@@ -1,6 +1,6 @@
 const JSON_HEADERS = {"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:JSON_HEADERS});
-const normalized=s=>s.normalize("NFKC").toLowerCase().replace(/[^\\p{L}\\p{N}]/gu,"");
+const normalized=s=>s.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]/gu,"");
 const digest=async s=>{
   const data=new TextEncoder().encode(s);
   const arr=new Uint8Array(await crypto.subtle.digest("SHA-256",data));
@@ -43,7 +43,7 @@ export async function onRequestPost({request,env}){
   let body;
   try{body=await request.json()}catch{return json({error:"Invalid JSON body"},400)}
   if(!body||typeof body!=="object"||JSON.stringify(body).length>5000)return json({error:"Submission too large"},413);
-  const name=String(body.commander||"").trim().replace(/\\s+/g," ");
+  const name=String(body.commander||"").trim().replace(/\s+/g," ");
   const reason=String(body.reason||"").trim();
   const strategy=String(body.strategy||"").trim();
   const cards=String(body.cards||"").trim();
