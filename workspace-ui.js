@@ -110,20 +110,20 @@
   syncCutSetting();
 
   // Research — combo analyzer visible, optional rules lookup behind one control.
+  const forecast=$("turnForecast");if(forecast)views.get("improve").append(fold(forecast,"Goldfish simulation — commander casting probability"));
   const combos=$("comboPanel"),rulings=$("rulesDesk");
   if(combos)views.get("research").append(combos);
   if(rulings)views.get("research").append(fold(rulings,"Card rulings and official rules references"));
 
   // Shop & cloud tools: fast links first; the longer workflows are opt-in.
   const research=page.querySelector('.workshop-summary[aria-labelledby="researchHeading"]'),
-        collection=$("collectionPanel"),cloud=$("cloudShare"),vault=$("vaultPanel");
+        collection=$("collectionPanel"),cloud=$("cloudShare"),vault=$("vaultPanel"),account=$("accountPanel");
   if(research)views.get("save").append(research);
   if(collection)views.get("save").append(fold(collection,"My collection and missing cards"));
+  if(account)views.get("save").append(fold(account,"My account & cloud-synced decks"));
   if(cloud)views.get("save").append(fold(cloud,"Create a shareable deck link"));
   if(vault)views.get("save").append(fold(vault,"Save a cloud deck with a recovery key"));
 
-  const roadmap=page.querySelector('.workshop-summary[aria-labelledby="futureHeading"]');
-  if(roadmap)views.get("save").append(fold(roadmap,"What this prototype cannot do yet"));
   const foot=wrap.querySelector(".tool-footer");if(foot)views.get("save").append(foot);
 
   function jumpToView(eventKey){
@@ -136,7 +136,7 @@
   const nested={
     deckGenerator:"build",commanderField:"deck",deckInput:"deck",hostedImport:"deck",
     analysisPanel:"improve",deckRows:"deck",comboPanel:"research",rulesDesk:"research",
-    cloudShare:"save",vaultPanel:"save",collectionPanel:"save",researchLinks:"save"
+    cloudShare:"save",vaultPanel:"save",accountPanel:"save",turnForecast:"improve",collectionPanel:"save",researchLinks:"save"
   };
   let defaultView;
   try{defaultView=localStorage.getItem("deepcuts-workbench-tab")}catch{}

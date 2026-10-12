@@ -1,0 +1,17 @@
+/* Sitewide feedback launcher; intentionally small and unobtrusive. */
+.dc-feedback-launch{position:fixed;z-index:90;right:19px;bottom:18px;min-height:44px;padding:11px 17px;border:1px solid #87aa90;background:#29553f;color:#fff9e9;box-shadow:0 5px 15px #1028204a;font:700 12px ui-sans-serif,system-ui,sans-serif;border-radius:30px;cursor:pointer;letter-spacing:.03em}
+.dc-feedback-launch:hover,.dc-feedback-launch:focus-visible{background:#1e4934;outline:2px solid #d2e2b6;outline-offset:2px}
+.dc-feedback-dialog{border:1px solid #bacdba;border-radius:16px;background:#fffef8;padding:24px;max-width:min(92vw,480px);width:100%;color:#294637;box-shadow:0 18px 66px #08150eb3}
+.dc-feedback-dialog::backdrop{background:#101d16ae;backdrop-filter:blur(3px)}
+.dc-feedback-dialog h2{font:700 28px Georgia,serif;margin:3px 24px 6px 0;color:#305a40}
+.dc-feedback-close{float:right;font-size:24px;color:#45694b;background:transparent;border:0;min-width:35px;min-height:35px;cursor:pointer}
+.dc-feedback-lede{font-size:13px;line-height:1.65;color:#617467;margin:0 0 17px}
+.dc-feedback-dialog form{display:grid;gap:12px}
+.dc-feedback-dialog label{display:grid;gap:6px;font-size:12px;font-weight:700;color:#365a41}
+.dc-feedback-dialog select,.dc-feedback-dialog textarea{font:400 14px ui-sans-serif,system-ui,sans-serif;width:100%;padding:11px;border:1px solid #bbcfbd;background:white;color:#203e2a;border-radius:8px;resize:vertical}
+.dc-feedback-helper{font-size:11px;color:#6b806e;margin:0}
+.dc-feedback-status{font-size:12px;min-height:16px;color:#356d48;margin:0}
+.dc-feedback-send{border:0;border-radius:8px;background:#316c49;color:#fff;padding:12px 18px;min-height:44px;font-weight:800;cursor:pointer}
+.dc-feedback-send:disabled{opacity:.7;cursor:wait}
+.dc-feedback-turnstile{min-height:65px}
+@media(max-width:580px){.dc-feedback-launch{right:10px;bottom:12px;padding:10px 14px}.dc-feedback-dialog{padding:18px}}
