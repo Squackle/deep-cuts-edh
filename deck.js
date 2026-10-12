@@ -33,7 +33,7 @@ function renderRows(){
   const buy=el("a","BUY ↗");buy.href="https://www.tcgplayer.com/search/magic/product?productLineName=magic&q="+encodeURIComponent(card.name)+"&view=grid";buy.target="_blank";buy.rel="noopener noreferrer";buy.title="Find "+card.name+" on TCGplayer";buy.className="mini-buy";row.append(qty,name,role,buy,minus);container.append(row);
  }
 }
-const gc=c=>GAME_CHANGERS.has(normalizedName(c.name));
+const gc=c=>GAME_CHANGERS.has(normalizedName(String(c.name||"").split(" // ")[0]));
 function sumQty(cards){return cards.reduce((n,c)=>n+(Number(c.qty)||0),0)}
 function manaSource(card,color){
  if(!card)return false;
@@ -174,6 +174,7 @@ function mana(s,root){
  }
 }
 function cutSuggestions(s){
+ const mode=$("cutMode")?.value||"balance";
  const excess=s.total-100;if(excess<=0)return [];
  const candidates=[];
  for(const entry of deck.cards){
@@ -188,10 +189,23 @@ function cutSuggestions(s){
    else if(s.lands>s.desiredLands){score+=20;if(/enters (the battlefield )?tapped/i.test(c.oracle_text||""))score+=15;reasons.push("Land count above target")}
    else score-=80;
   }else{
-   if(c.cmc>=7){score+=8;reasons.push("High mana value")}
+   if(c.cmc>=7){score+=mode==="curve"?35:8;reasons.push("High mana value")}
+   if(mode==="curve"&&c.cmc>=5)score+=Math.max(0,c.cmc-4)*6;
+   if(mode==="budget"&&Number(c.prices?.usd)>0){score+=Math.min(65,Number(c.prices.usd)*2);reasons.push("Lower-cost cut candidate")}
+   if(mode==="bracket"&&(s.target<=3)&&(/take an extra turn|players can't|each player sacrifices.*land/i.test(c.oracle_text||""))){score+=40;reasons.push("High game-warp potential")}
+   if(mode==="synergy"){
+     const text=(c.oracle_text||"").toLowerCase(),cmd=commanderCards.filter(Boolean).map(x=>x.oracle_text||"").join(" ").toLowerCase();
+     const keys=["sacrifice","graveyard","token","cast","equipment","artifact","counter","damage","creature","land"];
+     const shared=keys.filter(k=>cmd.includes(k)&&text.includes(k));
+     if(!shared.length){score+=25;reasons.push("Limited obvious commander-text overlap")}
+   }
+   if(mode==="redundancy"){
+     const text=(c.oracle_text||"").toLowerCase();
+     if(/draw a card|destroy target|add one mana|add \{[wubrgc]\}/.test(text)){score+=15;reasons.push("Common deck role; consider alternatives")}
+   }
    if((c.oracle_text||"").length<80){score+=3;reasons.push("Review for deck synergy")}
   }
-  if(GAME_CHANGERS.has(normalizedName(c.name))&&s.target<=2){score+=50;reasons.push("Game Changer conflicts with target bracket")}
+  if(GAME_CHANGERS.has(normalizedName(String(c.name||"").split(" // ")[0]))&&s.target<=2){score+=50;reasons.push("Game Changer conflicts with target bracket")}
   for(let qty=0;qty<entry.qty;qty++){if(land&&s.lands-s.desiredLands<=qty&&score<50)continue;candidates.push({name:entry.name,score:score-qty*2,reasons:reasons.join("; ")||"Lowest priority review",card:c})}
  }
  return candidates.sort((a,b)=>b.score-a.score).slice(0,excess);
@@ -311,6 +325,7 @@ $("clearDeck").addEventListener("click",()=>{
  if(!confirm("Clear the saved deck workbench?"))return;
  deck={cards:[],commanders:[],targetBracket:2};commanderCards=[];hasAnalyzed=false;saveDeck(deck);loadInputs();refreshSummary("Empty workbench.");
 });
+$("cutMode")?.addEventListener("change",()=>{if(hasAnalyzed&&currentTab==="cut")display()});
 $("bracketTarget").addEventListener("change",()=>{
  deck.targetBracket=Number($("bracketTarget").value);saveDeck(deck);
  if(hasAnalyzed){lastAnalysis=diagnose();display()}

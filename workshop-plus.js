@@ -34,13 +34,13 @@ function roleTags(card){
 function metrics(deck){
  const counts=new Map(),roles=new Map(),curve=Array(8).fill(0),colors={W:0,U:0,B:0,R:0,G:0};
  let lands=0,known=0,tapped=0,pips=0,gamechangers=0,fastMana=0,denial=0,extraTurns=0,totalPrice=0,priceMissing=0;
- const changers=new Set("Drannith Magistrate|Humility|Serra's Sanctum|Smothering Tithe|Enlightened Tutor|Teferi's Protection|Consecrated Sphinx|Cyclonic Rift|Force of Will|Fierce Guardianship|Gifts Ungiven|Intuition|Mystical Tutor|Narset, Parter of Veils|Rhystic Study|Thassa's Oracle|Ad Nauseam|Bolas's Citadel|Braids, Cabal Minion|Demonic Tutor|Imperial Seal|Necropotence|Opposition Agent|Orcish Bowmasters|Tergrid, God of Fright|Vampiric Tutor|Gamble|Jeska's Will|Underworld Breach|Crop Rotation|Gaea's Cradle|Natural Order|Seedborn Muse|Survival of the Fittest|Worldly Tutor|Aura Shards|Coalition Victory|Grand Arbiter Augustin IV|Notion Thief|Ancient Tomb|Chrome Mox|Field of the Dead|Glacial Chasm|Grim Monolith|Lion's Eye Diamond|Mana Vault|Mishra's Workshop|Mox Diamond|Panoptic Mirror|The One Ring|The Tabernacle at Pendrell Vale".split("|").map(normalizedName));
+ const changers=new Set("Ad Nauseam|Ancient Tomb|Aura Shards|Biorhythm|Bolas's Citadel|Braids, Cabal Minion|Chrome Mox|Coalition Victory|Consecrated Sphinx|Crop Rotation|Cyclonic Rift|Demonic Tutor|Drannith Magistrate|Enlightened Tutor|Farewell|Field of the Dead|Fierce Guardianship|Force of Will|Gaea's Cradle|Gamble|Gifts Ungiven|Glacial Chasm|Grand Arbiter Augustin IV|Grim Monolith|Humility|Imperial Seal|Intuition|Jeska's Will|Lion's Eye Diamond|Mana Vault|Mishra's Workshop|Mox Diamond|Mystical Tutor|Narset, Parter of Veils|Natural Order|Necropotence|Notion Thief|Opposition Agent|Orcish Bowmasters|Panoptic Mirror|Rhystic Study|Seedborn Muse|Serra's Sanctum|Smothering Tithe|Survival of the Fittest|Teferi's Protection|Tergrid, God of Fright|Thassa's Oracle|The One Ring|The Tabernacle at Pendrell Vale|Underworld Breach|Vampiric Tutor|Worldly Tutor".split("|").map(normalizedName));
  const fast=new Set(["solring","manacrypt","manavault","chromemox","moxdiamond","moxopal","lionseyediamond","lotuspetal","darkritual","jewelledlotus","jeweledlotus"]);
  for(const item of deck.cards||[]){
   const q=Number(item.qty)||0,c=item.card;if(!c||!q)continue;known+=q;
   const tags=roleTags(c);
   for(const t of tags)roles.set(t,(roles.get(t)||0)+q);
-  const name=normalizedName(item.name);
+  const name=normalizedName(String(item.name||"").split(" // ")[0]);
   if(changers.has(name))gamechangers+=q;
   if(fast.has(name))fastMana+=q;
   if(/destroy all lands|each player sacrifices (all|[3-9]) lands|players can't untap lands|skip their untap steps/i.test(c.oracle_text||""))denial+=q;

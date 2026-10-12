@@ -1,13 +1,33 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#172522"><title>Deck Workshop | Deep Cuts EDH</title>
 <meta name="description" content="Import your Commander deck. Review mana balance, legality, Game Changer limits, card counts, and suggested cuts to 100.">
-<link rel="icon" href="assets/favicon.svg"><script defer src="data.js"></script><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><script type="module" src="deck.js"></script><script type="module" src="workshop-plus.js"></script></head>
+<link rel="icon" href="assets/favicon.svg"><script defer src="data.js"></script><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><script type="module" src="deck.js"></script><script type="module" src="workshop-plus.js"></script><script type="module" src="studio-v3.js"></script></head>
 <body><a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol" aria-hidden="true"><img src="assets/deep-cuts-mark.svg" alt="" width="46" height="56"></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>OLD LEGENDS · NEW TROUBLE</small></span></a>
 <nav class="primary-nav" aria-label="Main navigation"><a href="index.html#latest">RESCUE REPORT</a><a href="library.html">CARD LIBRARY</a><a class="workshop-link" href="deck.html">DECK WORKSHOP</a><a href="index.html#nominate">NOMINATE</a></nav><a class="header-action" href="library.html">FIND MORE CARDS ↗</a></div></header>
 <main id="main" class="tool-page"><div class="wrap">
 <div class="tool-intro"><div class="retro-eyebrow">DEEP CUTS EDH / THE DECK PHYSICIAN</div><h1 class="retro-heading">The <em>Deck Workshop.</em></h1>
 <p class="tool-lead">Diagnose the mana, curve, consistency, legality and table expectations of a forgotten commander deck. Review cuts and upgrades yourself—no mystery black box.</p></div>
+
+<section id="deckGenerator" class="workshop-summary studio-intro">
+ <div class="summary-top"><div><span class="retro-eyebrow">NEW / DEEP CUTS DECK GENERATOR</span><h2 class="retro-heading" style="font-size:33px;margin:5px 0">Build the impossible.</h2><p class="helper-note">Generate a complete Commander draft around an obscure legend. Cards come from live Scryfall searches, with color identity and format checks. This is a new deck foundation, not a playtested optimization.</p></div></div>
+ <div class="tool-controls">
+ <div class="span-two"><label for="genCommander">COMMANDER NAME</label><input id="genCommander" autocomplete="off" placeholder="e.g. Chainer, Dementia Master"></div>
+ <div><label for="genTheme">GAME PLAN</label><select id="genTheme">
+ <option value="surprise">Surprise me</option><option value="creatures">Big creatures</option><option value="tokens">Go wide / tokens</option><option value="graveyard">Graveyard / reanimator</option><option value="sacrifice">Aristocrats / sacrifice</option><option value="spells">Spellslinger</option><option value="equipment">Equipment / Voltron</option><option value="counters">+1/+1 counters</option><option value="lands">Landfall</option><option value="tribal">Tribal</option><option value="control">Control</option>
+ </select></div>
+ <div><label for="genBudget">PRICE TARGET (USD)</label><select id="genBudget"><option value="50">$50</option><option selected value="100">$100</option><option value="200">$200</option><option value="400">$400</option><option value="0">No cap</option></select></div>
+ <div><label for="genBracket">POWER TARGET</label><select id="genBracket"><option value="1">1 · Exhibition</option><option value="2" selected>2 · Core</option><option value="3">3 · Upgraded</option><option value="4">4 · Optimized</option><option value="5">5 · cEDH aspirational</option></select></div>
+ <div><label for="genPartner">SECOND COMMANDER (PARTNER / BACKGROUND)</label><input id="genPartner" placeholder="e.g. Gilanra, Caller of Wirewood" maxlength="130"></div>
+ <div><label for="genTribe">TRIBE (OPTIONAL)</label><input id="genTribe" placeholder="e.g. Soldiers, Vampires" maxlength="32"></div>
+ <div><label for="genFinish">FINISHER STYLE</label><select id="genFinish"><option value="combat">Combat / damage</option><option value="value">Value engines</option><option value="combo">Known combos (review externally)</option></select></div>
+ <div><label for="genInteraction">INTERACTION LEVEL</label><select id="genInteraction"><option value="low">Light</option><option selected value="balanced">Balanced</option><option value="high">Heavy</option></select></div>
+ </div>
+ <div class="tool-actions"><label class="studio-check"><input type="checkbox" id="genNoChangers" checked> Avoid Game Changers</label><label class="studio-check"><input type="checkbox" id="genNoTutors"> Avoid tutors</label><label class="studio-check"><input type="checkbox" id="genNoFast"> Avoid fast mana</label><label class="studio-check"><input type="checkbox" id="genOwned"> Prefer my collection</label></div>
+ <div class="tool-actions"><button type="button" class="retro-button" id="generateDeck">GENERATE 100-CARD DRAFT ↗</button><button type="button" class="retro-button dark" id="applyGenerated" disabled>REPLACE WORKSHOP WITH DRAFT</button></div>
+ <div class="studio-status" id="generatorStatus" role="status" aria-live="polite">Choose a commander and a strategy to begin.</div>
+ <div id="generatorPreview" class="studio-preview"></div>
+</section>
 <div class="deck-columns">
 <section class="ornate-panel"><div class="retro-eyebrow">01 / IMPORT YOUR PATIENT</div><h2 class="retro-heading" style="font-size:32px">The decklist</h2>
 <label for="commanderField" class="field-label">COMMANDER(S) — ONE PER LINE</label>
@@ -16,6 +36,8 @@
 <label for="deckInput" class="field-label">PASTE YOUR MAINBOARD — NAME AND QUANTITY</label>
 <textarea class="deck-input" id="deckInput" spellcheck="false" placeholder="1 Sol Ring&#10;1 Arcane Signet&#10;1 Lightning Greaves&#10;34 Swamp&#10;..."></textarea>
 <div class="tool-actions"><button id="analyzeDeck" class="retro-button">ANALYZE DECK ↗</button><button id="loadExample" type="button" class="retro-button dark">LOAD CHAINER EXAMPLE</button><button id="clearDeck" class="retro-button dark" type="button">CLEAR WORKSHOP</button></div>
+
+<div class="diagnosis-group" id="hostedImport"><span class="retro-eyebrow">IMPORT A PUBLIC DECK URL</span><p class="helper-note">Uses Commander Spellbook's published decklist import service for public Moxfield, Archidekt, Deckstats and TappedOut URLs. Private decks, unsupported sites, and changed provider formats may require a text export.</p><label class="field-label" for="hostDeckUrl">HOSTED DECK URL</label><input id="hostDeckUrl" class="retro-input" type="url" placeholder="https://www.moxfield.com/decks/..." autocomplete="off"><div class="tool-actions"><button class="retro-button" type="button" id="importDeckUrl">IMPORT URL ↗</button></div><p class="tool-status" id="importUrlStatus" aria-live="polite"></p></div>
 <div id="deckStatus" class="tool-status" role="status" aria-live="polite">Paste a deck or add cards from the Card Library.</div>
 <div class="diagnosis-group"><div class="retro-eyebrow">COMMANDER BRACKET TARGET</div>
 <div class="tool-controls" style="grid-template-columns:1fr"><div><label for="bracketTarget">POWER / PLAY EXPECTATIONS</label>
@@ -26,6 +48,7 @@
 <section class="ornate-panel"><div class="retro-eyebrow">02 / DIAGNOSE, PRESCRIBE, ADJUST</div>
 <h2 class="retro-heading" style="font-size:32px">The diagnosis</h2>
 <div class="analysis-stats"><div class="analysis-stat"><strong id="statCards">0</strong><small>TOTAL CARDS</small></div><div class="analysis-stat"><strong id="statLands">–</strong><small>LANDS</small></div><div class="analysis-stat"><strong id="statGamechangers">–</strong><small>GAME CHANGERS</small></div></div>
+<div class="tool-controls" style="grid-template-columns:1fr;margin-bottom:14px"><div><label for="cutMode">CUT SUGGESTION PRIORITY</label><select id="cutMode"><option value="balance">Balance / legality first</option><option value="synergy">Commander synergy</option><option value="curve">Smooth the mana curve</option><option value="budget">Reduce deck cost</option><option value="bracket">Lower bracket pressure</option><option value="redundancy">Remove repeated roles</option></select></div></div>
 <div class="deck-tabbar" role="tablist" aria-label="Deck improvement tools">
 <button class="deck-tab active" data-tab="overview" type="button">OVERVIEW</button><button class="deck-tab" data-tab="mana" type="button">FIX MANA</button><button class="deck-tab" data-tab="cut" type="button">CUT TO 100</button><button class="deck-tab" data-tab="bracket" type="button">CHANGE BRACKET</button></div>
 <div id="analysisPanel" aria-live="polite"><p class="helper-note">Import or analyze a deck to receive recommendations.</p></div>
@@ -38,12 +61,45 @@
  </div>
  <div id="advancedLoading" role="status" class="tool-status">Analyze a deck to unlock the complete workshop report.</div>
  <div id="healthBadges" class="health-grid"></div>
+ <div class="tool-actions"><button id="sampleHand" class="retro-button dark" type="button">DRAW 7 ↗</button><button id="sampleTen" class="retro-button dark" type="button">DRAW 10 ↗</button></div><p id="sampleHandResult" class="helper-note" role="status" aria-live="polite"></p>
  <div class="workshop-extras">
   <article class="diagnostic-card"><h3>Mana curve</h3><div class="curve-chart" id="manaCurve" aria-label="Mana curve chart"></div><p class="helper-note">Nonland cards, including commanders when resolved. Mana value 7+ grouped.</p></article>
   <article class="diagnostic-card"><h3>Opening-hand odds</h3><div id="drawProbabilities" class="stat-bars"></div><p class="helper-note">Exact hypergeometric calculations, on a 100-card deck assumption, without mulligans. Ramp probability counts cards classified as ramp, not whether their mana costs can be paid.</p></article>
   <article class="diagnostic-card"><h3>Deck roles</h3><div id="deckRoles" class="role-grid"></div><p class="helper-note">Oracle text heuristics; some cards fill multiple roles. Confirm edge cases manually.</p></article>
   <article class="diagnostic-card"><h3>Strategy / table feel</h3><div id="engineFindings" class="engine-findings"></div><p class="helper-note">Experimental pattern flags, not ML win-turn, archenemy scoring, or combo-proof classification.</p></article>
  </div>
+</section>
+
+<section class="workshop-summary" id="comboPanel">
+ <div class="summary-top"><div><span class="retro-eyebrow">05 / VERIFIED COMBO INTELLIGENCE</span><h2 class="retro-heading" style="font-size:31px;margin:5px 0">Combos &amp; bracket signals.</h2>
+ <p class="helper-note">Commander Spellbook detects complete combos and combos missing one piece, plus bracket-relevant effects. Results cite the actual combo database instead of claiming to discover new infinite loops.</p></div><button type="button" id="checkCombos" class="retro-button">CHECK MY COMBOS ↗</button></div>
+ <div id="spellbookStatus" class="tool-status" role="status">Analyze your deck and click Check My Combos.</div>
+ <div class="workshop-extras"><div class="diagnostic-card"><h3>Combos in your deck</h3><div id="combosIncluded" class="combo-results"></div></div><div class="diagnostic-card"><h3>One card away</h3><div id="combosMissing" class="combo-results"></div></div></div>
+ <div id="bracketSignals" class="diagnostic-card" style="margin-top:16px"><h3>Brackets &amp; disruptive mechanics</h3><p class="helper-note">No Spellbook analysis yet.</p></div>
+ <p class="helper-note">Source: <a href="https://commanderspellbook.com/" target="_blank" rel="noopener noreferrer">Commander Spellbook ↗</a>. Incomplete or ambiguous card names can produce incorrect results. Combo prerequisites may still prevent execution in a real game.</p>
+</section>
+<section class="workshop-summary" id="rulesDesk">
+ <div class="summary-top"><div><span class="retro-eyebrow">06 / RULES DESK</span><h2 class="retro-heading" style="font-size:31px;margin:5px 0">Ask the card. Read the ruling.</h2><p class="helper-note">Look up official card rulings through Scryfall and verify interactions in the latest Magic Comprehensive Rules. This is a sourced rules lookup, not a generative Judge chat.</p></div></div>
+ <div class="tool-controls"><div class="span-two"><label for="rulingCard">CARD NAME</label><input id="rulingCard" placeholder="e.g. Chainer, Dementia Master"></div><div><label for="rulesTopic">RULES TOPIC</label><select id="rulesTopic"><option value="702">Keyword abilities (702)</option><option value="603">Triggered abilities (603)</option><option value="605">Mana abilities (605)</option><option value="613">Layers (613)</option><option value="704">State-based actions (704)</option><option value="707">Copying objects (707)</option><option value="702.26">Phasing (702.26)</option><option value="903">Commander (903)</option><option value="400">Zones (400)</option><option value="601">Casting spells (601)</option></select></div></div>
+ <div class="tool-actions"><button id="lookupRulings" class="retro-button">FIND CARD RULINGS ↗</button><a id="rulesReferenceLink" class="retro-button dark" href="https://magic.wizards.com/en/rules" target="_blank" rel="noopener noreferrer">OFFICIAL COMPREHENSIVE RULES ↗</a></div>
+ <div id="rulingsStatus" class="tool-status" role="status"></div><div id="rulingsResults" class="rulings-results"></div>
+</section>
+<section class="workshop-summary" id="cloudShare">
+ <div class="summary-top"><div><span class="retro-eyebrow">07 / CLOUD DECK SNAPSHOTS</span><h2 class="retro-heading" style="font-size:31px;margin:5px 0">A deck link you can carry.</h2><p class="helper-note">Create a read-only share link and open it on another device. Only share decks you are comfortable making accessible to anyone with the link. This is not a password-protected account or automatic cloud sync.</p></div></div>
+ <div class="tool-actions"><button type="button" class="retro-button" id="shareDeckCloud">SAVE SHAREABLE CLOUD SNAPSHOT ↗</button><button type="button" class="retro-button dark" id="copyShareUrl" disabled>COPY SHARE LINK</button></div>
+ <div id="sharedDeckStatus" class="tool-status" role="status"></div><div id="sharedDeckLink"></div>
+</section>
+
+<section class="workshop-summary" id="vaultPanel">
+ <div class="summary-top"><div><span class="retro-eyebrow">08 / RECOVERY-KEY CLOUD VAULT</span><h2 class="retro-heading" style="font-size:31px;margin:5px 0">Keep a deck across devices.</h2>
+ <p class="helper-note">This is a private-key vault, not an email or social-media account. Create a 256-bit recovery key, keep it secret, then use it to load or update one cloud deck on another device. The site database stores deck text, so do not treat this as end-to-end encrypted storage.</p></div></div>
+ <label for="vaultKey" class="field-label">YOUR VAULT RECOVERY KEY</label><input id="vaultKey" class="retro-input" type="password" autocomplete="off" spellcheck="false" placeholder="dcvault1_…">
+ <div class="tool-actions"><button type="button" class="retro-button" id="createVault">CREATE VAULT</button>
+ <button type="button" class="retro-button dark" id="loadVault">LOAD FROM VAULT</button>
+ <button type="button" class="retro-button dark" id="saveVault">SAVE TO VAULT</button>
+ <button type="button" class="retro-button dark" id="copyVaultKey">COPY RECOVERY KEY</button></div>
+ <label class="studio-check"><input type="checkbox" id="rememberVault"> Remember this key on this browser (anyone using this device could access it)</label>
+ <div id="vaultStatus" class="tool-status" role="status" aria-live="polite">Create a vault only after adding a Commander deck. Losing your recovery key means you cannot recover the cloud deck.</div>
 </section>
 <section class="workshop-summary" id="collectionPanel" aria-labelledby="collectionHeading">
  <div class="summary-top"><div><span class="retro-eyebrow">04 / COLLECTION & BUY LIST</span><h2 id="collectionHeading" class="retro-heading" style="font-size:31px;margin:5px 0">Cards you own. Cards you need.</h2></div><div class="tool-actions"><button class="retro-button dark" type="button" id="clearCollection">CLEAR COLLECTION</button></div></div>
@@ -68,7 +124,7 @@
  <div class="tool-actions"><button type="button" class="retro-button" id="copyExternalDeck">COPY FOR MOXFIELD / ARCHIDEKT</button><button type="button" class="retro-button dark" id="copyDeckShare">COPY DECK SHARE TEXT</button></div>
 </section>
 <section class="workshop-summary" aria-labelledby="futureHeading"><span class="retro-eyebrow">DEEP CUTS ROADMAP</span><h2 id="futureHeading" style="font-size:22px;margin:8px 0">Advanced features in development</h2>
-<p class="helper-note">Automated public deck URL imports, exact Commander Spellbook combo/one-card-away detection, a complete commander-aware 100-card generator, account cloud-sync, and AI/rules-backed Judge answers are **not yet implemented**. Current probabilities and deck health scores are intentionally labeled experimental.</p></section>
+<p class="helper-note">Hosted deck imports and combo detection use Commander Spellbook; a guided commander-aware builder creates editable 100-card drafts, while cloud share links provide read-only snapshots. Full authenticated account sync, generative rules-chat answers, and trained ML win-turn predictions are still unavailable. Current probability and health indicators are experimental.</p></section>
 <div class="tool-footer">Deck checks are advisory. Scryfall provides card data and current format legality; Commander bracket intent, combo interactions, atypical singleton exceptions, and land needs still require human judgment. Card prices are approximate and may not include shipping.</div></div></main>
 <footer class="site-footer"><div class="wrap footer-content"><strong>DEEP CUTS <span>EDH</span></strong><div class="footer-links"><a href="index.html">HOME</a><a href="library.html">CARD LIBRARY</a><a href="https://magic.wizards.com/en/formats/commander" target="_blank" rel="noopener noreferrer">OFFICIAL BRACKET GUIDANCE ↗</a></div></div></footer>
 </body></html>

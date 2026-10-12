@@ -1,8 +1,8 @@
 
 export const KEY="deepcuts-deck-v1";
 export const formats=["commander","standard","pioneer","modern","legacy","vintage","pauper","historic","brawl","timeless","alchemy"];
-export const GAME_CHANGERS=new Set(
-("Drannith Magistrate|Humility|Serra's Sanctum|Smothering Tithe|Enlightened Tutor|Teferi's Protection|Consecrated Sphinx|Cyclonic Rift|Force of Will|Fierce Guardianship|Gifts Ungiven|Intuition|Mystical Tutor|Narset, Parter of Veils|Rhystic Study|Thassa's Oracle|Ad Nauseam|Bolas's Citadel|Braids, Cabal Minion|Demonic Tutor|Imperial Seal|Necropotence|Opposition Agent|Orcish Bowmasters|Tergrid, God of Fright|Vampiric Tutor|Gamble|Jeska's Will|Underworld Breach|Crop Rotation|Gaea's Cradle|Natural Order|Seedborn Muse|Survival of the Fittest|Worldly Tutor|Aura Shards|Coalition Victory|Grand Arbiter Augustin IV|Notion Thief|Ancient Tomb|Chrome Mox|Field of the Dead|Glacial Chasm|Grim Monolith|Lion's Eye Diamond|Mana Vault|Mishra's Workshop|Mox Diamond|Panoptic Mirror|The One Ring|The Tabernacle at Pendrell Vale").split("|").map(normalizedName));
+// Official 53 Game Changers snapshot, October 2026. See Scryfall is:gamechanger for updates.
+export const GAME_CHANGERS=new Set(("Ad Nauseam|Ancient Tomb|Aura Shards|Biorhythm|Bolas's Citadel|Braids, Cabal Minion|Chrome Mox|Coalition Victory|Consecrated Sphinx|Crop Rotation|Cyclonic Rift|Demonic Tutor|Drannith Magistrate|Enlightened Tutor|Farewell|Field of the Dead|Fierce Guardianship|Force of Will|Gaea's Cradle|Gamble|Gifts Ungiven|Glacial Chasm|Grand Arbiter Augustin IV|Grim Monolith|Humility|Imperial Seal|Intuition|Jeska's Will|Lion's Eye Diamond|Mana Vault|Mishra's Workshop|Mox Diamond|Mystical Tutor|Narset, Parter of Veils|Natural Order|Necropotence|Notion Thief|Opposition Agent|Orcish Bowmasters|Panoptic Mirror|Rhystic Study|Seedborn Muse|Serra's Sanctum|Smothering Tithe|Survival of the Fittest|Teferi's Protection|Tergrid, God of Fright|Thassa's Oracle|The One Ring|The Tabernacle at Pendrell Vale|Underworld Breach|Vampiric Tutor|Worldly Tutor").split("|").map(normalizedName));
 export const manaLetters=["W","U","B","R","G"];
 export const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export function readDeck(){
@@ -58,3 +58,5 @@ export const isBasic=(c)=>!!c&&/\bBasic Land\b/i.test(c.type_line||"");
 export const isLand=(c)=>!!c&&/\bLand\b/i.test(c.type_line||"");
 export function canRepeat(c){return isBasic(c)||/a deck can have any number of cards named/i.test(c?.oracle_text||"")||/a deck can have up to seven cards named/i.test(c?.oracle_text||"")}
 export function legalStatus(c,format="commander"){return c?.legalities?.[format]||"unknown"}
+
+export const isGameChanger=name=>GAME_CHANGERS.has(normalizedName(String(name||'').split(' // ')[0]));

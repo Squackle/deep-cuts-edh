@@ -195,3 +195,29 @@ dialog{background:#faf9f2;color:#24352e;border:1px solid #94b09b;border-radius:1
 .modal-footer{display:flex;flex-wrap:wrap;gap:12px}
 .modal-footer a{font-size:11px}
 #brewSelect,#brewName{background:#fffef9;color:#263b30;border:1px solid #b9c4b7;padding:10px;min-height:44px;border-radius:7px;width:100%;margin:7px 0}
+
+
+/* Deep Cuts Studio v3 - builder + imported decks + Spellbook and rules library */
+.studio-intro{margin-bottom:28px;border:1px solid #bbcdbc;background:linear-gradient(140deg,#fffefa,#f0f5ee)}
+.studio-check{display:inline-flex;gap:8px;align-items:center;font-size:13px;color:#3a6048;font-weight:650}
+.studio-check input{accent-color:#3c7653}
+.studio-preview{margin-top:14px;max-height:450px;overflow:auto}
+.studio-preview-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.studio-preview-group{border:1px solid #d1ddd0;background:#fff;border-radius:9px;padding:13px}
+.studio-preview-group h4{color:#315c42;font:600 17px Georgia,serif;margin:0 0 8px}
+.studio-preview-group small{display:block;line-height:1.55;color:#59705d}
+.studio-status{color:#54765c;font-size:13px;line-height:1.5;font-weight:650}
+.combo-results{max-height:365px;overflow:auto}
+.combo-result{padding:12px;margin-bottom:10px;background:#fffefa;border:1px solid #d7dfd5;border-radius:8px}
+.combo-result strong{display:block;color:#2f6145;margin-bottom:6px}
+.combo-result .combo-cards{font-size:13px;line-height:1.5;color:#334f3b}
+.combo-result .combo-effect{font-size:12px;color:#677c68;margin:7px 0}
+.combo-result a{font-size:12px;color:#346d50;font-weight:750}
+.rulings-results{margin-top:15px}
+.ruling-entry{padding:14px 17px;margin:9px 0;border-left:3px solid #799e82;background:#f1f6ed;border-radius:5px}
+.ruling-entry p{white-space:pre-line;margin:5px 0;color:#354d3b}
+.ruling-entry small{color:#667962}
+#sharedDeckLink a{color:#28684c;overflow-wrap:anywhere;font-weight:650}
+.research-link:focus-visible,.retro-button:focus-visible{outline:3px solid #3d8166;outline-offset:3px}
+@media(max-width:900px){.studio-preview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){.studio-preview-grid{grid-template-columns:1fr}}

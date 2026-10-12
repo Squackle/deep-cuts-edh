@@ -11,6 +11,10 @@ An **independent, no-framework, static** prototype for an obscure Commander disc
 - Bracket results are advisory and cannot automatically validate combos, intent, game speed, mass land denial or every exception. See current https://magic.wizards.com/en/formats/commander .
 - The deck assistant never automatically commits cuts to your deck without user confirmation. This is a functional rules-of-thumb prototype, not yet a semantic or AI-powered optimizer.
 
+## Studio 3.0
+
+The new deck generator, Spellbook API bridge, rules lookup, and cloud deck tools are documented in [`docs/STUDIO-3.md`](docs/STUDIO-3.md).
+
 ## What's working
 
 - Responsive dark-fantasy editorial homepage.
