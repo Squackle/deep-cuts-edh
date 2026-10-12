@@ -22,9 +22,12 @@ function buildQuery(){
  return terms.join(" ");
 }
 function entry(card){
- const box=create("article","library-card");
+ const box=create("article","library-card");window.DeepCutsGuide?.registerCardNames([card.name]);
  const img=create("img");img.alt=card.name+" card illustration";img.loading="lazy";img.decoding="async";img.src=cardImage(card)||"assets/favicon.svg";
- const title=create("h3","",card.name);
+ const title=create("h3");const cardLink=create("a","dc-card-link",card.name);
+ cardLink.href=card.scryfall_uri||window.DeepCutsGuide?.scryfallUrl(card.name)||("https://scryfall.com/search?q="+encodeURIComponent('!"'+card.name+'"'));
+ cardLink.target="_blank";cardLink.rel="noopener noreferrer";cardLink.title="View "+card.name+" on Scryfall";
+ title.append(cardLink);
  const meta=create("p","meta",(card.type_line||"")+" · "+(card.prices?.usd?"$"+card.prices.usd:"Price N/A") );
  const buttons=create("div","card-controls");
  const info=create("button","","DETAILS");info.type="button";info.addEventListener("click",()=>showDetail(card));
@@ -33,7 +36,11 @@ function entry(card){
 }
 function showDetail(c){
  const root=$("cardDetailBody");root.replaceChildren();
- const h=create("h2","",c.name),p=create("p","",c.type_line||"");
+ window.DeepCutsGuide?.registerCardNames([c.name]);
+ const h=create("h2");const cardNameLink=create("a","dc-card-link",c.name);
+ cardNameLink.href=c.scryfall_uri||window.DeepCutsGuide?.scryfallUrl(c.name)||"https://scryfall.com";
+ cardNameLink.target="_blank";cardNameLink.rel="noopener noreferrer";h.append(cardNameLink);
+ const p=create("p","",c.type_line||"");
  const img=create("img");img.src=cardImage(c)||"assets/favicon.svg";img.alt=c.name;img.style="max-width:230px;float:left;margin:0 20px 15px 0;border-radius:10px";
  const oracle=create("p","",(c.oracle_text||c.card_faces?.map(x=>x.oracle_text||"").join("\n//\n")||"").replaceAll("{","[").replaceAll("}","]"));oracle.style.whiteSpace="pre-line";
  const legal=create("p","","Legality: "+Object.entries(c.legalities||{}).filter(([k,v])=>v==="legal").slice(0,12).map(([k])=>label(k)).join(", "));

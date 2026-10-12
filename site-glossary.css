@@ -1,0 +1,11 @@
+/* Sitewide card links and interactive rules references */
+.dc-card-link{color:#25664a!important;text-decoration:underline;text-decoration-thickness:1px;text-decoration-color:#8ead96;text-underline-offset:3px;font-weight:inherit}
+.dc-card-link:hover,.dc-card-link:focus-visible{color:#124b34!important;text-decoration-color:currentColor;text-decoration-thickness:2px}
+.hero .dc-card-link,.report-hero .dc-card-link,.closing-cta .dc-card-link{color:#f2d49a!important;text-decoration-color:#9cae8f}
+.hero .dc-card-link:hover,.report-hero .dc-card-link:hover{color:#fff5d6!important}
+.dc-keyword{color:inherit;cursor:help;text-decoration:underline dotted #618c73;text-underline-offset:4px;text-decoration-thickness:1.5px;border-radius:2px}
+.dc-keyword:hover,.dc-keyword:focus-visible,.dc-keyword.dc-open{background:#d8ead8;color:#224d36;text-decoration-color:#467656;outline-offset:2px}
+.dc-keyword:focus-visible{outline:2px solid #458360}
+#dc-rule-tooltip{position:fixed;z-index:99999;pointer-events:none;box-sizing:border-box;max-width:320px;background:#233d32;color:#f4f3e8;padding:13px 15px;border-radius:9px;box-shadow:0 13px 32px #0005;border:1px solid #7ea08b;font-size:13px;line-height:1.6;font-family:ui-sans-serif,system-ui,sans-serif;font-weight:450;white-space:normal;overflow-wrap:break-word}
+#dc-rule-tooltip[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){.dc-card-link,.dc-keyword{transition:none}}

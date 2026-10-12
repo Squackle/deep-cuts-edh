@@ -22,6 +22,7 @@
       setText("nomVotedCandidates",candidates.filter(x=>x.votes>0).length);
       setText("nomPendingCount",pendingCount??0);
       const pendingEl=document.getElementById("pendingNominationCount");if(pendingEl)pendingEl.textContent=pendingCount>0?pendingCount+" new "+(pendingCount===1?"nomination":"nominations")+" awaiting review":"";
+      window.DeepCutsGuide?.registerCardNames(candidates.map(x=>x.name));
       board.replaceChildren();
       for(const [index,entry] of candidates.slice(0,25).entries()){
         const row=document.createElement("div");row.className="leader-entry";
@@ -50,16 +51,19 @@
   }
   if(list){
     for(const idea of ideas){
-      const button=document.createElement("button");button.type="button";button.className="nomination-suggestion";
-      const title=document.createElement("strong");title.textContent=idea.name;
+      const box=document.createElement("div");box.className="nomination-suggestion";
+      const title=document.createElement("a");title.textContent=idea.name;title.className="dc-card-link";
+      title.href=window.DeepCutsGuide?.scryfallUrl(idea.full)||"https://scryfall.com/search?q="+encodeURIComponent('!"'+idea.full+'"');
+      title.target="_blank";title.rel="noopener noreferrer";title.title="View "+idea.full+" on Scryfall";
       const detail=document.createElement("span");detail.textContent=idea.kind+(idea.status==="upcoming"?" · upcoming":"");
-      button.append(title,detail);
+      const button=document.createElement("button");button.type="button";button.className="nomination-suggestion-action";
+      button.textContent="NOMINATE ↗";button.setAttribute("aria-label","Nominate "+idea.full);
       button.addEventListener("click",()=>{
         document.getElementById("nomCommander").value=idea.full;
         document.getElementById("nomReason").focus();
         document.getElementById("nominationForm").scrollIntoView({behavior:"smooth",block:"center"});
       });
-      list.append(button);
+      box.append(title,detail,button);list.append(box);
     }
   }
   document.getElementById("refreshNominations")?.addEventListener("click",load);

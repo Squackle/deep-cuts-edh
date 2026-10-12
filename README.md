@@ -118,3 +118,11 @@ References:
 - `reports/guide.css` and `reports/guide.js`: shared issue layout and starter-core import/copy. Pre-release card cores are copy-only.
 - Article publication is recorded in `data.js` and `app.js`; D1 `nominations.status` should be set to `featured` to hide the finished commander from nomination voting.
 - All article cores are incomplete, unpriced, editorial ideas. Budget target is $100, not a verified deck total.
+
+## Sitewide card links and MTG keyword definitions
+
+`card-lexicon.js` lists card names from existing rescue articles and editorial records. `glossary-terms.js` provides concise, rules-grounded definitions of common Magic mechanics and deckbuilding vocabulary. `site-glossary.js` scans visible non-decklist text and adds Scryfall exact-card links and accessible hover/focus/tap explanations, with `site-glossary.css` styling. It watches dynamically rendered tool results and exposes `window.DeepCutsGuide.registerCardNames(names)` for new results.
+
+For **all future published articles**, add their core card names to the lexicon or register them from the page's `#rescue-data` JSON (automatically read at runtime). A linked text match goes to an exact-name Scryfall search unless the underlying card already has `scryfall_uri` (such as Library results), in which case the actual card detail URL is used.
+
+Do not link card names in decklist editors, deck rows or starter-core tables, which remain plain and easy to select. Keyword descriptions are brief learning aids; consult the official rules for unusual interactions. Reference: https://magic.wizards.com/en/keyword-glossary .

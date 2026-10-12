@@ -248,6 +248,7 @@ async function swapOne(oldName,replacement){
  }catch(e){status(e.message)}
 }
 function bracket(s,root){
+ window.DeepCutsGuide?.registerCardNames([...Object.keys(swaps),...Object.values(swaps)]);
  const name={1:"Exhibition",2:"Core",3:"Upgraded",4:"Optimized",5:"cEDH"}[s.target];
  root.append(heading("Target Bracket "+s.target+" · "+name));
  const gcLimit=s.target<=2?0:s.target===3?3:Infinity;
@@ -274,6 +275,7 @@ function display(){
  const root=$("analysisPanel");root.replaceChildren();
  if(!hasAnalyzed){root.append(p("Paste and analyze a deck to receive real card-based recommendations.","helper-note"));return}
  const s=lastAnalysis||diagnose();lastAnalysis=s;stat(s);
+ window.DeepCutsGuide?.registerCardNames(deck.cards.map(x=>x.name));
  if(currentTab==="mana")mana(s,root);
  else if(currentTab==="cut")trim(s,root);
  else if(currentTab==="bracket")bracket(s,root);

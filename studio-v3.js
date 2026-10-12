@@ -77,6 +77,7 @@ function showComboList(id,records,type){
  for(const value of list.slice(0,15)){
   const variant=value?.variant??value?.combo??value,box=mk("article","combo-result"),
    names=variantCardNames(value),effects=(variant?.produces||[]).map(x=>x?.feature?.name||x?.name).filter(Boolean);
+  window.DeepCutsGuide?.registerCardNames(names);
   box.append(mk("strong",null,names.join(" + ")||variant?.name||"Commander Spellbook combo"));
   if(effects.length)box.append(mk("div","combo-effect","Result: "+effects.slice(0,3).join(" · ")));
   if(type==="missing"){

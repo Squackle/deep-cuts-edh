@@ -165,3 +165,18 @@
 .latest-more-grid a:hover{background:#eaf3e9;border-color:#91ad96}
 @media(max-width:900px){.latest-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:580px){.latest-more-grid{grid-template-columns:1fr}}
+
+/* Separate the card research link from the action of nominating it. */
+.nomination-suggestion{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:5px 12px;cursor:default}
+.nomination-suggestion>.dc-card-link{font-size:12px;font-weight:750;grid-column:1;align-self:end}
+.nomination-suggestion>span{font-size:10px;grid-column:1;align-self:start;text-align:left}
+.nomination-suggestion-action{grid-column:2;grid-row:1 / span 2;min-height:33px;padding:6px 9px;cursor:pointer;border:1px solid #aecbac;background:#dfece0;border-radius:6px;font:750 10px ui-sans-serif,system-ui,sans-serif;color:#2b6444;white-space:nowrap}
+.nomination-suggestion-action:hover,.nomination-suggestion-action:focus-visible{background:#cde3d2;border-color:#709d7a}
+
+/* Published archive: separate the Scryfall card link from the report link. */
+.archive-card{cursor:default!important}
+.archive-card .archive-card-name{color:#2a5340!important;font-weight:700;text-decoration-color:#8ba793}
+.archive-card .archive-card-name:hover{color:#1b7148!important}
+.archive-card .archive-read{font-size:11px;font-weight:800;color:#2f6947;text-decoration:none;border-bottom:1px solid #82a68a;padding:6px 0;white-space:nowrap}
+.archive-card .archive-read:hover{text-decoration:none;color:#104b2e;border-color:currentColor}
+.archive-card .card-bottom{gap:8px}

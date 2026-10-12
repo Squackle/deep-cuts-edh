@@ -254,6 +254,7 @@ async function generateFill(){
 }
 function renderProposal(p,current,needed,existingPrice,newPrice,budget){
  const groups=$("fillGroups");groups.replaceChildren();
+ window.DeepCutsGuide?.registerCardNames(p.selections.map(x=>x.name));
  const summary=$("fillSummary");
  summary.textContent=current+" / 100 → "+(current+needed-p.missingAfter)+" / 100 · "+(needed-p.missingAfter)+" cards proposed · approx. $"+newPrice.toFixed(2)+" added"+(Number.isFinite(budget)?" · $"+(existingPrice+newPrice).toFixed(2)+" estimated deck total":"");
  const order=["lands","ramp","draw","removal","wipe","protection","theme","flex"];
