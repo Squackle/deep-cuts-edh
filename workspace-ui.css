@@ -98,3 +98,60 @@
  .workbench-tab .workbench-tab-icon{font-size:16px}
 }
 @media(max-width:425px){.workbench-tab strong{font-size:12px}.workbench-tab{min-width:108px}}
+
+/* Clear vote totals and a compact, browsable nomination suggestion catalog. */
+.nomination-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:22px 0 18px}
+.nomination-stat{display:flex;flex-direction:column;gap:4px;border:1px solid #c9d8cb;background:#fbfdf8;border-radius:10px;padding:14px 12px}
+.nomination-stat strong{font:650 clamp(27px,3vw,39px) Georgia,serif;color:#2e6747;line-height:1.1;font-variant-numeric:tabular-nums}
+.nomination-stat span{font-size:11px;font-weight:700;color:#587561;line-height:1.35}
+.nomination-suggestions{margin:22px 0 18px;border:1px solid #ccdacb;background:#fcfdf9;border-radius:11px;padding:17px}
+.nomination-suggestions h3{font-size:21px;margin:5px 0 8px;color:#2d573f}
+.nomination-suggestions p{font-size:13px;color:#59715e;line-height:1.6;margin:0 0 12px}
+.nomination-suggestion-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:240px;overflow-y:auto;padding:2px}
+.nomination-suggestion{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;text-align:left;border:1px solid #cfdbcc;border-radius:7px;background:#eef4ec;padding:10px;cursor:pointer;color:#315642}
+.nomination-suggestion strong{font-size:12px;line-height:1.4}
+.nomination-suggestion span{font-size:10px;color:#65816e;line-height:1.45;text-align:right}
+.nomination-suggestion:hover,.nomination-suggestion:focus-visible{background:#dcebdd;outline-color:#4f7c5f}
+.nomination-leaderboard .leader-entry{grid-template-columns:32px minmax(0,1fr) 76px;gap:8px;padding:11px 8px;border-bottom:1px solid #c8d8c7}
+.nomination-leaderboard .leader-entry:nth-child(2n){background:#f4f8f1}
+.nomination-leaderboard .leader-entry-name{font-weight:700;color:#304b3d}
+.nomination-leaderboard .leader-entry-votes{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#e5f1e4;color:#286340;border:1px solid #c5dac7;border-radius:8px;padding:5px 8px;white-space:nowrap}
+.nomination-leaderboard .leader-vote-number{font:650 24px Georgia,serif;line-height:1.1;font-variant-numeric:tabular-nums}
+.nomination-leaderboard .leader-vote-label{font:700 10px ui-sans-serif,system-ui,sans-serif;letter-spacing:.03em;color:#527761}
+.nomination-page .leader-spotlight{border:1px solid #b7cdb9;box-shadow:none;padding:20px}
+.nomination-page .leader-kicker{color:#527c5c}
+.nomination-page #leaderName{font-size:clamp(22px,2.5vw,30px)}
+@media(max-width:580px){.nomination-stats{gap:6px}.nomination-stat{padding:12px 8px}.nomination-stat strong{font-size:26px}.nomination-stat span{font-size:10px}.nomination-suggestion-list{grid-template-columns:1fr}}
+
+/* Compact Deck Workshop completion assistant */
+.fill-deck-button{background:#356f53;border-color:#356f53;color:#fff}
+.fill-deck-button:hover:enabled{background:#27583f;color:#fff}
+.fill-suggestions{border:1px solid #b9cfbb;border-radius:11px;background:#f8fbf6;margin:15px 0;padding:17px;box-shadow:0 4px 16px #1c422017}
+.fill-suggestions[hidden]{display:none!important}
+.fill-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.fill-header h3{font:650 23px Georgia,serif;margin:4px 0 5px;color:#2b5c40}
+.fill-header p{margin:0}
+.fill-close{border:0;background:transparent;color:#466950;font-size:19px;cursor:pointer;min-width:33px;min-height:33px}
+.fill-close:hover{color:#23452f;background:#e1ece0;border-radius:5px}
+.fill-settings{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;color:#54735c;margin:14px 0}
+.fill-settings label{font-weight:750;color:#385a42}
+.fill-settings select{padding:7px 12px;border:1px solid #b6cfb9;border-radius:7px;background:#fff;color:#2c543e}
+.fill-settings span{font-size:11px}
+.fill-status{font-size:13px;line-height:1.6;color:#2b6342;margin:11px 0;font-weight:650}
+.fill-status.error{color:#a34b38}
+.fill-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:410px;overflow-y:auto;padding:1px}
+.fill-group{border:1px solid #cadaca;background:#fff;border-radius:8px;min-width:0}
+.fill-group>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;cursor:pointer;color:#365743;font-size:13px;font-weight:750}
+.fill-group>summary span{display:inline-flex;background:#e2efe3;border-radius:100px;color:#356747;font-size:12px;padding:3px 9px;white-space:nowrap}
+.fill-group>summary:hover{background:#eff6ed}
+.fill-group[open]{grid-column:span 2}
+.fill-group[open]>summary{border-bottom:1px solid #dce9dc;background:#f7fbf5}
+.fill-group-list{max-height:300px;overflow-y:auto;padding:5px 12px}
+.fill-proposal-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #e2eae0}
+.fill-proposal-row:last-child{border-bottom:0}
+.fill-proposal-row>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.fill-proposal-row strong{font-size:13px;color:#2f553e}
+.fill-proposal-row span{font-size:12px;color:#5f7865;line-height:1.45}
+.fill-proposal-row a{font-size:11px;color:#397452;text-decoration:none;white-space:nowrap}
+.fill-proposal-row a:hover{text-decoration:underline}
+@media(max-width:660px){.fill-groups{grid-template-columns:1fr}.fill-group[open]{grid-column:span 1}.fill-proposal-row{gap:6px}}

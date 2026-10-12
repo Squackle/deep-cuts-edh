@@ -16,24 +16,50 @@
     try{
       const response=await fetch("/api/nominations",{headers:{Accept:"application/json"},cache:"no-store"});
       if(!response.ok)throw new Error("Unable to load vote totals");
-      const {candidates,leader,pendingCount}=await response.json();
+      const {candidates,leader,pendingCount,totalVotes}=await response.json();
+      const setText=(id,value)=>{const element=document.getElementById(id);if(element)element.textContent=String(value)};
+      setText("nomTotalCount",totalVotes??0);
+      setText("nomVotedCandidates",candidates.filter(x=>x.votes>0).length);
+      setText("nomPendingCount",pendingCount??0);
       const pendingEl=document.getElementById("pendingNominationCount");if(pendingEl)pendingEl.textContent=pendingCount>0?pendingCount+" new "+(pendingCount===1?"nomination":"nominations")+" awaiting review":"";
       board.replaceChildren();
-      for(const [index,entry] of candidates.slice(0,16).entries()){
+      for(const [index,entry] of candidates.slice(0,25).entries()){
         const row=document.createElement("div");row.className="leader-entry";
         const rank=document.createElement("span");rank.className="leader-entry-rank";rank.textContent=String(index+1).padStart(2,"0");
         const name=document.createElement("span");name.className="leader-entry-name";name.textContent=entry.name;
-        const score=document.createElement("span");score.className="leader-entry-votes";score.textContent=entry.votes+" "+(entry.votes===1?"NOMINATION":"NOMINATIONS");
-        row.append(rank,name,score);board.append(row);
+        const score=document.createElement("span");score.className="leader-entry-votes";
+        const number=document.createElement("strong");number.className="leader-vote-number";number.textContent=String(entry.votes);
+        const word=document.createElement("small");word.className="leader-vote-label";word.textContent=entry.votes===1?"vote":"votes";
+        score.append(number,word);row.append(rank,name,score);board.append(row);
       }
       if(!candidates.length){const p=document.createElement("p");p.className="nomination-loading";p.textContent="No approved nominations yet.";board.append(p)}
       spotlightName.textContent=leader?leader.name:"The next rescue is undecided";
-      spotlightVotes.textContent=leader?leader.votes+" community "+(leader.votes===1?"nomination":"nominations")+" so far":"Nominate a commander to put it on the board.";
+      spotlightVotes.textContent=leader?leader.votes+" "+(leader.votes===1?"vote":"votes")+" so far":"No approved candidates have votes yet.";
     }catch{
       board.replaceChildren();const p=document.createElement("p");p.className="nomination-loading";
       p.textContent="The live nominations board is unavailable. Try Refresh.";board.append(p);
       spotlightName.textContent="Nominations temporarily unavailable";
       spotlightVotes.textContent="Live database connection required.";
+    }
+  }
+  // Keep the unpublished editorial ideas in the nomination flow, not in the published article archive.
+  const ideas=(window.DEEP_CUTS||[]).filter(c=>c.status!=="published");
+  const list=document.getElementById("nominationSuggestionList"),datalist=document.getElementById("nominationSuggestions");
+  if(datalist){
+    for(const idea of ideas){const option=document.createElement("option");option.value=idea.full;datalist.append(option)}
+  }
+  if(list){
+    for(const idea of ideas){
+      const button=document.createElement("button");button.type="button";button.className="nomination-suggestion";
+      const title=document.createElement("strong");title.textContent=idea.name;
+      const detail=document.createElement("span");detail.textContent=idea.kind+(idea.status==="upcoming"?" · upcoming":"");
+      button.append(title,detail);
+      button.addEventListener("click",()=>{
+        document.getElementById("nomCommander").value=idea.full;
+        document.getElementById("nomReason").focus();
+        document.getElementById("nominationForm").scrollIntoView({behavior:"smooth",block:"center"});
+      });
+      list.append(button);
     }
   }
   document.getElementById("refreshNominations")?.addEventListener("click",load);

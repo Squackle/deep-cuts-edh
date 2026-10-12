@@ -104,3 +104,8 @@ References:
 ### Viewing nominations
 - Public: [nominations.html](https://deep-cuts-edh.pages.dev/nominations.html) shows approved candidates and their vote totals, plus an anonymous submission form.
 - Owner review: Cloudflare dashboard → D1 → `deep-cuts-nominations` → Console. Use the documented SQL in `db/OPERATIONS.md` to inspect the `pending` queue and approve/reject. The public site never grants anonymous users moderation controls.
+
+## Article visibility and Fill to 100 (October 2026)
+- The homepage archive shows **only** `window.DEEP_CUTS` entries with `status: "published"`. Unpublished/queued/upcoming commanders are available as selectable nomination suggestions on `nominations.html` but not as pretend completed articles.
+- The nominations page displays the total number of nominations, number of approved candidates with votes, pending count, and large per-commander totals. Suggestions prefill the anonymous nomination form but do **not** submit automatically.
+- `fill-deck.js` powers the optional **Fill to 100** button in the My Deck panel. It checks existing cards and commanders against Scryfall, uses mana curve/role heuristics, searches Commander-legal cards in the proper identity, proposes basic lands plus role-based spells, explains each suggestion, and preserves existing choices on confirmation. If it cannot find all missing cards within a budget, it doesn't apply a partial list. A complete Scryfall lookup and browser testing remain necessary for production confidence; estimates omit unavailable printings and shipping.
