@@ -202,3 +202,16 @@
 
 /* Make the original Chainer report's glow animate, too. */
 @keyframes deep-cuts-aura{0%,100%{opacity:.43;transform:scale(.95)}50%{opacity:.92;transform:scale(1.08)}}
+
+/* Supporter navigation and an understated support prompt on the homepage. */
+.site-header .primary-nav a.support-nav-link{color:#e6c28b;font-weight:800}
+.site-header .primary-nav a.support-nav-link:hover{color:#fff0d4}
+.site-header .header-action[href$="supporters.html"]{background:#d2a76d;border-color:#d2a76d;color:#1f3828}
+.supporter-strip{background:#e6eee4;padding:32px 0;border-block:1px solid #cbdacb}
+.supporter-strip-inner{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.supporter-strip .retro-eyebrow{color:#4d795e}
+.supporter-strip h2{font:700 clamp(23px,3vw,35px)/1.2 Georgia,serif;color:#2b5038;margin:4px 0 8px}
+.supporter-strip h2 span{color:#537f58}
+.supporter-strip p{margin:0;font-size:13px;color:#53735a;line-height:1.6}
+.supporter-strip .btn{white-space:nowrap;flex-shrink:0}
+@media(max-width:780px){.supporter-strip-inner{align-items:flex-start;flex-direction:column}.supporter-strip .btn{white-space:normal}}

@@ -131,7 +131,12 @@ Do not link card names in decklist editors, deck rows or starter-core tables, wh
 
 - Shared art: the Alena & Gilanra Rescue Report now shows **both partner commander cards** side by side. All new-style commander report art uses an understated animated glow that respects `prefers-reduced-motion`; the legacy Chainer report also receives a subtle glow.
 - A sitewide **Feedback** launcher opens a native modal for bug reports and feature requests, protected by Cloudflare Turnstile and rate limited to five submissions per IP per day. Feedback goes into the private `site_feedback` D1 table, not GitHub issues. See `docs/FEEDBACK.md`.
-- **Native personal deck accounts**: choose a username and password, sign in and manually save up to twenty account decks on the existing D1 database; retrieve them on other devices. PBKDF2 password hashing and scoped HttpOnly cookies. No password recovery or third-party OAuth; the existing recovery-key vault remains separate. Login attempts are rate-limited. The password itself is never stored by the site.
+- **Historical feature (retired 2026-10-12)**: Optional username/password accounts were briefly prototyped, then disabled before any accounts or deck saves were created. `/api/account` now returns 410 Gone. Only recovery-key vaults are supported.
 - Rules Q&A now supports a question and one or two card names. Returns card Oracle text and ranked Scryfall rulings. Optional `env.AI` integration can generate a sourced explanation when a Workers AI binding is independently configured; until then it is a source lookup, not a generative Magic Judge. The model is NOT configured via this repository.
 - The Goldfish consistency simulator runs 1,000 approximate opening-hand scenarios to display by-turn mana threshold probabilities for commanders. It does not estimate wins, incorporate every card interaction, or claim to be trained on playtest data.
 - The visible roadmap section has been removed. Honest capability limitations remain in documentation and in labels on the features themselves.
+
+## Home dossier / key-only saves / support
+- `dossier.css` makes the homepage featured case report resemble an aged, typewritten police investigation with clear commander-name contrast.
+- Removed the username/password account panel and script; `/api/account` now responds with HTTP 410 Gone and cannot authenticate or accept registration. Use only the 256-bit recovery-key vault (`/api/vault`).
+- The site has a Supporters page advertising a planned **$5/month** founding supporter tier. A genuine checkout URL must be configured in `support-config.js` before payments can begin; do not imply payments are active or invent a subscription link. See [`docs/SUPPORTERS.md`](docs/SUPPORTERS.md).

@@ -1,0 +1,59 @@
+/* Homepage's classified field dossier: nostalgic materials, modern readability.
+ * Intentionally scoped to the two featured-case surfaces only. */
+#latest .latest-grid{gap:clamp(24px,4vw,54px);align-items:center}
+#latest .latest-left{min-width:0}
+#latest .dossier-subject-label{display:block;font:800 10px/1.4 ui-sans-serif,system-ui,sans-serif;letter-spacing:.2em;color:#668471;margin:20px 0 8px}
+#latest .featured-commander-name{font:750 clamp(38px,4.9vw,60px)/1.07 Georgia,"Palatino Linotype",serif;letter-spacing:-.045em;color:#233b31;margin:0 0 13px;overflow-wrap:normal;text-wrap:balance}
+#latest .featured-commander-name em{font-style:italic;color:#547459}
+#latest .featured-premise{font:italic 23px/1.4 Georgia,serif;color:#3d684e;margin:0 0 13px}
+#latest .latest-left .text-link{display:inline-flex;margin-top:8px;align-items:center;gap:7px;letter-spacing:.07em}
+#latest .dossier-sheet{
+ --file-ink:#342b21;--file-muted:#6d5b44;
+ isolation:isolate;position:relative;overflow:hidden;min-width:0;
+ padding:clamp(19px,3vw,33px) clamp(20px,3.3vw,36px) 27px;
+ border:1px solid #b09b76;border-radius:3px;color:var(--file-ink);
+ background:
+ linear-gradient(90deg,transparent 0 31px,#be524029 31px 33px,transparent 33px),
+ repeating-linear-gradient(180deg,transparent 0 32px,#655b4422 33px,#655b4422 34px,transparent 35px),
+ radial-gradient(circle at 85% 11%,#ac7d3b13,transparent 45%),
+ linear-gradient(128deg,#f6efdb,#e5d5b6 95%);
+ box-shadow:1px 3px 0 #b39e7c,4px 6px 0 #e3d5b7,0 16px 35px #4e43243b;
+ transform:rotate(-.45deg);
+}
+#latest .dossier-sheet:before{content:"";position:absolute;pointer-events:none;inset:4px;border:1px solid #85745547;z-index:-1}
+#latest .dossier-sheet:after{content:"◌";position:absolute;pointer-events:none;right:25px;top:15%;font:120px Georgia,serif;color:#675f4810;transform:rotate(-20deg);z-index:-1}
+#latest .dossier-agency{font:750 10px/1.5 "Courier New",Courier,monospace;letter-spacing:.085em;color:#544331;text-align:center;margin-top:3px}
+#latest .dossier-agency span{color:#92674a}
+#latest .dossier-report-kind{text-align:center;font:750 clamp(19px,2.7vw,28px)/1.12 Georgia,serif;letter-spacing:.12em;text-transform:uppercase;color:#2b2a22;margin:11px 0 14px;text-shadow:none}
+#latest .dossier-rule{height:4px;border-top:2px solid #5d4631;border-bottom:1px solid #7c6144;margin:9px 0 11px}
+#latest .dossier-corner{position:absolute;right:17px;top:13px;font:650 9px "Courier New",monospace;color:#86745c}
+#latest .dossier-meta{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;font:700 11px/1.45 "Courier New",Courier,monospace;color:#68573e;margin:9px 0 19px}
+#latest .dossier-meta strong{color:#433527;letter-spacing:.04em}
+#latest .dossier-field{border-top:1px solid #8a78583d;padding:12px 0 10px;min-width:0}
+#latest .dossier-label{display:block;font:700 9px/1.5 "Courier New",Courier,monospace;letter-spacing:.1em;color:#79644a;margin-bottom:5px}
+#latest .dossier-primary{padding:14px 0}
+#latest .dossier-commander,#latest .dossier-commander.dc-card-link{
+ display:block;width:fit-content;max-width:100%;font:750 clamp(27px,3vw,39px)/1.12 Georgia,"Palatino Linotype",serif!important;
+ letter-spacing:-.027em;overflow-wrap:normal;word-break:normal;text-wrap:pretty;color:#252923!important;
+ text-shadow:none!important;text-decoration:none!important;border-bottom:2px solid #63594463;
+}
+#latest .dossier-commander:hover,#latest .dossier-commander:focus-visible{border-bottom-color:#256345;color:#23513c!important}
+#latest .dossier-field>strong{font:700 13px/1.4 "Courier New",Courier,monospace;color:#423a2b}
+#latest .dossier-field p{font:14px/1.65 Georgia,serif;color:#43382b;margin:2px 0 0}
+#latest .dossier-field .dc-keyword{color:#3e4630}
+#latest .dossier-bottom{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 0 12px;border-top:1px solid #826b4b5c}
+#latest .dossier-red-stamp{display:inline-block;color:#9b3d31;border:3px double #a34437;border-radius:2px;padding:7px 13px;font:900 14px/1.03 "Courier New",Courier,monospace;letter-spacing:.11em;text-align:center;text-transform:uppercase;transform:rotate(-8deg);opacity:.83;box-shadow:inset 0 0 0 2px #f1e8d9}
+#latest .dossier-filing{text-align:right;font:700 9px/1.5 "Courier New",Courier,monospace;color:#89755b;letter-spacing:.08em}
+#latest .dossier-filing strong{color:#584634}
+#latest .dossier-open-link{display:block;text-align:center;padding:12px 14px;background:#243d31;border:1px solid #274333;border-radius:3px;color:#f6eedd!important;font:750 11px/1.5 ui-sans-serif,system-ui,sans-serif;letter-spacing:.1em;text-decoration:none;margin-top:8px}
+#latest .dossier-open-link:hover,#latest .dossier-open-link:focus-visible{background:#3c6a4d;color:#fff!important}
+.hero .hero-feature{border:1px solid #c1aa7e;box-shadow:0 15px 38px #0006}
+.hero .hero-feature .feature-head{background:#ede0c4;color:#554530;font:750 10px/1.5 "Courier New",Courier,monospace;letter-spacing:.08em}
+.hero .hero-feature .feature-foot{background:#f5e9d1;border-top:2px solid #b3a083;gap:13px;align-items:center}
+.hero .hero-feature .feature-foot .tiny-label{font:750 9px/1.6 "Courier New",Courier,monospace;letter-spacing:.09em;color:#735e3d}
+.hero .hero-feature .feature-foot .hero-commander-name{display:block;font:750 clamp(22px,2.7vw,30px)/1.1 Georgia,serif;color:#1f3027;text-shadow:none;letter-spacing:-.025em;overflow-wrap:normal}
+.hero .hero-feature .feature-foot .round-arrow{color:#273b30;border-color:#82907a;flex:0 0 36px}
+.hero .hero-feature .feature-foot .round-arrow:hover{background:#dce4cb;color:#173b2c}
+@media(max-width:950px){#latest .latest-grid{grid-template-columns:1fr}#latest .dossier-sheet{max-width:650px;width:100%;margin:0 auto}}
+@media(max-width:600px){#latest .dossier-sheet{transform:none;padding:21px}#latest .dossier-commander{font-size:29px!important}#latest .dossier-agency{font-size:9px}#latest .dossier-report-kind{font-size:23px}#latest .dossier-bottom{gap:8px}}
+@media(prefers-reduced-motion:reduce){#latest .dossier-sheet,#latest .dossier-red-stamp{animation:none!important}}

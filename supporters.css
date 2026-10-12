@@ -1,0 +1,36 @@
+/* Support page: friendly, restrained and honest about checkout availability. */
+.support-page{background:#f0f2eb;min-height:77vh;padding:66px 0 90px}
+.support-wrap{max-width:1060px}
+.support-head{max-width:810px;margin-bottom:27px}
+.support-eyebrow{font:800 11px/1.4 ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;color:#52735e;margin-bottom:12px}
+.support-head h1{font:700 clamp(39px,6vw,66px)/1.08 Georgia,serif;letter-spacing:-.05em;color:#264437;margin:0 0 18px}
+.support-head h1 em{font-weight:500;color:#6b896e}
+.support-head p{font-size:17px;line-height:1.7;color:#566c5c;max-width:680px;margin:0}
+.support-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);gap:19px;align-items:start}
+.support-offer{background:#fffef8;border:1px solid #c9d5c7;border-radius:15px;padding:clamp(24px,4vw,38px);box-shadow:0 12px 30px #16391c12}
+.support-offer .smallcap{font:750 11px ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;color:#577965}
+.support-tier-price{display:flex;gap:7px;align-items:baseline;margin:12px 0 8px}
+.support-tier-price strong{font:650 clamp(64px,10vw,94px)/1 Georgia,serif;color:#214835}
+.support-tier-price span{font-size:16px;color:#5b7664}
+.support-offer h2{font:600 28px Georgia,serif;color:#305840;margin:8px 0 14px}
+.support-offer p{color:#536b59;line-height:1.7}
+.support-promise{display:grid;gap:11px;margin:25px 0}
+.support-promise div{display:flex;gap:10px;align-items:flex-start;color:#3b6046;font-size:14px}
+.support-promise .check{font-weight:900;color:#598866;flex:0 0 18px}
+.support-promise span:last-child{max-width:560px}
+.support-cta{margin:23px 0 12px}
+.support-cta a{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 20px;border-radius:8px;background:#285f45;color:#fff;text-decoration:none;font:800 13px ui-sans-serif,system-ui,sans-serif}
+.support-cta a:hover{background:#1e4734}
+.support-cta a[hidden]{display:none!important}
+#supportCheckoutMessage{font-size:13px;line-height:1.7;background:#f6f4ea;border:1px solid #ddd5b7;color:#655942;padding:13px 15px;border-radius:8px}
+#supportCheckoutMessage.checkout-ready{color:#2e684b;background:#e8f3e8;border-color:#b9dbbb}
+.support-offer small{color:#6a7b6b;display:block;line-height:1.6;margin-top:13px}
+.support-side{background:#e7eee4;border:1px solid #cbdbca;border-radius:13px;padding:23px}
+.support-side h3{font:650 21px Georgia,serif;color:#2d503b;margin:0 0 12px}
+.support-side p{font-size:14px;color:#536d5a;line-height:1.7;margin:0 0 15px}
+.support-side a{font-weight:750;color:#2c6748;font-size:13px}
+.support-disclosure{margin:24px 0 0;font-size:12px;line-height:1.7;color:#627966;max-width:800px}
+.site-header .primary-nav .support-nav-link{color:#e9c58c;font-weight:800}
+.site-header .primary-nav .support-nav-link:hover{color:#fff2d8}
+@media(max-width:850px){.support-layout{grid-template-columns:1fr}.support-side{max-width:none}}
+@media(max-width:600px){.support-page{padding:40px 0 60px}.support-offer{padding:22px}.support-head p{font-size:15px}}

@@ -1,10 +1,10 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#172522"><title>Deck Workshop | Deep Cuts EDH</title>
 <meta name="description" content="Import your Commander deck. Review mana balance, legality, Game Changer limits, card counts, and suggested cuts to 100.">
-<link rel="icon" href="assets/favicon.svg"><script defer src="data.js"></script><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><link rel="stylesheet" href="workspace-ui.css"><script type="module" src="deck.js"></script><script type="module" src="workshop-plus.js"></script><script type="module" src="studio-v3.js"></script><script type="module" src="workspace-ui.js"></script><script type="module" src="fill-deck.js"></script><script type="module" src="account-ui.js"></script><script type="module" src="workshop-intelligence.js"></script><link rel="stylesheet" href="site-glossary.css"><script defer src="card-lexicon.js"></script><script defer src="glossary-terms.js"></script><script defer src="site-glossary.js"></script><link rel="stylesheet" href="feedback.css"><script defer src="feedback.js"></script></head>
+<link rel="icon" href="assets/favicon.svg"><script defer src="data.js"></script><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><link rel="stylesheet" href="workspace-ui.css"><script type="module" src="deck.js"></script><script type="module" src="workshop-plus.js"></script><script type="module" src="studio-v3.js"></script><script type="module" src="workspace-ui.js"></script><script type="module" src="fill-deck.js"></script><script type="module" src="workshop-intelligence.js"></script><link rel="stylesheet" href="site-glossary.css"><script defer src="card-lexicon.js"></script><script defer src="glossary-terms.js"></script><script defer src="site-glossary.js"></script><link rel="stylesheet" href="feedback.css"><script defer src="feedback.js"></script></head>
 <body><a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol" aria-hidden="true"><img src="assets/deep-cuts-mark.svg" alt="" width="46" height="56"></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>OLD LEGENDS · NEW TROUBLE</small></span></a>
-<nav class="primary-nav" aria-label="Main navigation"><a href="index.html#latest">RESCUE REPORT</a><a href="library.html">CARD LIBRARY</a><a class="workshop-link" href="deck.html">DECK WORKSHOP</a><a href="nominations.html">NOMINATIONS</a></nav><a class="header-action" href="library.html">FIND MORE CARDS ↗</a></div></header>
+<nav class="primary-nav" aria-label="Main navigation"><a href="index.html#latest">RESCUE REPORT</a><a href="library.html">CARD LIBRARY</a><a class="workshop-link" href="deck.html">DECK WORKSHOP</a><a href="nominations.html">NOMINATIONS</a><a class="support-nav-link" href="supporters.html">SUPPORT $5+</a></nav><a class="header-action" href="library.html">FIND MORE CARDS ↗</a></div></header>
 <main id="main" class="tool-page"><div class="wrap">
 <div class="tool-intro"><div class="retro-eyebrow">DEEP CUTS EDH / THE DECK PHYSICIAN</div><h1 class="retro-heading">The <em>Deck Workshop.</em></h1>
 <p class="tool-lead">Diagnose the mana, curve, consistency, legality and table expectations of a forgotten commander deck. Review cuts and upgrades yourself—no mystery black box.</p></div>
@@ -94,30 +94,14 @@
 </section>
 <section class="workshop-summary" id="turnForecast"><div class="summary-top"><div><span class="retro-eyebrow">GOLDFISH CONSISTENCY TEST</span><h2 class="retro-heading" style="font-size:27px">How soon does it get going?</h2><p class="helper-note">Simulate 1,000 opening hands and draws to estimate when you naturally have enough lands to cast your commander. <strong>Not a trained win-turn predictor.</strong> This model ignores ramp, mulligans, color requirements and opponents.</p></div></div><div class="tool-actions"><button id="runForecast" type="button" class="retro-button">SIMULATE 1,000 GAMES ↗</button></div><div id="forecastStatus" class="tool-status" role="status" aria-live="polite">Analyze your deck first for accurate land recognition.</div><div id="forecastChart" class="forecast-chart"></div></section>
 <section class="workshop-summary" id="cloudShare">
- <div class="summary-top"><div><span class="retro-eyebrow">07 / CLOUD DECK SNAPSHOTS</span><h2 class="retro-heading" style="font-size:31px;margin:5px 0">A deck link you can carry.</h2><p class="helper-note">Create a read-only share link and open it on another device. Only share decks you are comfortable making accessible to anyone with the link. This is not a password-protected account or automatic cloud sync.</p></div></div>
+ <div class="summary-top"><div><span class="retro-eyebrow">07 / CLOUD DECK SNAPSHOTS</span><h2 class="retro-heading" style="font-size:31px;margin:5px 0">A deck link you can carry.</h2><p class="helper-note">Create a read-only share link and open it on another device. Only share decks you are comfortable making accessible to anyone with the link. Anyone with the link can view the deck. Edit access uses a separate recovery key; this link is not a personal account.</p></div></div>
  <div class="tool-actions"><button type="button" class="retro-button" id="shareDeckCloud">SAVE SHAREABLE CLOUD SNAPSHOT ↗</button><button type="button" class="retro-button dark" id="copyShareUrl" disabled>COPY SHARE LINK</button></div>
  <div id="sharedDeckStatus" class="tool-status" role="status"></div><div id="sharedDeckLink"></div>
 </section>
 
-<section class="workshop-summary" id="accountPanel">
- <div class="summary-top"><div><span class="retro-eyebrow">PERSONAL DECK ACCOUNT</span><h2 class="retro-heading" style="font-size:29px;margin:4px 0">Your cloud shelf.</h2><p class="helper-note">Secure username and password, up to 20 Commander decks, and cross-device access. No email required; there is currently no password recovery. Keep your password safe.</p></div></div>
- <p id="accountStatus" class="tool-status" role="status" aria-live="polite"></p>
- <div id="accountGuest">
-  <div class="tool-controls"><div><label for="accountUsername">USERNAME</label><input id="accountUsername" autocomplete="username" minlength="3" maxlength="30"></div><div><label for="accountPassword">PASSWORD (12+ CHARACTERS)</label><input id="accountPassword" type="password" autocomplete="current-password" minlength="12" maxlength="128"></div></div>
-  <div class="tool-actions"><button class="retro-button" type="button" id="accountLogin">SIGN IN</button><button class="retro-button dark" type="button" id="accountRegisterToggle">CREATE NEW ACCOUNT</button></div>
-  <div id="accountCreate" hidden><p class="helper-note">Choose a unique username. Account creation requires human verification. There is no password-reset email service.</p><div id="accountCaptcha"></div><button class="retro-button" type="button" id="accountRegister">CONFIRM CREATE ACCOUNT ↗</button></div>
- </div>
- <div id="accountSigned" hidden>
-  <div class="tool-actions"><strong id="accountGreeting">Signed in</strong><button id="accountLogout" type="button" class="retro-button dark">SIGN OUT</button></div>
-  <label for="accountDeckName">DECK NAME</label><input id="accountDeckName" class="retro-input" maxlength="75" placeholder="e.g. Chainer Nightmares">
-  <div class="tool-actions"><button id="accountSave" class="retro-button" type="button">SAVE CURRENT DECK TO ACCOUNT</button></div>
-  <label for="accountDeckList">CLOUD DECKS</label><select id="accountDeckList" class="retro-input"><option value="">Choose a saved deck</option></select>
-  <div class="tool-actions"><button id="accountLoad" type="button" class="retro-button dark">LOAD SELECTED</button><button id="accountDelete" type="button" class="retro-button dark">DELETE SELECTED</button></div>
- </div>
-</section>
 <section class="workshop-summary" id="vaultPanel">
- <div class="summary-top"><div><span class="retro-eyebrow">08 / RECOVERY-KEY CLOUD VAULT</span><h2 class="retro-heading" style="font-size:31px;margin:5px 0">Keep a deck across devices.</h2>
- <p class="helper-note">This is a private-key vault, not an email or social-media account. Create a 256-bit recovery key, keep it secret, then use it to load or update one cloud deck on another device. The site database stores deck text, so do not treat this as end-to-end encrypted storage.</p></div></div>
+ <div class="summary-top"><div><span class="retro-eyebrow">KEY-ONLY / CLOUD DECK VAULT</span><h2 class="retro-heading" style="font-size:31px;margin:5px 0">Save a deck with a recovery key.</h2>
+ <p class="helper-note">No username, password, or email required. Your 256-bit recovery key unlocks your saved deck on other devices. Keep it private: anyone with the key can access the deck. The site database stores card lists, so this isn't end-to-end encryption.</p></div></div>
  <label for="vaultKey" class="field-label">YOUR VAULT RECOVERY KEY</label><input id="vaultKey" class="retro-input" type="password" autocomplete="off" spellcheck="false" placeholder="dcvault1_…">
  <div class="tool-actions"><button type="button" class="retro-button" id="createVault">CREATE VAULT</button>
  <button type="button" class="retro-button dark" id="loadVault">LOAD FROM VAULT</button>
@@ -150,5 +134,5 @@
 </section>
 
 <div class="tool-footer">Deck checks are advisory. Scryfall provides card data and current format legality; Commander bracket intent, combo interactions, atypical singleton exceptions, and land needs still require human judgment. Card prices are approximate and may not include shipping.</div></div></main>
-<footer class="site-footer"><div class="wrap footer-content"><strong>DEEP CUTS <span>EDH</span></strong><div class="footer-links"><a href="index.html">HOME</a><a href="library.html">CARD LIBRARY</a><a href="https://magic.wizards.com/en/formats/commander" target="_blank" rel="noopener noreferrer">OFFICIAL BRACKET GUIDANCE ↗</a></div></div></footer>
+<footer class="site-footer"><div class="wrap footer-content"><strong>DEEP CUTS <span>EDH</span></strong><div class="footer-links"><a href="index.html">HOME</a><a href="library.html">CARD LIBRARY</a><a href="https://magic.wizards.com/en/formats/commander" target="_blank" rel="noopener noreferrer">OFFICIAL BRACKET GUIDANCE ↗</a><a href="supporters.html">SUPPORTERS ↗</a></div></div></footer>
 </body></html>
