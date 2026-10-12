@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#352617"><title>Deck Workshop | Deep Cuts EDH</title>
+<meta name="description" content="Import your Commander deck. Review mana balance, legality, Game Changer limits, card counts, and suggested cuts to 100.">
+<link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><script type="module" src="deck.js"></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol">D<span>✦</span>C</span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>OLD LEGENDS · NEW TROUBLE</small></span></a>
+<nav class="primary-nav" aria-label="Main navigation"><a href="index.html#latest">RESCUE REPORT</a><a href="library.html">CARD LIBRARY</a><a class="workshop-link" href="deck.html">DECK WORKSHOP</a><a href="index.html#nominate">NOMINATE</a></nav><a class="header-action" href="library.html">FIND MORE CARDS ↗</a></div></header>
+<main id="main" class="tool-page"><div class="wrap">
+<div class="tool-intro"><div class="retro-eyebrow">DEEP CUTS EDH / THE DECK PHYSICIAN</div><h1 class="retro-heading">The <em>Deck Workshop.</em></h1>
+<p class="tool-lead">Bring us a strange deck and we'll diagnose the problems. Import a list, check 100-card and Commander restrictions, compare mana sources with colored costs, and see how to tune toward your table's bracket.</p></div>
+<div class="deck-columns">
+<section class="ornate-panel"><div class="retro-eyebrow">01 / IMPORT YOUR PATIENT</div><h2 class="retro-heading" style="font-size:32px">The decklist</h2>
+<label for="commanderField" class="field-label">COMMANDER(S) — ONE PER LINE</label>
+<textarea class="deck-commander" id="commanderField" rows="2" spellcheck="false" placeholder="Chainer, Dementia Master&#10;(For partners, place each name on its own line.)"></textarea>
+<p class="helper-note">Commander cards count toward 100. For legal partner combinations, use two lines.</p>
+<label for="deckInput" class="field-label">PASTE YOUR MAINBOARD — NAME AND QUANTITY</label>
+<textarea class="deck-input" id="deckInput" spellcheck="false" placeholder="1 Sol Ring&#10;1 Arcane Signet&#10;1 Lightning Greaves&#10;34 Swamp&#10;..."></textarea>
+<div class="tool-actions"><button id="analyzeDeck" class="retro-button">ANALYZE DECK ↗</button><button id="clearDeck" class="retro-button dark" type="button">CLEAR WORKSHOP</button></div>
+<div id="deckStatus" class="tool-status" role="status" aria-live="polite">Paste a deck or add cards from the Card Library.</div>
+<div class="diagnosis-group"><div class="retro-eyebrow">COMMANDER BRACKET TARGET</div>
+<div class="tool-controls" style="grid-template-columns:1fr"><div><label for="bracketTarget">POWER / PLAY EXPECTATIONS</label>
+<select id="bracketTarget"><option value="1">1 · Exhibition</option><option value="2" selected>2 · Core</option><option value="3">3 · Upgraded</option><option value="4">4 · Optimized</option><option value="5">5 · cEDH</option></select></div></div>
+<p class="helper-note">Your selection is a target, not an automatically assigned score. The tool checks known Game Changers and red flags; it cannot reliably infer game speed, combos or intent.</p></div>
+<div class="diagnosis-group"><div class="retro-eyebrow">CURRENT DECK</div><div id="deckRows" class="deck-queue" aria-live="polite"></div><div class="tool-actions"><button id="exportDeck" type="button" class="retro-button dark">COPY DECKLIST</button><button id="downloadDeck" type="button" class="retro-button dark">DOWNLOAD .TXT</button></div></div>
+</section>
+<section class="ornate-panel"><div class="retro-eyebrow">02 / DIAGNOSE, PRESCRIBE, ADJUST</div>
+<h2 class="retro-heading" style="font-size:32px">The diagnosis</h2>
+<div class="analysis-stats"><div class="analysis-stat"><strong id="statCards">0</strong><small>TOTAL CARDS</small></div><div class="analysis-stat"><strong id="statLands">–</strong><small>LANDS</small></div><div class="analysis-stat"><strong id="statGamechangers">–</strong><small>GAME CHANGERS</small></div></div>
+<div class="deck-tabbar" role="tablist" aria-label="Deck improvement tools">
+<button class="deck-tab active" data-tab="overview" type="button">OVERVIEW</button><button class="deck-tab" data-tab="mana" type="button">FIX MANA</button><button class="deck-tab" data-tab="cut" type="button">CUT TO 100</button><button class="deck-tab" data-tab="bracket" type="button">CHANGE BRACKET</button></div>
+<div id="analysisPanel" aria-live="polite"><p class="helper-note">Import or analyze a deck to receive recommendations.</p></div>
+</section></div>
+<div class="tool-footer">Deck checks are advisory. Scryfall provides card data and current format legality; Commander bracket intent, combo interactions, atypical singleton exceptions, and land needs still require human judgment. Card prices are approximate and may not include shipping.</div></div></main>
+<footer class="site-footer"><div class="wrap footer-content"><strong>DEEP CUTS <span>EDH</span></strong><div class="footer-links"><a href="index.html">HOME</a><a href="library.html">CARD LIBRARY</a><a href="https://magic.wizards.com/en/formats/commander" target="_blank" rel="noopener noreferrer">OFFICIAL BRACKET GUIDANCE ↗</a></div></div></footer>
+</body></html>
