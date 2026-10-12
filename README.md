@@ -2,6 +2,15 @@
 
 An **independent, no-framework, static** prototype for an obscure Commander discovery website and a weekly editorial series called **The Rescue Report**.
 
+## Retro styling and Deck Workshop
+
+- `retro.css`: original tabletop-fantasy visual theme, inspired by old-era card aesthetics; not copied Wizards frame artwork.
+- `library.html`, `library.js`: paginated, user-triggered Scryfall card search for the complete online catalog, including format legality, card type, color identity, rarity, mana value, price, and sorting.
+- `shared.js`: library-to-deck storage in the browser (`localStorage`), not cloud accounts.
+- `deck.html`, `deck.js`: import/export text lists, batch-lookup cards from Scryfall, legality and singleton checks, mana source diagnostics, bracket Game Changer checks, reviewable swaps, and Cut to 100 suggestions.
+- Bracket results are advisory and cannot automatically validate combos, intent, game speed, mass land denial or every exception. See current https://magic.wizards.com/en/formats/commander .
+- The deck assistant never automatically commits cuts to your deck without user confirmation. This is a functional rules-of-thumb prototype, not yet a semantic or AI-powered optimizer.
+
 ## What's working
 
 - Responsive dark-fantasy editorial homepage.

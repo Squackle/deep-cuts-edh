@@ -10,6 +10,7 @@
   <meta property="og:description" content="Bad commanders. Good decks. No excuses. Discover 16 strange Commander projects and read the first Rescue Report." />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="retro.css" />
   <script defer src="data.js"></script>
   <script defer src="app.js"></script>
   <script defer src="nomination.js"></script>
@@ -20,8 +21,8 @@
   <header class="site-header">
     <div class="wrap header-inner">
       <a class="wordmark" href="index.html" aria-label="Deep Cuts home"><span class="wordmark-symbol" aria-hidden="true">D<span>✦</span>C</span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>COMMANDER REHABILITATION</small></span></a>
-      <nav class="primary-nav" aria-label="Main navigation"><a href="#latest">THE REPORT</a><a href="#archive">THE ARCHIVE</a><a href="#process">THE METHOD</a><a href="#nominate">NOMINATE</a></nav>
-      <a class="header-action" href="#nominate">NOMINATE A COMMANDER <span aria-hidden="true">↗</span></a>
+      <nav class="primary-nav" aria-label="Main navigation"><a href="#latest">RESCUE REPORT</a><a href="#archive">COMMANDERS</a><a href="library.html">CARD LIBRARY</a><a href="deck.html">DECK WORKSHOP</a><a href="#nominate">NOMINATE</a></nav>
+      <a class="header-action" href="deck.html">DECK WORKSHOP <span aria-hidden="true">↗</span></a>
     </div>
   </header>
   <main id="main">
@@ -32,7 +33,7 @@
           <div class="eyebrow"><span class="live-dot"></span> A WEEKLY EXPERIMENT IN QUESTIONABLE LEGENDS</div>
           <h1 id="hero-title">Nobody plays them.<br><i>We make them work.</i></h1>
           <p class="hero-sub">Forgotten commanders. Bad first impressions. Unreasonable deckbuilding ambition. We take the jank nobody believes in and find a way to make it dangerous.</p>
-          <div class="hero-actions"><a class="btn btn-gold" href="reports/chainer-dementia-master.html">READ THE FIRST RESCUE <span aria-hidden="true">↗</span></a><a class="btn btn-outline" href="#archive">EXPLORE THE ARCHIVE <span aria-hidden="true">↓</span></a></div>
+          <div class="hero-actions"><a class="btn btn-gold" href="reports/chainer-dementia-master.html">READ THE FIRST RESCUE <span aria-hidden="true">↗</span></a><a class="btn btn-outline" href="#archive">EXPLORE THE ARCHIVE <span aria-hidden="true">↓</span></a><a class="btn btn-outline" href="deck.html">FIX MY DECK ↗</a></div>
           <div class="hero-fineprint"><span class="tiny-star">✳</span> NO GENERIC GOODSTUFF PILES. THE COMMANDER HAS TO MATTER.</div>
         </div>
         <div class="hero-feature">
@@ -44,7 +45,7 @@
           <div class="feature-foot"><div><span class="tiny-label">FIRST RESCUE REPORT</span><strong>Chainer, Dementia Master</strong></div><a href="reports/chainer-dementia-master.html" aria-label="Read Chainer's report" class="round-arrow">↗</a></div>
         </div>
       </div>
-      <div class="wrap hero-bottom"><div>16 <span>COMMANDER CASES</span></div><div>$100 <span>STANDARD BUDGET TARGET</span></div><div>01 <span>NEW REPORT FORMAT</span></div><p>*Budget is a build target, not a verified live card-price total.</p></div>
+      <div class="wrap hero-bottom"><div>16 <span>COMMANDER CASES</span></div><div>5 <span>POWER BRACKETS</span></div><div>100 <span>CARDS TO PERFECT</span></div><p>*Deck analysis is advisory. Budget prices are estimates.</p></div>
     </section>
     <section id="latest" class="section latest-section"><div class="wrap">
       <div class="section-kicker"><span>01 / FEATURED FIELD WORK</span><span>THE RESCUE REPORT</span></div>
@@ -54,6 +55,11 @@
       <div class="section-kicker"><span>02 / OUR PHILOSOPHY</span><span>NO LEGEND LEFT BEHIND</span></div><h2 class="section-title">The rescue <em>method.</em></h2>
       <div class="method-grid"><article><div class="method-number">01</div><h3>FIND THE FLAW</h3><p>Why isn't anyone building this commander? Too slow, too awkward, too restrictive—or simply forgotten?</p></article><article><div class="method-number">02</div><h3>FIND THE EXPLOIT</h3><p>Identify what only this legend can do. Find the obscure interactions that make its terrible text suddenly matter.</p></article><article><div class="method-number">03</div><h3>FORCE THE WIN</h3><p>Build around the commander's actual ability, not a pile of unrelated staples. Every rescue gets a realistic game plan.</p></article></div>
     </div></section>
+<section class="section process-section" id="toolbox"><div class="wrap"><div class="section-kicker"><span>TOOLS FOR THE IMPOSSIBLE</span><span>THE DEEP CUTS TOOLBOX</span></div><h2 class="section-title">The old-school <em>workbench.</em></h2><div class="method-grid">
+<article><div class="method-number">I</div><h3>THE CARD LIBRARY</h3><p>Search Magic's catalog with filters for legality, colors, card type, rarity, mana value, and price.</p><a class="text-link" href="library.html">ENTER THE LIBRARY ↗</a></article>
+<article><div class="method-number">II</div><h3>THE DECK PHYSICIAN</h3><p>Import a deck and review legality, color requirements, mana balance, and the path to 100 cards.</p><a class="text-link" href="deck.html">FIX MY DECK ↗</a></article>
+<article><div class="method-number">III</div><h3>BRACKET TUNING</h3><p>Set your bracket target and review Game Changers, mismatches, and possible lower-power swaps.</p><a class="text-link" href="deck.html">TUNE MY BRACKET ↗</a></article>
+</div></div></section>
     <section id="archive" class="section archive-section"><div class="wrap">
       <div class="section-kicker"><span>03 / OPEN CASE FILES</span><span>THE COMMANDER ARCHIVE</span></div>
       <div class="archive-heading"><div><h2 class="section-title">The <em>forgotten.</em></h2><p>Sixteen weird builds worth attempting. All budget targets default to $100. Case notes are previews unless a full report is published.</p></div><button class="surprise-btn" id="surpriseBtn" type="button">✧ SURPRISE ME</button></div>
@@ -107,7 +113,7 @@
     </div></section>
     <section class="closing-cta"><div class="wrap"><span class="eyebrow">EVERY LEGEND HAS A STORY</span><h2>Got a commander everyone<br><em>told you not to build?</em></h2><p>That probably means we're interested. Put your favorite lost cause up for a Rescue Report.</p><a class="btn btn-gold" href="#nominate">NOMINATE A COMMANDER ↗</a></div></section>
   </main>
-  <footer class="site-footer"><div class="wrap footer-content"><div><strong>DEEP CUTS <span>EDH</span></strong><p>Bad commanders. Good decks. No excuses.</p></div><div class="footer-links"><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">CARD DATA: SCRYFALL ↗</a><a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener noreferrer">FAN CONTENT POLICY ↗</a></div></div><div class="wrap fine-print">Deep Cuts EDH is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC. Card images provided via Scryfall. This is a community prototype; card pricing, legality and availability can change.</div></footer>
+  <footer class="site-footer"><div class="wrap footer-content"><div><strong>DEEP CUTS <span>EDH</span></strong><p>Bad commanders. Good decks. No excuses.</p></div><div class="footer-links"><a href="library.html">CARD LIBRARY ↗</a><a href="deck.html">DECK WORKSHOP ↗</a><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">CARD DATA: SCRYFALL ↗</a><a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener noreferrer">FAN CONTENT POLICY ↗</a></div></div><div class="wrap fine-print">Deep Cuts EDH is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC. Card images provided via Scryfall. This is a community prototype; card pricing, legality and availability can change.</div></footer>
   <dialog id="caseDialog" aria-labelledby="modalTitle"><div class="modal-shell"><div class="modal-top"><span class="eyebrow">DEEP CUTS EDH / CASE FILE</span><button class="modal-close" id="closeDialog" aria-label="Close case file" type="button">✕</button></div><div id="modalBody"></div></div></dialog>
 </body>
 </html>

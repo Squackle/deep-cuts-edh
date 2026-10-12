@@ -13,10 +13,11 @@ function loadInputs(){
 function store(){saveDeck(deck);renderRows()}
 function normalizeDeck(){
  const incoming=parseLines($("deckInput").value);
+ const oldCards=new Map((deck.cards||[]).map(c=>[normalizedName(c.name),c.card]));
  let commanders=$("commanderField").value.split(/\r?\n/).map(x=>x.trim().replace(/^\d+\s*[xX]?\s+/,"")).filter(Boolean);
  if(!commanders.length&&incoming.commanders.length)commanders=incoming.commanders;
  const ids=new Set(commanders.map(normalizedName));
- deck={cards:incoming.cards.filter(c=>!ids.has(normalizedName(c.name))),commanders:commanders.slice(0,2),targetBracket:Number($("bracketTarget").value)||2};
+ deck={cards:incoming.cards.filter(c=>!ids.has(normalizedName(c.name))).map(c=>({...c,card:oldCards.get(normalizedName(c.name))||null})),commanders:commanders.slice(0,2),targetBracket:Number($("bracketTarget").value)||2};
  store();return incoming.invalid;
 }
 function renderRows(){
@@ -67,7 +68,7 @@ function diagnose(){
  if(knownCmds.length!==deck.commanders.length)violations.push("Some commander names could not be verified.");
  for(const [i,c] of cmds.entries()){
   if(c&&c.legalities?.commander!=="legal")violations.push((deck.commanders[i]||c.name)+" is not currently legal as a Commander card.");
-  if(c&&!/legendary creature/i.test(c.type_line||"")&&!/can be your commander/i.test(c.oracle_text||"")&&!/legendary planeswalker/i.test(c.type_line||""))violations.push((deck.commanders[i]||c.name)+" does not appear to be an eligible commander; verify special rules.");
+  if(c&&!/legendary creature/i.test(c.type_line||"")&&!/can be your commander/i.test(c.oracle_text||""))violations.push((deck.commanders[i]||c.name)+" does not appear to be an eligible commander; verify special rules.");
  }
  if(knownCmds.length===2&&!knownCmds.every(c=>/\bPartner\b|Choose a Background|Friends forever|Doctor's companion|Partner with|Doctor's Companion/i.test(c.oracle_text||"")))violations.push("Two commanders require a supported partner / background / companion rule. Please verify their pairing.");
  for(const x of cards){
@@ -300,4 +301,11 @@ $("downloadDeck").addEventListener("click",()=>{
  const blob=new Blob([toText(deck)],{type:"text/plain"}),href=URL.createObjectURL(blob);
  const a=document.createElement("a");a.href=href;a.download="deep-cuts-commander-deck.txt";a.click();setTimeout(()=>URL.revokeObjectURL(href),200);
 });
+$("loadExample").addEventListener("click",()=>{
+ if(deck.cards.length&&!confirm("Replace your draft with an incomplete Chainer example?"))return;
+ const sample=window.CHAINER_CORE||[];
+ deck={commanders:["Chainer, Dementia Master"],cards:sample.filter(([role,name])=>name!=="Chainer, Dementia Master").map(([role,name])=>({name,qty:1,card:null})),targetBracket:2};
+ commanderCards=[];hasAnalyzed=false;saveDeck(deck);loadInputs();refreshSummary("Loaded incomplete Chainer starter core. Add more cards to reach 100, then analyze.");
+});
+
 loadInputs();refreshSummary("Deck ready. Import or add cards, then click Analyze Deck.");

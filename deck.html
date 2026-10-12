@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#352617"><title>Deck Workshop | Deep Cuts EDH</title>
 <meta name="description" content="Import your Commander deck. Review mana balance, legality, Game Changer limits, card counts, and suggested cuts to 100.">
-<link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><script type="module" src="deck.js"></script></head>
+<link rel="icon" href="assets/favicon.svg"><script defer src="data.js"></script><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><script type="module" src="deck.js"></script></head>
 <body><a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol">D<span>✦</span>C</span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>OLD LEGENDS · NEW TROUBLE</small></span></a>
 <nav class="primary-nav" aria-label="Main navigation"><a href="index.html#latest">RESCUE REPORT</a><a href="library.html">CARD LIBRARY</a><a class="workshop-link" href="deck.html">DECK WORKSHOP</a><a href="index.html#nominate">NOMINATE</a></nav><a class="header-action" href="library.html">FIND MORE CARDS ↗</a></div></header>
@@ -15,7 +15,7 @@
 <p class="helper-note">Commander cards count toward 100. For legal partner combinations, use two lines.</p>
 <label for="deckInput" class="field-label">PASTE YOUR MAINBOARD — NAME AND QUANTITY</label>
 <textarea class="deck-input" id="deckInput" spellcheck="false" placeholder="1 Sol Ring&#10;1 Arcane Signet&#10;1 Lightning Greaves&#10;34 Swamp&#10;..."></textarea>
-<div class="tool-actions"><button id="analyzeDeck" class="retro-button">ANALYZE DECK ↗</button><button id="clearDeck" class="retro-button dark" type="button">CLEAR WORKSHOP</button></div>
+<div class="tool-actions"><button id="analyzeDeck" class="retro-button">ANALYZE DECK ↗</button><button id="loadExample" type="button" class="retro-button dark">LOAD CHAINER EXAMPLE</button><button id="clearDeck" class="retro-button dark" type="button">CLEAR WORKSHOP</button></div>
 <div id="deckStatus" class="tool-status" role="status" aria-live="polite">Paste a deck or add cards from the Card Library.</div>
 <div class="diagnosis-group"><div class="retro-eyebrow">COMMANDER BRACKET TARGET</div>
 <div class="tool-controls" style="grid-template-columns:1fr"><div><label for="bracketTarget">POWER / PLAY EXPECTATIONS</label>
