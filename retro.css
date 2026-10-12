@@ -144,3 +144,12 @@ dialog{background:#e8d6ac;color:#322313;border:8px ridge #986c3c}
 .success-item{color:#43603c;font-weight:bold}
 @media(max-width:960px){.tool-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.deck-columns{grid-template-columns:1fr}}
 @media(max-width:650px){.tool-page{padding:35px 0}.tool-controls{grid-template-columns:1fr}.tool-controls .span-two{grid-column:span 1}.card-gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.library-card{padding:5px;border-width:3px}.library-card h3{font-size:14px}.library-card .card-controls{flex-direction:column}.analysis-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.analysis-stat{padding:6px}.analysis-stat strong{font-size:22px}.report-side{position:static}}
+
+/* Small-screen retro navigation stays usable rather than disappearing entirely. */
+@media(max-width:950px){.site-header .header-inner{display:flex;flex-wrap:wrap;justify-content:center;padding:9px 0;gap:8px}.site-header .primary-nav{display:flex;order:3;width:100%;justify-content:center;flex-wrap:wrap;gap:13px;padding:7px 0}.site-header .primary-nav a{font-size:10px;white-space:nowrap}.site-header .header-action{display:none}}
+@media(max-width:600px){.site-header .primary-nav{gap:9px}.site-header .primary-nav a{font-size:10px}.wordmark-copy{font-size:17px}}
+.library-card{position:relative;outline:1px solid #3f2d1a;outline-offset:-10px}
+.library-card h3{border:3px ridge #a38758;padding:8px;background:linear-gradient(90deg,#eee0b5,#d7c299);border-radius:8px;color:#362518}
+.library-card:before,.library-card:after{content:"✦";font-size:10px;line-height:1;color:#815a2f;position:absolute;top:3px;z-index:1}
+.library-card:before{left:6px}.library-card:after{right:6px}
+.nomination-feedback{color:#3e6034}.nomination-feedback.error{color:#a13c27}
