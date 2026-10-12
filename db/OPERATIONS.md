@@ -11,7 +11,7 @@ Secrets required for production Pages Functions:
 
 Frontend's public Turnstile **site key** is in `index.html`. The private Turnstile secret must **never** be committed to GitHub.
 
-To configure: Cloudflare Pages → `deep-cuts-edh` → Settings → Variables and Secrets → Add `TURNSTILE_SECRET` (secret). Redeploy.
+Configured in Cloudflare Pages on October 12, 2026: production and preview environments have an encrypted `TURNSTILE_SECRET`, and the `DB` binding points to the initialized D1 database. Never commit the secret to this repository. If you change the Turnstile widget secret, update the Cloudflare environment secret and redeploy.
 Turnstile widget is restricted to `deep-cuts-edh.pages.dev`. Add any custom domains in Turnstile settings before switching to them.
 
 ## Moderator workflow
