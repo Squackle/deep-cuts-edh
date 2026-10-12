@@ -1,0 +1,100 @@
+
+/* Deep Cuts: quieter task-focused navigation, 2026-10 */
+.tool-page{background:#f2f3ec}
+.workbench-shell{max-width:1130px;margin:0 auto 50px}
+.workbench-welcome{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 17px}
+.workbench-welcome p{font-size:14px;color:#526e5d;margin:2px 0 0}
+.workbench-live{font-size:12px;color:#54775f;white-space:nowrap}
+.workbench-live span{color:#579b67;margin-right:6px}
+.workbench-tabs{position:sticky;top:var(--workbench-top,84px);z-index:26;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;background:#f2f3ecf7;border:1px solid #d6dfd4;border-radius:13px;padding:6px;margin-bottom:19px;backdrop-filter:blur(12px);box-shadow:0 4px 16px #12271912;scroll-margin-top:110px}
+.workbench-tab{border:0;border-radius:9px;padding:11px 9px;display:flex;align-items:center;justify-content:center;gap:9px;text-align:left;background:transparent;color:#3f5c49;min-height:57px;cursor:pointer}
+.workbench-tab .workbench-tab-icon{font-size:19px;line-height:1;color:#6e9076;flex-shrink:0}
+.workbench-tab strong{display:block;font:750 13px ui-sans-serif,system-ui,sans-serif;white-space:nowrap}
+.workbench-tab small{display:block;font-size:10px;color:#71867a;white-space:nowrap;margin-top:4px}
+.workbench-tab:hover{background:#e5ede2}
+.workbench-tab.active,.workbench-tab[aria-selected=true]{background:#285441;color:#fff;box-shadow:0 3px 8px #1d49371a}
+.workbench-tab.active .workbench-tab-icon,.workbench-tab.active small{color:#d8e6d9}
+.workbench-tab:focus-visible,.workbench-fold summary:focus-visible{outline:3px solid #528a70;outline-offset:2px}
+.workbench-view[hidden],.workbench-fold[hidden],.tool-controls[hidden]{display:none!important}
+.workbench-view{animation:workbench-in .19s ease-out;min-height:180px}
+@keyframes workbench-in{from{opacity:.75;transform:translateY(5px)}to{opacity:1;transform:none}}
+.workbench-view .workshop-summary,.workbench-view .ornate-panel{margin:0 0 14px}
+.workbench-view .ornate-panel{width:100%;max-width:none;padding:25px}
+.workbench-view .workshop-summary h2{line-height:1.22}
+.workbench-view .workshop-summary .summary-top{margin-bottom:13px}
+.workbench-view #deckGenerator .tool-controls{grid-template-columns:repeat(4,minmax(0,1fr))}
+.workbench-view .workbench-advanced>.tool-controls{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:14px}
+.workbench-view .workbench-advanced .studio-check{margin-right:15px}
+.workbench-view .workbench-main{border:1px solid #cbd8ca;box-shadow:0 6px 23px #1a382718;border-radius:13px}
+.workbench-view #deckGenerator{margin-bottom:0}
+.workbench-view .deck-commander{min-height:59px}
+.workbench-view .deck-input{min-height:220px}
+.workbench-view .compact-deck-rows{max-height:295px;overflow:auto}
+.workbench-view .diagnosis-group{margin-top:20px;padding-top:14px}
+.workbench-view .deck-tabbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-bottom:17px}
+.workbench-view .deck-tab{font-size:12px;padding:11px 6px}
+.workbench-view .deck-queue{max-height:290px}
+.workbench-view .analysis-stats{margin-bottom:22px}
+.workbench-view #analysisPanel{max-height:570px;overflow-y:auto;padding:4px 6px 15px;line-height:1.65}
+.workbench-view .workbench-fold{margin:12px 0 0;border:1px solid #cbd8ca;border-radius:11px;background:#f9fbf6;overflow:hidden}
+.workbench-view .workbench-fold>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;font-weight:750;color:#345b43;cursor:pointer;padding:16px 18px;list-style:none}
+.workbench-view .workbench-fold>summary::-webkit-details-marker{display:none}
+.workbench-view .workbench-fold>summary:after{content:"⌄";color:#678c6e;font-size:19px;line-height:1;transition:transform .2s}
+.workbench-view .workbench-fold[open]>summary:after{transform:rotate(180deg)}
+.workbench-view .workbench-fold>summary:hover{background:#f0f5ee}
+.workbench-view .workbench-fold>summary small{margin-left:auto;color:#738675;font-size:11px}
+.workbench-view .workbench-fold .workbench-fold>summary{background:#f2f5ef}
+.workbench-view .workbench-fold>.workshop-summary,
+.workbench-view .workbench-fold>.diagnosis-group{margin:0!important;box-shadow:none;border:0!important;border-top:1px solid #dce5db!important;border-radius:0;background:#fbfcf9}
+.workbench-view .workbench-fold>.workshop-summary{padding:18px}
+.workbench-view .workbench-fold>.diagnosis-group{padding:17px;margin:0;border-top:1px solid #dce5db}
+.workbench-view .workbench-fold .summary-top{gap:9px}
+.workbench-view .workbench-fold .tool-lead{font-size:14px}
+.workbench-view .workbench-advanced{padding:0 0 0!important}
+.workbench-view .workbench-advanced>summary{border-bottom:1px solid transparent}
+.workbench-view .workbench-advanced[open]>summary{border-bottom-color:#dce5db}
+.workbench-view .workbench-advanced>.tool-controls{padding:14px}
+.workbench-view .workbench-advanced>.tool-actions{padding:0 14px 15px}
+.workbench-view #hostedImport{margin-top:0;border-top:0}
+.workbench-view #hostedImport p{font-size:12px}
+.workbench-view #generatorPreview{max-height:330px}
+.workbench-view .workshop-extras{gap:13px}
+.workbench-view #researchLinks{grid-template-columns:repeat(3,minmax(0,1fr))}
+.workbench-view #comboPanel>.summary-top p,.workbench-view #rulesDesk>.summary-top p{max-width:720px}
+.workbench-view .tool-footer{margin-top:14px}
+.community-shortcut{background:#e7efe6;border-top:1px solid #c8d7c8;border-bottom:1px solid #c8d7c8;padding:32px 0}
+.community-shortcut-inner{display:flex;gap:28px;align-items:center;justify-content:space-between}
+.community-shortcut h2{font-size:clamp(25px,3vw,39px);margin:4px 0 8px;color:#2c4837}
+.community-shortcut p{font-size:14px;color:#536c58;margin:0}
+.community-shortcut .retro-eyebrow{color:#52745f}
+.community-shortcut .btn{flex-shrink:0}
+.nomination-page .nomination-section{background:transparent;border:0;padding-top:5px}
+.nomination-page .nomination-grid{gap:26px}
+.nomination-page .nomination-form{padding:23px}
+.nomination-page .nomination-form-head{margin-bottom:11px}
+.nomination-page .nomination-form label{margin:13px 0 6px}
+.nomination-page .nomination-form textarea{min-height:76px}
+.nomination-page .section-kicker{margin-bottom:25px}
+.nomination-how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.nomination-how>div{border:1px solid #cddacc;background:#fffdf8;border-radius:10px;padding:19px}
+.nomination-how strong{font:750 20px Georgia,serif;color:#355c45}
+.nomination-how p{color:#647867;font-size:13px;margin:7px 0 0;line-height:1.7}
+.library-quick-filters{grid-template-columns:2fr 1fr 1fr!important}
+.library-advanced{border:1px solid #d1decf;border-radius:9px;margin:13px 0;background:#f5f8f3}
+.library-advanced>summary{padding:11px 16px;font-size:13px;font-weight:750;color:#3a6547;cursor:pointer}
+.library-advanced.has-filters>summary:after{content:" • filtered";color:#986b2f}
+.library-advanced .tool-controls{padding:16px;margin:0;grid-template-columns:repeat(3,minmax(0,1fr))}
+#librarySearch>.tool-actions{margin:14px 0 5px}
+@media(max-width:1040px){.workbench-tab small{display:none}.workbench-tab strong{font-size:12px}.workbench-view #deckGenerator .tool-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:750px){.workbench-welcome{flex-wrap:wrap}.workbench-welcome p{font-size:13px}.workbench-tab{flex-direction:column;text-align:center;padding:8px 3px;gap:4px;min-height:62px}.workbench-tab .workbench-tab-icon{font-size:15px}.workbench-tab strong{font-size:10px}.workbench-tabs{gap:1px;padding:4px}.workbench-view .deck-tabbar{grid-template-columns:repeat(2,minmax(0,1fr))}.workbench-view .ornate-panel{padding:16px}.workbench-view #researchLinks{grid-template-columns:repeat(2,minmax(0,1fr))}.nomination-how{grid-template-columns:1fr}.community-shortcut-inner{align-items:flex-start;flex-direction:column;gap:13px}.library-quick-filters{grid-template-columns:1fr!important}.library-quick-filters .span-two{grid-column:auto!important}.library-advanced .tool-controls{grid-template-columns:1fr}}
+@media(max-width:425px){.workbench-tab strong{font-size:9px}.workbench-tabs{margin-left:-5px;margin-right:-5px}.workbench-view #deckGenerator .tool-controls,.workbench-view .workbench-advanced>.tool-controls{grid-template-columns:1fr}.workbench-view #researchLinks{grid-template-columns:1fr}}
+
+/* Keep mobile labels readable: scroll five tabs instead of shrinking them to tiny text. */
+.pending-nomination-count{display:block;margin-top:10px;font-size:12px;font-weight:750;color:#477357}
+@media(max-width:750px){
+ .workbench-tabs{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:thin;padding:6px 7px}
+ .workbench-tab{flex:0 0 auto;min-width:111px;flex-direction:row;text-align:left;justify-content:center;scroll-snap-align:start;gap:6px}
+ .workbench-tab strong{font-size:12px}
+ .workbench-tab .workbench-tab-icon{font-size:16px}
+}
+@media(max-width:425px){.workbench-tab strong{font-size:12px}.workbench-tab{min-width:108px}}

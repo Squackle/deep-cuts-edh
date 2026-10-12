@@ -28,7 +28,7 @@ function entry(card){
  const meta=create("p","meta",(card.type_line||"")+" · "+(card.prices?.usd?"$"+card.prices.usd:"Price N/A") );
  const buttons=create("div","card-controls");
  const info=create("button","","DETAILS");info.type="button";info.addEventListener("click",()=>showDetail(card));
- const add=create("button","primary","+ ADD TO DECK");add.type="button";add.addEventListener("click",()=>{if(addCard(card)){add.textContent="✓ ADDED";setTimeout(()=>{add.textContent="+ ADD TO DECK"},1400)}});
+ const add=create("button","primary","+ ADD TO DECK");add.type="button";add.addEventListener("click",()=>{if(addCard(card)){try{localStorage.setItem("deepcuts-workbench-tab","deck")}catch{}add.textContent="✓ ADDED";setTimeout(()=>{add.textContent="+ ADD TO DECK"},1400)}});
  const shop=create("a","shop-card-link","TCGplayer ↗");shop.href="https://www.tcgplayer.com/search/magic/product?productLineName=magic&q="+encodeURIComponent(card.name)+"&view=grid";shop.target="_blank";shop.rel="noopener noreferrer";shop.setAttribute("aria-label","Find "+card.name+" on TCGplayer");buttons.append(info,add);box.append(img,title,meta,buttons,shop);return box;
 }
 function showDetail(c){

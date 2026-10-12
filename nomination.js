@@ -16,7 +16,8 @@
     try{
       const response=await fetch("/api/nominations",{headers:{Accept:"application/json"},cache:"no-store"});
       if(!response.ok)throw new Error("Unable to load vote totals");
-      const {candidates,leader}=await response.json();
+      const {candidates,leader,pendingCount}=await response.json();
+      const pendingEl=document.getElementById("pendingNominationCount");if(pendingEl)pendingEl.textContent=pendingCount>0?pendingCount+" new "+(pendingCount===1?"nomination":"nominations")+" awaiting review":"";
       board.replaceChildren();
       for(const [index,entry] of candidates.slice(0,16).entries()){
         const row=document.createElement("div");row.className="leader-entry";

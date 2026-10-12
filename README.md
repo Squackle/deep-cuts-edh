@@ -95,3 +95,12 @@ References:
 - `workshop-plus.js` adds probability and mana-curve charts, role classification, simple health estimates, collection/missing-card tools, and outbound research/shop links.
 - The TCGplayer links are ordinary non-affiliate shopping links until a separate affiliate account is approved and connected; there are no tracking identifiers in the repository.
 - Beyond current scope: full CommanderBracket feature parity (combos, server-side deck import from every provider, rules Judge, automatic validated 100-card construction, ML deck ratings, and cloud account sync).
+
+## October 12 · Navigation simplification
+- `nominations.html` is the dedicated public nomination board. The homepage links to it instead of burying the ballot beneath the archive.
+- Editor moderation is through the private Cloudflare D1 console; the public board never exposes private nomination messages or approval controls.
+- `workspace-ui.js` progressively organizes the existing Deck Workshop tools into accessible tab views without removing features. `workspace-ui.css` provides responsive, low-clutter styles.
+- `library-ui.js` collapses advanced card search controls by default while preserving format legality and name search.
+### Viewing nominations
+- Public: [nominations.html](https://deep-cuts-edh.pages.dev/nominations.html) shows approved candidates and their vote totals, plus an anonymous submission form.
+- Owner review: Cloudflare dashboard → D1 → `deep-cuts-nominations` → Console. Use the documented SQL in `db/OPERATIONS.md` to inspect the `pending` queue and approve/reject. The public site never grants anonymous users moderation controls.

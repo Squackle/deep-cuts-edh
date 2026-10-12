@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#172522"><meta name="description" content="Nominate overlooked Magic: The Gathering commanders, see live community vote totals, and help choose the next Deep Cuts Rescue Report."><title>Community Nominations | Deep Cuts EDH</title>
+<link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><link rel="stylesheet" href="workspace-ui.css">
+<script defer src="nomination.js"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol" aria-hidden="true"><img src="assets/deep-cuts-mark.svg" alt="" width="46" height="56"></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>OLD LEGENDS · NEW TROUBLE</small></span></a><nav class="primary-nav" aria-label="Main navigation"><a href="index.html#latest">RESCUE REPORT</a><a href="index.html#archive">COMMANDERS</a><a href="library.html">CARD LIBRARY</a><a href="deck.html">DECK WORKSHOP</a><a href="nominations.html" class="workshop-link" aria-current="page">NOMINATIONS</a></nav><a class="header-action" href="deck.html">DECK WORKSHOP ↗</a></div></header>
+<main id="main" class="tool-page nomination-page"><div class="wrap"><div class="tool-intro"><div class="retro-eyebrow">THE COMMUNITY BOARD / WHAT GETS RESCUED NEXT?</div><h1 class="retro-heading">Choose the next <em>rescue.</em></h1><p class="tool-lead">Every overlooked legendary deserves a shot. See the leaders, nominate your favorite forgotten commander, and help us decide what to build next.</p></div></div>
+    <section id="nominate" class="section nomination-section" aria-labelledby="nominationTitle"><div class="wrap">
+      <div class="section-kicker"><span>COMMUNITY RESCUE BOARD</span><span>THE NEXT RESCUE IS UP TO YOU</span></div>
+      <div class="nomination-grid">
+        <div class="nomination-intro">
+          <div class="nomination-index">★ THE COMMUNITY DECIDES</div>
+          <h2 id="nominationTitle" class="section-title">Nominate a <em>lost cause.</em></h2>
+          <p>Tell us which forgotten legendary creature deserves a full Rescue Report. Every valid nomination adds a vote to that commander. The highest-ranked approved candidate becomes our next rescue frontrunner.</p>
+          <div class="leader-spotlight" id="leaderSpotlight" aria-live="polite">
+            <span class="leader-kicker">MOST WANTED / NEXT RESCUE</span>
+            <strong id="leaderName">No nominations yet</strong>
+            <span id="leaderVotes">Be the first to nominate a commander.</span><span id="pendingNominationCount" class="pending-nomination-count" aria-live="polite"></span>
+          </div>
+          <div class="leaderboard-heading"><h3>COMMUNITY MOST WANTED</h3><button type="button" id="refreshNominations" aria-label="Refresh nomination totals">REFRESH ↻</button></div>
+          <div id="nominationLeaderboard" class="nomination-leaderboard" aria-live="polite"><p class="nomination-loading">Loading community nominations…</p></div>
+          <p class="nomination-footnote">Counts are nominations—not unique people. Anonymous voting is limited per browser and rate-limited, but not identity-verified. New commanders enter the public board after review. A leading nomination is a recommendation, not an automatically published article.</p>
+        </div>
+        <form id="nominationForm" class="nomination-form" aria-label="Nominate a Commander">
+          <div class="nomination-form-head"><span>NEW NOMINATION</span><span>NO LOGIN REQUIRED</span></div>
+          <label for="nomCommander">COMMANDER NAME <span aria-hidden="true">*</span></label>
+          <input id="nomCommander" name="commander" type="text" maxlength="100" required autocomplete="off" placeholder="e.g. Reveka, Wizard Savant">
+          <label for="nomReason">WHY DOES THIS COMMANDER NEED RESCUING? <span aria-hidden="true">*</span></label>
+          <textarea id="nomReason" name="reason" rows="3" minlength="10" maxlength="500" required placeholder="What's holding them back? Why doesn't anyone play them?"></textarea>
+          <label for="nomStrategy">YOUR WEIRD BUILD IDEA <span class="optional-tag">(OPTIONAL)</span></label>
+          <textarea id="nomStrategy" name="strategy" rows="3" maxlength="500" placeholder="The combo, engine, theme, or game plan you'd try..."></textarea>
+          <label for="nomCards">CARDS THAT MIGHT MAKE IT WORK <span class="optional-tag">(OPTIONAL)</span></label>
+          <input id="nomCards" name="cards" type="text" maxlength="200" placeholder="e.g. Mirror Entity, Maskwood Nexus">
+          <label for="nomBudget">PREFERRED BUDGET</label>
+          <select id="nomBudget" name="budget">
+            <option value="$100">The standard $100 rescue</option>
+            <option value="$50">Budget challenge: $50</option>
+            <option value="$250">Up to $250</option>
+            <option value="Any">No budget preference</option>
+          </select>
+          <div class="captcha-area">
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAAFU5c2gIVJQkigt0" data-theme="light"></div>
+          </div>
+          <button id="nominationSubmit" class="btn btn-gold nomination-submit" type="submit">NOMINATE THIS COMMANDER <span aria-hidden="true">↗</span></button>
+          <p id="nominationFeedback" class="nomination-feedback" role="status" aria-live="polite"></p>
+          <p class="nomination-disclosure">Nominations are stored on Deep Cuts EDH. No GitHub account is required. The site does not ask for your name or email; anonymous anti-abuse identifiers and submissions are stored to prevent repeat votes. New commander names need review before they appear publicly.</p>
+        </form>
+      </div>
+    </div></section>
+
+<section class="section" aria-label="How nominations work"><div class="wrap"><div class="nomination-how"><div><strong>01. Nominate</strong><p>Submit a commander and tell us what's worth exploring. No account required.</p></div><div><strong>02. Review &amp; count</strong><p>New commander names need approval to prevent duplicates and spam. One anonymous nomination per browser per commander.</p></div><div><strong>03. Pick a rescue</strong><p>The leader becomes our next suggested article. The editor verifies the strategy and publishes the Rescue Report.</p></div></div></div></section></main>
+<footer class="site-footer"><div class="wrap footer-content"><strong>DEEP CUTS <span>EDH</span></strong><div class="footer-links"><a href="index.html">HOME</a><a href="deck.html">DECK WORKSHOP ↗</a><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">SCRYFALL ↗</a></div></div><div class="wrap fine-print">Deep Cuts EDH is unofficial fan content, not approved or endorsed by Wizards of the Coast. Card information via Scryfall.</div></footer>
+</body></html>

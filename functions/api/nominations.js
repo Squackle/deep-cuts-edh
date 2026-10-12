@@ -27,10 +27,11 @@ export async function onRequestGet({env}){
       ORDER BY votes DESC, n.created_at ASC, n.id ASC
       LIMIT 50
     `).all();
+    const pending=await env.DB.prepare("SELECT COUNT(*) AS count FROM nominations WHERE status='pending'").first();
     const candidates=data.results.map(x=>({id:Number(x.id),name:x.name,votes:Number(x.votes)}));
     const total=candidates.reduce((a,x)=>a+x.votes,0);
     const leader=candidates.find(x=>x.votes>0)||null;
-    return json({candidates,leader,totalVotes:total,method:"Community nominations (moderated)"});
+    return json({candidates,leader,pendingCount:Number(pending?.count||0),totalVotes:total,method:"Community nominations (moderated)"});
   }catch(e){console.error("Nominations GET failed",e);return json({error:"Unable to load nominations right now"},503)}
 }
 export async function onRequestPost({request,env}){
