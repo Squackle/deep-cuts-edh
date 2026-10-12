@@ -330,4 +330,5 @@ $("loadExample").addEventListener("click",()=>{
  commanderCards=[];hasAnalyzed=false;saveDeck(deck);loadInputs();refreshSummary("Loaded incomplete Chainer starter core. Add more cards to reach 100, then analyze.");
 });
 
+window.addEventListener("deepcuts:loadsnapshot",e=>{const next=e.detail?.deck;if(!next||!Array.isArray(next.cards))return;deck=next;commanderCards=[];hasAnalyzed=false;saveDeck(deck);loadInputs();refreshSummary("Saved brew loaded. Analyze to refresh all checks.");window.dispatchEvent(new Event("deepcuts:deckchanged"))});
 loadInputs();refreshSummary("Deck ready. Import or add cards, then click Analyze Deck.");

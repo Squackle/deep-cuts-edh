@@ -189,3 +189,9 @@ dialog{background:#faf9f2;color:#24352e;border:1px solid #94b09b;border-radius:1
 .shop-card-link{display:inline-block;margin:9px 5px 3px;color:#406849;font-size:12px;font-weight:750;text-decoration:none}
 @media(max-width:960px){.health-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workshop-extras{grid-template-columns:1fr}.research-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.collection-layout{grid-template-columns:1fr}.health-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.research-grid{grid-template-columns:1fr}.workshop-summary{padding:15px}.role-grid{grid-template-columns:1fr}}
+
+/* Brews shelf / rescue report links */
+.report-provider-links{display:flex;flex-direction:column;align-items:start;gap:10px;margin-top:18px;border-top:1px solid #d3dccc;padding-top:18px}
+.modal-footer{display:flex;flex-wrap:wrap;gap:12px}
+.modal-footer a{font-size:11px}
+#brewSelect,#brewName{background:#fffef9;color:#263b30;border:1px solid #b9c4b7;padding:10px;min-height:44px;border-radius:7px;width:100%;margin:7px 0}

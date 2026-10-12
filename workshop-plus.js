@@ -224,3 +224,40 @@ window.addEventListener("deepcuts:analyzed",render);
 window.addEventListener("deepcuts:deckchanged",render);
 window.addEventListener("storage",e=>{if(e.key==="deepcuts-deck-v1"||e.key===COLLECT_KEY)render()});
 render();
+
+
+const BREW_KEY="deepcuts-saved-brews-v1";
+function getBrews(){
+ try{const x=JSON.parse(localStorage.getItem(BREW_KEY));return Array.isArray(x)?x.slice(0,12):[]}catch{return []}
+}
+function refreshBrews(){
+ const select=$("brewSelect"),old=select.value;select.replaceChildren();
+ const first=document.createElement("option");first.value="";first.textContent="Choose a local saved brew";select.append(first);
+ for(const brew of getBrews()){
+  const opt=document.createElement("option");opt.value=brew.id;opt.textContent=brew.name;select.append(opt);
+ }
+ select.value=getBrews().some(x=>x.id===old)?old:"";
+}
+$("saveBrew")?.addEventListener("click",()=>{
+ const d=readDeck(),name=$("brewName").value.trim();
+ if(!name){status("Enter a name for this brew.");return}
+ if(!d.cards.length){status("Analyze or add deck cards before saving.");return}
+ const list=getBrews(),existing=list.find(x=>x.name.toLowerCase()===name.toLowerCase());
+ if(!existing&&list.length>=12){status("The local brew shelf is full (12). Delete one first.");return}
+ if(existing){if(!confirm("Overwrite the saved brew named "+name+"?"))return;existing.deck=structuredClone(d);existing.savedAt=Date.now()}
+ else list.push({id:crypto.randomUUID(),name:name.slice(0,65),deck:structuredClone(d),savedAt:Date.now()});
+ try{localStorage.setItem(BREW_KEY,JSON.stringify(list));refreshBrews();status("Saved "+name+" in this browser.")}catch{status("Browser storage is full or unavailable. Export your deck as TXT instead.")}
+});
+$("loadBrew")?.addEventListener("click",()=>{
+ const brew=getBrews().find(x=>x.id===$("brewSelect").value);if(!brew){status("Select a saved brew.");return}
+ if(!confirm("Replace the current draft with "+brew.name+"?"))return;
+ $("brewName").value=brew.name;
+ window.dispatchEvent(new CustomEvent("deepcuts:loadsnapshot",{detail:{deck:structuredClone(brew.deck)}}));
+ status("Loaded "+brew.name+". Click Analyze Deck for current checks.");
+});
+$("deleteBrew")?.addEventListener("click",()=>{
+ const brew=getBrews().find(x=>x.id===$("brewSelect").value);if(!brew)return;
+ if(!confirm("Delete "+brew.name+" from this browser?"))return;
+ localStorage.setItem(BREW_KEY,JSON.stringify(getBrews().filter(x=>x.id!==brew.id)));refreshBrews();status("Saved brew deleted.");
+});
+refreshBrews();
