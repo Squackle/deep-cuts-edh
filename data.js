@@ -9,19 +9,20 @@ window.DEEP_CUTS=[
       "R",
       "G"
     ],
-    "badge": "Partner project",
+    "badge": "Rescue Report 002",
     "kind": "explosive mana",
-    "headline": "Big creatures, even bigger mana",
+    "headline": "Build the creature. Cash in the power.",
     "pitch": "Turn Alena's power-based red mana into huge creatures while Gilanra draws cards from expensive spells.",
     "hook": "Use low-cost high-power attackers to charge Alena and chain giant creatures.",
-    "risk": "Mana generation depends on keeping both partners alive.",
+    "risk": "Alena needs haste or protection; power must have entered this turn.",
     "tech": [
-      "Quartzwood Crasher",
-      "Goreclaw, Terror of Qal Sisma",
-      "Kogla, the Titan Ape"
+      "Lupine Prototype",
+      "Phyrexian Soulgorger",
+      "Thousand-Year Elixir"
     ],
     "tier": "Deep cut",
-    "status": "queued"
+    "status": "published",
+    "report": "reports/alena-and-gilanra.html"
   },
   {
     "id": "nephilim",
@@ -53,24 +54,25 @@ window.DEEP_CUTS=[
     "id": "ekthi",
     "name": "Ekthi, Contaminator Priest",
     "full": "Ekthi, Contaminator Priest",
-    "identity": "WB",
+    "identity": "W",
     "colors": [
-      "W",
-      "B"
+      "W"
     ],
-    "badge": "Living weapon revival",
-    "kind": "equipment tokens",
-    "headline": "Equipment is the creature army",
-    "pitch": "Explore living weapon and For Mirrodin! equipment as your creature engine.",
-    "hook": "Equip threats that are also token factories.",
-    "risk": "Upcoming card: rules and legality need rechecking at release.",
+    "badge": "Rescue Report 004 · Preview",
+    "kind": "mono-white equipment tokens",
+    "headline": "Every piece of Equipment is now a creature spell",
+    "pitch": "Mono-white Ekthi grants living weapon to Equipment, transforming an armory into a Germ army.",
+    "hook": "Build around entering Equipment, the Phyrexian Germ anthem and free attachments.",
+    "risk": "Scheduled for November 9, 2026; not Commander-legal before release.",
     "tech": [
-      "Batterskull",
-      "Kaldra Compleat",
-      "Nettlecyst"
+      "Colossus Hammer",
+      "Skullclamp",
+      "Bloodforged Battle-Axe"
     ],
     "tier": "Deep cut",
-    "status": "upcoming"
+    "status": "published",
+    "preview": true,
+    "report": "reports/ekthi-contaminator-priest.html"
   },
   {
     "id": "mustard",
@@ -81,19 +83,20 @@ window.DEEP_CUTS=[
       "R",
       "W"
     ],
-    "badge": "Soldier maximalism",
+    "badge": "Rescue Report 003",
     "kind": "soldier tribal",
-    "headline": "The most disciplined ridiculous army",
+    "headline": "The most dangerous army is the one you overlook",
     "pitch": "Push Soldier tribal without turning it into generic Boros goodstuff.",
     "hook": "Commander-led Soldiers grow wide and overwhelm defenses.",
-    "risk": "Wraths can erase an army without resilient backup.",
+    "risk": "This five-mana commander must survive while Soldiers flood the board.",
     "tech": [
       "Ballyrush Banneret",
-      "Captain of the Watch",
-      "Deploy to the Front"
+      "Myrel, Shield of Argive",
+      "Shared Animosity"
     ],
     "tier": "Deep cut",
-    "status": "queued"
+    "status": "published",
+    "report": "reports/commander-mustard.html"
   },
   {
     "id": "evincar",

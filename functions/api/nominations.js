@@ -78,7 +78,7 @@ export async function onRequestPost({request,env}){
       VALUES(?,?,?,?,?,?,'pending')
     `).bind(slug,name,reason,strategy,cards,budget).run();
     const target=await env.DB.prepare("SELECT id,name,status FROM nominations WHERE slug=?").bind(slug).first();
-    if(!target||["rejected","retired"].includes(target.status))return json({error:"This nomination is not accepting new support."},409);
+    if(!target||["rejected","retired","featured"].includes(target.status))return json({error:"This commander already has a Rescue Report or is not accepting votes."},409);
     const vote=await env.DB.prepare("INSERT OR IGNORE INTO nomination_votes(nomination_id,visitor_hash) VALUES(?,?)").bind(target.id,visitorHash).run();
     const count=await env.DB.prepare("SELECT COUNT(*) AS votes FROM nomination_votes WHERE nomination_id=?").bind(target.id).first();
     const recorded=!!vote.meta?.changes;

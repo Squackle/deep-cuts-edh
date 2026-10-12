@@ -1,0 +1,43 @@
+/* Deep Cuts Rescue Report starter-core actions; no server or account required. */
+(() => {
+ const dataEl=document.getElementById("rescue-data");
+ if(!dataEl)return;
+ let data;try{data=JSON.parse(dataEl.textContent)}catch{return}
+ const rows=document.getElementById("guideCoreRows");
+ const $=id=>document.getElementById(id);
+ if(rows){
+  for(const entry of data.core){
+   const tr=document.createElement("tr"),role=document.createElement("td"),name=document.createElement("td"),a=document.createElement("a");
+   role.textContent=entry[0];a.textContent=entry[1];
+   a.href="https://scryfall.com/search?q="+encodeURIComponent('!"'+entry[1]+'"');
+   a.target="_blank";a.rel="noopener noreferrer";name.append(a);tr.append(role,name);rows.append(tr);
+  }
+ }
+ const text=()=>{
+  const groups=new Map();
+  for(const [,name] of data.core){
+   if(data.commanders.includes(name))continue;
+   groups.set(name,(groups.get(name)||0)+1);
+  }
+  return "Commander\n"+data.commanders.map(n=>"1 "+n).join("\n")+"\n\n"+[...groups].map(([n,q])=>q+" "+n).join("\n");
+ };
+ const say=s=>{const msg=$("reportCopyFeedback");if(msg)msg.textContent=s};
+ $("reportCopy")?.addEventListener("click",async()=>{
+  try{await navigator.clipboard.writeText(text());say("Starter core copied, including commander(s).")}catch{say("Clipboard unavailable—select the cards from the table.")}
+ });
+ $("reportOpenWorkshop")?.addEventListener("click",()=>{
+  if(data.preview){
+   say("Pre-release card: copy the preview core and build after Commander legality begins.");
+   return;
+  }
+  try{
+   const current=JSON.parse(localStorage.getItem("deepcuts-deck-v1")||"null");
+   if(current?.cards?.length&&!confirm("Replace your current Workshop deck with this incomplete starter core? Export or save your existing deck first."))return;
+   const list=data.core.filter(([,name])=>!data.commanders.includes(name)).map(([,name])=>({name,qty:1,card:null}));
+   const deck={commanders:data.commanders,cards:list,targetBracket:2};
+   localStorage.setItem("deepcuts-deck-v1",JSON.stringify(deck));
+   localStorage.setItem("deepcuts-workbench-tab","deck");
+   location.href="../deck.html#deck";
+  }catch(e){say("Browser storage was unavailable; copy the starter core instead.")}
+ });
+})();

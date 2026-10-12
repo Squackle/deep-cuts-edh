@@ -109,3 +109,12 @@ References:
 - The homepage archive shows **only** `window.DEEP_CUTS` entries with `status: "published"`. Unpublished/queued/upcoming commanders are available as selectable nomination suggestions on `nominations.html` but not as pretend completed articles.
 - The nominations page displays the total number of nominations, number of approved candidates with votes, pending count, and large per-commander totals. Suggestions prefill the anonymous nomination form but do **not** submit automatically.
 - `fill-deck.js` powers the optional **Fill to 100** button in the My Deck panel. It checks existing cards and commanders against Scryfall, uses mana curve/role heuristics, searches Commander-legal cards in the proper identity, proposes basic lands plus role-based spells, explains each suggestion, and preserves existing choices on confirmation. If it cannot find all missing cards within a budget, it doesn't apply a partial list. A complete Scryfall lookup and browser testing remain necessary for production confidence; estimates omit unavailable printings and shipping.
+
+## Rescue Reports 002–004 (2026-10-12)
+
+- `reports/alena-and-gilanra.html`: Gruul burst-mana partner guide.
+- `reports/commander-mustard.html`: Boros Soldier tribal guide.
+- `reports/ekthi-contaminator-priest.html`: PRE-RELEASE preview, mono-white; Ekthi is expected 2026-11-09 and not yet Commander-legal.
+- `reports/guide.css` and `reports/guide.js`: shared issue layout and starter-core import/copy. Pre-release card cores are copy-only.
+- Article publication is recorded in `data.js` and `app.js`; D1 `nominations.status` should be set to `featured` to hide the finished commander from nomination voting.
+- All article cores are incomplete, unpriced, editorial ideas. Budget target is $100, not a verified deck total.

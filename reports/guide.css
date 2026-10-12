@@ -1,0 +1,78 @@
+/* Deep Cuts Rescue Reports — focused, readable issue layout */
+.report-guide{background:#f2f3ec;min-height:100vh;padding:43px 0 90px;color:#273b30}
+.report-guide .report-wrap{max-width:1180px}
+.report-breadcrumb{display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-size:12px;color:#627d69;margin:0 0 20px}
+.report-breadcrumb a{color:#356a4a;text-decoration:none}
+.report-breadcrumb a:hover{text-decoration:underline}
+.report-hero{background:radial-gradient(circle at right 18%,#345846,#1b3229 66%);border-radius:16px;color:#f3efe5;display:grid;grid-template-columns:1fr 260px;gap:18px;padding:clamp(24px,4vw,48px);border:1px solid #466552;box-shadow:0 15px 45px #12332026;overflow:hidden;position:relative}
+.report-hero:after{content:"";position:absolute;right:4%;top:0;width:350px;height:350px;border:1px solid #b9b68f17;transform:rotate(22deg);pointer-events:none}
+.report-hero .issue-line{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#c7dbbf;font-weight:700}
+.report-hero h1{font-size:clamp(39px,5.4vw,65px);color:#fcf8ef;line-height:1.08;letter-spacing:-.052em;margin:18px 0 18px}
+.report-hero h1 em{color:#d9bc86}
+.report-hero .lede{font-size:clamp(16px,2vw,19px);line-height:1.68;color:#d4e5d8;max-width:680px;margin-bottom:22px}
+.report-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.report-tag{background:#41614d;border:1px solid #779078;display:inline-flex;color:#f5eddd;padding:5px 12px;font-size:11px;font-weight:650;border-radius:40px}
+.report-hero-media{position:relative;min-height:250px;display:flex;justify-content:center;align-items:center}
+.report-hero-media img{position:relative;z-index:1;width:min(240px,100%);height:auto;border-radius:13px;box-shadow:0 16px 28px #0008}
+.report-hero-media[data-failed] img{display:none}
+.report-image-backup{display:none;position:relative;z-index:1;background:#e5dabc;color:#314939;border:2px solid #b99e69;width:228px;height:310px;border-radius:13px;align-items:center;justify-content:center;text-align:center;font:700 30px Georgia,serif;padding:20px}
+.report-hero-media[data-failed] .report-image-backup{display:flex}
+.report-alert{border:1px solid #d7b483;border-radius:10px;background:#fcf2dd;padding:17px 20px;margin-top:18px;color:#694b29;line-height:1.6;font-size:14px}
+.report-alert strong{display:block;color:#694722;margin-bottom:4px}
+.report-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 32px}
+.report-fact{background:#fdfbf6;border:1px solid #cedbcf;padding:15px 16px;border-radius:10px}
+.report-fact span{display:block;text-transform:uppercase;letter-spacing:.1em;font-size:10px;color:#65806c;font-weight:750;margin-bottom:6px}
+.report-fact strong{display:block;color:#304a3a;font-weight:750;font-size:13px;line-height:1.45}
+.report-main{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:32px;align-items:start}
+.report-content{min-width:0;background:#fffef9;border:1px solid #d5ddd0;border-radius:13px;padding:clamp(22px,3.2vw,38px);box-shadow:0 7px 24px #15312210}
+.report-content h2{font:700 clamp(24px,3vw,32px) Georgia,serif;color:#304b3a;margin:33px 0 13px;letter-spacing:-.04em}
+.report-content h2:first-child{margin-top:0}
+.report-content h3{font:700 19px Georgia,serif;color:#37664a;margin:20px 0 7px}
+.report-content p{color:#475b4d;line-height:1.84;margin:9px 0 15px;font-size:15px}
+.report-content strong{color:#2e523c}
+.report-content a{color:#2e6e49}
+.report-pullquote{margin:25px 0;padding:18px 22px;background:#edf5ea;border-left:4px solid #5b8b65;font:italic 19px/1.5 Georgia,serif;color:#35573f}
+.report-phase-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.report-phase{border:1px solid #cbd8cc;border-radius:9px;background:#f4f7f0;padding:16px}
+.report-phase b{font-size:11px;letter-spacing:.1em;color:#4a7556;text-transform:uppercase}
+.report-phase p{font-size:13px;margin:7px 0 0;line-height:1.6}
+.report-tech-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 22px}
+.report-tech{border:1px solid #d0dccf;border-radius:10px;background:#f5f8f1;padding:17px}
+.report-tech a{font-weight:750;color:#2d6546;text-decoration:none}
+.report-tech a:hover{text-decoration:underline}
+.report-tech p{font-size:13px;line-height:1.6;margin:8px 0 0}
+.report-rule{border:1px solid #d6dbc9;background:#f2f4eb;padding:15px 18px;border-radius:8px;margin:15px 0;font-size:14px;line-height:1.7;color:#49604b}
+.report-list{padding-left:20px;color:#485f4d;font-size:14px;line-height:1.85}
+.report-list li{margin:8px 0}
+.report-side{position:sticky;top:125px;background:#fafcf7;border:1px solid #cbdacc;border-radius:13px;padding:22px}
+.report-side h3{font:700 22px Georgia,serif;margin:0 0 15px;color:#2c4d38}
+.report-side .report-side-detail{border-top:1px solid #d1dfcf;padding:12px 0;font-size:13px;line-height:1.6;color:#516b58}
+.report-side .report-side-detail strong{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#3f6c4c}
+.report-side a{display:block;color:#2d6947;text-decoration:none;font-size:13px;font-weight:700;margin:10px 0}
+.report-side a:hover{text-decoration:underline}
+.report-section-actions{margin:25px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.report-section-actions button,.report-section-actions a{border-radius:8px;min-height:43px;padding:10px 18px;border:1px solid #b6cbb7;cursor:pointer;font-size:12px;font-weight:800;text-decoration:none}
+.report-section-actions .report-primary{background:#306647;border-color:#306647;color:white}
+.report-section-actions .report-primary:hover{background:#245237;color:white}
+.report-section-actions .report-secondary{background:#e8efe6;color:#315e42}
+.report-section-actions .report-secondary:hover{background:#dcebd9}
+.report-core-table{width:100%;border-collapse:collapse;background:#fffefa;color:#365440;font-size:13px;border:1px solid #d4dfd3}
+.report-core-table th{text-align:left;background:#e8efe5;color:#375f43;font-size:11px;letter-spacing:.07em;padding:12px}
+.report-core-table td{padding:9px 12px;border-top:1px solid #e0e8df;vertical-align:top}
+.report-core-table td:first-child{white-space:nowrap;font-size:11px;color:#67806b}
+.report-core-table a{text-decoration:none}
+.report-core-fold{border:1px solid #d3ded0;border-radius:9px;background:#fcfdf9;overflow:hidden;margin:18px 0}
+.report-core-fold>summary{cursor:pointer;padding:16px 20px;color:#355e43;font-weight:750;font-size:14px;list-style:none}
+.report-core-fold>summary:after{content:"⌄";float:right;color:#608e6a}
+.report-core-fold[open]>summary:after{content:"⌃"}
+.report-core-fold .report-core-table{border:0}
+.report-feedback{font-size:12px;color:#416e4d;display:inline}
+.report-references{margin-top:22px;border-top:1px solid #dbe4d8;padding-top:18px;color:#607263;font-size:12px;line-height:1.7}
+.report-references a{display:inline-block;margin:0 11px 6px 0;font-size:12px}
+.report-next{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
+.report-next a{display:inline-flex;align-items:center;border:1px solid #c7d8c7;border-radius:9px;background:#ebf3e9;padding:11px 17px;text-decoration:none;font-size:13px;font-weight:750;color:#346c4a}
+.report-next a:hover{background:#dceadb}
+.report-core-warning{margin:9px 0;font-size:12px;color:#8a6b39}
+.report-availability{color:#90652d;border-color:#dfc694;background:#fff7e4}
+@media(max-width:850px){.report-main{grid-template-columns:1fr}.report-side{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}.report-side h3,.report-side .report-references{grid-column:1/-1}.report-hero{grid-template-columns:1fr 185px}.report-hero-media{min-height:200px}.report-hero-media img{width:180px}.report-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.report-hero{grid-template-columns:1fr;padding:25px}.report-hero-media{grid-row:1;min-height:240px}.report-hero-media img{width:165px}.report-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.report-tech-grid,.report-phase-grid{grid-template-columns:1fr}.report-side{display:block}.report-guide{padding-top:22px}.report-core-table th,.report-core-table td{padding:9px}.report-core-table td:first-child{white-space:normal}}

@@ -155,3 +155,13 @@
 .fill-proposal-row a{font-size:11px;color:#397452;text-decoration:none;white-space:nowrap}
 .fill-proposal-row a:hover{text-decoration:underline}
 @media(max-width:660px){.fill-groups{grid-template-columns:1fr}.fill-group[open]{grid-column:span 1}.fill-proposal-row{gap:6px}}
+
+/* Latest published rescue guide links */
+.latest-more-reports{margin:29px 0 0;padding:19px 0 0;border-top:1px solid #cbd8c6}
+.latest-more-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:13px}
+.latest-more-grid a{background:#fdfcf7;border:1px solid #cbd8c9;border-radius:9px;padding:14px;display:flex;gap:7px;flex-direction:column;text-decoration:none;min-height:80px}
+.latest-more-grid a strong{font-size:13px;color:#305942;line-height:1.5}
+.latest-more-grid a small{font-size:11px;color:#668073;line-height:1.4}
+.latest-more-grid a:hover{background:#eaf3e9;border-color:#91ad96}
+@media(max-width:900px){.latest-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){.latest-more-grid{grid-template-columns:1fr}}
