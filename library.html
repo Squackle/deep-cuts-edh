@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#372819"><title>The Card Library | Deep Cuts EDH</title>
+<meta name="description" content="Search Magic cards by name, type, color, legality, rarity, mana value and price; add cards to your Deep Cuts deck.">
+<link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css">
+<script type="module" src="library.js"></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol">D<span>✦</span>C</span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>OLD LEGENDS · NEW TROUBLE</small></span></a>
+<nav class="primary-nav" aria-label="Main navigation"><a href="index.html#latest">RESCUE REPORT</a><a class="workshop-link" href="library.html">CARD LIBRARY</a><a href="deck.html">DECK WORKSHOP</a><a href="index.html#nominate">NOMINATE</a></nav>
+<a class="header-action" href="deck.html">OPEN DECK WORKSHOP ↗</a></div></header>
+<main id="main" class="tool-page"><div class="wrap">
+<div class="tool-intro"><div class="retro-eyebrow">THE SCRYFALL CATALOG / ALL MAGIC HISTORY</div><h1 class="retro-heading">The <em>Card Library.</em></h1>
+<p class="tool-lead">Search across Magic's card catalog and filter by format legality, type, color identity, rarity, price and mana value. Find an obscure interaction? Add it to your workbench with one click.</p></div>
+<div class="ornate-panel">
+<form id="librarySearch" role="search">
+<div class="tool-controls">
+<div class="span-two"><label for="cardQuery">CARD NAME / SCRYFALL QUERY</label><input id="cardQuery" type="search" autocomplete="off" placeholder='e.g. changeling, o:"proliferate", t:legendary'></div>
+<div><label for="formatFilter">LEGAL IN</label><select id="formatFilter"><option value="">ANY FORMAT</option><option value="commander" selected>COMMANDER</option><option value="standard">STANDARD</option><option value="pioneer">PIONEER</option><option value="modern">MODERN</option><option value="legacy">LEGACY</option><option value="vintage">VINTAGE</option><option value="pauper">PAUPER</option><option value="brawl">BRAWL</option><option value="historic">HISTORIC</option><option value="timeless">TIMELESS</option><option value="alchemy">ALCHEMY</option></select></div>
+<div><label for="typeFilter">CARD TYPE</label><select id="typeFilter"><option value="">ALL TYPES</option><option value="creature">CREATURE</option><option value="legendary">LEGENDARY</option><option value="instant">INSTANT</option><option value="sorcery">SORCERY</option><option value="artifact">ARTIFACT</option><option value="enchantment">ENCHANTMENT</option><option value="planeswalker">PLANESWALKER</option><option value="land">LAND</option><option value="battle">BATTLE</option></select></div>
+<div><label for="identityFilter">COLOR IDENTITY (SUBSET)</label><select id="identityFilter"><option value="">ANY COLOR</option><option value="W">WHITE</option><option value="U">BLUE</option><option value="B">BLACK</option><option value="R">RED</option><option value="G">GREEN</option><option value="WU">AZORIUS (WU)</option><option value="UB">DIMIR (UB)</option><option value="BR">RAKDOS (BR)</option><option value="RG">GRUUL (RG)</option><option value="GW">SELESNYA (GW)</option><option value="WB">ORZHOV (WB)</option><option value="UR">IZZET (UR)</option><option value="BG">GOLGARI (BG)</option><option value="RW">BOROS (RW)</option><option value="GU">SIMIC (GU)</option><option value="WUBRG">FIVE COLOR</option></select></div>
+<div><label for="rarityFilter">RARITY</label><select id="rarityFilter"><option value="">ALL RARITIES</option><option value="common">COMMON</option><option value="uncommon">UNCOMMON</option><option value="rare">RARE</option><option value="mythic">MYTHIC</option></select></div>
+<div><label for="maxMana">MAX MANA VALUE</label><select id="maxMana"><option value="">ANY</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>10</option></select></div>
+<div><label for="maxPrice">MAX USD PRICE</label><select id="maxPrice"><option value="">ANY PRICE</option><option value="1">$1</option><option value="2">$2</option><option value="5">$5</option><option value="10">$10</option><option value="25">$25</option><option value="100">$100</option></select></div>
+<div><label for="sortFilter">SORT BY</label><select id="sortFilter"><option value="edhrec">EDHREC POPULARITY</option><option value="name">NAME</option><option value="cmc">MANA VALUE</option><option value="usd">PRICE</option><option value="released">RELEASE DATE</option><option value="rarity">RARITY</option></select></div>
+</div>
+<div class="tool-actions"><button class="retro-button" type="submit">SEARCH THE ARCHIVES ↗</button><button type="button" id="libraryReset" class="retro-button dark">RESET FILTERS</button><a class="text-link" href="deck.html">VIEW DECK WORKSHOP ↗</a></div>
+</form><div id="libraryStatus" class="tool-status" role="status" aria-live="polite">Start by searching a card name or exploring Legendary cards.</div>
+<p class="retro-caption">Color identity selects cards whose identity fits inside the chosen colors. Results show unique cards (rather than every printing). Use Scryfall operators such as <code>o:"draw a card"</code>, <code>set:leg</code> or <code>year&lt;2000</code> for deeper searches.</p>
+</div>
+<div style="margin-top:29px"><div id="cardGallery" class="card-gallery" aria-live="polite"></div></div>
+<div class="tool-actions"><button type="button" class="retro-button dark" id="loadMore" hidden>SHOW MORE CARDS ↓</button><span id="pageStats" class="tool-status"></span></div>
+<div class="tool-footer">Card information, legality and card images are supplied by Scryfall. Search data is live and may change. Deep Cuts EDH is unofficial fan content and is not endorsed by Wizards of the Coast.</div>
+</div></main>
+<dialog id="cardDetail" aria-label="Card details"><div class="modal-shell"><div class="modal-top"><span class="eyebrow">THE ARCHIVE · CARD DETAILS</span><button class="modal-close" type="button" id="closeCard">CLOSE ✕</button></div><div id="cardDetailBody"></div></div></dialog>
+<footer class="site-footer"><div class="wrap footer-content"><strong>DEEP CUTS <span>EDH</span></strong><div class="footer-links"><a href="index.html">HOME</a><a href="deck.html">DECK WORKSHOP ↗</a><a href="https://scryfall.com" target="_blank" rel="noopener noreferrer">CARD DATA: SCRYFALL ↗</a></div></div></footer>
+</body></html>
