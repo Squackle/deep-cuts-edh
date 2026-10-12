@@ -84,3 +84,10 @@ References:
 - https://company.wizards.com/en/legal/fancontentpolicy
 - https://scryfall.com/docs/api
 - https://magic.wizards.com/en/news/feature/whats-inside-mystery-booster-commander-edition
+## October 2026 — Theme / expanded workshop
+
+- A responsive original logo lives in `assets/deep-cuts-mark.svg` and never overflows its own frame.
+- `theme-v2.css` overrides the previous muddy retro palette with deep pine, cream parchment and muted brass.
+- `workshop-plus.js` adds probability and mana-curve charts, role classification, simple health estimates, collection/missing-card tools, and outbound research/shop links.
+- The TCGplayer links are ordinary non-affiliate shopping links until a separate affiliate account is approved and connected; there are no tracking identifiers in the repository.
+- Beyond current scope: full CommanderBracket feature parity (combos, server-side deck import from every provider, rules Judge, automatic validated 100-card construction, ML deck ratings, and cloud account sync).

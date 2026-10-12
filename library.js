@@ -29,7 +29,7 @@ function entry(card){
  const buttons=create("div","card-controls");
  const info=create("button","","DETAILS");info.type="button";info.addEventListener("click",()=>showDetail(card));
  const add=create("button","primary","+ ADD TO DECK");add.type="button";add.addEventListener("click",()=>{if(addCard(card)){add.textContent="✓ ADDED";setTimeout(()=>{add.textContent="+ ADD TO DECK"},1400)}});
- buttons.append(info,add);box.append(img,title,meta,buttons);return box;
+ const shop=create("a","shop-card-link","TCGplayer ↗");shop.href="https://www.tcgplayer.com/search/magic/product?productLineName=magic&q="+encodeURIComponent(card.name)+"&view=grid";shop.target="_blank";shop.rel="noopener noreferrer";shop.setAttribute("aria-label","Find "+card.name+" on TCGplayer");buttons.append(info,add);box.append(img,title,meta,buttons,shop);return box;
 }
 function showDetail(c){
  const root=$("cardDetailBody");root.replaceChildren();
@@ -40,7 +40,7 @@ function showDetail(c){
  const price=create("p","","USD price: "+(c.prices?.usd?"$"+c.prices.usd:"Unavailable"));
  const add=create("button","retro-button","+ ADD TO DECK");add.addEventListener("click",()=>{if(addCard(c))add.textContent="✓ ADDED"});
  const outbound=create("a","text-link","VIEW ON SCRYFALL ↗");outbound.href=c.scryfall_uri||"https://scryfall.com";outbound.target="_blank";outbound.rel="noopener noreferrer";outbound.style.marginLeft="15px";
- root.append(h,img,p,oracle,legal,price,add,outbound);
+ const shop=create("a","text-link","TCGplayer ↗");shop.href="https://www.tcgplayer.com/search/magic/product?productLineName=magic&q="+encodeURIComponent(c.name)+"&view=grid";shop.target="_blank";shop.rel="noopener noreferrer";shop.style.marginLeft="12px";root.append(h,img,p,oracle,legal,price,add,outbound,shop);
  detail.showModal();
 }
 async function load(clear=false){

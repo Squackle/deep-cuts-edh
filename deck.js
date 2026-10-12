@@ -10,7 +10,7 @@ function loadInputs(){
  $("bracketTarget").value=String(deck.targetBracket||2);
  renderRows();
 }
-function store(){saveDeck(deck);renderRows()}
+function store(){saveDeck(deck);renderRows();window.dispatchEvent(new Event("deepcuts:deckchanged"))}
 function normalizeDeck(){
  const incoming=parseLines($("deckInput").value);
  const oldCards=new Map((deck.cards||[]).map(c=>[normalizedName(c.name),c.card]));
@@ -30,7 +30,7 @@ function renderRows(){
   const role=el("span",card.card?(isLand(card.card)?"LAND":Math.round(card.card.cmc||0)+" MV"):"?","role");
   const minus=el("button","−");minus.title="Remove one copy of "+card.name;
   minus.addEventListener("click",()=>{card.qty--;if(card.qty<=0)deck.cards=deck.cards.filter(x=>x!==card);store();hasAnalyzed=false;refreshSummary("Deck edited — analyze again for current diagnostics.")});
-  row.append(qty,name,role,minus);container.append(row);
+  const buy=el("a","BUY ↗");buy.href="https://www.tcgplayer.com/search/magic/product?productLineName=magic&q="+encodeURIComponent(card.name)+"&view=grid";buy.target="_blank";buy.rel="noopener noreferrer";buy.title="Find "+card.name+" on TCGplayer";buy.className="mini-buy";row.append(qty,name,role,buy,minus);container.append(row);
  }
 }
 const gc=c=>GAME_CHANGERS.has(normalizedName(c.name));
@@ -300,7 +300,7 @@ async function analyze(){
   commanderCards=[];
   await enrich();
   store();
-  hasAnalyzed=true;lastAnalysis=diagnose();display();
+  hasAnalyzed=true;lastAnalysis=diagnose();display();window.dispatchEvent(new Event("deepcuts:analyzed"));
   status("Analyzed "+lastAnalysis.total+" cards. "+(lastAnalysis.unknown.length+" unresolved cards.")+(invalid.length?" "+invalid.length+" lines not recognized.":""));
  }catch(e){
   hasAnalyzed=false;display();status("Couldn't fully verify the deck: "+e.message+" Please try again. The decklist remains saved.");

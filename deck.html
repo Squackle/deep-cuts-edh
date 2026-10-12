@@ -1,13 +1,13 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#172522"><title>Deck Workshop | Deep Cuts EDH</title>
 <meta name="description" content="Import your Commander deck. Review mana balance, legality, Game Changer limits, card counts, and suggested cuts to 100.">
-<link rel="icon" href="assets/favicon.svg"><script defer src="data.js"></script><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><script type="module" src="deck.js"></script></head>
+<link rel="icon" href="assets/favicon.svg"><script defer src="data.js"></script><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><script type="module" src="deck.js"></script><script type="module" src="workshop-plus.js"></script></head>
 <body><a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol" aria-hidden="true"><img src="assets/deep-cuts-mark.svg" alt="" width="46" height="56"></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>OLD LEGENDS · NEW TROUBLE</small></span></a>
 <nav class="primary-nav" aria-label="Main navigation"><a href="index.html#latest">RESCUE REPORT</a><a href="library.html">CARD LIBRARY</a><a class="workshop-link" href="deck.html">DECK WORKSHOP</a><a href="index.html#nominate">NOMINATE</a></nav><a class="header-action" href="library.html">FIND MORE CARDS ↗</a></div></header>
 <main id="main" class="tool-page"><div class="wrap">
 <div class="tool-intro"><div class="retro-eyebrow">DEEP CUTS EDH / THE DECK PHYSICIAN</div><h1 class="retro-heading">The <em>Deck Workshop.</em></h1>
-<p class="tool-lead">Bring us a strange deck and we'll diagnose the problems. Import a list, check 100-card and Commander restrictions, compare mana sources with colored costs, and see how to tune toward your table's bracket.</p></div>
+<p class="tool-lead">Diagnose the mana, curve, consistency, legality and table expectations of a forgotten commander deck. Review cuts and upgrades yourself—no mystery black box.</p></div>
 <div class="deck-columns">
 <section class="ornate-panel"><div class="retro-eyebrow">01 / IMPORT YOUR PATIENT</div><h2 class="retro-heading" style="font-size:32px">The decklist</h2>
 <label for="commanderField" class="field-label">COMMANDER(S) — ONE PER LINE</label>
@@ -30,6 +30,45 @@
 <button class="deck-tab active" data-tab="overview" type="button">OVERVIEW</button><button class="deck-tab" data-tab="mana" type="button">FIX MANA</button><button class="deck-tab" data-tab="cut" type="button">CUT TO 100</button><button class="deck-tab" data-tab="bracket" type="button">CHANGE BRACKET</button></div>
 <div id="analysisPanel" aria-live="polite"><p class="helper-note">Import or analyze a deck to receive recommendations.</p></div>
 </section></div>
+
+<section class="workshop-summary" aria-label="Expanded analysis and deck tools">
+ <div class="summary-top">
+  <div><span class="retro-eyebrow">03 / FIELD DIAGNOSTICS</span><h2 class="retro-heading" style="font-size:31px;margin:5px 0">The Apothecary's Notes</h2><p class="helper-note" style="max-width:750px">Role estimates and probability calculations based on your resolved card list. Advisory, not a playtest or a certified bracket rating.</p></div>
+  <button type="button" class="retro-button dark" id="refreshAdvanced">UPDATE REPORT ↻</button>
+ </div>
+ <div id="advancedLoading" role="status" class="tool-status">Analyze a deck to unlock the complete workshop report.</div>
+ <div id="healthBadges" class="health-grid"></div>
+ <div class="workshop-extras">
+  <article class="diagnostic-card"><h3>Mana curve</h3><div class="curve-chart" id="manaCurve" aria-label="Mana curve chart"></div><p class="helper-note">Nonland cards, including commanders when resolved. Mana value 7+ grouped.</p></article>
+  <article class="diagnostic-card"><h3>Opening-hand odds</h3><div id="drawProbabilities" class="stat-bars"></div><p class="helper-note">Exact hypergeometric calculations, on a 100-card deck assumption, without mulligans. Ramp probability counts cards classified as ramp, not whether their mana costs can be paid.</p></article>
+  <article class="diagnostic-card"><h3>Deck roles</h3><div id="deckRoles" class="role-grid"></div><p class="helper-note">Oracle text heuristics; some cards fill multiple roles. Confirm edge cases manually.</p></article>
+  <article class="diagnostic-card"><h3>Strategy / table feel</h3><div id="engineFindings" class="engine-findings"></div><p class="helper-note">Experimental pattern flags, not ML win-turn, archenemy scoring, or combo-proof classification.</p></article>
+ </div>
+</section>
+<section class="workshop-summary" id="collectionPanel" aria-labelledby="collectionHeading">
+ <div class="summary-top"><div><span class="retro-eyebrow">04 / COLLECTION & BUY LIST</span><h2 id="collectionHeading" class="retro-heading" style="font-size:31px;margin:5px 0">Cards you own. Cards you need.</h2></div><div class="tool-actions"><button class="retro-button dark" type="button" id="clearCollection">CLEAR COLLECTION</button></div></div>
+ <p class="helper-note">Paste a list from a collection export with one quantity and card name per line. This stores a local copy in your browser; it is not synced to an account.</p>
+ <div class="collection-layout">
+ <div><label class="field-label" for="collectionInput">YOUR OWNED CARDS</label><textarea id="collectionInput" class="deck-input" rows="5" style="min-height:120px" placeholder="3 Sol Ring&#10;1 Arcane Signet&#10;2 Swamp"></textarea>
+ <div class="tool-actions"><button type="button" class="retro-button" id="saveCollection">SAVE COLLECTION LIST</button><label class="retro-button dark file-picker" for="collectionFile">IMPORT .TXT OR .CSV</label><input id="collectionFile" type="file" accept=".txt,.csv,text/plain,text/csv" hidden></div></div>
+ <div class="collection-result"><strong id="ownedCount">0 cards in collection</strong><div id="missingCards">Import a collection list to see what your deck still needs.</div>
+ <div class="tool-actions"><button type="button" class="retro-button dark" id="copyMissing">COPY MISSING CARDS</button><button type="button" class="retro-button" id="copyForTCG">COPY FULL BUY LIST</button></div></div></div>
+</section>
+<section class="workshop-summary" aria-labelledby="researchHeading">
+ <span class="retro-eyebrow">05 / WORKBENCH LINKS</span><h2 id="researchHeading" class="retro-heading" style="font-size:31px;margin:5px 0">Research, export, and shop.</h2>
+ <p class="helper-note">Keep working across the Magic community. External sites open in a new tab. Deck export is plain text; some sites require you to paste or import it after opening.</p>
+ <div class="research-grid" id="researchLinks">
+  <a class="research-link" data-provider="scryfall" href="https://scryfall.com" target="_blank" rel="noopener noreferrer"><strong>Scryfall</strong><small>Card search and legality ↗</small></a>
+  <a class="research-link" data-provider="moxfield" href="https://www.moxfield.com/" target="_blank" rel="noopener noreferrer"><strong>Moxfield</strong><small>Deck builder ↗</small></a>
+  <a class="research-link" data-provider="mtggoldfish" href="https://www.mtggoldfish.com/deck_searches/new" target="_blank" rel="noopener noreferrer"><strong>MTGGoldfish</strong><small>Deck search ↗</small></a>
+  <a class="research-link" data-provider="edhrec" href="https://edhrec.com/" target="_blank" rel="noopener noreferrer"><strong>EDHREC</strong><small>Commander synergies ↗</small></a>
+  <a class="research-link" data-provider="spellbook" href="https://commanderspellbook.com/" target="_blank" rel="noopener noreferrer"><strong>Commander Spellbook</strong><small>Real combo database ↗</small></a>
+  <a class="research-link" data-provider="tcgplayer" href="https://www.tcgplayer.com/massentry?productline=Magic" target="_blank" rel="noopener noreferrer"><strong>TCGplayer</strong><small>Mass Entry shopping ↗</small></a>
+ </div>
+ <div class="tool-actions"><button type="button" class="retro-button" id="copyExternalDeck">COPY FOR MOXFIELD / ARCHIDEKT</button><button type="button" class="retro-button dark" id="copyDeckShare">COPY DECK SHARE TEXT</button></div>
+</section>
+<section class="workshop-summary" aria-labelledby="futureHeading"><span class="retro-eyebrow">DEEP CUTS ROADMAP</span><h2 id="futureHeading" style="font-size:22px;margin:8px 0">Advanced features in development</h2>
+<p class="helper-note">Automated public deck URL imports, exact Commander Spellbook combo/one-card-away detection, a complete commander-aware 100-card generator, account cloud-sync, and AI/rules-backed Judge answers are **not yet implemented**. Current probabilities and deck health scores are intentionally labeled experimental.</p></section>
 <div class="tool-footer">Deck checks are advisory. Scryfall provides card data and current format legality; Commander bracket intent, combo interactions, atypical singleton exceptions, and land needs still require human judgment. Card prices are approximate and may not include shipping.</div></div></main>
 <footer class="site-footer"><div class="wrap footer-content"><strong>DEEP CUTS <span>EDH</span></strong><div class="footer-links"><a href="index.html">HOME</a><a href="library.html">CARD LIBRARY</a><a href="https://magic.wizards.com/en/formats/commander" target="_blank" rel="noopener noreferrer">OFFICIAL BRACKET GUIDANCE ↗</a></div></div></footer>
 </body></html>
