@@ -18,8 +18,8 @@
   <header class="site-header">
     <div class="wrap header-inner">
       <a class="wordmark" href="index.html" aria-label="Deep Cuts home"><span class="wordmark-symbol" aria-hidden="true">D<span>✦</span>C</span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>COMMANDER REHABILITATION</small></span></a>
-      <nav class="primary-nav" aria-label="Main navigation"><a href="#latest">THE REPORT</a><a href="#archive">THE ARCHIVE</a><a href="#process">THE METHOD</a></nav>
-      <a class="header-action" href="#archive">FIND A COMMANDER <span aria-hidden="true">↗</span></a>
+      <nav class="primary-nav" aria-label="Main navigation"><a href="#latest">THE REPORT</a><a href="#archive">THE ARCHIVE</a><a href="#process">THE METHOD</a><a href="#nominate">NOMINATE</a></nav>
+      <a class="header-action" href="#nominate">NOMINATE A COMMANDER <span aria-hidden="true">↗</span></a>
     </div>
   </header>
   <main id="main">
@@ -59,7 +59,45 @@
       <div class="results-row"><span id="resultsCount" aria-live="polite">16 CASES ON FILE</span><span>CLICK A CASE TO INSPECT THE EVIDENCE</span></div>
       <div class="archive-grid" id="archiveGrid"></div><div class="empty-state" id="emptyState" hidden><h3>No results in the vault.</h3><p>Try a different name, color, or mechanic.</p><button id="clearFilters" class="btn btn-outline" type="button">CLEAR FILTERS</button></div>
     </div></section>
-    <section class="closing-cta"><div class="wrap"><span class="eyebrow">EVERY LEGEND HAS A STORY</span><h2>Got a commander everyone<br><em>told you not to build?</em></h2><p>That probably means we're interested. Start in the archive and see what a little reckless optimism can do.</p><a class="btn btn-gold" href="#archive">OPEN THE CASE FILES ↗</a></div></section>
+
+    <section id="nominate" class="section nomination-section" aria-labelledby="nominationTitle"><div class="wrap">
+      <div class="section-kicker"><span>04 / COMMUNITY SUBMISSIONS</span><span>YOUR CASE. OUR NEXT RESCUE?</span></div>
+      <div class="nomination-grid">
+        <div class="nomination-intro">
+          <div class="nomination-index">★ COMMUNITY CASE FILES</div>
+          <h2 id="nominationTitle" class="section-title">Nominate a <em>lost cause.</em></h2>
+          <p>Found a legendary creature that nobody takes seriously? Tell us why it's worth a second look. We want the weird legends, the impossible build-arounds, and the commanders that <strong>almost</strong> work.</p>
+          <div class="nomination-principles">
+            <div><span>01</span><p>Pick a forgotten or underplayed commander (partners welcome).</p></div>
+            <div><span>02</span><p>Give us the puzzle: the flaw, the combo, or the beautiful jank.</p></div>
+            <div><span>03</span><p>We review nominations for future Rescue Reports. No guaranteed publication.</p></div>
+          </div>
+          <a class="nomination-community-link" href="https://github.com/Squackle/deep-cuts-edh/issues?q=is%3Aissue+%22%5BNomination%5D%22+in%3Atitle" target="_blank" rel="noopener noreferrer">VIEW COMMUNITY NOMINATIONS ↗</a>
+          <p class="nomination-footnote">On GitHub, you can give existing nominations a 👍 reaction to show support.</p>
+        </div>
+        <form id="nominationForm" class="nomination-form" aria-label="Nominate a Commander">
+          <div class="nomination-form-head"><span>NEW NOMINATION</span><span>PUBLIC CASE FILE ↗</span></div>
+          <label for="nomCommander">COMMANDER NAME <span aria-hidden="true">*</span></label>
+          <input id="nomCommander" name="commander" type="text" maxlength="100" required autocomplete="off" placeholder="e.g. Reveka, Wizard Savant">
+          <label for="nomReason">WHY DOES THIS COMMANDER NEED RESCUING? <span aria-hidden="true">*</span></label>
+          <textarea id="nomReason" name="reason" rows="3" minlength="10" maxlength="500" required placeholder="What's holding them back? Why doesn't anyone play them?"></textarea>
+          <label for="nomStrategy">YOUR WEIRD BUILD IDEA <span class="optional-tag">(OPTIONAL)</span></label>
+          <textarea id="nomStrategy" name="strategy" rows="3" maxlength="500" placeholder="The combo, engine, theme, or game plan you'd try..."></textarea>
+          <label for="nomCards">CARDS THAT MIGHT MAKE IT WORK <span class="optional-tag">(OPTIONAL)</span></label>
+          <input id="nomCards" name="cards" type="text" maxlength="200" placeholder="e.g. Mirror Entity, Maskwood Nexus">
+          <label for="nomBudget">PREFERRED BUDGET</label>
+          <select id="nomBudget" name="budget">
+            <option value="$100">The standard $100 rescue</option>
+            <option value="$50">Budget challenge: $50</option>
+            <option value="$250">Up to $250</option>
+            <option value="Any">No budget preference</option>
+          </select>
+          <button class="btn btn-gold nomination-submit" type="submit">CONTINUE TO GITHUB <span aria-hidden="true">↗</span></button>
+          <p class="nomination-disclosure">This opens a pre-filled GitHub Issue. You'll need a free GitHub account and must click <strong>Submit new issue</strong> there to complete the nomination. Your suggestion and GitHub username will be public. We don't collect an email address on this site.</p>
+        </form>
+      </div>
+    </div></section>
+    <section class="closing-cta"><div class="wrap"><span class="eyebrow">EVERY LEGEND HAS A STORY</span><h2>Got a commander everyone<br><em>told you not to build?</em></h2><p>That probably means we're interested. Put your favorite lost cause up for a Rescue Report.</p><a class="btn btn-gold" href="#nominate">NOMINATE A COMMANDER ↗</a></div></section>
   </main>
   <footer class="site-footer"><div class="wrap footer-content"><div><strong>DEEP CUTS <span>EDH</span></strong><p>Bad commanders. Good decks. No excuses.</p></div><div class="footer-links"><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">CARD DATA: SCRYFALL ↗</a><a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener noreferrer">FAN CONTENT POLICY ↗</a></div></div><div class="wrap fine-print">Deep Cuts EDH is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC. Card images provided via Scryfall. This is a community prototype; card pricing, legality and availability can change.</div></footer>
   <dialog id="caseDialog" aria-labelledby="modalTitle"><div class="modal-shell"><div class="modal-top"><span class="eyebrow">DEEP CUTS EDH / CASE FILE</span><button class="modal-close" id="closeDialog" aria-label="Close case file" type="button">✕</button></div><div id="modalBody"></div></div></dialog>

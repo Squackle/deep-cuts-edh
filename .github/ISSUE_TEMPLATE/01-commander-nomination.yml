@@ -1,0 +1,51 @@
+name: "Nominate a forgotten Commander"
+description: "Suggest an underplayed legend for a future Deep Cuts EDH Rescue Report."
+title: "[Nomination] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Bad commanders. Good decks. No excuses.**
+        We review nominations for future reports, but submitting does not guarantee a feature.
+        Your issue and GitHub username will be publicly visible.
+  - type: input
+    id: commander-name
+    attributes:
+      label: Commander name
+      description: You can nominate partner commanders together.
+      placeholder: "e.g. Reveka, Wizard Savant"
+    validations:
+      required: true
+  - type: textarea
+    id: why-rescue
+    attributes:
+      label: Why does this commander need rescuing?
+      description: What's awkward, weak, or overlooked about it?
+      placeholder: "Give us a reason to try saving it."
+    validations:
+      required: true
+  - type: textarea
+    id: odd-strategy
+    attributes:
+      label: The weird build idea
+      description: Optional. What unusual interaction or game plan would you try?
+    validations:
+      required: false
+  - type: textarea
+    id: synergy-cards
+    attributes:
+      label: Potential synergy cards or combos
+      description: Optional. Include any cards you think could make it work.
+    validations:
+      required: false
+  - type: dropdown
+    id: target-budget
+    attributes:
+      label: Preferred deck budget
+      options:
+        - "$100 (standard)"
+        - "$50 challenge"
+        - "Up to $250"
+        - "Any budget"
+    validations:
+      required: true

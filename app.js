@@ -6,3 +6,45 @@ function buildTile(c,i){const theme=c.colors.includes("B")?"ink":c.colors.includ
 function render(){const q=searchInput.value.trim().toLowerCase(),cf=colorFilter.value,st=statusFilter.value;const selected=commanders.filter(c=>{const blob=[c.name,c.full,c.headline,c.pitch,c.hook,c.kind,c.badge,...c.tech].join(" ").toLowerCase();return(!q||blob.includes(q))&&(cf==="all"||(cf==="multi"?c.colors.length>1:c.colors.includes(cf)))&&(st==="all"||c.status===st)});archiveGrid.innerHTML=selected.map(buildTile).join("");count.textContent=selected.length+" "+(selected.length===1?"CASE":"CASES")+" ON FILE";document.getElementById("emptyState").hidden=selected.length!==0}
 function openCase(id){const c=commanders.find(x=>x.id===id);if(!c)return;if(c.status==="published"){location.href="reports/chainer-dementia-master.html";return}modalBody.innerHTML='<div class="modal-eyebrow">'+escapeHtml(c.badge.toUpperCase())+' · DEEP CUT</div><div class="modal-title-row"><h2 id="modalTitle">'+escapeHtml(c.name)+'</h2><div class="card-colors">'+c.colors.map(manaPip).join("")+'</div></div><p class="modal-tagline">'+escapeHtml(c.headline)+'</p><div class="modal-diagnosis"><span>THE PREMISE</span><p>'+escapeHtml(c.pitch)+'</p></div><div class="modal-two-col"><div><span class="modal-minilabel">THE ANGLE</span><p>'+escapeHtml(c.hook)+'</p></div><div><span class="modal-minilabel">THE PROBLEM</span><p>'+escapeHtml(c.risk)+'</p></div></div><div class="modal-tech"><span class="modal-minilabel">POTENTIAL TECH · NOT A VERIFIED DECKLIST</span><ul>'+c.tech.map(x=>"<li>"+escapeHtml(x)+"</li>").join("")+'</ul></div><div class="modal-footer"><span>'+(c.status==="upcoming"?"UPCOMING CARD · CHECK LEGALITY AT RELEASE":"FULL REPORT COMING LATER")+'</span><a target="_blank" rel="noopener noreferrer" href="https://scryfall.com/search?q='+encodeURIComponent('!"'+c.full+'"')+'">VIEW CARD DETAILS ↗</a></div>';dialog.showModal()}
 searchInput.addEventListener("input",render);colorFilter.addEventListener("change",render);statusFilter.addEventListener("change",render);archiveGrid.addEventListener("click",e=>{const tile=e.target.closest("[data-id]");if(tile)openCase(tile.dataset.id)});document.getElementById("surpriseBtn").addEventListener("click",()=>{const options=commanders.filter(c=>c.status!=="upcoming");openCase(options[Math.floor(Math.random()*options.length)].id)});document.getElementById("closeDialog").addEventListener("click",()=>dialog.close());dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close()});document.getElementById("clearFilters").addEventListener("click",()=>{searchInput.value="";colorFilter.value="all";statusFilter.value="all";render()});render();
+
+/* This is a static-site handoff, not an API submission. Visitors finish by creating a public GitHub Issue. */
+const nominationForm = document.getElementById("nominationForm");
+if (nominationForm) {
+  nominationForm.addEventListener("submit", event => {
+    event.preventDefault();
+    if (!nominationForm.reportValidity()) return;
+    const commander = document.getElementById("nomCommander").value.trim();
+    const reason = document.getElementById("nomReason").value.trim();
+    const strategy = document.getElementById("nomStrategy").value.trim();
+    const cards = document.getElementById("nomCards").value.trim();
+    const budget = document.getElementById("nomBudget").value;
+    if (!commander || reason.length < 10) {
+      document.getElementById(!commander ? "nomCommander" : "nomReason").focus();
+      return;
+    }
+    const title = "[Nomination] " + commander.slice(0, 100);
+    const body = [
+      "## Commander",
+      commander,
+      "",
+      "## Why this commander needs a rescue",
+      reason,
+      "",
+      "## The build idea",
+      strategy || "Surprise me — find a way to make this commander work!",
+      "",
+      "## Cards or combos to explore",
+      cards || "Open to suggestions",
+      "",
+      "## Preferred budget",
+      budget,
+      "",
+      "---",
+      "Submitted through the Deep Cuts EDH website. This is a public community nomination, not a published Rescue Report."
+    ].join("\n");
+    const url = "https://github.com/Squackle/deep-cuts-edh/issues/new?title=" +
+      encodeURIComponent(title) + "&body=" + encodeURIComponent(body);
+    // Leave the public issue unpublished until the visitor reviews and submits it on GitHub.
+    window.location.assign(url);
+  });
+}
