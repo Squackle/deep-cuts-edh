@@ -146,6 +146,28 @@ function mana(s,root){
  }else if(s.lands>s.desiredLands){
   root.append(p("Your land count is "+(s.lands-s.desiredLands)+" above the rough target. Consider trimming excess slow lands only after assessing your ramp and curve.","helper-note"));
  }
+
+ if(lacking.length&&s.lands>=s.desiredLands){
+  root.append(heading("Balance basic land colors"));
+  let options=0;
+  for(const color of lacking){
+   const donors=s.availableColors.filter(k=>k!==color&&deck.cards.some(x=>x.name===basic[k]&&x.qty>0))
+     .sort((a,b)=>(s.sources[b]-s.sourceTargets[b])-(s.sources[a]-s.sourceTargets[a]));
+   if(donors.length){
+    const donor=donors[0],from=basic[donor],to=basic[color];
+    root.append(suggestionCard("Swap one "+from+" for "+to+" to improve "+color+" access without changing your total land count. Review color balance after the swap.",()=>{
+      const old=deck.cards.find(x=>x.name===from&&x.qty>0);
+      if(!old){status("Basic land no longer available. Analyze again.");return}
+      old.qty--;if(!old.qty)deck.cards=deck.cards.filter(x=>x!==old);
+      const existing=deck.cards.find(x=>x.name===to);
+      if(existing)existing.qty++;else deck.cards.push({name:to,qty:1,card:null});
+      store();loadInputs();hasAnalyzed=false;refreshSummary("Swapped "+from+" for "+to+". Re-analyze mana sources.");
+    },"SWAP "+from.toUpperCase()+" → "+to.toUpperCase()));
+    options++;
+   }
+  }
+  if(!options)root.append(p("No simple basic-land swap was found. Review slow nonbasic lands or search budget dual lands below.","helper-note"));
+ }
  if(s.availableColors.length){
   const query="t:land f:commander id<="+s.availableColors.join("").toLowerCase()+" usd<=3";
   const a=el("a","BROWSE BUDGET LANDS ↗","text-link");a.href="library.html?q="+encodeURIComponent(query);root.append(a);
