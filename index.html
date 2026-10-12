@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="styles.css" />
   <script defer src="data.js"></script>
   <script defer src="app.js"></script>
+  <script defer src="nomination.js"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -60,23 +62,25 @@
       <div class="archive-grid" id="archiveGrid"></div><div class="empty-state" id="emptyState" hidden><h3>No results in the vault.</h3><p>Try a different name, color, or mechanic.</p><button id="clearFilters" class="btn btn-outline" type="button">CLEAR FILTERS</button></div>
     </div></section>
 
+
     <section id="nominate" class="section nomination-section" aria-labelledby="nominationTitle"><div class="wrap">
-      <div class="section-kicker"><span>04 / COMMUNITY SUBMISSIONS</span><span>YOUR CASE. OUR NEXT RESCUE?</span></div>
+      <div class="section-kicker"><span>04 / COMMUNITY RESCUE BOARD</span><span>THE NEXT RESCUE IS UP TO YOU</span></div>
       <div class="nomination-grid">
         <div class="nomination-intro">
-          <div class="nomination-index">★ COMMUNITY CASE FILES</div>
+          <div class="nomination-index">★ THE COMMUNITY DECIDES</div>
           <h2 id="nominationTitle" class="section-title">Nominate a <em>lost cause.</em></h2>
-          <p>Found a legendary creature that nobody takes seriously? Tell us why it's worth a second look. We want the weird legends, the impossible build-arounds, and the commanders that <strong>almost</strong> work.</p>
-          <div class="nomination-principles">
-            <div><span>01</span><p>Pick a forgotten or underplayed commander (partners welcome).</p></div>
-            <div><span>02</span><p>Give us the puzzle: the flaw, the combo, or the beautiful jank.</p></div>
-            <div><span>03</span><p>We review nominations for future Rescue Reports. No guaranteed publication.</p></div>
+          <p>Tell us which forgotten legendary creature deserves a full Rescue Report. Every valid nomination adds a vote to that commander. The highest-ranked approved candidate becomes our next rescue frontrunner.</p>
+          <div class="leader-spotlight" id="leaderSpotlight" aria-live="polite">
+            <span class="leader-kicker">MOST WANTED / NEXT RESCUE</span>
+            <strong id="leaderName">No nominations yet</strong>
+            <span id="leaderVotes">Be the first to nominate a commander.</span>
           </div>
-          <a class="nomination-community-link" href="https://github.com/Squackle/deep-cuts-edh/issues?q=is%3Aissue+%22%5BNomination%5D%22+in%3Atitle" target="_blank" rel="noopener noreferrer">VIEW COMMUNITY NOMINATIONS ↗</a>
-          <p class="nomination-footnote">On GitHub, you can give existing nominations a 👍 reaction to show support.</p>
+          <div class="leaderboard-heading"><h3>COMMUNITY MOST WANTED</h3><button type="button" id="refreshNominations" aria-label="Refresh nomination totals">REFRESH ↻</button></div>
+          <div id="nominationLeaderboard" class="nomination-leaderboard" aria-live="polite"><p class="nomination-loading">Loading community nominations…</p></div>
+          <p class="nomination-footnote">Counts are nominations—not unique people. Anonymous voting is limited per browser and rate-limited, but not identity-verified. New commanders enter the public board after review. A leading nomination is a recommendation, not an automatically published article.</p>
         </div>
         <form id="nominationForm" class="nomination-form" aria-label="Nominate a Commander">
-          <div class="nomination-form-head"><span>NEW NOMINATION</span><span>PUBLIC CASE FILE ↗</span></div>
+          <div class="nomination-form-head"><span>NEW NOMINATION</span><span>NO LOGIN REQUIRED</span></div>
           <label for="nomCommander">COMMANDER NAME <span aria-hidden="true">*</span></label>
           <input id="nomCommander" name="commander" type="text" maxlength="100" required autocomplete="off" placeholder="e.g. Reveka, Wizard Savant">
           <label for="nomReason">WHY DOES THIS COMMANDER NEED RESCUING? <span aria-hidden="true">*</span></label>
@@ -92,8 +96,12 @@
             <option value="$250">Up to $250</option>
             <option value="Any">No budget preference</option>
           </select>
-          <button class="btn btn-gold nomination-submit" type="submit">CONTINUE TO GITHUB <span aria-hidden="true">↗</span></button>
-          <p class="nomination-disclosure">This opens a pre-filled GitHub Issue. You'll need a free GitHub account and must click <strong>Submit new issue</strong> there to complete the nomination. Your suggestion and GitHub username will be public. We don't collect an email address on this site.</p>
+          <div class="captcha-area">
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAAFU5c2gIVJQkigt0" data-theme="dark"></div>
+          </div>
+          <button id="nominationSubmit" class="btn btn-gold nomination-submit" type="submit">NOMINATE THIS COMMANDER <span aria-hidden="true">↗</span></button>
+          <p id="nominationFeedback" class="nomination-feedback" role="status" aria-live="polite"></p>
+          <p class="nomination-disclosure">Nominations are stored on Deep Cuts EDH. No GitHub account is required. The site does not ask for your name or email; anonymous anti-abuse identifiers and submissions are stored to prevent repeat votes. New commander names need review before they appear publicly.</p>
         </form>
       </div>
     </div></section>

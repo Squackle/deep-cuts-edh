@@ -15,16 +15,9 @@ An **independent, no-framework, static** prototype for an obscure Commander disc
 - Direct Scryfall card/search links, full-card imagery on the two Chainer hero displays.
 - No hosting dependencies, no server, no database. Nominations require GitHub sign-in to publish.
 
-## Commander nomination system
+## Community nominations — LIVE BACKEND
 
-The homepage has a **Nominate a Commander** section. Visitors can enter a commander name, the reason it needs rescuing, an optional strategy, synergy cards, and a budget. JavaScript prepares an encoded GitHub Issue URL for `Squackle/deep-cuts-edh`, then sends the visitor to GitHub to review and submit the issue.
-
-- GitHub Issues must remain enabled in repository settings (currently enabled).
-- Visitors **need a free GitHub account** and must submit their issue on GitHub; entering details on the site alone does not send anything.
-- New suggestions are public GitHub issues and are **not** automatically added to the editorial archive.
-- View nominations: https://github.com/Squackle/deep-cuts-edh/issues?q=is%3Aissue+%22%5BNomination%5D%22+in%3Atitle
-- GitHub also provides a structured native issue form at `.github/ISSUE_TEMPLATE/01-commander-nomination.yml`.
-- This no-backend approach costs $0 and avoids storing visitor data on Cloudflare. For future no-login submissions, add a moderated form backend and spam protection.
+Cloudflare Pages Functions (`functions/api/nominations.js`) and D1 store community nominations and counts. Visitors nominate through a form directly on the site, with server-side Turnstile verification and anonymous rate-limiting. The public leaderboard displays approved candidates and the live frontrunner. New commander names enter a moderation queue; see `db/OPERATIONS.md` for how to approve nominations or close a voting round. This feature does not auto-write or auto-publish an article.
 
 ## Important limitations
 
