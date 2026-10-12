@@ -21,3 +21,7 @@ Alternative hosted links: an approved $5 monthly Patreon or Ko-fi membership pag
 - Only third-party payment services handle billing; never ask supporters to enter payment credentials on this website.
 
 Payment Links official documentation: https://stripe.com/payments/payment-links
+
+
+## October 2026 hardened Stripe-only integration
+See [`STRIPE-IMPLEMENTATION.md`](STRIPE-IMPLEMENTATION.md) for the product, monthly price, portal, testing and go-live checklist. `supporters.js` now rejects test-mode Stripe links and only enables the public checkout after explicit verification of a live $5/month Price. The existing site's `pk_test` key is **not required** for Payment Links.

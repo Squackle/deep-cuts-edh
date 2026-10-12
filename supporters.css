@@ -34,3 +34,8 @@
 .site-header .primary-nav .support-nav-link:hover{color:#fff2d8}
 @media(max-width:850px){.support-layout{grid-template-columns:1fr}.support-side{max-width:none}}
 @media(max-width:600px){.support-page{padding:40px 0 60px}.support-offer{padding:22px}.support-head p{font-size:15px}}
+
+.support-billing{margin-top:17px;padding-top:15px;border-top:1px solid #d9e2d5}
+.support-billing a{display:inline-block;color:#2d6748;font-weight:750;font-size:13px;margin:0 0 7px;text-decoration:underline;text-underline-offset:3px}
+.support-billing a[hidden]{display:none!important}
+.support-billing-hint{color:#687e6d!important;font-size:12px!important;line-height:1.5!important;margin:0!important}

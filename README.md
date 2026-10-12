@@ -140,3 +140,6 @@ Do not link card names in decklist editors, deck rows or starter-core tables, wh
 - `dossier.css` makes the homepage featured case report resemble an aged, typewritten police investigation with clear commander-name contrast.
 - Removed the username/password account panel and script; `/api/account` now responds with HTTP 410 Gone and cannot authenticate or accept registration. Use only the 256-bit recovery-key vault (`/api/vault`).
 - The site has a Supporters page advertising a planned **$5/month** founding supporter tier. A genuine checkout URL must be configured in `support-config.js` before payments can begin; do not imply payments are active or invent a subscription link. See [`docs/SUPPORTERS.md`](docs/SUPPORTERS.md).
+
+## Stripe subscriptions: prepared, not activated
+The supporter tier is **$5 USD per month**, recurring; Stripe-hosted Checkout is preferred. Current code includes a test-link-resistant URL gate and optional Stripe Billing portal link. See [`docs/STRIPE-IMPLEMENTATION.md`](docs/STRIPE-IMPLEMENTATION.md). Checkout is **not yet active**: Stripe product/price/link creation and live verification still require callable Stripe account access.
