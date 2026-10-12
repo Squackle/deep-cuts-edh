@@ -39,3 +39,42 @@
 .support-billing a{display:inline-block;color:#2d6748;font-weight:750;font-size:13px;margin:0 0 7px;text-decoration:underline;text-underline-offset:3px}
 .support-billing a[hidden]{display:none!important}
 .support-billing-hint{color:#687e6d!important;font-size:12px!important;line-height:1.5!important;margin:0!important}
+
+
+/* Membership comparison — restrained three-tier layout. */
+.support-tier-intro{max-width:720px;margin:0 0 20px}
+.support-tier-intro h2,.support-launch-info h2{font:700 clamp(26px,3vw,37px)/1.16 Georgia,serif;color:#2d513d;margin:5px 0 9px}
+.support-tier-intro p,.support-launch-info p{font-size:14px;color:#5a7060;line-height:1.7}
+.support-tier-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;align-items:start}
+.support-tier-card{background:#fffef9;border:1px solid #c9d7c8;border-radius:13px;min-width:0;padding:23px 20px 17px;box-shadow:0 9px 22px #223e2310}
+.support-tier-primary{border-color:#8cae91;box-shadow:0 8px 30px #224a2d19}
+.support-tier-upper{display:flex;justify-content:space-between;align-items:center;gap:7px;min-height:24px}
+.support-tier-kicker{font:750 9px/1.4 ui-sans-serif,system-ui,sans-serif;letter-spacing:.12em;color:#67866d}
+.support-tier-status{border-radius:30px;background:#f0f2e9;padding:5px 7px;white-space:nowrap;color:#817454;font:650 9px ui-sans-serif,system-ui,sans-serif}
+.support-tier-card h2{font:700 29px/1.15 Georgia,serif;color:#304b39;letter-spacing:-.03em;margin:15px 0 7px}
+.support-tier-card .support-tier-price{margin:6px 0 12px}
+.support-tier-card .support-tier-price strong{font:650 48px/1 Georgia,serif}
+.support-tier-card .support-tier-price span{font-size:12px}
+.support-tier-lead{min-height:77px;font-size:13px!important;color:#58705c;line-height:1.65!important}
+.support-tier-details{background:#f5f8f1;border:1px solid #dbe5d7;border-radius:9px;overflow:hidden;margin-top:16px}
+.support-tier-details summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:14px 12px;font-size:12px;font-weight:750;color:#355f46;gap:6px}
+.support-tier-details summary::-webkit-details-marker{display:none}
+.support-tier-details summary span{font-size:18px;transition:transform .2s}
+.support-tier-details[open] summary span{transform:rotate(180deg)}
+.support-tier-details summary:hover{background:#ebf2e7}
+.support-tier-details summary:focus-visible{outline:2px solid #6c9d72;outline-offset:-2px}
+.support-tier-benefits{padding:4px 13px 13px;border-top:1px solid #e0e9de}
+.support-tier-benefits p{font-size:12px!important;line-height:1.62!important;display:flex;gap:9px;color:#46634f;margin:9px 0!important}
+.support-tier-benefits p span{color:#5c916d;font-weight:900;flex-shrink:0}
+.support-tier-footer{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+.support-tier-fine{font-size:11px;line-height:1.5;color:#7c806e}
+.support-tier-info{font-size:12px;text-decoration:none;font-weight:750;color:#346849}
+.support-tier-info:hover{text-decoration:underline}
+.support-launch-info{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:22px;align-items:start;margin:30px 0 18px;background:#e6eee4;border:1px solid #cbdccb;border-radius:12px;padding:25px}
+.support-launch-info>aside{border-left:1px solid #bdd2bf;padding-left:20px}
+.support-launch-info aside h3{font:650 20px Georgia,serif;color:#355940;margin-top:4px}
+.support-launch-info aside a{color:#386e4d;font-weight:700;font-size:13px}
+#supportCheckout{display:inline-block;background:#285f45;color:#fff;padding:12px 18px;text-decoration:none;border-radius:8px;font-weight:750}
+#supportCheckout[hidden],#supportManageBilling[hidden]{display:none!important}
+@media(max-width:950px){.support-tier-grid{grid-template-columns:1fr}.support-tier-lead{min-height:0}.support-tier-card{padding:22px}.support-tier-grid{max-width:680px}}
+@media(max-width:670px){.support-launch-info{grid-template-columns:1fr}.support-launch-info>aside{border-left:0;border-top:1px solid #bdd2bf;padding:16px 0 0}}

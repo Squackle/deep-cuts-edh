@@ -1,19 +1,13 @@
-/* Deep Cuts EDH — Stripe-hosted $5/month supporter subscriptions.
- * Stripe Payment Links require no API key on the site.
- * Never add an sk_test_/sk_live_ secret here or in GitHub.
- *
- * Before enabling:
- * 1. Confirm the Stripe Price is USD 500 cents, recurring every month.
- * 2. Confirm Payment Link is LIVE, active and owned by Deep Cuts EDH.
- * 3. Enable Stripe Billing customer portal and copy its portal login URL.
- * 4. Update checkoutURL and verifiedLiveRecurring below in the same commit.
- */
+/* Stripe sandbox products exist for all three tiers. No live checkout configured.
+Never add Stripe secret keys to this public file. A static link alone does not
+grant premium entitlements. Enable only after benefits, billing and access checks
+are implemented and each live recurring Price is verified. */
 window.DEEP_CUTS_SUPPORT=Object.freeze({
- monthlyUSD:5,
- currency:"USD",
- frequency:"month",
- provider:"Stripe",
- checkoutURL:null,
- verifiedLiveRecurring:false,
- manageBillingURL:null
+ monthlyUSD:5,currency:"USD",frequency:"month",provider:"Stripe",
+ checkoutURL:null,verifiedLiveRecurring:false,manageBillingURL:null,
+ tiers:Object.freeze({
+  informant:{monthlyUSD:5,sandboxProduct:"prod_VQj1sN8fQn1Hff",sandboxPrice:"price_1UPrZWBDD2Zs8Kb6NMpeOFOu",liveCheckoutURL:null,ready:false},
+  detective:{monthlyUSD:10,sandboxProduct:"prod_VQkHZ7oRG0X80p",sandboxPrice:"price_1UPsnHBDD2Zs8Kb6qchMeXKO",liveCheckoutURL:null,ready:false},
+  chief:{monthlyUSD:25,sandboxProduct:"prod_VQkHAnT8PJKwkI",sandboxPrice:"price_1UPsnKBDD2Zs8Kb6F8hFcPfK",liveCheckoutURL:null,ready:false}
+ })
 });
