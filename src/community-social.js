@@ -1,3 +1,4 @@
+import {notifyComment,notifyNewFollow} from "./field-dispatches.js";
 import {send,fail,safe,rnd,hash,AVATARS,BIO_EMOJIS,CASES,topicOK,verifyHuman,quota} from "./community-core.js";
 export async function register(req,db,env,d){
  const handle=safe(d.handle,24),bio=safe(d.bio,240),avatar=safe(d.avatar,130),bioEmoji=String(d.bioEmoji??"");
@@ -29,7 +30,10 @@ export async function socialWrite(db,a,d){
   const topic=safe(d.topic,90),kind=d.kind==="doctor"?"doctor":"discussion",body=safe(d.body,1200);
   if(!topicOK(topic)||body.length<5)return fail("A valid discussion and 5–1200 characters are required.",400);
   if(topic.startsWith("deck:")&&!(await db.prepare("SELECT id FROM community_decks WHERE id=?").bind(topic.slice(5)).first()))return fail("Deck not found.",404);
-  await db.prepare("INSERT INTO community_comments(id,author_id,topic,kind,body) VALUES(?,?,?,?,?)").bind(rnd(),a.id,topic,kind,body).run();return send({ok:true},201);
+  const commentId=rnd();
+  await db.prepare("INSERT INTO community_comments(id,author_id,topic,kind,body) VALUES(?,?,?,?,?)").bind(commentId,a.id,topic,kind,body).run();
+  try{await notifyComment(db,a,topic,body,commentId)}catch(e){console.error("Comment dispatch skipped",String(e?.name||"error"))}
+  return send({ok:true},201);
  }
  if(action==="react"){
   const id=safe(d.id,32);
@@ -48,7 +52,10 @@ export async function socialWrite(db,a,d){
   }else if(!CASES.includes(target))return fail("Unknown case.",400);
   const following=!!(await db.prepare("SELECT 1 FROM community_follows WHERE follower_id=? AND target_type=? AND target=?").bind(a.id,type,target).first());
   if(following)await db.prepare("DELETE FROM community_follows WHERE follower_id=? AND target_type=? AND target=?").bind(a.id,type,target).run();
-  else await db.prepare("INSERT OR IGNORE INTO community_follows(follower_id,target_type,target) VALUES(?,?,?)").bind(a.id,type,target).run();
+  else{
+   await db.prepare("INSERT OR IGNORE INTO community_follows(follower_id,target_type,target) VALUES(?,?,?)").bind(a.id,type,target).run();
+   if(type==="profile")try{await notifyNewFollow(db,a,target)}catch(e){console.error("Follow notification skipped",String(e?.name||"error"))}
+  }
   return send({ok:true,following:!following});
  }
  if(action==="report"){

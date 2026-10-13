@@ -1,5 +1,6 @@
 import {setupFeatures,refreshFeatures} from "./community-features.js";
 import {initializeRecovery,refreshEmailStatus,offerEmail} from "./community-recovery.js";
+import {setupFieldExpansion,refreshFieldExpansion,attachProfileReputation,refreshDispatchBadge} from "./field-expansion.js";
 export const $=id=>document.getElementById(id);
 export const state={key:"",me:null,remembered:false,legacyStored:false,caseSlug:"chainer-dementia-master",deck:null,editing:"",myDecks:[]};
 export const el=(tag,content,cls)=>{const n=document.createElement(tag);if(content!==undefined&&content!==null)n.textContent=String(content);if(cls)n.className=cls;return n};
@@ -86,16 +87,29 @@ export function setTab(tab){
   challenge:"JOIN THE RESCUE CHALLENGE",
   lab:"TEST THE UNEXPECTED",
   network:"FOLLOW THE INVESTIGATION",
-  account:"YOUR INVESTIGATOR DOSSIER"
+  account:"YOUR INVESTIGATOR DOSSIER",
+  evidence:"THE EVIDENCE NEVER RESTS",
+  collection:"EVERY CARD COUNTS",
+  compare:"TWO DECKS · ONE VERDICT",
+  reputation:"YOUR WORK EARNS THE RANK",
+  dispatches:"DISPATCHES FROM THE FIELD"
  };
  const tagline=document.querySelector(".site-header .wordmark-copy small");
  if(tagline)tagline.textContent=subtitles[tab]||subtitles.cases;
  const panels=document.querySelectorAll("[data-panel]");panels.forEach(n=>n.hidden=n.dataset.panel!==tab);
  document.querySelectorAll("[data-tab]").forEach(n=>n.setAttribute("aria-current",n.dataset.tab===tab?"page":"false"));
- history.replaceState(null,"",location.pathname+(tab==="cases"?"?case="+encodeURIComponent(state.caseSlug):"#"+tab));
+ const existing=new URLSearchParams(location.search);
+ const finding=existing.get("evidence"),profile=existing.get("profile");
+ const directFinding=tab==="evidence"&&/^[a-f0-9]{32}$/.test(finding||"");
+ const directProfile=tab==="network"&&/^[A-Za-z][A-Za-z0-9_]{2,23}$/.test(profile||"");
+ const destination=tab==="cases"?"?case="+encodeURIComponent(state.caseSlug):
+  directFinding?"?case="+encodeURIComponent(state.caseSlug)+"&evidence="+finding:
+  directProfile?"?profile="+encodeURIComponent(profile):"#"+tab;
+ history.replaceState(null,"",location.pathname+destination);
  if(tab==="cases")loadCase();
  if(tab==="network")loadNetwork();
  if(["decks","challenge","lab"].includes(tab))refreshFeatures(tab);
+ if(["evidence","collection","compare","reputation","dispatches"].includes(tab))refreshFieldExpansion(tab);
  if(tab==="account")updateIdentity();
 }
 export function portrait(p){
@@ -118,6 +132,7 @@ export function updateIdentity(){
  $("accountLoggedOut").hidden=!!state.me;$("accountLoggedIn").hidden=!state.me;
  if(state.me){
   $("ownProfile").replaceChildren(portrait(state.me),el("p","Save your recovery key somewhere private. This profile is public; your credential is not.","cm-note"));
+  attachProfileReputation($("ownProfile"),state.me.handle);
   $("editProfileForm").elements.bio.value=state.me.bio||"";
   $("editProfileForm").elements.bioEmoji.value=state.me.bio_emoji||"";
   $("editProfileForm").elements.avatar.value=state.me.avatar;
@@ -232,9 +247,11 @@ async function loadNetwork(){
 }
 async function showProfile(handle){
  const x=await attempt(()=>api("profile",{handle}));if(!x)return;
+ history.replaceState(null,"",location.pathname+"?profile="+encodeURIComponent(x.profile.handle));
  const n=$("publicProfile");n.hidden=false;clear(n);n.append(portrait(x.profile));
  n.append(el("p",x.counts.comments+" findings · "+x.counts.tests+" playtests · "+x.counts.followers+" followers","cm-note"));
  for(const b of x.badges)n.append(badge(b));
+ attachProfileReputation(n,x.profile.handle);
  if(state.me&&state.me.id!==x.profile.id)n.append(button("FOLLOW / UNFOLLOW INVESTIGATOR",async()=>{const r=await attempt(()=>write({action:"follow",type:"profile",target:x.profile.id}));if(r)msg(r.following?"Following investigator.":"Unfollowed investigator.")}));
  x.decks.forEach(d=>n.append(el("p",null),link(d.title+" ↗","community.html?deck="+d.id)));
 }
@@ -321,7 +338,7 @@ function bindAccount(){
   state.key="";state.me=null;state.remembered=false;state.legacyStored=false;forgetLegacyStorage();
   $("newKeyBox").hidden=true;$("newKey").value="";
   $("profileRecoveryKeyBox").hidden=true;$("profileRecoveryKey").value="";
-  updateIdentity();msg("Signed out. This browser's remembered access was revoked.");
+  updateIdentity();refreshDispatchBadge();msg("Signed out. This browser's remembered access was revoked.");
   return true;
  }
  $("signOut").addEventListener("click",signOutDevice);
@@ -341,12 +358,12 @@ function bindCases(){
 }
 async function boot(){
  document.querySelectorAll("[data-tab]").forEach(n=>n.addEventListener("click",()=>setTab(n.dataset.tab)));
- bindAccount();bindCases();setupFeatures();initializeRecovery();
- await restore();await loadHome();
+ bindAccount();bindCases();setupFeatures();setupFieldExpansion();initializeRecovery();
+ await restore();refreshDispatchBadge();await loadHome();
  const p=new URL(location.href).searchParams;
  if(p.has("case")&&["chainer-dementia-master","alena-and-gilanra","commander-mustard","ekthi-contaminator-priest"].includes(p.get("case")))state.caseSlug=p.get("case");
- const tab=p.has("deck")||p.has("publish")?"decks":p.has("profile")?"network":location.hash.slice(1)||"cases";
- setTab(["cases","decks","challenge","lab","network","account"].includes(tab)?tab:"cases");
+ const tab=p.has("deck")||p.has("publish")?"decks":p.has("profile")?"network":p.has("evidence")?"evidence":location.hash.slice(1)||"cases";
+ setTab(["cases","decks","challenge","lab","network","account","evidence","collection","compare","reputation","dispatches"].includes(tab)?tab:"cases");
  if(p.has("profile")){$("profileSearch").value=p.get("profile");showProfile(p.get("profile"))}
  if(p.has("deck")){const id=p.get("deck");if(/^[a-f0-9]{32}$/.test(id))window.DeepCutsOpenDeck?.(id)}
  if(p.has("publish"))$("fromWorkshop").click();

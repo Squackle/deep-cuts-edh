@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#172522"><meta name="description" content="The Deep Cuts EDH community: investigations, commander discussions, deck rescues, playtest logs, and obscure-card discovery.">
 <title>Field Network | Deep Cuts EDH</title><link rel="icon" href="assets/favicon.svg">
-<link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><link rel="stylesheet" href="community.css">
+<link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><link rel="stylesheet" href="community.css"><link rel="stylesheet" href="field-expansion.css">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script><script type="module" src="community.js"></script></head>
 <body><a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner">
@@ -14,13 +14,13 @@
 <div class="cm-layout"><aside class="cm-sidebar">
 <div class="cm-paper cm-identity-card"><span class="retro-eyebrow">YOUR IDENTITY</span><div id="identitySummary">No profile signed in.</div><button class="cm-btn" type="button" data-tab="account">PROFILE / SIGN IN ↗</button><p class="cm-note">Free profiles use their own recovery keys. They do not unlock Ko-fi memberships.</p></div>
 <nav class="cm-tabs" aria-label="Community sections">
-<button data-tab="cases" aria-current="page">01 / CASE DISCUSSIONS</button><button data-tab="decks">02 / DECK GALLERY</button><button data-tab="challenge">03 / RESCUE CHALLENGE</button><button data-tab="lab">04 / TESTING LAB</button><button data-tab="network">05 / WATCHLIST & FRIENDS</button><button data-tab="account">06 / MY PROFILE</button>
+<button data-tab="cases" aria-current="page">01 / CASE DISCUSSIONS</button><button data-tab="decks">02 / DECK GALLERY</button><button data-tab="challenge">03 / RESCUE CHALLENGE</button><button data-tab="lab">04 / TESTING LAB</button><button data-tab="network">05 / WATCHLIST & FRIENDS</button><button data-tab="account">06 / MY PROFILE</button><button data-tab="evidence">07 / EVIDENCE BOARDS</button><button data-tab="collection">08 / CARD COLLECTION</button><button data-tab="compare">09 / DECK COMPARISON</button><button data-tab="reputation">10 / INVESTIGATOR RANKS</button><button data-tab="dispatches">11 / FIELD DISPATCHES <span id="dispatchUnread" class="field-unread" hidden></span></button>
 </nav><div class="cm-paper"><span class="retro-eyebrow">HOW THE RECORD WORKS</span><p>Test reports are self-submitted. Likes and votes reflect community interest, not proof of power. Keep posts constructive and report abuse.</p></div>
 </aside>
 <div class="cm-main"><p id="cmStatus" role="status" aria-live="polite" class="cm-status"></p>
 <section class="cm-panel" data-panel="cases"><span class="retro-eyebrow">01 / INVESTIGATION BOARD</span><h2>Case File Discussions</h2><p>Open a file, add discoveries, discuss combos, and follow its updates.</p>
 <div class="cm-controls"><label>CASE FILE<select id="caseSelect"><option value="chainer-dementia-master">001 · Chainer, Dementia Master</option><option value="alena-and-gilanra">002 · Alena & Gilanra</option><option value="commander-mustard">003 · Commander Mustard</option><option value="ekthi-contaminator-priest">004 · Ekthi (preview)</option></select></label><button class="cm-btn" type="button" id="followCase">FOLLOW THIS CASE ☆</button><a id="openReport" class="cm-text-link" href="reports/chainer-dementia-master.html">READ REPORT ↗</a></div>
-<p id="caseEvidence" class="cm-note" aria-live="polite"></p><div id="caseComments" class="cm-cards"></div>
+<p id="caseEvidence" class="cm-note" aria-live="polite"></p><p><button type="button" class="cm-btn cm-outline" data-tab="evidence">OPEN COMMUNITY EVIDENCE BOARD ↗</button></p><div id="caseComments" class="cm-cards"></div>
 <form id="caseCommentForm" class="cm-paper"><h3>ADD TO THE EVIDENCE</h3><label>YOUR FINDING<textarea name="body" required minlength="5" maxlength="1200" rows="4" placeholder="What card or interaction did you discover? What did you test?"></textarea></label><button class="cm-btn" type="submit">POST COMMENT ↗</button></form></section>
 <section class="cm-panel" data-panel="decks" hidden><span class="retro-eyebrow">02 / PUBLIC DECKS</span><h2>The Community Deck Gallery</h2><p>Publish a deck from your Workshop, document your revisions, and ask the community for Deck Doctor recommendations.</p>
 <div class="cm-paper"><h3>PUBLISH OR REVISE A DECK</h3><p class="cm-note">Public decklists are visible to everyone. Your private recovery-key vault stays private and is never automatically published.</p><form id="deckForm">
@@ -39,6 +39,55 @@
 <form id="playtestForm" class="cm-paper"><h3>FILE A GAME REPORT</h3><label>COMMANDER<input name="commander" maxlength="130" required value="Chainer, Dementia Master"></label><label>OPPONENT'S STRATEGY<input name="opponent" maxlength="70" required placeholder="Tokens, control, combo…"></label><div class="cm-two"><label>RESULT<select name="result"><option value="win">Win</option><option value="loss">Loss</option><option value="draw">Draw</option></select></label><label>GAME TURNS<input name="turns" type="number" min="1" max="60" required value="9"></label></div><label>NOTES<input name="note" maxlength="320" placeholder="What actually happened?"></label><button type="submit" class="cm-btn">FILE PLAYTEST ↗</button></form>
 <div class="cm-paper"><h3>HIDDEN GEM SCANNER <small>EXPERIMENTAL</small></h3><p>Find rarely explored card ideas with a live Scryfall search. Results are search leads, not commander-specific synergy guarantees.</p><div class="cm-two"><label>ORACLE MECHANIC<select id="gemTheme"><option value="graveyard">Graveyard</option><option value="dies">Dies triggers</option><option value="sacrifice">Sacrifice</option><option value="tokens">Tokens</option><option value="counters">Counters</option><option value="equipment">Equipment</option></select></label><button id="scanGems" class="cm-btn" type="button">SCAN UNUSUAL CARDS ↗</button></div><div id="gemResults" class="cm-cards"></div></div></section>
 <section class="cm-panel" data-panel="network" hidden><span class="retro-eyebrow">05 / YOUR INVESTIGATION NETWORK</span><h2>Watchlist & Investigator Profiles</h2><p>Follow other investigators and their case research. Your activity feed gathers new posts from people and case files you follow.</p><div class="cm-controls"><label>LOOK UP AN INVESTIGATOR<input id="profileSearch" maxlength="24" placeholder="Username"></label><button id="findProfile" class="cm-btn" type="button">OPEN PROFILE ↗</button></div><div id="publicProfile" class="cm-paper" hidden></div><h3>YOUR FOLLOWED RESEARCH</h3><div id="watchlist" class="cm-cards"></div><h3>LATEST ACTIVITY FROM YOUR WATCHLIST</h3><div id="activityFeed" class="cm-cards"></div></section>
+<section class="cm-panel" data-panel="evidence" hidden>
+<span class="retro-eyebrow">07 / COMMUNITY CASE RESEARCH</span><h2>Commander Evidence Boards</h2>
+<p>Every forgotten commander deserves an evolving case file. File hidden synergies, combos, budget swaps, weaknesses, and matchup discoveries. Your peers can endorse findings; votes show community interest, not independently tested truth.</p>
+<div class="cm-controls"><label>CASE FILE<select id="evidenceCase"><option value="chainer-dementia-master">001 · Chainer, Dementia Master</option><option value="alena-and-gilanra">002 · Alena &amp; Gilanra</option><option value="commander-mustard">003 · Commander Mustard</option><option value="ekthi-contaminator-priest">004 · Ekthi (preview)</option></select></label>
+<label>ORDER<select id="evidenceSort"><option value="top">COMMUNITY ENDORSED</option><option value="new">MOST RECENT</option></select></label>
+<a id="evidenceReportLink" class="cm-text-link" href="reports/chainer-dementia-master.html">READ THE ORIGINAL CASE ↗</a></div>
+<div id="evidenceResults" class="cm-cards" role="region" aria-label="Community evidence findings"></div>
+<form id="evidenceForm" class="cm-paper"><h3>FILE A NEW DISCOVERY</h3><p class="cm-note">Your name and finding are public. Cite a real interaction or describe the evidence; this does not change the published editorial report automatically.</p>
+<label>DISCOVERY TYPE<select name="category"><option value="synergy">Hidden synergy</option><option value="combo">Combo / engine</option><option value="budget">Budget replacement</option><option value="weakness">Weakness / counterplay</option><option value="matchup">Matchup discovery</option></select></label>
+<label>SHORT TITLE<input name="title" minlength="8" maxlength="100" required placeholder="Unearth plus sacrifice outlet"></label>
+<label>RELATED CARD (OPTIONAL)<input name="cardName" maxlength="130" placeholder="e.g. Viscera Seer"></label>
+<label>THE FINDING<textarea name="body" minlength="20" maxlength="1200" rows="5" required placeholder="Explain the interaction, why it helps, and anything you've tested."></textarea></label>
+<button class="cm-btn" type="submit">FILE EVIDENCE ↗</button></form></section>
+<section class="cm-panel" data-panel="collection" hidden>
+<span class="retro-eyebrow">08 / YOUR PRIVATE CARD INDEX</span><h2>My Card Collection</h2>
+<p>Track physical cards you own, upload a collection CSV, and see which cards you still need for a deck. Your inventory belongs to your Field Network profile and is never published.</p>
+<p id="collectionSummary" class="cm-challenge-notice" role="status">Sign in to load your private collection.</p>
+<form id="collectionAddForm" class="cm-paper"><h3>ADD OR UPDATE A CARD</h3>
+<div class="cm-two"><label>CARD NAME<input name="name" maxlength="130" required placeholder="Sol Ring"></label><label>COPIES OWNED<input name="quantity" type="number" min="0" max="999" value="1" required></label></div>
+<button class="cm-btn" type="submit">SAVE CARD ↗</button><p class="cm-note">Set quantity to 0 to remove a card.</p></form>
+<div class="cm-paper"><h3>IMPORT FROM A LIST OR CSV</h3><p class="cm-note">Supports lines such as <code>4 Lightning Bolt</code> and CSV headers such as <code>Quantity,Name</code> or <code>Count,Card Name</code>. Additional edition columns are ignored. Imported quantities update the corresponding cards; unrelated saved cards stay untouched.</p>
+<label>PASTE YOUR COLLECTION<textarea id="collectionImportText" rows="6" placeholder="Quantity,Name&#10;2,Sol Ring&#10;1,Arcane Signet"></textarea></label>
+<label>OR CHOOSE A CSV FILE<input id="collectionCsvFile" type="file" accept=".csv,text/csv,text/plain"></label>
+<div class="cm-actions"><button id="collectionImportButton" type="button" class="cm-btn">IMPORT TO MY COLLECTION ↗</button><button id="collectionClearButton" type="button" class="cm-btn cm-danger">CLEAR ENTIRE COLLECTION…</button></div>
+<p id="collectionImportStatus" class="cm-note" role="status"></p></div>
+<div class="cm-paper"><h3>BUILD WITH CARDS I OWN</h3><p class="cm-note">Estimate how much it would cost to finish a Workshop build or public deck. Prices use reference printings from Scryfall, not guaranteed lowest market prices.</p>
+<label>DECK SOURCE<select id="collectionDeckSelect"><option value="workshop">My local Deck Workshop list</option></select></label>
+<button id="collectionCostButton" type="button" class="cm-btn">FIND MISSING CARDS &amp; COST ↗</button><div id="collectionCostResult" class="field-analysis-result" aria-live="polite"></div></div>
+<div class="cm-paper"><div class="cm-section-head"><h3>MY SAVED CARDS</h3><label>SEARCH COLLECTION<input id="collectionSearch" type="search" placeholder="Filter by card name"></label></div><div id="collectionItems" class="field-scroll-list"></div></div>
+</section>
+<section class="cm-panel" data-panel="compare" hidden>
+<span class="retro-eyebrow">09 / THE DECK COMPARISON LAB</span><h2>Compare Two Decks</h2>
+<p>Measure shared cards, unique slots, mana curves and estimated prices. Compare your locally saved Workshop deck against publicly published builds or any two community decks.</p>
+<div class="cm-paper"><div class="cm-two">
+<label>DECK A<select id="compareDeckA"><option value="workshop">My local Workshop deck</option></select></label>
+<label>DECK B<select id="compareDeckB"><option value="">Choose a public deck</option></select></label></div>
+<button id="compareRun" class="cm-btn" type="button">COMPARE DECKS ↗</button>
+<p class="cm-note">Card roles and prices are heuristic, using Scryfall card metadata when available. Deck lists and playtest results are not independently verified.</p></div>
+<div id="compareOutput" class="field-analysis-result" aria-live="polite"></div></section>
+<section class="cm-panel" data-panel="reputation" hidden>
+<span class="retro-eyebrow">10 / EARN YOUR FIELD CREDENTIALS</span><h2>Investigator Ranks &amp; Achievements</h2>
+<p>Recognition for published decks, tested matches, documented case research, and findings fellow investigators endorse. Score caps discourage farming posts for points.</p>
+<div id="reputationMine" class="cm-paper"></div>
+<div class="cm-paper"><h3>COMMUNITY LEADERBOARD</h3><div id="reputationLeaders" class="field-scroll-list"></div><p class="cm-note">Ranks reflect community activity—not card expertise, purchasing, or tournament performance.</p></div></section>
+<section class="cm-panel" data-panel="dispatches" hidden>
+<span class="retro-eyebrow">11 / MESSAGES FROM THE FIELD</span><h2>Field Dispatches</h2>
+<p>Updates when someone mentions you, comments on your deck, follows you, votes for your challenge entry, or files research in a case you follow. Everything stays inside the website; no unsolicited emails.</p>
+<div class="cm-controls"><button id="dispatchRefresh" type="button" class="cm-btn">REFRESH INBOX ↻</button><button id="dispatchReadAll" type="button" class="cm-btn cm-outline">MARK ALL READ</button></div>
+<div id="dispatchList" class="cm-cards" role="region" aria-label="Your Field Dispatch inbox"></div></section>
 <section class="cm-panel" data-panel="account" hidden><span class="retro-eyebrow">06 / PROFILE CONTROL</span><h2>Your Investigator Dossier</h2><div id="accountLoggedOut">
 <div class="cm-paper"><h3>CREATE A FREE PROFILE</h3><p>A unique handle, a Commander portrait, a bio and a 256-bit private recovery key. No password is required. Add and verify an email for future recovery, or keep using a key-only profile.</p><form id="registerForm">
 <label>HANDLE<input name="handle" autocomplete="username" pattern="[A-Za-z][A-Za-z0-9_]{2,23}" maxlength="24" placeholder="GraveyardDetective" required></label>

@@ -1,0 +1,51 @@
+/* Unified evidence boards, private collection, comparison, reputation and dispatches. */
+.field-unread{display:inline-block;min-width:23px;padding:2px 5px;margin-left:4px;border-radius:30px;background:#b66a34;color:#fff;font:800 10px system-ui;text-align:center}
+.field-unread[hidden]{display:none}
+.field-evidence-card{border-left:4px solid #b79b61;background:#fff9ef}
+.field-evidence-card h3{margin:9px 0 4px;font-family:Georgia,serif;font-size:21px;color:#2a4635}
+.field-evidence-card>p{white-space:pre-wrap;line-height:1.55}
+.field-evidence-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.field-evidence-category,.field-featured{font-size:10px;font-weight:900;letter-spacing:.06em;color:#426849}
+.field-featured{padding:6px 9px;background:#dac695;color:#40321a}
+.field-evidence-meta{font-size:12px;color:#655c49;margin:6px 0}
+.field-evidence-cardname{font-size:12px;font-weight:800}
+.field-evidence-card .cm-actions{margin-bottom:0}
+.field-evidence-highlight{outline:3px solid #bd8e43;outline-offset:2px}
+.field-scroll-list{max-height:500px;overflow:auto;margin:12px 0;padding-right:3px}
+.field-inventory-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 7px;border-bottom:1px solid #cfc3a7;font-size:12px;overflow-wrap:anywhere}
+.field-inventory-row>strong{color:#284835}
+.field-inventory-row .cm-btn{font-size:11px;padding:6px 9px}
+.field-inventory-row .cm-actions{margin:0;gap:5px;flex-wrap:nowrap;align-items:center}
+.field-analysis-result{margin-top:16px;line-height:1.6}
+.field-analysis-result:empty{display:none}
+.field-analysis-result>h3{font:24px Georgia,serif;margin:5px 0 14px}
+.field-stat{padding:11px 13px;border-left:3px solid #b79b61;background:#fff8e9;font-weight:800;margin:10px 0}
+.field-compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin:16px 0}
+.field-compare-column{border:1px solid #c6b895;padding:13px;min-width:0;background:#fffaf0}
+.field-compare-column h3{font:18px Georgia,serif;overflow-wrap:anywhere;line-height:1.3}
+.field-compare-stat{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #d7ccac;padding:6px 0;font-size:12px}
+.field-compare-stat strong{color:#28503b;text-align:right}
+.field-compare-common{background:#f9efdc;padding:12px}
+.field-compare-common>.field-compare-column{border:0;padding:0}
+.field-rank-card{padding:14px 16px;border-bottom:1px solid #c9bb9c;background:#fffaf1}
+.field-rank-card+.field-rank-card{margin-top:6px}
+.field-rank-line{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.field-rank-line strong{font-size:17px}
+.field-score{font-weight:800;color:#74592b;font-size:13px}
+.field-rank-label{margin:8px 0;color:#314d3c;font:700 17px Georgia,serif}
+.field-rank-badges{display:flex;flex-wrap:wrap;gap:3px;margin:8px 0}
+.field-rank-number{font-size:12px;color:#81754b}
+.field-rank-self{border-left:4px solid #bd9150}
+.field-profile-reputation{margin:14px 0;border-top:1px solid #c6b58b;padding-top:9px}
+.field-dispatch{border-left:3px solid #ada28a;background:#faf4e8}
+.field-dispatch-new{border-left-color:#b47a2c;background:#fff8e6}
+.field-unread{background:#c59449;padding:3px 6px;color:#1e3023;font-size:10px;font-weight:900}
+[data-panel="collection"] input[type="file"]{padding:10px 0;max-width:100%;display:block}
+[data-panel="collection"] textarea{width:100%;resize:vertical}
+[data-panel="evidence"] .cm-controls label,[data-panel="compare"] .cm-two label{min-width:0}
+@media(max-width:680px){
+ .field-compare-grid{grid-template-columns:1fr}
+ .field-inventory-row{flex-wrap:wrap}
+ .field-inventory-row .cm-actions{margin-left:auto}
+ .field-rank-line{align-items:flex-start}
+}

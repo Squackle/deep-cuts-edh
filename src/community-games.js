@@ -1,3 +1,4 @@
+import {notifyDeckVote} from "./field-dispatches.js";
 import {send,fail,safe,rnd,cleanDeck} from "./community-core.js";
 export async function gamesWrite(db,a,d){
  const action=d.action;
@@ -45,7 +46,9 @@ export async function gamesWrite(db,a,d){
   }
   const entry=await db.prepare("SELECT member_id FROM community_entries WHERE challenge_id=? AND deck_id=?").bind(ch.id,id).first();
   if(!entry||entry.member_id===a.id)return fail("Cannot vote for your own deck or a missing entry.",400);
+  const existing=await db.prepare("SELECT deck_id FROM community_votes WHERE challenge_id=? AND voter_id=?").bind(ch.id,a.id).first();
   await db.prepare("INSERT INTO community_votes(challenge_id,voter_id,deck_id) VALUES(?,?,?) ON CONFLICT(challenge_id,voter_id) DO UPDATE SET deck_id=excluded.deck_id").bind(ch.id,a.id,id).run();
+  if(existing?.deck_id!==id)try{await notifyDeckVote(db,a,id,ch.id)}catch(e){console.error("Challenge dispatch skipped",String(e?.name||"error"))}
   return send({ok:true});
  }
  return fail("Unknown game operation.",404);
