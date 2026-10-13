@@ -86,18 +86,10 @@ $("copyMemberKey").addEventListener("click",async()=>{
  try{await navigator.clipboard.writeText($("memberNewKey").textContent);status("Membership key copied. Save it securely.")}catch{status("Clipboard unavailable. Select and copy the key.",true)}
 });
 async function claim(){
- const s=new URL(location.href).searchParams.get("session_id");
- if(!s)return;
+ const id=new URL(location.href).searchParams.get("session_id");
+ if(!id)return;
  scrubKey();
- if(!/^cs_live_[A-Za-z0-9_]+$/.test(s)){status("Only a verified live membership checkout can issue a key.",true);return}
- try{
-  const result=await api("/api/member",{action:"claim",sessionId:s});
-  $("memberEntrance").hidden=false;$("memberClaim").hidden=false;
-  $("memberClaimText").textContent="Your "+(tierNames[result.tier]||result.tier)+" membership was verified.";
-  $("memberNewKey").textContent=result.key;
-  $("memberKey").value=result.key;
-  status("Checkout verified. Save your key and activate this device.");
- }catch(e){status(e.message,true)}
+ status("The old direct Stripe checkout is retired. Visit our Ko-fi page for supporter information.",true);
 }
 async function callDossier(){
  const button=$("runDossier");button.disabled=true;

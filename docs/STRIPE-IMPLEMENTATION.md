@@ -1,4 +1,4 @@
-# Deep Cuts EDH — Stripe implementation plan
+> **ARCHIVED (Ko-fi migration):** Deep Cuts EDH is no longer implementing direct-Stripe memberships. The official page is https://ko-fi.com/deepcutsedh . This historical Stripe plan is not an active setup guide; see [KO-FI.md](KO-FI.md).\n\n# Deep Cuts EDH — Stripe implementation plan
 **Prepared:** 2026-10-12  
 **Site:** https://deep-cuts-edh.pages.dev/  
 **Offering:** Deep Cuts EDH — Founding Supporter, **$5.00 USD monthly**, optional recurring support for independent Magic: The Gathering articles and free deckbuilding tools.

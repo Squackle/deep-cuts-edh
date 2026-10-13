@@ -1,57 +1,29 @@
-/* Verified live Stripe Payment Link only; checkout itself is hosted by Stripe.
- * This static site never receives or stores card data or Stripe API secrets. */
+/* All supporter checkout destinations are Ko-fi. Never send a visitor to
+ * the retired Stripe test catalogue. A public Ko-fi visit is not equivalent
+ * to verified eligibility for Field Office premium tools. */
 (() => {
 "use strict";
 const config=window.DEEP_CUTS_SUPPORT||{};
-const $=id=>document.getElementById(id);
-const checkout=$("supportCheckout"),message=$("supportCheckoutMessage");
-if(!checkout||!message)return;
-const label=$("supportTierLabel"),disclosure=$("supportDisclosure");
-const manage=$("supportManageBilling"),manageNote=$("supportManageNote");
-const monthly=Number(config.monthlyUSD)===5&&config.currency==="USD"&&config.frequency==="month";
-function safeUrl(value,kind){
- if(typeof value!=="string"||!value.trim())return null;
- try {
-   const parsed=new URL(value);
-   if(parsed.protocol!=="https:"||parsed.username||parsed.password||parsed.port||parsed.hash)return null;
-   const host=parsed.hostname.toLowerCase();
-   const path=decodeURIComponent(parsed.pathname);
-   if(kind==="checkout"&&host==="buy.stripe.com"&&/^\/[A-Za-z0-9_-]{8,}$/.test(path)&&!/^\/test(?:_|\/)/i.test(path))return parsed.href;
-   if(kind==="portal"&&host==="billing.stripe.com"&&/^\/p\/login\/[A-Za-z0-9_-]{8,}$/.test(path))return parsed.href;
- }catch{}
- return null;
+const url=(()=>{
+ try{const u=new URL(config.pageURL);return u.protocol==="https:"&&u.hostname==="ko-fi.com"&&u.pathname==="/deepcutsedh"?u.href:null}catch{return null}
+})();
+const checkout=document.getElementById("supportCheckout");
+const message=document.getElementById("supportCheckoutMessage");
+const disclosure=document.getElementById("supportDisclosure");
+if(checkout){
+ if(url){checkout.href=url;checkout.hidden=false;checkout.textContent="VISIT OUR KO-FI PAGE ↗";checkout.target="_blank";checkout.rel="noopener noreferrer"}
+ else checkout.hidden=true;
 }
-const link=monthly&&config.membershipInfrastructureReady===true&&config.verifiedLiveRecurring===true?safeUrl(config.checkoutURL,"checkout"):null;
-if(link){
- checkout.href=link;checkout.hidden=false;checkout.target="_blank";checkout.rel="noopener noreferrer";
- message.textContent="Secure checkout on Stripe · $5 USD billed every month. No Deep Cuts account is required.";
- message.classList.add("checkout-ready");
- if(label)label.textContent="FOUNDING SUPPORTER / MONTHLY SUBSCRIPTION";
- if(disclosure)disclosure.textContent="Subscriptions are billed by Stripe at $5 USD per month. You can manage or cancel through Stripe Billing. Any applicable taxes are shown at checkout. Deep Cuts EDH never receives your card details.";
-}else{
- checkout.hidden=true;
- message.textContent="Subscriptions aren't open yet. The $5/month founding supporter plan will become available after its live recurring Stripe checkout is verified.";
- if(label)label.textContent="FOUNDING SUPPORTER / COMING SOON";
- if(disclosure)disclosure.textContent="The monthly price is informational until a verified Stripe subscription checkout is activated. No payment or subscription can currently be created here.";
-}
-const payButtons=document.querySelectorAll("a.support-tier-checkout");
-const allReady=config.membershipInfrastructureReady===true&&config.verifiedLiveRecurring===true;
-for(const button of payButtons){
- const tier=button.dataset.tier,configTier=config.tiers?.[tier];
- const validPrice={informant:5,detective:10,chief:25}[tier];
- const tierLink=allReady&&configTier?.ready===true&&Number(configTier.monthlyUSD)===validPrice?safeUrl(configTier.liveCheckoutURL,"checkout"):null;
- if(tierLink){
-  button.href=tierLink;button.hidden=false;button.target="_blank";button.rel="noopener noreferrer";
+if(message)message.textContent="Support us on Ko-fi. Premium Field Office access is being connected separately; Ko-fi payments do not issue Deep Cuts membership keys yet.";
+if(disclosure)disclosure.textContent="Membership prices shown here are planned. Confirm tier details and billing on Ko-fi before paying. The Ko-fi-to-Field-Office access integration is not yet active.";
+for(const button of document.querySelectorAll(".support-tier-checkout")){
+ const tier=config.tiers?.[button.dataset.tier];
+ if(url&&tier&&tier.verified===true&&config.membershipAccessReady===true){
+  button.hidden=false;button.href=url;button.textContent="VIEW MEMBERSHIP ON KO-FI ↗";button.target="_blank";button.rel="noopener noreferrer";
  }else button.hidden=true;
 }
-const portal=safeUrl(config.manageBillingURL,"portal");
-if(manage&&manageNote){
- if(portal&&link){
-   manage.href=portal;manage.hidden=false;manage.target="_blank";manage.rel="noopener noreferrer";
-   manageNote.textContent="Existing supporters can manage or cancel their subscription securely through Stripe, without a Deep Cuts password.";
- }else{
-   manage.hidden=true;
-   manageNote.textContent="Stripe's billing-management portal will be available when subscriptions launch.";
- }
-}
+const manage=document.getElementById("supportManageBilling");
+const manageNote=document.getElementById("supportManageNote");
+if(manage)manage.hidden=true;
+if(manageNote)manageNote.textContent="Members manage and cancel recurring payments through their Ko-fi account and connected payment provider.";
 })();

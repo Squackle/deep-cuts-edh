@@ -1,5 +1,4 @@
-import {reply,random,sha,originOK,stripe,tierFromPrice,authorize,json,sync,H} from "../../src/member-auth.js";
-const goodSession=s=>/^cs_live_[A-Za-z0-9_]+$/.test(s);
+import {reply,random,sha,originOK,authorize,json,sync,H} from "../../src/member-auth.js";
 const goodKey=s=>/^dcmember1_[0-9a-f]{32}_[0-9a-f]{64}$/.test(s);
 const simple=s=>String(s||"").trim().slice(0,36).replace(/[<>]/g,"");
 export async function onRequestGet({request,env}){
@@ -13,22 +12,7 @@ export async function onRequestPost({request,env}){
  if(!env.DB)return reply({error:"Membership storage isn't configured."},503);
  let d;try{d=await json(request,2500)}catch{return reply({error:"Invalid request."},400)}
  const action=String(d.action||"");
- if(action==="claim"){
-  const id=String(d.sessionId||"");
-  if(!goodSession(id))return reply({error:"A valid live Stripe checkout session is needed."},400);
-  try{
-   const s=await stripe("checkout/sessions/"+encodeURIComponent(id),env);
-   if(s.id!==id||s.mode!=="subscription"||s.status!=="complete"||s.payment_status!=="paid"||s.livemode!==true||!s.subscription)return reply({error:"This isn't a completed live membership checkout."},403);
-   const sub=await stripe("subscriptions/"+encodeURIComponent(s.subscription),env);
-   if(!["active","trialing"].includes(sub.status)||sub.livemode!==true||sub.customer!==s.customer)return reply({error:"Membership subscription isn't active."},403);
-   const tier=tierFromPrice(sub.items?.data?.[0]?.price?.id,env);
-   if(!tier)return reply({error:"Checkout isn't associated with a configured Deep Cuts membership tier."},403);
-   const memberId=random(16),key="dcmember1_"+memberId+"_"+random(32);
-   const result=await env.DB.prepare("INSERT OR IGNORE INTO member_accounts(id,stripe_customer,stripe_subscription,checkout_session,tier,key_hash,status,checked_at) VALUES(?,?,?,?,?,?,'active',?)").bind(memberId,s.customer,s.subscription,id,tier,await sha(key),Math.floor(Date.now()/1000)).run();
-   if((result.meta?.changes||0)!==1)return reply({error:"This checkout has already been claimed. Use the key you saved. Contact the site owner if it was lost."},409);
-   return reply({ok:true,tier,key,message:"Store this membership key securely. It is shown only once."},201);
-  }catch(e){console.error("Claim verification failed",String(e));return reply({error:"Couldn't verify live checkout right now."},503)}
- }
+ if(action==="claim")return reply({error:"Direct Stripe enrollment is retired. Ko-fi member-key issuance is not configured yet."},410);
  if(action==="activate"){
   const key=String(d.key||"");if(!goodKey(key))return reply({error:"Invalid membership key format."},400);
   const id=key.split("_")[1],digest=await sha(key);

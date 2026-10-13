@@ -1,3 +1,5 @@
+> **IMPORTANT — Ko-fi migration:** This file records the previous direct-Stripe implementation and historical plan. Direct-Stripe enrollment and webhook have been retired. The current canonical provider integration guide is [KO-FI.md](KO-FI.md), and premium access is disabled until the Ko-fi key-issuance workflow is operational.
+
 # Premium Field Office — deployment and operations
 
 This package implements a key-only membership infrastructure and member-facing features across all three proposed tiers. **Publishing code is not equivalent to launching paid benefits.** All live checkout URLs remain null/disabled until Stripe LIVE credentials, billing, full verification and editorial capacity are available.

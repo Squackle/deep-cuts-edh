@@ -141,8 +141,11 @@ Do not link card names in decklist editors, deck rows or starter-core tables, wh
 - Removed the username/password account panel and script; `/api/account` now responds with HTTP 410 Gone and cannot authenticate or accept registration. Use only the 256-bit recovery-key vault (`/api/vault`).
 - The site has a Supporters page advertising a planned **$5/month** founding supporter tier. A genuine checkout URL must be configured in `support-config.js` before payments can begin; do not imply payments are active or invent a subscription link. See [`docs/SUPPORTERS.md`](docs/SUPPORTERS.md).
 
-## Stripe subscriptions: prepared, not activated
-The supporter tier is **$5 USD per month**, recurring; Stripe-hosted Checkout is preferred. Current code includes a test-link-resistant URL gate and optional Stripe Billing portal link. See [`docs/STRIPE-IMPLEMENTATION.md`](docs/STRIPE-IMPLEMENTATION.md). Checkout is **not yet active**: Stripe product/price/link creation and live verification still require callable Stripe account access.
+## Legacy direct-Stripe subscriptions (retired in favor of Ko-fi)
+Historical Stripe planning only; public supporter links now go to **Ko-fi**. The unused Stripe test products were not deleted. See [`docs/KO-FI.md`](docs/KO-FI.md).
 
 ## Premium Field Office (single package, October 2026)
-The key-only premium workspace is at [members.html](members.html); billing is deliberately **not active**. Backend routes: `/api/member`, `/api/member-data`, `/api/member-lab`, `/api/stripe-webhook`, and `/api/supporter-gallery`. All four phases have integration hooks, with full feature/launch limitations documented in [docs/MEMBERSHIPS.md](docs/MEMBERSHIPS.md). D1 migration applied from `db/premium.sql`. **Do not advertise incomplete features as delivered or enable Stripe checkout until live credentials, product taxes and editorial workflows are ready.**
+The key-only premium workspace is at [members.html](members.html); billing is deliberately **not active**. Backend routes: `/api/member`, `/api/member-data`, `/api/member-lab`, `/api/kofi-webhook`, and `/api/supporter-gallery`. All four phases have integration hooks, with full feature/launch limitations documented in [docs/MEMBERSHIPS.md](docs/MEMBERSHIPS.md). D1 migration applied from `db/premium.sql`. **Do not advertise incomplete features as delivered or enable Ko-fi premium keys until verified renewal, expiration and account-claim workflows are ready.**
+
+## Ko-fi supporter page (October 2026)
+Official public link: https://ko-fi.com/deepcutsedh . Public website links now point to Ko-fi rather than direct Stripe. The Ko-fi webhook can record validated subscription renewals (once creator secrets are configured), but **cannot detect cancellations** and does not yet issue membership keys. Premium access remains locked until a verified claim + expiration system is completed. See [docs/KO-FI.md](docs/KO-FI.md).
