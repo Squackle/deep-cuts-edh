@@ -29,7 +29,7 @@ The pricing and billing configuration—not the URL shape or public JavaScript�
 
 ## Phase A — Stripe connection & account setup
 
-1. The Stripe ChatGPT plugin is installed but its actions, including `stripe_implementation_planner`, weren't exposed during this session. When those tools become callable, run the official implementation planner with this document's business context.
+1. Stripe integration planning remains separate from active site billing. Confirm available Stripe connector capabilities and account configuration before changing payment or membership issuance workflows.
 2. Verify Stripe account ownership, business display name, statement descriptor, support contact, country, payouts and tax details.
 3. In **Stripe test mode**, create the Product + recurring $5.00/month Price and one Payment Link. Use test cards only, and confirm it generates a subscription (not a one-time PaymentIntent).
 4. Run the checkout success, declined-payment and cancellation cases. Ensure the email receipts, billing descriptions and taxes are accurate.

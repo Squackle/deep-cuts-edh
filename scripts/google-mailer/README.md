@@ -38,4 +38,4 @@ The Cloudflare Pages Function sends an HTTPS POST signed with HMAC-SHA256. Its s
 - The web app is accessible to Anyone so Cloudflare can call it, but every email command must pass the shared HMAC challenge. Never publish the secret or paste it into chat, source code or browser scripts.
 - After changing Code.gs, use **Deploy → Manage deployments → Edit → New version**; saving alone does not update the published version.
 - Existing Resend configuration, if any, remains supported as a fallback. If either part of the Google configuration is missing, Google sending remains disabled and users can still log in using profile keys.
-- The owner alone must authorize the Google script. ChatGPT cannot perform Google's interactive Google Account authorization on their behalf.
+- The Google account owner must personally authorize the mailer script's requested Gmail permissions.

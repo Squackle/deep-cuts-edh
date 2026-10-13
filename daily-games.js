@@ -322,16 +322,7 @@ function startPractice(){
 }
 function setupHub(){
  const status=$("hubDay");
- if(status)status.textContent="NEW PUZZLES EVERY DAY · MIDNIGHT CENTRAL · NO GPT REQUIRED";
- const health=$("gameAutomationHealth");
- if(health){
-  fetch("/api/daily-games?action=automation_status",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
-   if(!d?.automatic){health.textContent="Game automation status temporarily unavailable.";return}
-   health.textContent="Daily generation is automatic. Catalog last refreshed: "+
-    (d.catalogUpdatedAt?new Date(d.catalogUpdatedAt*1000).toLocaleDateString():"awaiting first source refresh")+
-    ". Today's frozen puzzles: "+d.today.map(x=>x.game).join(" & ")+".";
-  }).catch(()=>health.textContent="Games continue on an automatic, date-driven rotation.");
- }
+ if(status)status.textContent="NEW PUZZLES EVERY DAY · MIDNIGHT CENTRAL";
  const buttons=document.querySelectorAll("[data-random-practice]");
  for(const button of buttons){
   button.addEventListener("click",()=>{

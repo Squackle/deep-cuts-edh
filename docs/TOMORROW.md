@@ -19,7 +19,7 @@ Cloudflare successfully deployed the preceding security package. A subsequent ro
 
 ## Tomorrow's order of work
 
-1. **Rotate the Ko-fi verification token.** The old token was shared in a ChatGPT message and needs replacement *before launch*. Regenerate it in Ko-fi's dashboard, then update the Cloudflare Pages **encrypted** production setting `KOFI_VERIFICATION_TOKEN`. Don't paste the replacement in GitHub, a public chat, or frontend files.
+1. **Rotate the Ko-fi verification token.** The old token was shared in a previous conversation and should be replaced before it is used for production webhook verification. Regenerate it in Ko-fi's dashboard, then update the Cloudflare Pages **encrypted** production setting `KOFI_VERIFICATION_TOKEN`. Don't paste the replacement in GitHub, a public chat, or frontend files.
 2. **Open the private diagnostics dashboard.** Use the previously downloaded independent key. Check last-24-hour entries: `post_received`, `token_verified`, `unknown_tier_or_amount`, `invalid_subscription_details`, and `subscription_recorded`. Older sample events may age out of the dashboard's rolling window.
 3. **Confirm Ko-fi tiers really exist and match exactly:** The Informant $5/mo, The Detective $10/mo, The Chief Investigator $25/mo. Tier publishing has not been independently verified.
 4. **Send one membership and one monthly sample**, inspect HTTP 200 response and the *private* diagnostics status. Ko-fi sample events may not reflect live payment fields or be eligible for a paid member record; this is expected.

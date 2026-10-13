@@ -1,6 +1,6 @@
 /* Self-maintaining daily MTG puzzles for Cloudflare Pages + D1.
  * Every day's answer is snapshotted atomically: data refreshes cannot move the
- * goalposts after somebody has played. Uses public Scryfall search, not GPT.
+ * goalposts after somebody has played. Card data comes from Scryfall.
  *
  * Data source distinction: edhrec_rank is a CARD inclusion/popularity rank,
  * NOT the number of decks led by a commander. The interface labels it that way.
@@ -202,7 +202,7 @@ export async function getPuzzle(db,game,day,mode="daily",seed=0){
 export async function getAutoStatus(db,day){
  const row=await db.prepare("SELECT updated_at,refresh_attempt_at,length(payload) AS size FROM game_auto_catalog WHERE id=1").first();
  const puzzles=await db.prepare("SELECT game,source,created_at FROM game_auto_puzzles WHERE day=? ORDER BY game").bind(day).all();
- return {day,automatic:true,modelRequired:false,
+ return {day,automatic:true,
   catalogUpdatedAt:row?.updated_at||null,catalogRefreshAttemptAt:row?.refresh_attempt_at||null,
   catalogBytes:row?.size||0,rotation:"midnight America/Chicago",
   catalogRefresh:"approximately every 7 days, requested automatically by Cloudflare",

@@ -1,4 +1,4 @@
-/* Cloudflare Worker Cron Trigger — no ChatGPT, API key, or paid AI.
+/* Cloudflare Worker Cron Trigger — prepares daily puzzles on schedule.
  * Runs twice daily at 05:15 and 06:15 UTC, covering 00:15 Central during
  * daylight-saving or standard time respectively.
  * The Pages Functions create and freeze the puzzle snapshots in D1.

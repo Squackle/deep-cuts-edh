@@ -48,6 +48,6 @@ export async function onRequestPost({request,env}){
   if(!explanation){
    explanation=selected.length?"These are the closest published card rulings I found. Review their exact wording; an interaction not covered by these rulings may require the Comprehensive Rules.":"No card-specific published rulings matched this question. Read the card text and consult the official Comprehensive Rules; I cannot give a definitive answer from the information available.";
   }
-  return answer({ok:true,explanation,generated,cards:found.map(c=>({name:c.name,oracle_text:c.oracle_text,url:c.source})),rulings:selected.map(r=>({card:r.card,comment:r.comment,url:r.url,published:r.published})),rulesURL:"https://magic.wizards.com/en/rules",warning:generated?"AI-assisted interpretation; verify against official rules.":"Source lookup only; not an AI-generated definitive Judge ruling."});
+  return answer({ok:true,explanation,generated,cards:found.map(c=>({name:c.name,oracle_text:c.oracle_text,url:c.source})),rulings:selected.map(r=>({card:r.card,comment:r.comment,url:r.url,published:r.published})),rulesURL:"https://magic.wizards.com/en/rules",warning:generated?"AI-assisted interpretation; verify against official rules.":"These are published card rulings, not a ruling on your specific interaction. Check the Comprehensive Rules for complex cases."});
  }catch(e){console.error("Rules Q&A unavailable",e);return answer({error:"Could not retrieve current rulings right now."},503)}
 }

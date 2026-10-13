@@ -1,40 +1,40 @@
 # Deep Cuts EDH — Autonomous Site Systems and Daily Puzzle Rotation
 Updated: 2026-10-13
 
-## Answer to "Does it need GPT?"
+## Operational overview
 
-**No.** Playing, daily changes, card source refreshes, achievements, profiles, notifications, community voting, and event-driven webhooks run as normal web code and Cloudflare services. ChatGPT is a development assistant, not part of the production request or scheduled task path. The games do not use, call, or require OpenAI APIs or ChatGPT.
+Daily puzzles, source refreshes, achievements, profiles, notifications, community voting, and incoming webhooks run through the website and its Cloudflare services. Some actions run on schedules, while others are triggered by visitors or third-party events.
 
 ## Daily puzzle automation
 
 - **00:00 America/Chicago:** The active calendar day changes automatically, including daylight-saving time. The first GET request or the scheduled prewarmer creates that day's new puzzles.
 - **00:15 America/Chicago:** A dedicated Cloudflare Worker Cron Trigger `deep-cuts-puzzle-clock` prewarms both games. Two cron expressions (`15 5 * * *`, `15 6 * * *`) cover Central Daylight and Central Standard Time; one run each day will fall before midnight or after 1 AM, but both are safe and idempotent.
 - **No job dependency:** If Cloudflare delays the cron or it is disabled, the first game request generates the missing daily puzzles automatically. Once created, each daily puzzle is saved in D1 and never changes during the day.
-- **Source refresh:** Approximately once per seven days, the site checks Scryfall's documented card-search API for a compact, Commander-legal paper-card pool. The refresh uses a short-lived D1 lease to avoid stampedes and six spaced requests total, caches the source in D1, and retries after a failure. No background AI, GitHub commit or manual edit is necessary.
+- **Source refresh:** Approximately once per seven days, the site checks Scryfall's documented card-search API for a compact, Commander-legal paper-card pool. The refresh uses a short-lived D1 lease to avoid stampedes and six spaced requests total, caches the source in D1, and retries after a failure. The refresh does not require a separate release.
 - **New Cold Case content:** On and after October 14, 2026, the game selects commanders from this automatically refreshed pool (at least 110 distinct qualified names). Clues are generated using card metadata, legal color identity, printed year, mechanical text, and type line. Recent selections are excluded for up to 90 days where enough candidates are available. The curated original 30-puzzle dataset is retained as a source-outage fallback and for practice rounds.
 - **New Obscurity Ladder content:** Each day selects five legendary cards from five distinct bands of Scryfall EDHREC card-popularity rankings, and freezes the exact source ranks and correct solution in D1. **EDHREC card usage is not the number of decks led by a commander**. The game labels this distinction on its page, before submission, and in the results, and retains the original October 13 deck-count snapshot only for that date and curated practice.
 - **Source disruptions:** If Scryfall is unavailable, an older cached pool is used; if no valid pool has ever been cached, the original curated puzzles are selected. A dated puzzle still exists and players never see half-updated scores. Retrying Scryfall does not alter any already published day.
 - **Profiles and achievements:** Per-day D1 runs, anti-repeat checks and achievements execute in response to gameplay, without scheduling. Practice never awards trophies.
-- **Operational status:** Public, read-only endpoint `/api/daily-games?action=automation_status` reports source-refresh date, generated daily puzzles, and whether a model is needed. It never returns credentials or unrevealed answers.
+- **Operational status:** The read-only endpoint `/api/daily-games?action=automation_status` reports the source-refresh date and generated daily puzzles without exposing credentials or unrevealed answers.
 
 ## Other automatic site systems
 
-| System | How it runs | GPT required? |
-| --- | --- | --- |
-| Card Library search & prices | Scryfall API on user query, responses rendered by site JavaScript | No |
-| Deck Workshop analysis & saved decks | Browser logic and Cloudflare/D1 on user actions | No |
-| Community profiles & trusted devices | Cloudflare API, HttpOnly cookie, TTL checked on each request | No |
-| Field Dispatch notifications | Database event writes when the relevant member action occurs | No |
-| Evidence boards & endorsements | Browser submissions and Cloudflare API/database | No |
-| User rankings and game achievements | Derived on demand or awarded with validated activity | No |
-| Email verification / lost-key recovery | Google Apps Script sender and API when a code is requested; codes expire by timestamp | No |
-| Nomination vote counts | Saved and queried automatically; new nominees need moderator approval | No for counting; human editorial review for publication |
-| Ko-fi webhook processing | Signed incoming provider webhooks, when configured | No |
-| Stripe legacy enrollment | Retired; **do not restart automatically** | N/A |
-| Premium Ko-fi subscription key issuance | Intentionally gated pending verified payment/recovery and secure operational readiness | **Remain disabled**; owner approval and configuration required |
-| Publishing official Commander Rescue Reports | Original research, card legality checking, editorial review and release | **Human review required**; deliberately NOT auto-published |
+| System | Operating mode |
+| --- | --- |
+| Card Library search and prices | Live Scryfall queries whenever visitors search |
+| Deck Workshop analysis and saved decks | Browser tools and Cloudflare database actions |
+| Community profiles and remembered devices | Authenticated requests; session expiry checked on use |
+| Field Dispatch notifications | Created when qualifying community activity occurs |
+| Evidence boards and endorsements | Submitted and moderated through the site |
+| Investigator rankings and achievements | Calculated or awarded from qualifying activity |
+| Email verification and key recovery | Requested on demand; codes expire automatically |
+| Nomination voting | Votes counted by the site; nomination approval remains editorial |
+| Ko-fi webhook processing | Triggered by signed provider events when configured |
+| Legacy Stripe enrollment | Retired and should remain inactive |
+| Premium membership key issuance | Intentionally gated pending verified payment setup |
+| Official Commander Rescue Reports | Published after human research and editorial review |
 
-"Automatic" doesn't mean every process is a scheduled job. Most systems are **event-driven**, which is the correct way to execute them: a user saves a deck, a payment webhook arrives, or a recovery code is requested. Those event-driven workflows operate independently without someone prompting ChatGPT.
+"Automatic" doesn't mean every process is a scheduled job. Most systems are **event-driven**, which is the correct way to execute them: a user saves a deck, a payment webhook arrives, or a recovery code is requested. Those event-driven workflows run when the relevant request or event occurs.
 
 ## Cloudflare implementation
 
@@ -49,7 +49,7 @@ Updated: 2026-10-13
 ## Checks to run after deployment
 
 1. Verify GitHub `main` commit, Cloudflare Pages successful deployment, and separate Worker script/schedules (if scheduled Worker deployment was authorized).
-2. GET `/api/daily-games?action=automation_status`; verify that `automatic: true`, `modelRequired: false`, and catalog timestamps reflect any source refresh.
+2. GET `/api/daily-games?action=automation_status`; verify that `automatic: true` and the catalog timestamps reflect any source refresh.
 3. Get both daily states twice; day/answers/ranks must match and new puzzle database rows must be immutable. Verify game state doesn't leak the answer before completion.
 4. Request valid practice rounds. These must remain playable offline from Scryfall (artwork may fail) and grant no achievements.
 5. Check mobile Cold Case choices, ranking order and count/rank labels, gameplay saves, scoreboards, and profile trophies.

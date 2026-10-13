@@ -16,7 +16,7 @@
 ## D1 tables added
 Active: `site_feedback`, `feedback_limits`, `rules_assist_limits`, `deck_vaults`, `deck_share_limits`. Legacy username/password tables are no longer used and can be dropped after confirming no records exist.
 
-The daily nomination moderation automation is scheduled separately in ChatGPT at 10 AM America/Chicago; there is no Cloudflare Cron Worker needed for that review.
+Nomination moderation is an editorial task managed separately from the site's Cloudflare infrastructure. Confirm that the desired review schedule is active before relying on it.
 
 See `docs/FEEDBACK.md` for the private feedback inbox.
 
