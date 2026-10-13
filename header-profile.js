@@ -117,7 +117,8 @@
    const after=nav.querySelector('a[href="/index.html#archive"]');
    if(after)after.after(watch);else nav.append(watch);
   }
-  if(location.pathname==="/set-watch.html"){
+  const pagePath=location.pathname.replace(/\.html$/,"").replace(/\/$/,"");
+  if(pagePath==="/set-watch"){
    nav.querySelector('a[href="/set-watch.html"]')?.setAttribute("aria-current","page");
   }
   const links=Array.from(nav.children).filter(a=>a.tagName==="A");
@@ -157,8 +158,8 @@
   games.href="/games.html";
   const watch=node("a","site-mobile-quick site-mobile-watch","SET WATCH ↗");
   watch.href="/set-watch.html";
-  if(location.pathname==="/games.html"||location.pathname.startsWith("/games/"))games.setAttribute("aria-current","page");
-  if(location.pathname==="/set-watch.html")watch.setAttribute("aria-current","page");
+  if(pagePath==="/games"||pagePath.startsWith("/games/"))games.setAttribute("aria-current","page");
+  if(pagePath==="/set-watch")watch.setAttribute("aria-current","page");
   shortcuts.append(games,watch);
   root.insertBefore(toggle,nav);
   root.insertBefore(shortcuts,nav);
