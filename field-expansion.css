@@ -56,3 +56,8 @@
 .game-profile-badges{display:flex;flex-wrap:wrap;gap:6px}
 .game-profile-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:800;color:#395439;background:#fdfbf0;padding:8px 10px;border:1px solid #bfaa7d;box-shadow:0 2px 4px #2c341018}
 .game-profile-game-link{display:block;margin-top:11px;font-size:10px;font-weight:800;color:#275f40;text-decoration:underline;text-underline-offset:3px}
+
+/* Glow once after the member has actually gained a new credential. */
+@keyframes dc-badge-earned{0%{box-shadow:0 0 0 rgba(217,176,92,0)}40%{box-shadow:0 0 0 2px rgba(209,167,85,.36),0 0 17px rgba(226,189,107,.48)}100%{box-shadow:0 0 0 rgba(217,176,92,0)}}
+.dc-badge-just-earned{animation:dc-badge-earned 1.7s ease-out both}
+@media(prefers-reduced-motion:reduce){.dc-badge-just-earned{animation:none;outline:1px solid #bf9954}}

@@ -150,3 +150,8 @@
  .games-button:hover{transform:none}
 }
 
+
+/* Real new achievement: one-time shimmer, never a repeated distraction. */
+@keyframes dc-earned-sheen{0%{box-shadow:0 0 0 rgba(215,177,92,0);transform:translateY(2px)}45%{box-shadow:0 0 0 1px rgba(217,177,99,.5),0 0 16px rgba(219,181,103,.38);transform:none}100%{box-shadow:0 0 0 rgba(215,177,92,0);transform:none}}
+.games-award-popup.dc-earned-achievement{animation:dc-earned-sheen 1.6s ease-out both}
+@media(prefers-reduced-motion:reduce){.games-award-popup.dc-earned-achievement{animation:none;border-color:#c69b5a}}

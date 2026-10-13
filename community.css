@@ -114,3 +114,7 @@
 .cm-portrait-details h3{overflow-wrap:anywhere}
 .cm-card header{flex-wrap:wrap}
 .cm-identity-card #identitySummary .cm-avatar-link:hover{filter:brightness(1.05)}
+
+/* A soft gold halo for the uniquely most-voted deck, only after voting closes. */
+.cm-card.cm-challenge-winner{border-color:#c89c50;background:linear-gradient(130deg,#fffaf0,#fff4dc);box-shadow:0 0 0 1px rgba(209,162,78,.38),0 0 19px rgba(216,176,103,.22)}
+.cm-top-vote-label{display:inline-block;margin-bottom:9px;padding:5px 9px;border-radius:3px;border:1px solid #caaf79;background:#f6e6c2;color:#73521d;font:800 10px ui-sans-serif,system-ui,sans-serif;letter-spacing:.09em}

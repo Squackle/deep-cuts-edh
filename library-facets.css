@@ -119,3 +119,10 @@
 
 .dc-search-help{padding:0 22px 19px;margin:5px 0!important;color:#708474;font:550 11px/1.6 ui-sans-serif,system-ui,sans-serif}
 .dc-search-help a{color:#325f48;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+
+/* EDHREC-confirmed low-inclusion cards: a quiet gold edge, brighter only on focus or hover. */
+.library-card.dc-usage-gem{border-color:#b9a373;box-shadow:0 0 0 1px rgba(210,171,93,.3),0 0 13px rgba(226,186,110,.19);transition:box-shadow .22s ease,border-color .22s ease}
+.library-card.dc-usage-gem:hover,.library-card.dc-usage-gem:focus-within{border-color:#d3ac5c;box-shadow:0 0 0 1px rgba(211,171,93,.56),0 0 22px rgba(233,188,107,.34)}
+.library-card .dc-inclusion-note{display:block;margin:1px 0 9px;font:800 10px ui-sans-serif,system-ui,sans-serif;letter-spacing:.035em;color:#85601f;text-decoration:none}
+.library-card .dc-inclusion-note:hover,.library-card .dc-inclusion-note:focus-visible{text-decoration:underline;text-underline-offset:3px}
+@media(prefers-reduced-motion:reduce){.library-card.dc-usage-gem{transition:none}}

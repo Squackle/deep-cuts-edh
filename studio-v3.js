@@ -4,6 +4,12 @@ import {readDeck,saveDeck,compactCard,normalizedName,GAME_CHANGERS,scryfall,pars
 const $=id=>document.getElementById(id);
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e};
 const status=(id,message)=>{const e=$(id);if(e)e.textContent=message};
+function celebrateSavedDeck(id){
+ const target=$(id);if(!target)return;
+ target.classList.remove("dc-save-success-glow");void target.offsetWidth;
+ target.classList.add("dc-save-success-glow");
+ target.addEventListener("animationend",()=>target.classList.remove("dc-save-success-glow"),{once:true});
+}
 const leanDeck=d=>({commanders:(d.commanders||[]).slice(0,2),cards:(d.cards||[]).map(x=>({name:x.name,qty:x.qty})),targetBracket:d.targetBracket});
 const server=async(body,path="/api/external")=>{
  const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -162,7 +168,7 @@ $("shareDeckCloud")?.addEventListener("click",async()=>{
   lastShare=res.url;$("copyShareUrl").disabled=false;
   const anchor=mk("a",null,res.url);anchor.href=res.url;anchor.target="_blank";anchor.rel="noopener noreferrer";
   $("sharedDeckLink").replaceChildren(anchor);
-  status("sharedDeckStatus","Cloud snapshot saved! Copy the link to open this deck on other devices.");
+  status("sharedDeckStatus","Cloud snapshot saved! Copy the link to open this deck on other devices.");celebrateSavedDeck("sharedDeckStatus");
  }catch(e){status("sharedDeckStatus",e.message)}finally{btn.disabled=false}
 });
 $("copyShareUrl")?.addEventListener("click",async()=>{
@@ -389,13 +395,13 @@ $("createVault")?.addEventListener("click",async()=>{
  const d=readDeck();if(!d.cards?.length||!d.commanders?.length){status("vaultStatus","Build a Commander deck first.");return}
  if(!confirm("Create a new cloud vault with a one-time recovery key? The deck is stored in the site's database."))return;
  const b=$("createVault");b.disabled=true;status("vaultStatus","Creating your vault…");
- try{const data=await vaultAction("create",{deck:leanDeck(d)});$("vaultKey").value=data.key;keepVaultKey();status("vaultStatus","Vault created! Immediately copy and back up this recovery key. It cannot be reset or recovered.")}catch(e){status("vaultStatus",e.message)}finally{b.disabled=false}
+ try{const data=await vaultAction("create",{deck:leanDeck(d)});$("vaultKey").value=data.key;keepVaultKey();status("vaultStatus","Vault created! Immediately copy and back up this recovery key. It cannot be reset or recovered.");celebrateSavedDeck("vaultStatus")}catch(e){status("vaultStatus",e.message)}finally{b.disabled=false}
 });
 $("saveVault")?.addEventListener("click",async()=>{
  const key=$("vaultKey").value.trim(),d=readDeck();
  if(!key||!d.cards?.length){status("vaultStatus","Enter the recovery key and a deck to save.");return}
  const b=$("saveVault");b.disabled=true;status("vaultStatus","Updating your cloud deck…");
- try{const data=await vaultAction("save",{key,deck:leanDeck(d)});keepVaultKey();status("vaultStatus","Vault updated. The same key opens the newest saved deck on another device.")}catch(e){status("vaultStatus",e.message)}finally{b.disabled=false}
+ try{const data=await vaultAction("save",{key,deck:leanDeck(d)});keepVaultKey();status("vaultStatus","Vault updated. The same key opens the newest saved deck on another device.");celebrateSavedDeck("vaultStatus")}catch(e){status("vaultStatus",e.message)}finally{b.disabled=false}
 });
 $("loadVault")?.addEventListener("click",async()=>{
  const key=$("vaultKey").value.trim();if(!key){status("vaultStatus","Enter your vault recovery key.");return}

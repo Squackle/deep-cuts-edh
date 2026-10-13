@@ -38,3 +38,6 @@ We do **not** show invented counts on every facet pill. Scryfall reports the act
 6. Try Clear All, remove an active chip, and paste a copied share URL in a fresh browser; state must restore.
 7. Use a quick preset, Search on Scryfall, Show More, Details and Add to Deck with a real card; preserve existing state.
 8. Check no fake global facet counts, no account login requirement, and no unauthorized host fetches.
+
+## Inclusion-based underplayed glow (October 2026)
+Printed rarity (common/uncommon/rare/mythic) remains a separate Scryfall search facet. The gold **UNDERPLAYED** card outline uses EDHREC's actual card-page inclusion rate: `100 × num_decks / potential_decks`. Only confirmed inclusion of at most 1% across at least 1,000 eligible Commander decks receives a glow. The first six displayed results are progressively enriched; remaining cards can be checked on hover or keyboard focus. The metadata links to the original EDHREC card page. A missing or changed upstream response fails closed without an invented percentage or rarity claim. EDHREC's JSON endpoint is unofficial and may change or become unavailable, so this effect is best-effort and does not change Scryfall's printed rarity filters or sorting.

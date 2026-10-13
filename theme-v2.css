@@ -257,3 +257,11 @@ dialog{background:#faf9f2;color:#24352e;border:1px solid #94b09b;border-radius:1
     text-shadow: none;
   }
 }
+
+/* Featured home Commander — quiet gold-and-green halo, stronger on hover. */
+.hero-feature .feature-card-shell{position:relative;isolation:isolate}
+.hero-feature .feature-card-shell::before{content:"";position:absolute;inset:3% -9%;z-index:0;border-radius:35%;background:radial-gradient(ellipse at center,rgba(231,191,117,.28),rgba(129,171,116,.16) 47%,transparent 73%);filter:blur(20px);pointer-events:none;transition:opacity .3s ease;opacity:.8}
+.hero-feature .feature-card-shell img{position:relative;z-index:1;filter:drop-shadow(0 0 8px rgba(236,197,117,.20));transition:filter .3s ease}
+.hero-feature:hover .feature-card-shell::before{opacity:1}
+.hero-feature:hover .feature-card-shell img{filter:drop-shadow(0 0 13px rgba(236,197,117,.33))}
+@media(prefers-reduced-motion:reduce){.hero-feature .feature-card-shell::before,.hero-feature .feature-card-shell img{transition:none}}

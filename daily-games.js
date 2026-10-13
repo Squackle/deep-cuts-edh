@@ -152,7 +152,7 @@ function revealBadges(host){
  const wrap=el("div","games-new-awards");
  wrap.append(el("h3","","🏆 New achievement unlocked!"));
  state.newAwards.forEach(a=>{
-  const row=el("div","games-award-popup");
+  const row=el("div","games-award-popup dc-earned-achievement");
   row.append(el("strong","",a.title),el("p","",a.detail));
   wrap.append(row);
  });

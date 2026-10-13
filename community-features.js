@@ -128,10 +128,13 @@ async function loadChallengeDetail(){
  updateEligibility();
  const entries=$("challengeEntries");clear(entries);
  if(!x.entries.length)empty(entries,"No entrants yet. You could be the first.");
+ const topVotes=Number(x.entries[0]?.votes||0);
+ const topVoted=!open&&now>ch.closes_at&&topVotes>0&&x.entries.filter(e=>Number(e.votes)===topVotes).length===1?x.entries[0].deck_id:null;
  for(const entry of x.entries){
   const preview=isPreviewCommander(entry.commander);
   const n=card(entry.title,entry.commander+(preview?" · PRE-RELEASE: showcase entry, not Commander-legal":""),
    "@"+entry.handle+" · "+entry.votes+" community votes");
+  if(topVoted===entry.deck_id){n.classList.add("cm-challenge-winner");n.prepend(el("span","🏆 MOST-VOTED BUILD","cm-top-vote-label"))}
   n.append(button("SEE BUILD ↗",()=>openDeck(entry.deck_id),true));
   if(open)n.append(button("VOTE FOR THIS BUILD",async()=>{
    const r=await attempt(()=>write({action:"vote",challenge_id:ch.id,deck_id:entry.deck_id}),"Vote saved for this challenge.");

@@ -6,6 +6,35 @@ const form=$("librarySearch"),gallery=$("cardGallery"),status=$("libraryStatus")
   more=$("loadMore"),pageStats=$("pageStats"),detail=$("cardDetail");
 let nextPage=null,loading=false,lastRequest=0,shown=0,searchToken=0,cards=new Map(),controller=null;
 const cache=new Map();
+const inclusionRequests=new Map();
+let inclusionChain=Promise.resolve();
+// Genuine EDHREC inclusion = number of decks with the card / eligible decks.
+// Requests are paced and fail closed; the printed Magic rarity facet is separate.
+function checkInclusion(card,tile){
+ const name=String(card.name||"");
+ if(!name||name.length>110||name.includes("//"))return;
+ if(!inclusionRequests.has(name)){
+  const pending=inclusionChain.then(()=>new Promise(resolve=>setTimeout(resolve,600))).then(async()=>{
+   const r=await fetch("/api/card-inclusion?name="+encodeURIComponent(name),{credentials:"omit"});
+   if(!r.ok)return null;
+   const d=await r.json();
+   return d.available===true&&Number.isFinite(d.percent)?d:null;
+  }).catch(()=>null);
+  inclusionRequests.set(name,pending);
+  inclusionChain=pending.then(()=>{},()=>{});
+ }
+ inclusionRequests.get(name).then(info=>{
+  if(!tile.isConnected||!info)return;
+  tile.title="EDHREC: "+info.percent+"% inclusion in "+info.potential_decks.toLocaleString()+" eligible Commander decks";
+  if(!info.underplayed||tile.querySelector(".dc-inclusion-note"))return;
+  tile.classList.add("dc-usage-gem");
+  const percent=info.percent<.01?"<0.01":info.percent<1?info.percent.toFixed(2):info.percent.toFixed(1);
+  const tag=create("a","dc-inclusion-note","✦ UNDERPLAYED · "+percent+"% included");
+  tag.href=info.url;tag.target="_blank";tag.rel="noopener noreferrer";
+  tag.title="EDHREC reports "+info.num_decks.toLocaleString()+" of "+info.potential_decks.toLocaleString()+" eligible decks. Not printed rarity.";
+  const meta=tile.querySelector(".meta");meta?.after(tag);
+ });
+}
 const label=o=>String(o||"").replaceAll("_"," ");
 function create(tag,className,txt){const e=document.createElement(tag);if(className)e.className=className;if(txt!==undefined)e.textContent=txt;return e}
 const sortOptions={
@@ -58,6 +87,8 @@ function updateScryfallLink(){
 }
 function entry(card){
  const box=create("article","library-card");window.DeepCutsGuide?.registerCardNames([card.name]);
+ box.addEventListener("pointerenter",()=>checkInclusion(card,box),{once:true});
+ box.addEventListener("focusin",()=>checkInclusion(card,box),{once:true});
  const img=create("img");img.alt=card.name+" card illustration";img.loading="lazy";img.decoding="async";img.src=cardImage(card)||"assets/favicon.svg";
  const title=create("h3");const cardLink=create("a","dc-card-link",card.name);
  cardLink.href=card.scryfall_uri||window.DeepCutsGuide?.scryfallUrl(card.name)||("https://scryfall.com/search?q="+encodeURIComponent('!"'+card.name+'"'));
@@ -130,7 +161,7 @@ async function load(clear=false){
   let data=cache.get(url.toString());
   if(!data){data=await scryfall(url.toString(),{signal:controller.signal});cache.set(url.toString(),data);if(cache.size>8)cache.delete(cache.keys().next().value)}
   if(current!==searchToken)return;
-  for(const c of data.data||[]){const id=currentUnique()==="prints"?c.id:(c.oracle_id||c.id);if(!cards.has(id)){cards.set(id,c);gallery.append(entry(c));shown++}}
+  for(const c of data.data||[]){const id=currentUnique()==="prints"?c.id:(c.oracle_id||c.id);if(!cards.has(id)){cards.set(id,c);const tile=entry(c);gallery.append(tile);if(shown<6)checkInclusion(c,tile);shown++}}
   nextPage=data.has_more?data.next_page:null;
   more.hidden=!nextPage;status.textContent=shown+" cards loaded"+(data.total_cards?" · "+data.total_cards+" total matches":"");
   pageStats.textContent=nextPage?"Load more results for this search.":"End of search results.";

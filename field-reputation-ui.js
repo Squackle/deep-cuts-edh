@@ -1,5 +1,16 @@
 import {$,state,el,clear,msg,appendProfileMentions} from "./community.js";
 import {fieldGet,emptyNotice,showFieldError} from "./field-client.js";
+function newBadgeNames(handle,titles,group){
+ if(!handle||!Array.isArray(titles))return new Set();
+ const key="dc-earned-badges-v1:"+group+":"+handle.toLowerCase();
+ try{
+  const prior=localStorage.getItem(key);
+  localStorage.setItem(key,JSON.stringify(titles));
+  if(prior===null)return new Set();
+  const old=JSON.parse(prior);
+  return new Set(titles.filter(title=>!Array.isArray(old)||!old.includes(title)));
+ }catch{return new Set()}
+}
 function card(profile,self=false){
  const p=el("article",null,"field-rank-card");
  const top=el("div",null,"field-rank-line");
@@ -9,7 +20,8 @@ function card(profile,self=false){
  const stat=el("p",profile.findings+" research findings · "+profile.endorsements+" endorsements · "+profile.decks+" decks · "+profile.games+" playtests · "+profile.comments+" case comments","cm-note");
  p.append(stat);
  const badges=el("div",null,"field-rank-badges");
- for(const title of profile.badges||[])badges.append(el("span",title,"cm-tag"));
+ const newBadges=self?newBadgeNames(profile.handle,profile.badges||[],"field"):new Set();
+ for(const title of profile.badges||[])badges.append(el("span",title,"cm-tag"+(newBadges.has(title)?" dc-badge-just-earned":"")));
  if(!badges.childNodes.length)badges.append(el("span","Earn a badge by contributing documented research.","cm-note"));
  p.append(badges);
  if(self)p.classList.add("field-rank-self");
@@ -33,7 +45,7 @@ export async function loadReputation(){
    const response=await fieldGet("reputation",{handle:state.me.handle});
    my.replaceChildren(el("h3","YOUR INVESTIGATOR RANK"),card(response.profile,true));
    const badges=await gameBadges(state.me.handle);
-   if(badges.length)appendGameBling(my,badges);
+   if(badges.length)appendGameBling(my,badges,true,state.me.handle);
   }else my.replaceChildren(el("p","Sign in to see your personal achievements. Public standings appear below.","cm-note"));
  }catch(e){showFieldError(my,e)}
 }
@@ -51,12 +63,13 @@ async function gameBadges(handle){
   return Array.isArray(d.badges)?d.badges:[];
  }catch{return []}
 }
-function appendGameBling(host,badges){
+function appendGameBling(host,badges,self=false,handle=""){
  const section=el("section",null,"game-profile-bling");
  section.append(el("h3","🎮 DAILY GAME TROPHIES"));
  const grid=el("div",null,"game-profile-badges");
+ const newlyEarned=self?newBadgeNames(handle,badges.map(b=>b.title),"games"):new Set();
  for(const b of badges){
-  const tag=el("span",b.title,"game-profile-badge");
+  const tag=el("span",b.title,"game-profile-badge"+(newlyEarned.has(b.title)?" dc-badge-just-earned":""));
   tag.title=b.detail||"Daily MTG game achievement";
   grid.append(tag);
  }

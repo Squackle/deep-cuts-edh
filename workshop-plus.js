@@ -227,6 +227,12 @@ render();
 
 
 const BREW_KEY="deepcuts-saved-brews-v1";
+function celebrateSavedBrew(){
+ const element=$("advancedLoading");if(!element)return;
+ element.classList.remove("dc-save-success-glow");void element.offsetWidth;
+ element.classList.add("dc-save-success-glow");
+ element.addEventListener("animationend",()=>element.classList.remove("dc-save-success-glow"),{once:true});
+}
 function getBrews(){
  try{const x=JSON.parse(localStorage.getItem(BREW_KEY));return Array.isArray(x)?x.slice(0,12):[]}catch{return []}
 }
@@ -246,7 +252,7 @@ $("saveBrew")?.addEventListener("click",()=>{
  if(!existing&&list.length>=12){status("The local brew shelf is full (12). Delete one first.");return}
  if(existing){if(!confirm("Overwrite the saved brew named "+name+"?"))return;existing.deck=structuredClone(d);existing.savedAt=Date.now()}
  else list.push({id:crypto.randomUUID(),name:name.slice(0,65),deck:structuredClone(d),savedAt:Date.now()});
- try{localStorage.setItem(BREW_KEY,JSON.stringify(list));refreshBrews();status("Saved "+name+" in this browser.")}catch{status("Browser storage is full or unavailable. Export your deck as TXT instead.")}
+ try{localStorage.setItem(BREW_KEY,JSON.stringify(list));refreshBrews();status("Saved "+name+" in this browser.");celebrateSavedBrew()}catch{status("Browser storage is full or unavailable. Export your deck as TXT instead.")}
 });
 $("loadBrew")?.addEventListener("click",()=>{
  const brew=getBrews().find(x=>x.id===$("brewSelect").value);if(!brew){status("Select a saved brew.");return}
