@@ -1,6 +1,7 @@
 
 import {addCard,cardImage,scryfall} from "./shared.js";
 import {facetTerms,isFaceted,resetFacets,initFacets,shareURL,clearManaChips} from "./library-facets.js";
+import {compileLibraryQuery} from "./library-query.js";
 const $=id=>document.getElementById(id);
 const form=$("librarySearch"),gallery=$("cardGallery"),status=$("libraryStatus"),
   more=$("loadMore"),pageStats=$("pageStats"),detail=$("cardDetail");
@@ -47,30 +48,11 @@ const sortOptions={
  "power-desc":["power","desc"],"toughness-desc":["toughness","desc"],
  "color-asc":["color","asc"],"artist-asc":["artist","asc"],"set-desc":["set","desc"]
 };
-function priceFilter(id){
- const raw=$(id).value.trim();if(raw==="")return "";
- const value=Number(raw);
- if(!/^\d{1,6}(?:\.\d{1,2})?$/.test(raw)||!Number.isFinite(value)||value<0||value>100000)
-  throw Error("Enter a valid dollar price from $0 to $100,000, in cents.");
- return value.toFixed(2);
-}
 function buildQuery(){
- const v=id=>$(id).value.trim(),terms=[];
- const raw=v("cardQuery");if(raw)terms.push(raw);
- const format=v("formatFilter");if(format)terms.push("f:"+format);
- const facets=facetTerms();terms.push(...facets);
- const mv=v("maxMana");
- if(mv){
-  if(!/^\\d{1,2}$/.test(mv)||Number(mv)>99)throw Error("Maximum mana value must be a whole number from 0 to 99.");
-  terms.push("mv<="+mv);
- }
- const min=priceFilter("minPrice"),max=priceFilter("maxPrice");
- if(min&&max&&Number(min)>Number(max))throw Error("The minimum price cannot exceed the maximum price.");
- if(min)terms.push("usd>="+min);
- if(max)terms.push("usd<="+max);
- // Show a useful first screen without applying a secret filter to real queries.
- if(!raw&&!isFaceted()&&!mv&&!min&&!max)terms.push("t:legendary");
- return terms.join(" ");
+ const v=id=>$(id).value.trim();
+ return compileLibraryQuery({search:v("cardQuery"),format:v("formatFilter"),
+  facetTerms:facetTerms(),faceted:isFaceted(),maxMana:v("maxMana"),
+  minPrice:v("minPrice"),maxPrice:v("maxPrice")});
 }
 function currentSort(){return sortOptions[$("sortFilter").value]||sortOptions["edhrec-asc"]}
 function currentUnique(){return ["cards","prints","art"].includes($("printingFilter").value)?$("printingFilter").value:"cards"}
@@ -134,14 +116,19 @@ async function load(clear=false){
  if(loading&&!clear)return;
  let builtQuery="";
  if(clear){
-  try{builtQuery=buildQuery()}catch(err){status.textContent=err.message;return}
+  try{builtQuery=buildQuery()}catch(err){
+   if(controller)controller.abort();searchToken++;loading=false;nextPage=null;shown=0;
+   cards.clear();gallery.replaceChildren();more.hidden=true;more.disabled=true;
+   status.textContent=err.message;pageStats.textContent="Correct the filter values and search again.";
+   updateScryfallLink();return;
+  }
   updateScryfallLink();
   try{
    const target=new URL(shareURL());
    history.replaceState(null,"",target.pathname+target.search);
   }catch{}
  }
- if(clear){if(controller)controller.abort();searchToken++;nextPage=null;shown=0;cards.clear();gallery.replaceChildren();more.hidden=true}
+ if(clear){if(controller)controller.abort();searchToken++;nextPage=null;shown=0;cards.clear();gallery.replaceChildren();more.hidden=true;pageStats.textContent="";more.disabled=true}
  controller=new AbortController();
  if(!clear&&!nextPage)return;
  const current=searchToken;loading=true;
@@ -154,7 +141,7 @@ async function load(clear=false){
   url.searchParams.set("order",order);url.searchParams.set("dir",dir);
  }
  // Never request an arbitrary third-party URL from an untrusted next_page value.
- if(url.hostname!=="api.scryfall.com"||url.protocol!=="https:"){loading=false;return}
+ if(url.hostname!=="api.scryfall.com"||url.protocol!=="https:"){loading=false;more.disabled=false;status.textContent="Invalid pagination link. Restart your search.";return}
  try {
   const elapsed=Date.now()-lastRequest;if(elapsed<160)await new Promise(r=>setTimeout(r,160-elapsed));
   lastRequest=Date.now();
