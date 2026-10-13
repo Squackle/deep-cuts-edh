@@ -37,7 +37,32 @@ async function status(){
      :"Email recovery setup is not yet active. You can register and use your key normally, but the owner must configure an email sender before verification can be completed.";
  }catch(e){dest.textContent="Unable to check recovery status: "+err(e)}
 }
-export function refreshEmailStatus(){if(state.me)status()}
+async function showKoFiAdFreeStatus(){
+ const target=$("koFiAdFreeStatus");
+ if(!target||!state.me)return;
+ try{
+  const headers={Accept:"application/json"};
+  if(state.key)headers.Authorization="Bearer "+state.key;
+  const res=await fetch("/api/ad-entitlement",{credentials:"same-origin",cache:"no-store",headers});
+  const data=await res.json();
+  if(!res.ok||data.unavailable)throw Error("Unable to check supporter status.");
+  if(data.adFree){
+   const end=data.paidUntil?new Date(data.paidUntil*1000).toLocaleDateString():"the paid membership period";
+   target.textContent="✓ Monthly Ko-fi supporter confirmed. Ads are disabled for your verified account through "+end+". Remember this device to remain ad-free across the website.";
+  }else if(data.verifiedEmail){
+   target.textContent="Your email is verified. Ad-free browsing activates when a matching monthly Ko-fi payment is confirmed. Already paying monthly? Contact deepcutsedh@gmail.com to reconcile an older subscription.";
+  }else{
+   target.textContent="Monthly Ko-fi supporters browse ad-free after verifying the same email used for payment. Complete the email verification below, then remember this device.";
+  }
+ }catch{
+  target.textContent="Ko-fi supporter status is temporarily unavailable. You can still verify your account email below.";
+ }
+}
+export function refreshEmailStatus(){
+ if(!state.me)return;
+ status();
+ showKoFiAdFreeStatus();
+}
 function display(text,isError=false){
  const target=$("recoverMessage");
  if(target)target.textContent=text;
@@ -70,7 +95,7 @@ export function initializeRecovery(){
   ev.preventDefault();const button=verify.querySelector('button[type="submit"]');button.disabled=true;
   try{await request({action:"finish_verify",requestId:verifyChallenge,code:verify.elements.code.value.trim()},true);
    verifyChallenge="";verify.hidden=true;verify.reset();link.reset();
-   await status();msg("Recovery email verified.");
+   await status();await showKoFiAdFreeStatus();msg("Recovery email verified.");
   }catch(e){$("linkedEmailStatus").textContent=err(e)}finally{button.disabled=false}
  });
  lost.addEventListener("submit",async ev=>{

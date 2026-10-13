@@ -217,3 +217,7 @@ The Card Library now offers a dense, responsive set of clickable Commander color
 ### AdSense preparation — October 2026
 
 Publisher code `ca-pub-1885127351876276` is installed only on the homepage, Card Library, and four public Rescue Reports, together with root [ads.txt](ads.txt) and the public [Privacy & Advertising policy](privacy.html). No account, game, or Deck Workshop page contains ad code. The AdSense dashboard controls approval, activation and Auto ad formats; **no revenue or live ad placements can be assumed until Google approves the site and the publisher configures ads**. [Setup and minimal-ad recommendations](docs/ADSENSE-LAUNCH.md).
+
+### Ad-free for active monthly Ko-fi supporters
+
+Any tier's verified recurring Ko-fi subscription payment now grants ad-free browsing to a Field Network account whose **verified email matches the Ko-fi payment email**, while the subscription is paid through. The server removes the AdSense script before sending applicable pages to a recognized member; normal visitors still receive the publisher code. The system records keyed email identifiers, supports owner-verified reconciliation for subscriptions paid before the webhook upgrade, and automatically expires ad-free eligibility when renewals stop. Private Field Office key issuance is *not* enabled by this benefit. [Full privacy, setup and QA notes](docs/KOFI-ADFREE.md).

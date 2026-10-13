@@ -1,24 +1,44 @@
-/* Sitewide defense-in-depth for both Cloudflare Pages static assets and Functions. */
-const csp="base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'";
+/* Cloudflare Pages middleware. Keep the exact Google AdSense tag in public
+ * HTML for Google's crawler/review, but remove it server-side for any
+ * authenticated member whose verified email matches an active Ko-fi payment.
+ * This avoids client-side flashes, network fetches and tracking for members.
+ */
+import {checkAdFree} from "../src/kofi-adfree.js";
+const AD_TAG='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1885127351876276" crossorigin="anonymous"></script>';
+const AD_PAGES=new Set([
+ "/", "/index.html", "/library.html",
+ "/reports/chainer-dementia-master.html",
+ "/reports/alena-and-gilanra.html",
+ "/reports/commander-mustard.html",
+ "/reports/ekthi-contaminator-priest.html"
+]);
 export async function onRequest(context){
- const path=new URL(context.request.url).pathname;
- if(context.request.method==="POST"&&path.startsWith("/api/")&&path!=="/api/kofi-webhook"){
-  if(context.request.headers.get("Sec-Fetch-Site")==="cross-site"){
-   return new Response(JSON.stringify({error:"Cross-site API requests are not accepted."}),{status:403,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
-  }
+ const request=context.request;
+ const url=new URL(request.url);
+ if(request.method!=="GET"||!AD_PAGES.has(url.pathname))return context.next();
+ const cookie=request.headers.get("Cookie")||"";
+ if(!/(?:^|;\s*)__Host-dc_device=dcdevice1_[0-9a-f]{64}(?:;|$)/.test(cookie))return context.next();
+ let adFree=false;
+ try{
+  const status=await checkAdFree(request,context.env);
+  adFree=status.adFree;
+ }catch(error){
+  // If member status cannot be checked, protect signed-in members' ad-free
+  // experience until service recovers. This does not grant paid permissions.
+  console.warn("Advertising membership verification temporarily unavailable",String(error?.name||"error"));
+  adFree=true;
  }
- const response=await context.next();
- const headers=new Headers(response.headers);
- headers.set("X-Content-Type-Options","nosniff");
- headers.set("X-Frame-Options","DENY");
- headers.set("Referrer-Policy","no-referrer");
- headers.set("Permissions-Policy","camera=(), microphone=(), geolocation=(), payment=()");
- headers.set("Content-Security-Policy",csp);
- headers.set("Strict-Transport-Security","max-age=31536000");
- if(path.startsWith("/api/")&&path!=="/api/supporter-gallery"||
-    path==="/diagnostics.html"||path==="/diagnostics.js"||path==="/members.html"||path==="/member-operations.html"||path==="/member-operations.js"||path==="/owner-console.js")
-  headers.set("Cache-Control","no-store, private");
- if(path==="/diagnostics.html"||path==="/diagnostics.js"||path==="/members.html"||path==="/member-operations.html"||path==="/member-operations.js"||path==="/api/kofi-diagnostics"||path==="/api/kofi-member-issue"||path==="/api/owner-members"||path==="/api/profile-recovery")
-  headers.set("X-Robots-Tag","noindex, nofollow, noarchive");
- return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+ if(!adFree)return context.next();
+ const res=await context.next();
+ if(!res.ok||!String(res.headers.get("Content-Type")||"").toLowerCase().includes("text/html"))return res;
+ const html=await res.text();
+ // Only the exact publisher script supplied by the owner can be removed.
+ const safe=html.replace(AD_TAG,"");
+ const headers=new Headers(res.headers);
+ headers.delete("Content-Length");
+ headers.delete("ETag");
+ headers.set("Cache-Control","private, no-store, max-age=0");
+ headers.set("Vary","Cookie");
+ headers.set("X-DeepCuts-Ad-Free","member");
+ return new Response(safe,{status:res.status,statusText:res.statusText,headers});
 }

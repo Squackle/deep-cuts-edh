@@ -18,7 +18,7 @@ export function onRequestGet(){
  return response({ok:true,provider:"Ko-fi",memberKeyDeliveryReady:false});
 }
 async function digest(secret,data){
- const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),"HMAC",false,["sign"]);
+ const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
  return new Uint8Array(await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(data)));
 }
 function eq(a,b){if(a.length!==b.length)return false;let diff=0;for(let i=0;i<a.length;i++)diff|=a[i]^b[i];return diff===0}
@@ -92,40 +92,68 @@ export async function onRequestPost({request,env}){
  const name=String(obj.tier_name||"").trim().toLowerCase().replace(/\s+/g," ");
  const tier=tiers[name];
  const cents=Math.round(Number(obj.amount)*100);
- if(!tier||obj.currency!=="USD"||!Number.isSafeInteger(cents)||cents<tier.minimum){
-  await diagnostic(env,"unknown_tier_or_amount");
-  return response({ok:true,ignored:"unknown membership tier or amount"});
+ const currency=String(obj.currency||"").toUpperCase().trim();
+ if(!Number.isSafeInteger(cents)||cents<1||cents>100000000||!/^[A-Z]{3}$/.test(currency)||obj.is_refunded===true){
+  await diagnostic(env,"invalid_subscription_amount");
+  return response({ok:true,ignored:"not a qualifying paid subscription"});
  }
  const email=String(obj.email||"").trim().toLowerCase(),id=String(obj.message_id||"").trim();
  const date=new Date(String(obj.timestamp||"")),paidAt=Math.floor(date.getTime()/1000),now=Math.floor(Date.now()/1000);
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>250||id.length<8||id.length>128||!/^[\x21-\x7e]+$/.test(id)||!Number.isFinite(paidAt)||paidAt<now-7776000||paidAt>now+300)
  {
-  // A valid Ko-fi token means delivery itself succeeded, even if this is a
-  // simulated or malformed subscription example. Never grant access based
-  // on these details. 200 prevents automatic retry storms of the same test.
   await diagnostic(env,"invalid_subscription_details");
   return response({ok:true,ignored:"subscription event lacks valid payment details"});
  }
+ // All authenticated recurring Ko-fi payments grant the ad-free benefit,
+ // independently of premium Field Office member-key availability or tier.
  const emailHash=toHex(await digest(env.KOFI_EMAIL_HASH_SECRET,"ko-fi-member-v1:"+email));
  const paidUntil=addMonth(date);
+ let adFreeSaved;
  try{
   const result=await env.DB.batch([
-    env.DB.prepare("INSERT OR IGNORE INTO kofi_payment_events(message_id,email_hash,tier,paid_at,paid_until,amount_cents) VALUES(?,?,?,?,?,?)").bind(id,emailHash,tier.id,paidAt,paidUntil,cents),
-    // Renewals can only be attached to the matching immutable payment event.
-    // A duplicate message_id with changed identity or tier must never renew anyone.
-    env.DB.prepare(`INSERT INTO kofi_renewals(email_hash,tier,last_paid_at,paid_until)
-       SELECT email_hash,tier,paid_at,paid_until FROM kofi_payment_events
-       WHERE message_id=? AND email_hash=? AND tier=? AND paid_at=? AND amount_cents=?
-       ON CONFLICT(email_hash) DO UPDATE SET
-         tier=CASE WHEN excluded.last_paid_at>=kofi_renewals.last_paid_at THEN excluded.tier ELSE kofi_renewals.tier END,
-         last_paid_at=MAX(kofi_renewals.last_paid_at,excluded.last_paid_at),
-         paid_until=MAX(kofi_renewals.paid_until,excluded.paid_until)`).bind(id,emailHash,tier.id,paidAt,cents)
-   ]);
+   env.DB.prepare("INSERT OR IGNORE INTO kofi_adfree_payments(message_id,email_hash,paid_at,paid_until,amount_cents,currency) VALUES(?,?,?,?,?,?)")
+    .bind(id,emailHash,paidAt,paidUntil,cents,currency),
+   env.DB.prepare(`INSERT INTO kofi_adfree_renewals(email_hash,last_paid_at,paid_until,updated_at)
+    SELECT email_hash,paid_at,paid_until,unixepoch() FROM kofi_adfree_payments
+    WHERE message_id=? AND email_hash=? AND paid_at=? AND amount_cents=? AND currency=?
+    ON CONFLICT(email_hash) DO UPDATE SET
+     last_paid_at=MAX(kofi_adfree_renewals.last_paid_at,excluded.last_paid_at),
+     paid_until=MAX(kofi_adfree_renewals.paid_until,excluded.paid_until),
+     updated_at=unixepoch()`).bind(id,emailHash,paidAt,cents,currency)
+  ]);
+  adFreeSaved=(result?.[0]?.meta?.changes||0)===1;
+ }catch(e){
+  console.error("Ko-fi ad-free event storage failure",String(e?.name||"error"));
+  await diagnostic(env,"adfree_db_error");
+  return response({error:"Unable to record payment; retry later."},503);
+ }
+ // Paid Field Office key creation is deliberately NOT enabled here.
+ // Only the three configured USD tiers flow into existing paid renewals.
+ if(!tier||currency!=="USD"||cents<tier.minimum){
+  await diagnostic(env,adFreeSaved?"adfree_subscription_recorded":"adfree_subscription_duplicate");
+  return response({ok:true,adFree:true,recorded:adFreeSaved,ignored:"outside private Field Office tier rules"});
+ }
+ try{
+  const result=await env.DB.batch([
+   env.DB.prepare("INSERT OR IGNORE INTO kofi_payment_events(message_id,email_hash,tier,paid_at,paid_until,amount_cents) VALUES(?,?,?,?,?,?)")
+    .bind(id,emailHash,tier.id,paidAt,paidUntil,cents),
+   env.DB.prepare(`INSERT INTO kofi_renewals(email_hash,tier,last_paid_at,paid_until)
+    SELECT email_hash,tier,paid_at,paid_until FROM kofi_payment_events
+    WHERE message_id=? AND email_hash=? AND tier=? AND paid_at=? AND amount_cents=?
+    ON CONFLICT(email_hash) DO UPDATE SET
+     tier=CASE WHEN excluded.last_paid_at>=kofi_renewals.last_paid_at THEN excluded.tier ELSE kofi_renewals.tier END,
+     last_paid_at=MAX(kofi_renewals.last_paid_at,excluded.last_paid_at),
+     paid_until=MAX(kofi_renewals.paid_until,excluded.paid_until)`).bind(id,emailHash,tier.id,paidAt,cents)
+  ]);
   if((result?.[0]?.meta?.changes||0)!==1){
    await diagnostic(env,"duplicate_subscription_event");
-   return response({ok:true,duplicate:true});
+   return response({ok:true,adFree:true,duplicate:true});
   }
   await diagnostic(env,"subscription_recorded");
-  return response({ok:true,recorded:true});
- }catch(e){console.error("Ko-fi payment record failed",String(e));await diagnostic(env,"subscription_db_error");return response({error:"Unable to record payment; retry later."},503)}
+  return response({ok:true,adFree:true,recorded:true});
+ }catch(e){
+  console.error("Ko-fi payment record failed",String(e?.name||"error"));
+  await diagnostic(env,"subscription_db_error");
+  return response({error:"Unable to record payment; retry later."},503);
+ }
 }
