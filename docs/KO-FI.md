@@ -82,3 +82,6 @@ The validator accepts Ko-fi's documented `Tip`, `Subscription`, `Commission`, an
 
 ## Sitewide security audit update
 The private dashboard is at `/diagnostics.html`, secured using the independent `KOFI_ADMIN_DIAGNOSTICS_KEY` encrypted Cloudflare production secret. Its downloadable access credential is for the site operator only. See [SECURITY.md](SECURITY.md) for sitewide HTTP protections, anonymous diagnostics, remaining attack-surface limitations and webhook replay handling. The Ko-fi token still needs rotation because it was shared in chat.
+
+## Webhook delivery acknowledgment clarification (October 2026)
+An authenticated subscription sample that lacks a usable tier, email, timestamp, or message ID is **acknowledged with HTTP 200 and ignored**. This prevents Ko-fi from continually retrying validly delivered but non-creditable example/test events. An authenticated request can still fail with a 503 when recording a *genuine* qualifying payment fails, so Ko-fi can retry it. Invalid verification tokens and malformed form bodies are still rejected.

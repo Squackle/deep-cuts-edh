@@ -41,3 +41,6 @@ Note the diagnostics counters reflect aggregate traffic from anyone, not only Ko
 - Restrictive `script-src` / `style-src` CSP, automated dependency checks (site is mostly static), and disaster recovery/export policy for D1 are desirable next improvements.
 
 The independent admin key is a bearer secret, although only its one-way hash is stored in Cloudflare: whoever has it can read the operational diagnostics. Generate a new key and update its SHA-256 hash in Cloudflare if lost or shared. No diagnostics credential should ever be committed to GitHub.
+
+## Delivery acknowledgment safeguard (October 2026)
+Malformed/unrecognized *authenticated* subscription sample events are never granted entitlements. The webhook acknowledges their **delivery** with HTTP 200 while recording an anonymous ignore reason, avoiding unnecessary retry storms. An actual qualifying event requiring durable database storage still returns a temporary error on write failure so Ko-fi can retry.

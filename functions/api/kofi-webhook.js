@@ -71,7 +71,7 @@ export async function onRequestPost({request,env}){
   const data=new URLSearchParams(body).get("data");
   if(!data||data.length>15000)throw Error("Missing payload");
   obj=JSON.parse(data);
- }catch{await diagnostic(env,"malformed_payload");return response({error:"Malformed Ko-fi payload."},400)}
+ }catch(e){if(e?.message==="Request body too large"){await diagnostic(env,"too_large");return response({error:"Payload too large."},413)}await diagnostic(env,"malformed_payload");return response({error:"Malformed Ko-fi payload."},400)}
  if(!obj||typeof obj!=="object"||typeof obj.verification_token!=="string"){await diagnostic(env,"token_missing");return response({error:"Invalid token."},403)}
  if(!await tokenOK(obj.verification_token,env.KOFI_VERIFICATION_TOKEN)){await diagnostic(env,"token_mismatch");return response({error:"Invalid token."},403)}
  await diagnostic(env,"token_verified");
@@ -99,7 +99,13 @@ export async function onRequestPost({request,env}){
  const email=String(obj.email||"").trim().toLowerCase(),id=String(obj.message_id||"").trim();
  const date=new Date(String(obj.timestamp||"")),paidAt=Math.floor(date.getTime()/1000),now=Math.floor(Date.now()/1000);
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>250||id.length<8||id.length>128||!/^[\x21-\x7e]+$/.test(id)||!Number.isFinite(paidAt)||paidAt<now-7776000||paidAt>now+300)
- {await diagnostic(env,"invalid_subscription_details");return response({error:"Incomplete or out-of-range Ko-fi payment event."},400)}
+ {
+  // A valid Ko-fi token means delivery itself succeeded, even if this is a
+  // simulated or malformed subscription example. Never grant access based
+  // on these details. 200 prevents automatic retry storms of the same test.
+  await diagnostic(env,"invalid_subscription_details");
+  return response({ok:true,ignored:"subscription event lacks valid payment details"});
+ }
  const emailHash=toHex(await digest(env.KOFI_EMAIL_HASH_SECRET,"ko-fi-member-v1:"+email));
  const paidUntil=addMonth(date);
  try{
@@ -115,7 +121,11 @@ export async function onRequestPost({request,env}){
          last_paid_at=MAX(kofi_renewals.last_paid_at,excluded.last_paid_at),
          paid_until=MAX(kofi_renewals.paid_until,excluded.paid_until)`).bind(id,emailHash,tier.id,paidAt,cents)
    ]);
+  if((result?.[0]?.meta?.changes||0)!==1){
+   await diagnostic(env,"duplicate_subscription_event");
+   return response({ok:true,duplicate:true});
+  }
   await diagnostic(env,"subscription_recorded");
-  return response({ok:true,recorded:Boolean(result?.[0]?.meta?.changes),duplicate:!(result?.[0]?.meta?.changes)});
+  return response({ok:true,recorded:true});
  }catch(e){console.error("Ko-fi payment record failed",String(e));await diagnostic(env,"subscription_db_error");return response({error:"Unable to record payment; retry later."},503)}
 }

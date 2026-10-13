@@ -149,3 +149,6 @@ The key-only premium workspace is at [members.html](members.html); billing is de
 
 ## Ko-fi supporter page (October 2026)
 Official public link: https://ko-fi.com/deepcutsedh . Public website links now point to Ko-fi rather than direct Stripe. The Ko-fi webhook can record validated subscription renewals (once creator secrets are configured), but **cannot detect cancellations** and does not yet issue membership keys. Premium access remains locked until a verified claim + expiration system is completed. See [docs/KO-FI.md](docs/KO-FI.md).
+
+## Tomorrow's Ko-fi migration handoff
+See [docs/TOMORROW.md](docs/TOMORROW.md) for verified status, live URLs, blockers and the next-session checklist. The Ko-fi account and Cloudflare private credentials must never be pasted into the repository.
