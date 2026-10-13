@@ -7,8 +7,21 @@ export function normalizeEmail(value){
  const s=value.trim().toLowerCase();
  return s.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)&&!/\p{C}/u.test(s)?s:"";
 }
+// Only a deployment-created Apps Script endpoint is accepted as a sender destination.
+function googleMailerUrl(env){
+ const value=typeof env.GOOGLE_MAILER_URL==="string"?env.GOOGLE_MAILER_URL:"";
+ try{
+  const url=new URL(value);
+  return url.protocol==="https:"&&url.hostname==="script.google.com"&&
+    /^\/macros\/s\/[a-zA-Z0-9_-]+\/exec$/.test(url.pathname)&&
+    !url.search&&!url.hash?url.href:null;
+ }catch{return null}
+}
 export function emailReady(env){
- return Boolean(env.DB&&env.KOFI_EMAIL_HASH_SECRET&&env.RESEND_API_KEY&&env.PROFILE_EMAIL_FROM);
+ return Boolean(env.DB&&env.KOFI_EMAIL_HASH_SECRET&&(
+  (googleMailerUrl(env)&&/^[0-9a-f]{64}$/.test(env.GOOGLE_MAILER_SECRET||""))||
+  (env.RESEND_API_KEY&&env.PROFILE_EMAIL_FROM)
+ ));
 }
 export async function emailHash(email,env){
  const key=await crypto.subtle.importKey("raw",encoder.encode(env.KOFI_EMAIL_HASH_SECRET),"HMAC",false,["sign"]);
@@ -51,7 +64,43 @@ export function verifyHash(a,b){
  if(!/^[a-f0-9]{64}$/.test(String(a||""))||!/^[a-f0-9]{64}$/.test(String(b||"")))return false;
  let diff=0;for(let i=0;i<64;i++)diff|=a.charCodeAt(i)^b.charCodeAt(i);return diff===0;
 }
-export async function deliverCode(env,email,code,requestId,purpose){
+async function deliverViaGoogle(env,email,code,requestId,purpose){
+ const url=googleMailerUrl(env);
+ if(!url||!/^[a-f0-9]{64}$/.test(env.GOOGLE_MAILER_SECRET||""))
+  throw Error("The Google mailer has not been configured.");
+ // Canonical signed request: secret stays in an encrypted Cloudflare variable and a
+ // Google Apps Script property. Never send it to the client or in the request URL.
+ const ts=Date.now();
+ const canonical=["v1",String(ts),requestId,purpose,email,code].join("\n");
+ const secret=await crypto.subtle.importKey("raw",encoder.encode(env.GOOGLE_MAILER_SECRET),"HMAC",false,["sign"]);
+ const signature=hex(new Uint8Array(await crypto.subtle.sign("HMAC",secret,encoder.encode(canonical))));
+ const body=JSON.stringify({version:1,ts,id:requestId,purpose,email,code,signature});
+ let res=await fetch(url,{method:"POST",
+  headers:{"Content-Type":"text/plain;charset=utf-8"},body,redirect:"manual"});
+ // ContentService returns a redirect to script.googleusercontent.com.
+ // Only follow that exact destination and do not forward POST/body/signature.
+ if([301,302,303,307,308].includes(res.status)){
+  const location=res.headers.get("Location");
+  if(!location)throw Error("Google mailer did not return a response location.");
+  const next=new URL(location);
+  if(next.protocol!=="https:"||next.hostname!=="script.googleusercontent.com")
+   throw Error("Google mailer returned an untrusted redirect.");
+  res=await fetch(next.href,{method:"GET",redirect:"manual"});
+ }
+ if(!res.ok){console.error("Google mailer transport failure",res.status);throw Error("Google mail delivery failed.");}
+ let output;try{
+  const raw=await res.text();
+  if(raw.length>1200)throw Error("Unexpected response size.");
+  output=JSON.parse(raw);
+ }catch{throw Error("Google mailer did not return a valid response.")}
+ if(output?.ok!==true||output?.version!==1||output?.id!==requestId||
+    !["sent","already-sent"].includes(output?.status)){
+  // Fail closed: Google must acknowledge this exact request ID.
+  console.error("Google mailer did not confirm the request",String(output?.status||"invalid"));
+  throw Error("Google mailer did not confirm email delivery.");
+ }
+}
+async function deliverViaResend(env,email,code,requestId,purpose){
  const action=purpose==="verify"?"verify your profile email":"recover your profile access";
  const subject="Deep Cuts EDH — Your verification code";
  const message="Use this 8-digit code to "+action+": "+code+"\n\nThe code expires in 15 minutes and can be used only once.\n\nIf you did not request it, ignore this message. Never share the code with anyone.\n\nDeep Cuts EDH";
@@ -60,4 +109,14 @@ export async function deliverCode(env,email,code,requestId,purpose){
   body:JSON.stringify({from:env.PROFILE_EMAIL_FROM,to:[email],subject,text:message})
  });
  if(!res.ok){console.error("Profile recovery email provider rejected a delivery",res.status);throw Error("Unable to deliver verification email.")}
+}
+export async function deliverCode(env,email,code,requestId,purpose){
+ if(!/^[a-f0-9]{32}$/.test(requestId)||!["verify","recover"].includes(purpose)||
+    !/^\d{8}$/.test(code)||normalizeEmail(email)!==email)
+  throw Error("Invalid recovery email request.");
+ if(googleMailerUrl(env)&&/^[0-9a-f]{64}$/.test(env.GOOGLE_MAILER_SECRET||""))
+  return deliverViaGoogle(env,email,code,requestId,purpose);
+ if(env.RESEND_API_KEY&&env.PROFILE_EMAIL_FROM)
+  return deliverViaResend(env,email,code,requestId,purpose);
+ throw Error("No transactional mail service configured.");
 }
