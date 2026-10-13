@@ -24,7 +24,8 @@ async function status(){
  const dest=$("linkedEmailStatus");
  if(!dest||!state.me)return;
  try{
-  const res=await fetch("/api/profile-recovery",{headers:{Authorization:"Bearer "+state.key},cache:"no-store"});
+  const headers={};if(state.key)headers.Authorization="Bearer "+state.key;
+  const res=await fetch("/api/profile-recovery",{headers,credentials:"same-origin",cache:"no-store"});
   const data=await res.json();
   if(!res.ok)throw Error(data.error||"Recovery settings unavailable.");
   dest.textContent=data.verified
@@ -94,7 +95,7 @@ export function initializeRecovery(){
   try{
    const x=await request({action:"finish_recovery",email:recoverEmail,requestId:recoverChallenge,code:finish.elements.code.value.trim()});
    const key=x.key;recoverChallenge="";recoverEmail="";finish.reset();lost.reset();finish.hidden=true;
-   await saveSession(key,false);
+   await saveSession(key,true); // Recovery remembers the newly authorized browser.
    const box=$("profileRecoveryKeyBox"),container=$("accountLoggedIn");
    container.prepend(box);$("profileRecoveryKey").value=key;box.hidden=false;
    display("Recovery completed. Save the newly issued key. The previous key no longer works.");

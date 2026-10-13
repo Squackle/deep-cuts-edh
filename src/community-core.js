@@ -8,7 +8,7 @@ export const hash=async x=>hex(new Uint8Array(await crypto.subtle.digest("SHA-25
 export const safe=(s,max=500)=>typeof s==="string"?s.trim().slice(0,max):"";
 export const AVATARS=["Chainer, Dementia Master","Commander Mustard","Alena, Kessig Trapper","Gilanra, Caller of Wirewood","Ekthi, Contaminator Priest"];
 export const CASES=["chainer-dementia-master","alena-and-gilanra","commander-mustard","ekthi-contaminator-priest"];
-export const publicProfile=p=>p&&({id:p.id,handle:p.handle,bio:p.bio,avatar:p.avatar,focus_x:p.focus_x,focus_y:p.focus_y,created_at:p.created_at});
+export const publicProfile=p=>p&&({id:p.id,handle:p.handle,bio:p.bio,avatar:p.avatar,focus_x:p.focus_x,focus_y:p.focus_y,focus_zoom:p.focus_zoom??2.8,created_at:p.created_at});
 export const topicOK=s=>/^case:(chainer-dementia-master|alena-and-gilanra|commander-mustard|ekthi-contaminator-priest)$/.test(s)||/^deck:[a-f0-9]{32}$/.test(s);
 export function originOK(req){const val=req.headers.get("Origin");if(!val)return true;try{return new URL(val).origin===new URL(req.url).origin}catch{return false}}
 export async function body(req){
@@ -16,11 +16,26 @@ export async function body(req){
  const t=await req.text();if(t.length>42000)throw Error("Request too large.");
  return JSON.parse(t);
 }
+// The primary recovery key is used only to enroll a trusted browser. Once a
+// device cookie has been issued the original key need not live in localStorage.
+export const PROFILE_DEVICE_COOKIE="__Host-dc_device";
+export function deviceToken(req){
+ const cookies=req.headers.get("Cookie")||"";
+ const found=cookies.match(/(?:^|; *)__Host-dc_device=(dcdevice1_[a-f0-9]{64})(?:;|$)/);
+ return found?.[1]||"";
+}
 export async function auth(req,db){
- const key=(req.headers.get("Authorization")||"").replace(/^Bearer /,"");
- const m=/^dcprofile1_([a-f0-9]{32})_([a-f0-9]{64})$/.exec(key);
- if(!m)return null;
- return db.prepare("SELECT id,handle,bio,avatar,focus_x,focus_y,created_at FROM community_profiles WHERE id=? AND key_hash=?").bind(m[1],await hash(key)).first();
+ const header=req.headers.get("Authorization");
+ if(header){
+  const m=/^Bearer (dcprofile1_([a-f0-9]{32})_[a-f0-9]{64})$/.exec(header);
+  if(!m)return null; // Never fall back to a cookie after an invalid bearer key.
+  return db.prepare("SELECT id,handle,bio,avatar,focus_x,focus_y,focus_zoom,created_at FROM community_profiles WHERE id=? AND key_hash=?").bind(m[2],await hash(m[1])).first();
+ }
+ const token=deviceToken(req);
+ if(!token)return null;
+ return db.prepare(`SELECT p.id,p.handle,p.bio,p.avatar,p.focus_x,p.focus_y,p.focus_zoom,p.created_at
+  FROM community_device_sessions d JOIN community_profiles p ON p.id=d.profile_id
+  WHERE d.token_hash=? AND d.expires_at>unixepoch() LIMIT 1`).bind(await hash(token)).first();
 }
 export async function quota(db,env,req,action,max,member){
  const ip=req.headers.get("CF-Connecting-IP");if(!ip||!env.TURNSTILE_SECRET)return false;

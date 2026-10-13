@@ -129,6 +129,9 @@ export async function onRequestPost({request,env}){
      env.DB.prepare("DELETE FROM community_pending_recovery_contacts WHERE profile_id=?").bind(row.profile_id)
     );
    }
+   // Resetting a recovery key invalidates every old remembered device.
+   // The newly recovered browser can enroll again with its fresh key.
+   actions.push(env.DB.prepare("DELETE FROM community_device_sessions WHERE profile_id=?").bind(row.profile_id));
    const results=await env.DB.batch(actions);
    if(results[0]?.meta?.changes!==1||results[1]?.meta?.changes!==1||(grant&&results[4]?.meta?.changes!==1))
     return fail("Code already used or expired.",409);

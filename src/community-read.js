@@ -4,7 +4,7 @@ export async function communityRead(req,db){
  if(action==="me"){const a=await auth(req,db);return a?send({profile:publicProfile(a)}):fail("Sign in with your profile recovery key.",401)}
  if(action==="profile"){
   const handle=safe(q.get("handle"),24);
-  const p=await db.prepare("SELECT id,handle,bio,avatar,focus_x,focus_y,created_at FROM community_profiles WHERE handle=? COLLATE NOCASE").bind(handle).first();
+  const p=await db.prepare("SELECT id,handle,bio,avatar,focus_x,focus_y,focus_zoom,created_at FROM community_profiles WHERE handle=? COLLATE NOCASE").bind(handle).first();
   if(!p)return fail("Profile not found.",404);
   const decks=await db.prepare("SELECT id,title,commander,version,updated_at FROM community_decks WHERE owner_id=? ORDER BY updated_at DESC LIMIT 25").bind(p.id).all();
   const counts=await db.prepare("SELECT (SELECT COUNT(*) FROM community_comments WHERE author_id=? AND status='visible') comments,(SELECT COUNT(*) FROM community_playtests WHERE author_id=?) tests,(SELECT COUNT(*) FROM community_follows WHERE target_type='profile' AND target=?) followers").bind(p.id,p.id,p.id).first();
@@ -17,7 +17,7 @@ export async function communityRead(req,db){
  }
  if(action==="comments"){
   const topic=safe(q.get("topic"),90);if(!topicOK(topic))return fail("Invalid discussion.",400);
-  const r=await db.prepare("SELECT c.id,c.topic,c.kind,c.body,c.created_at,p.handle,p.avatar,p.focus_x,p.focus_y,(SELECT COUNT(*) FROM community_reactions r WHERE r.comment_id=c.id) likes FROM community_comments c JOIN community_profiles p ON p.id=c.author_id WHERE c.topic=? AND c.status='visible' ORDER BY c.created_at DESC LIMIT 60").bind(topic).all();
+  const r=await db.prepare("SELECT c.id,c.topic,c.kind,c.body,c.created_at,p.handle,p.avatar,p.focus_x,p.focus_y,p.focus_zoom,(SELECT COUNT(*) FROM community_reactions r WHERE r.comment_id=c.id) likes FROM community_comments c JOIN community_profiles p ON p.id=c.author_id WHERE c.topic=? AND c.status='visible' ORDER BY c.created_at DESC LIMIT 60").bind(topic).all();
   return send({comments:r.results});
  }
  if(action==="decks"){
