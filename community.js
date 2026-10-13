@@ -54,7 +54,7 @@ export async function restore(){
  updateIdentity();
 }
 export async function saveSession(key,remember=false){
- state.key=key;const data=await api("me");state.me=data.profile;
+ const previousKey=state.key;state.key=key;let data;try{data=await api("me")}catch(e){state.key=previousKey;throw e}state.me=data.profile;
  try{if(remember){localStorage.setItem("dc-profile-key",key);sessionStorage.removeItem("dc-profile-key")}else{sessionStorage.setItem("dc-profile-key",key);localStorage.removeItem("dc-profile-key")}}catch{}
  updateIdentity();msg("Signed in as "+state.me.handle+".");
  await reloadFollows();
@@ -82,6 +82,8 @@ export async function showComments(target,topic){
 export async function loadCase(){
  const slug=state.caseSlug;$("caseSelect").value=slug;$("openReport").href="reports/"+slug+".html";
  await showComments($("caseComments"),"case:"+slug);
+ const names={"chainer-dementia-master":"Chainer, Dementia Master","alena-and-gilanra":"Alena, Kessig Trapper","commander-mustard":"Commander Mustard","ekthi-contaminator-priest":"Ekthi, Contaminator Priest"};
+ const tests=await attempt(()=>api("tests",{commander:names[slug]}));if(tests){const count=Number(tests.summary?.games||0);$("caseEvidence").textContent=count+" self-reported field test"+(count===1?"":"s")+" on record. Not independently verified.";}
  const f=state.me?await attempt(()=>api("follows")):null;
  const followed=f?.follows?.some(x=>x.target_type==="commander"&&x.target===slug);
  $("followCase").textContent=followed?"★ FOLLOWING CASE":"☆ FOLLOW THIS CASE";
