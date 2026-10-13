@@ -130,3 +130,7 @@
 /* User-friendly currency entry: preserve decimal input before applying validation. */
 .dc-price-help{margin:8px 0 0;color:#5a705e;font:650 11px/1.5 ui-sans-serif,system-ui,sans-serif}
 .dc-advanced-row .library-price-input{font-variant-numeric:tabular-nums}
+
+/* Copy-link confirmation is separate from async Scryfall loading messages. */
+.dc-share-status{display:block;margin:9px 0 2px;color:#285e42;font:750 11px/1.5 ui-sans-serif,system-ui,sans-serif}
+.dc-share-status:empty{display:none}

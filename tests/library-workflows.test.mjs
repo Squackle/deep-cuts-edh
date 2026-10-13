@@ -31,4 +31,5 @@ test("HTML presents sort presets, facets, decimal inputs, and accessible results
  assert.match(html,/id="cardGallery"[^>]+aria-live="polite"/);
  assert.match(html,/id="libraryFacetPanel"/);
  assert.match(html,/id="libraryPriceHelp"/);
+ assert.match(html,/id="libraryShareStatus"[^>]*aria-live="polite"/);
 });

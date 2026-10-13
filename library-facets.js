@@ -203,12 +203,13 @@ export function initFacets(onChange){
  $("librarySearch")?.addEventListener("input",e=>{if(adv.has(e.target.id))updateVisuals()});
  $("librarySearch")?.addEventListener("change",e=>{if(adv.has(e.target.id))updateVisuals()});
  $("librarySaveSearch")?.addEventListener("click",async()=>{
-  const url=shareURL(),status=$("libraryStatus");
+  const url=shareURL(),status=$("libraryShareStatus")||$("libraryStatus"),field=$("libraryShareFallback");
   try{
    await navigator.clipboard.writeText(url);
+   if(field)field.hidden=true;
    if(status)status.textContent="Search link copied — your filters can be shared.";
   }catch{
-   const field=$("libraryShareFallback");if(field){field.value=url;field.hidden=false;field.focus();field.select()}
+   if(field){field.value=url;field.hidden=false;field.focus();field.select()}
    if(status)status.textContent="Select the share link to copy it.";
   }
  });
