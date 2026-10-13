@@ -241,18 +241,25 @@ function renderLadder(){
  const intro=el("div","games-dossier-head");
  intro.append(el("span","games-file-id","EVIDENCE ORDER · "+state.day),el("span","games-incident","OBSCURITY LADDER"));
  host.append(intro);
- host.append(el("h2","","Least played → most played"));
- host.append(el("p","games-muted","Use ↑ and ↓ to move commanders. Put the fewest EDHREC-listed Commander decks at the top."));
+ const byRank=state.metric==="rank";
+ host.append(el("h2","",byRank?"Least-used card → most-used card":"Least played → most played"));
+ host.append(el("p","games-muted",byRank?
+  "Use ↑ and ↓ to arrange these legendary cards by their Scryfall EDHREC usage rank. Higher rank numbers mean less-used cards in Commander decks; these are NOT deck-as-commander counts.":
+  "Use ↑ and ↓ to move commanders. Put the fewest EDHREC-listed Commander decks at the top."));
  if(state.finished){
   const result=el("section","games-reveal");
   result.append(el("p","games-overline",state.won?"✓ PERFECT ORDER":"VERDICT DELIVERED"));
   result.append(el("h2","",state.score+"/100 POINTS"));
-  result.append(el("p","games-muted",(state.correctPairs??Math.round(state.score/10))+" of 10 commander pairs in the right relative order. Deck counts are from the "+state.snapshot+" snapshot, not live rankings."));
+  result.append(el("p","games-muted",(state.correctPairs??Math.round(state.score/10))+
+    " of 10 pairs in the correct order. "+(state.sourceExplanation||"")+
+    " Data snapshot: "+state.snapshot+"; rankings are not live."));
   const ordered=el("ol","games-reveal-order");
   for(const c of state.solution||[]){
    const row=el("li","games-rank-reveal");
    const frame=el("span","games-small-art");frame.append(image(c.name));
-   const text=el("div");text.append(el("strong","",c.name),el("span","games-muted",c.decks.toLocaleString()+" EDHREC decks"));
+   const text=el("div");
+   const metric=byRank?"Scryfall EDHREC card rank #"+Number(c.rank).toLocaleString():Number(c.decks).toLocaleString()+" EDHREC commander decks";
+   text.append(el("strong","",c.name),el("span","games-muted",metric));
    row.append(frame,text);
    appendLink(row,"SOURCE ↗",c.edhrec);ordered.append(row);
   }
@@ -315,7 +322,16 @@ function startPractice(){
 }
 function setupHub(){
  const status=$("hubDay");
- if(status)status.textContent="NEW PUZZLES EVERY DAY · MIDNIGHT CENTRAL";
+ if(status)status.textContent="NEW PUZZLES EVERY DAY · MIDNIGHT CENTRAL · NO GPT REQUIRED";
+ const health=$("gameAutomationHealth");
+ if(health){
+  fetch("/api/daily-games?action=automation_status",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+   if(!d?.automatic){health.textContent="Game automation status temporarily unavailable.";return}
+   health.textContent="Daily generation is automatic. Catalog last refreshed: "+
+    (d.catalogUpdatedAt?new Date(d.catalogUpdatedAt*1000).toLocaleDateString():"awaiting first source refresh")+
+    ". Today's frozen puzzles: "+d.today.map(x=>x.game).join(" & ")+".";
+  }).catch(()=>health.textContent="Games continue on an automatic, date-driven rotation.");
+ }
  const buttons=document.querySelectorAll("[data-random-practice]");
  for(const button of buttons){
   button.addEventListener("click",()=>{

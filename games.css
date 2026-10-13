@@ -149,3 +149,6 @@
  .games-button{transition:none}
  .games-button:hover{transform:none}
 }
+
+/* Read-only, self-running source freshness indicator on the Games hub. */
+.games-auto-status{margin:15px 0 0;padding:10px 13px;background:#e9eadb;border:1px solid #b4c39b;border-left:4px solid #53876b;color:#35513f;font-size:12px;line-height:1.55}

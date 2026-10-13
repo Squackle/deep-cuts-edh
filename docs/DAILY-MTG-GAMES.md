@@ -2,7 +2,7 @@
 
 Production launch: October 13, 2026.
 
-## Games & routes
+> **Automation upgrade (October 13, 2026):** The details below describe the original launch content. Starting October 14, puzzles are generated and frozen automatically in Cloudflare D1, a weekly Scryfall Commander catalog refresh is triggered without ChatGPT, and the Obscurity Ladder's *new* numeric metric is the Scryfall EDHREC **card-usage rank**, **not** the number of decks led by each commander. Original October 13 puzzles and curated practice remain intact. See [Autonomous Site Systems](AUTONOMOUS-SITE-SYSTEMS.md) for scheduling, fallback, and source details.\n\n## Games & routes
 
 - Hub: `/games.html`
 - Cold Case: `/games/cold-case.html`

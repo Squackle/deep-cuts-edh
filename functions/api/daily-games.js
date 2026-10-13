@@ -1,7 +1,8 @@
 /* Daily puzzles: immutable dated EDHREC counts, server-validated daily
  * achievements, optional anonymous play, and anti-repeat profile scores. */
 import {send,fail,auth,body,originOK,quota,safe} from "../../src/community-core.js";
-import {SNAPSHOT_DATE,COMMANDERS,coldCase,obscurityLadder,todayChicago,previousDay} from "../../src/daily-games-data.js";
+import {SNAPSHOT_DATE,todayChicago,previousDay} from "../../src/daily-games-data.js";
+import {getPuzzle,getAutoStatus} from "../../src/automated-games.js";
 const BADGES={
  case_closer:{title:"🕵️ Cold Case Closer",detail:"Solve your first Cold Case."},
  first_clue:{title:"🔍 First Clue Sleuth",detail:"Solve Cold Case on the first guess."},
@@ -27,7 +28,10 @@ function modeData(u){
  if(!VALID_GAMES.has(game)||!Number.isSafeInteger(seed)||seed<0||seed>999999999)return null;
  return {game,mode,seed,day:todayChicago()};
 }
-function resultCard(x){return {name:x.name,art:photo(x.name),decks:x.decks,edhrec:edhrec(x),snapshot:SNAPSHOT_DATE,scryfall:cardLink(x.name)}}
+function resultCard(x,puzzle){
+ return {name:x.name,art:photo(x.name),decks:x.decks??null,rank:x.rank??null,
+  edhrec:edhrec(x),snapshot:puzzle?.snapshot||SNAPSHOT_DATE,scryfall:cardLink(x.name)};
+}
 async function runFor(db,profileId,game,day){
  return db.prepare("SELECT guesses,score,won,finished_at FROM daily_game_runs WHERE profile_id=? AND game=? AND day=?").bind(profileId,game,day).first();
 }
@@ -71,22 +75,27 @@ function coldState(puzzle,attempts,finished=false){
  const result={game:"cold",choices:puzzle.choices,clues:puzzle.clues.slice(0,done?5:Math.min(MAX_COLD,list.length+1)),
   attempts:list,attemptsLeft:Math.max(0,MAX_COLD-list.length),finished:done,won:right,
   score:done&&right?Math.max(100,600-100*list.length):0};
- if(done)result.solution=resultCard(puzzle.answer);
+ if(done)result.solution=resultCard(puzzle.answer,puzzle);
  return result;
 }
 function ladderState(puzzle,submitted=null){
- const data={game:"ladder",cards:puzzle.entries.map(compact),finished:!!submitted,snapshot:SNAPSHOT_DATE,
-  question:"Order these commanders from FEWEST to MOST EDHREC-listed Commander decks. This is a dated snapshot."};
+ const rank=puzzle.metric==="rank";
+ const data={game:"ladder",cards:puzzle.entries.map(compact),finished:!!submitted,
+  metric:rank?"rank":"decks",snapshot:puzzle.snapshot||SNAPSHOT_DATE,
+  sourceExplanation:puzzle.explanation||"EDHREC Commander deck counts from a dated, manually curated snapshot.",
+  question:rank?
+   "Arrange the legendary cards by their overall EDHREC card-usage rank, from the least to most popular. This is NOT commander deck count.":
+   "Order these commanders from FEWEST to MOST EDHREC-listed Commander decks. This is a dated snapshot."};
  if(submitted){
   const byName=new Map(puzzle.entries.map(x=>[x.name,x]));
   const order=submitted.map(n=>byName.get(n));
   if(order.some(x=>!x))return data;
   let pairwise=0;
-  for(let i=0;i<order.length;i++)for(let j=i+1;j<order.length;j++)if(order[i].decks<order[j].decks)pairwise++;
+  for(let i=0;i<order.length;i++)for(let j=i+1;j<order.length;j++)if(rank?order[i].rank>order[j].rank:order[i].decks<order[j].decks)pairwise++;
   data.score=pairwise*10;
   data.won=pairwise===10;
   data.submitted=submitted;
-  data.solution=puzzle.solution.map(resultCard);
+  data.solution=puzzle.solution.map(x=>resultCard(x,puzzle));
   data.correctPairs=pairwise;
  }
  return data;
@@ -102,7 +111,7 @@ function normalizeHistory(history,options){
 }
 async function publicState(request,env,params){
  const a=await auth(request,env.DB);
- const puzzle=params.game==="cold"?coldCase(params.day,params.mode,params.seed):obscurityLadder(params.day,params.mode,params.seed);
+ const puzzle=await getPuzzle(env.DB,params.game,params.day,params.mode,params.seed);
  const u=new URL(request.url);
  const saved=params.mode==="daily"&&a?await runFor(env.DB,a.id,params.game,params.day):null;
  let history=[];
@@ -115,7 +124,7 @@ async function publicState(request,env,params){
  if(params.mode==="practice"&&params.game==="ladder")state.finished=false;
  if(saved?.finished_at){state.score=saved.score;state.won=!!saved.won}
  return {...state,day:params.day,mode:params.mode,seed:params.seed,authenticated:!!a,
-  snapshot:SNAPSHOT_DATE,awards:a?await awardsFor(env.DB,a.id):[],
+  snapshot:puzzle.snapshot||SNAPSHOT_DATE,awards:a?await awardsFor(env.DB,a.id):[],
   note:"Daily results reset at midnight Central Time. Anonymous progress stays on your device."};
 }
 async function scoreboard(db,game,day){
@@ -127,6 +136,7 @@ export async function onRequestGet({request,env}){
  if(!env.DB)return fail("Daily games database unavailable.",503);
  try{
   const u=new URL(request.url),action=u.searchParams.get("action")||"state";
+  if(action==="automation_status")return send(await getAutoStatus(env.DB,todayChicago()));
   if(action==="badges"){
    const handle=safe(u.searchParams.get("handle"),24);
    if(!/^[A-Za-z][A-Za-z0-9_]{2,23}$/.test(handle))return fail("Invalid investigator.",400);
@@ -152,7 +162,7 @@ export async function onRequestPost({request,env}){
  // Protect free, no-CAPTCHA gameplay from scripted abuse without requiring accounts.
  if(!await quota(env.DB,env,request,"daily-game",100,a||undefined))return fail("Too many requests today. Come back later.",429);
  try{
-  const puzzle=game==="cold"?coldCase(day,mode,seed):obscurityLadder(day,mode,seed);
+  const puzzle=await getPuzzle(env.DB,game,day,mode,seed);
   let run=null;
   if(a&&mode==="daily")run=await runFor(env.DB,a.id,game,day);
   if(run?.finished_at){
@@ -177,7 +187,7 @@ export async function onRequestPost({request,env}){
     if(updated.meta?.changes!==1)return fail("Another game action just finished. Refresh the case.",409);
     if(finished)fresh=await checkAwards(env.DB,a.id,"cold",day,score,won,next.length);
    }
-   return send({...state,day,mode,seed,authenticated:!!a,newAwards:fresh,snapshot:SNAPSHOT_DATE});
+   return send({...state,day,mode,seed,authenticated:!!a,newAwards:fresh,snapshot:puzzle.snapshot||SNAPSHOT_DATE});
   }
   if(d.action!=="submit"||!Array.isArray(d.order)||d.order.length!==5)return fail("Arrange all five commanders.",400);
   const actual=puzzle.entries.map(x=>x.name);
