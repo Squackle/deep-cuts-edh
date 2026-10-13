@@ -1,0 +1,10 @@
+# Never commit credentials, local Cloudflare secrets, or private certificates.
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.pem
+*.p12
+*.pfx
+*.key
+*.secret

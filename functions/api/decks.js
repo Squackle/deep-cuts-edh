@@ -27,7 +27,7 @@ export async function onRequestGet({request,env}){
 }
 export async function onRequestPost({request,env}){
  if(!sameOrigin(request))return out({error:"Origin rejected."},403);
- if(!env.DB)return out({error:"Cloud storage is not configured."},503);
+ if(!env.DB||!env.TURNSTILE_SECRET)return out({error:"Cloud storage or abuse protection is not configured."},503);
  if(Number(request.headers.get("content-length")||0)>40000)return out({error:"Deck is too large."},413);
  let parsed;try{parsed=await request.json()}catch{return out({error:"Invalid JSON."},400)}
  if(JSON.stringify(parsed).length>40000)return out({error:"Deck is too large."},413);

@@ -79,3 +79,6 @@ FROM kofi_webhook_diagnostics ORDER BY hour_bucket DESC,reason;
 Expected `post_received` count is nonzero for a Ko-fi test that reaches the Pages Function. If it is zero after another test, check Ko-fi's response status / delivery settings or routing. A nonzero `token_mismatch` means the Dashboard token is different from the encrypted Cloudflare secret; regenerate/rotate both securely. `valid_non_subscription` shows a successful one-time Tip test, while verified `Subscription` payments enter the separate payment tables when tier and amount match.
 
 The validator accepts Ko-fi's documented `Tip`, `Subscription`, `Commission`, and `Shop Order` event labels.
+
+## Sitewide security audit update
+The private dashboard is at `/diagnostics.html`, secured using the independent `KOFI_ADMIN_DIAGNOSTICS_KEY` encrypted Cloudflare production secret. Its downloadable access credential is for the site operator only. See [SECURITY.md](SECURITY.md) for sitewide HTTP protections, anonymous diagnostics, remaining attack-surface limitations and webhook replay handling. The Ko-fi token still needs rotation because it was shared in chat.

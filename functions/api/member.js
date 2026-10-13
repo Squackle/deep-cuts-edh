@@ -13,6 +13,7 @@ export async function onRequestPost({request,env}){
  let d;try{d=await json(request,2500)}catch{return reply({error:"Invalid request."},400)}
  const action=String(d.action||"");
  if(action==="claim")return reply({error:"Direct Stripe enrollment is retired. Ko-fi member-key issuance is not configured yet."},410);
+ if(env.KOFI_MEMBER_ACCESS_READY!=="true")return reply({error:"Ko-fi membership key operations are not enabled yet."},503);
  if(action==="activate"){
   const key=String(d.key||"");if(!goodKey(key))return reply({error:"Invalid membership key format."},400);
   const id=key.split("_")[1],digest=await sha(key);

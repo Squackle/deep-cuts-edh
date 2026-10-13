@@ -1,2 +1,5 @@
 User-agent: *
+Disallow: /api/
+Disallow: /diagnostics.html
+Disallow: /members.html
 Allow: /

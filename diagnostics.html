@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>Webhook Diagnostics — Deep Cuts EDH</title><link rel="icon" href="assets/favicon.svg">
+<link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css">
+<link rel="stylesheet" href="diagnostics.css"><script defer src="diagnostics.js"></script>
+</head><body><a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><img src="assets/deep-cuts-mark.svg" alt="" width="44" height="53"><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>PRIVATE OPERATIONS</small></span></a><a href="supporters.html">SUPPORTER PAGE ↗</a></div></header>
+<main id="main" class="diagnostic-shell">
+ <span class="diagnostic-eyebrow">PRIVATE FIELD OFFICE / MAINTENANCE</span>
+ <h1>Webhook diagnostics</h1>
+ <p class="diagnostic-intro">Check whether Ko-fi tests reached Deep Cuts EDH, whether the verification token matched, and whether the event was considered a membership payment. No supporter details are shown.</p>
+ <section class="diagnostic-panel" aria-labelledby="accessTitle"><h2 id="accessTitle">Administrator access</h2>
+ <form id="diagnosticForm" autocomplete="off"><label for="diagnosticKey">Private diagnostics key</label>
+ <input id="diagnosticKey" type="password" required maxlength="120" spellcheck="false" autocomplete="off" placeholder="dcdiag1_…" aria-describedby="keyHelp">
+ <p class="hint" id="keyHelp">Paste the key from your privately saved diagnostics file. It never appears in the URL or browser storage.</p>
+ <button id="checkDiagnostic" type="submit">CHECK LAST 24 HOURS ↗</button>
+ <button id="clearDiagnostic" type="button" class="secondary-button">CLEAR</button></form></section>
+ <p id="diagnosticStatus" role="status" aria-live="polite">Diagnostics require your administrator key.</p>
+ <section id="diagnosticResults" class="diagnostic-panel" hidden aria-live="polite">
+ <h2>Recent Ko-fi webhook activity</h2><div id="diagnosticSummary" class="diagnostic-summary"></div>
+ <h3>Reception and verification</h3><div id="diagnosticCounters"></div>
+ <h3>Verified event categories</h3><div id="diagnosticVerified"></div>
+ <p class="hint">A Ko-fi test can pass verification without representing a paid membership. Subscriber key delivery remains off until ownership verification and expiration are tested.</p>
+ </section>
+ <p class="hint">Never post the diagnostics key publicly or paste it into Ko-fi. Ko-fi's own verification token is a different secret.</p>
+</main></body></html>

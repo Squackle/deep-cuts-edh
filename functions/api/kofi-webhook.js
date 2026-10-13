@@ -13,9 +13,9 @@ async function diagnostic(env,reason){
  }catch(e){console.error("Ko-fi diagnostics write failed",String(e))}
 }
 
-/* Public health check: only reports readiness booleans; never outputs credentials. */
-export function onRequestGet({env}){
- return response({ok:true,provider:"Ko-fi",webhookConfigured:Boolean(env.DB&&env.KOFI_VERIFICATION_TOKEN&&env.KOFI_EMAIL_HASH_SECRET),memberKeyDeliveryReady:false});
+/* Public liveness check: never advertises private secret state. */
+export function onRequestGet(){
+ return response({ok:true,provider:"Ko-fi",memberKeyDeliveryReady:false});
 }
 async function digest(secret,data){
  const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),"HMAC",false,["sign"]);
@@ -26,6 +26,23 @@ async function tokenOK(got,expected){
  const a=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(got));
  const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(expected));
  return eq(new Uint8Array(a),new Uint8Array(b));
+}
+/* Enforce a size limit while reading; a missing Content-Length does not
+ * allow a very large form body to be buffered into memory. */
+async function readLimited(request,max=16000){
+ if(!request.body)return "";
+ const reader=request.body.getReader(),parts=[];let size=0;
+ try{
+  while(true){
+   const {done,value}=await reader.read();if(done)break;
+   size+=value.byteLength;
+   if(size>max){await reader.cancel();throw Error("Request body too large")}
+   parts.push(value);
+  }
+  const bytes=new Uint8Array(size);let offset=0;
+  for(const part of parts){bytes.set(part,offset);offset+=part.byteLength}
+  return new TextDecoder("utf-8",{fatal:true}).decode(bytes);
+ }finally{reader.releaseLock()}
 }
 const toHex=bytes=>[...bytes].map(x=>x.toString(16).padStart(2,"0")).join("");
 const tiers={
@@ -50,8 +67,7 @@ export async function onRequestPost({request,env}){
  if(!ct.toLowerCase().includes("application/x-www-form-urlencoded")){await diagnostic(env,"wrong_content_type");return response({error:"Expected Ko-fi form data."},415)}
  let obj;
  try{
-  const body=await request.text();
-  if(body.length>16000)throw Error("Large payload");
+  const body=await readLimited(request,16000);
   const data=new URLSearchParams(body).get("data");
   if(!data||data.length>15000)throw Error("Missing payload");
   obj=JSON.parse(data);
@@ -89,10 +105,15 @@ export async function onRequestPost({request,env}){
  try{
   const result=await env.DB.batch([
     env.DB.prepare("INSERT OR IGNORE INTO kofi_payment_events(message_id,email_hash,tier,paid_at,paid_until,amount_cents) VALUES(?,?,?,?,?,?)").bind(id,emailHash,tier.id,paidAt,paidUntil,cents),
-    env.DB.prepare(`INSERT INTO kofi_renewals(email_hash,tier,last_paid_at,paid_until) VALUES(?,?,?,?)
-      ON CONFLICT(email_hash) DO UPDATE SET tier=CASE WHEN excluded.last_paid_at>=kofi_renewals.last_paid_at THEN excluded.tier ELSE kofi_renewals.tier END,
-      last_paid_at=MAX(kofi_renewals.last_paid_at,excluded.last_paid_at),
-      paid_until=MAX(kofi_renewals.paid_until,excluded.paid_until)`).bind(emailHash,tier.id,paidAt,paidUntil)
+    // Renewals can only be attached to the matching immutable payment event.
+    // A duplicate message_id with changed identity or tier must never renew anyone.
+    env.DB.prepare(`INSERT INTO kofi_renewals(email_hash,tier,last_paid_at,paid_until)
+       SELECT email_hash,tier,paid_at,paid_until FROM kofi_payment_events
+       WHERE message_id=? AND email_hash=? AND tier=? AND paid_at=? AND amount_cents=?
+       ON CONFLICT(email_hash) DO UPDATE SET
+         tier=CASE WHEN excluded.last_paid_at>=kofi_renewals.last_paid_at THEN excluded.tier ELSE kofi_renewals.tier END,
+         last_paid_at=MAX(kofi_renewals.last_paid_at,excluded.last_paid_at),
+         paid_until=MAX(kofi_renewals.paid_until,excluded.paid_until)`).bind(id,emailHash,tier.id,paidAt,cents)
    ]);
   await diagnostic(env,"subscription_recorded");
   return response({ok:true,recorded:Boolean(result?.[0]?.meta?.changes),duplicate:!(result?.[0]?.meta?.changes)});
