@@ -14,7 +14,7 @@ async function fromScryfall(path){
  try{
   const r=await fetch(ROOT+path,{headers:{"Accept":"application/json","User-Agent":"DeepCutsEDH/1.0 (+https://deep-cuts-edh.pages.dev)","Cache-Control":"no-cache"},signal:controller.signal});
   if(r.status===404)return null;
-  if(!r.ok){const why=(await r.text()).slice(0,180).replace(/<[^>]+>/g,"").replace(/[\r\n]+/g," ");throw Error("Scryfall unavailable ("+r.status+" "+why+")")}
+  if(!r.ok)throw Error("Scryfall unavailable ("+r.status+")");
   return await r.json();
  }finally{clearTimeout(timer)}
 }
@@ -53,6 +53,6 @@ export async function onRequestGet({request}){
   return result;
  }catch(e){
   console.error("Set Watch upstream failure:",e);
-  return json({error:"Set data is temporarily unavailable ("+String(e?.message||"upstream error").slice(0,95)+")."},0,502);
+  return json({error:"Set data is temporarily unavailable. Try again shortly."},0,502);
  }
 }
