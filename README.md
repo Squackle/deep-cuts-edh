@@ -152,3 +152,10 @@ Official public link: https://ko-fi.com/deepcutsedh . Public website links now p
 
 ## Tomorrow's Ko-fi migration handoff
 See [docs/TOMORROW.md](docs/TOMORROW.md) for verified status, live URLs, blockers and the next-session checklist. The Ko-fi account and Cloudflare private credentials must never be pasted into the repository.
+
+
+## Field Network community beta (October 13, 2026)
+
+The new [Field Network](community.html) provides free **recovery-key profiles** with Commander portraits and bios, case-file discussions and community moderation reports, profile/case following, public deck publishing and version history, Deck Doctor comments, an owner-operated weekly Rescue Challenge, community-submitted playtest and matchup logs, contribution badges, a followed-activity feed, and an experimental Scryfall Hidden Gem Scanner. The first challenge runs October 13–20, 2026 UTC. Existing key-only vaults and paid Ko-fi settings remain separate; no private decks are automatically published.
+
+**Important:** No email/account recovery, private friend messages, real-time push alerts, automated challenge resets, authoritative win rates, real machine-learning rescue scores, or automatic moderation. This is a limited community beta requiring owner review and controlled testing. See [docs/COMMUNITY.md](docs/COMMUNITY.md) for the migration, privacy/security rules, D1 moderation queries, feature descriptions and launch limitations. Database migration: [db/community.sql](db/community.sql) (applied October 13, 2026).
