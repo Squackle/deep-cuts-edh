@@ -213,3 +213,7 @@ As of the October 2026 automation upgrade, **Cold Case and Obscurity Ladder run 
 ### Card Library Research Desk facets (October 2026)
 
 The Card Library now offers a dense, responsive set of clickable Commander color-identity, card type, gameplay role, mana value, rarity and special-trait filters. It retains live Scryfall searches, real USD price bounds and sorting, card details, Scryfall Tagger, pagination, and one-click Add to Deck. Quick sorting/presets, individual active filter removal and shareable/restorable search URLs make obscure-card discovery practical on phones and desktop. No fictitious card-difficulty/bracket labels or fabricated filter counts. See [design and QA details](docs/CARD-LIBRARY-RESEARCH-DESK.md).
+
+### AdSense preparation — October 2026
+
+Publisher code `ca-pub-1885127351876276` is installed only on the homepage, Card Library, and four public Rescue Reports, together with root [ads.txt](ads.txt) and the public [Privacy & Advertising policy](privacy.html). No account, game, or Deck Workshop page contains ad code. The AdSense dashboard controls approval, activation and Auto ad formats; **no revenue or live ad placements can be assumed until Google approves the site and the publisher configures ads**. [Setup and minimal-ad recommendations](docs/ADSENSE-LAUNCH.md).
