@@ -30,21 +30,21 @@ export async function gamesWrite(db,a,d){
   await db.prepare("INSERT INTO community_playtests(id,author_id,deck_id,commander,opponent,result,turns,note) VALUES(?,?,?,?,?,?,?,?)").bind(rnd(),a.id,id||null,commander,opponent,result,turns,note).run();
   return send({ok:true},201);
  }
- if(action==="challenge_entry"){
-  const id=safe(d.deck_id,32),ch=await db.prepare("SELECT * FROM community_challenges WHERE status='active' ORDER BY opens_at DESC LIMIT 1").first();
+ if(action==="challenge_entry"||action==="vote"){
+  const id=safe(d.deck_id,32),challengeId=safe(d.challenge_id,48);
+  if(!/^[a-f0-9]{32}$/.test(id)||!/^[a-z0-9-]{3,48}$/.test(challengeId))return fail("Choose a valid published deck and challenge.",400);
+  const ch=await db.prepare("SELECT * FROM community_challenges WHERE id=? AND status='active'").bind(challengeId).first();
   const now=new Date().toISOString().slice(0,19).replace("T"," ");
-  if(!ch||now<ch.opens_at||now>ch.closes_at)return fail("No challenge is open.",409);
-  const deck=await db.prepare("SELECT owner_id,commander FROM community_decks WHERE id=?").bind(id).first();
-  if(!deck||deck.owner_id!==a.id||!deck.commander.toLowerCase().includes(ch.commander.toLowerCase()))return fail("Submit your own public deck featuring the featured commander.",400);
-  await db.prepare("INSERT INTO community_entries(challenge_id,deck_id,member_id) VALUES(?,?,?) ON CONFLICT(challenge_id,member_id) DO UPDATE SET deck_id=excluded.deck_id").bind(ch.id,id,a.id).run();
-  return send({ok:true});
- }
- if(action==="vote"){
-  const id=safe(d.deck_id,32),ch=await db.prepare("SELECT * FROM community_challenges WHERE status='active' ORDER BY opens_at DESC LIMIT 1").first();
-  const now=new Date().toISOString().slice(0,19).replace("T"," ");
-  if(!ch||now<ch.opens_at||now>ch.closes_at)return fail("Voting is closed.",409);
+  if(!ch||now<ch.opens_at||now>ch.closes_at)return fail("This challenge isn't accepting entries or votes.",409);
+  if(action==="challenge_entry"){
+   const deck=await db.prepare("SELECT owner_id,commander FROM community_decks WHERE id=?").bind(id).first();
+   if(!deck||deck.owner_id!==a.id)return fail("Choose one of your own published decks.",400);
+   if(ch.format!=="open"&&!deck.commander.toLowerCase().split("&").some(c=>c.trim()===ch.commander.toLowerCase().trim()))return fail("This challenge requires "+ch.commander+". Select the Open Case showcase for other commanders.",400);
+   await db.prepare("INSERT INTO community_entries(challenge_id,deck_id,member_id) VALUES(?,?,?) ON CONFLICT(challenge_id,member_id) DO UPDATE SET deck_id=excluded.deck_id").bind(ch.id,id,a.id).run();
+   return send({ok:true});
+  }
   const entry=await db.prepare("SELECT member_id FROM community_entries WHERE challenge_id=? AND deck_id=?").bind(ch.id,id).first();
-  if(!entry||entry.member_id===a.id)return fail("You cannot vote on your own deck or on missing entries.",400);
+  if(!entry||entry.member_id===a.id)return fail("Cannot vote for your own deck or a missing entry.",400);
   await db.prepare("INSERT INTO community_votes(challenge_id,voter_id,deck_id) VALUES(?,?,?) ON CONFLICT(challenge_id,voter_id) DO UPDATE SET deck_id=excluded.deck_id").bind(ch.id,a.id,id).run();
   return send({ok:true});
  }

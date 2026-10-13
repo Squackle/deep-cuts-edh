@@ -85,3 +85,10 @@ The private dashboard is at `/diagnostics.html`, secured using the independent `
 
 ## Webhook delivery acknowledgment clarification (October 2026)
 An authenticated subscription sample that lacks a usable tier, email, timestamp, or message ID is **acknowledged with HTTP 200 and ignored**. This prevents Ko-fi from continually retrying validly delivered but non-creditable example/test events. An authenticated request can still fail with a 503 when recording a *genuine* qualifying payment fails, so Ko-fi can retry it. Invalid verification tokens and malformed form bodies are still rejected.
+
+
+## October 13, 2026 · staged verified-owner membership issuance
+
+The Field Office now includes an operator-only manual key issuance/replacement/revocation workflow for real, qualifying Ko-fi subscription payments, documented in [MEMBER-OWNER-ISSUANCE.md](MEMBER-OWNER-ISSUANCE.md). The operator independently verifies subscriber identity and payment in Ko-fi; the API additionally requires a nonexpired, authenticated Ko-fi renewal record from the signed webhook. Subscriber emails are HMAC-hashed; 256-bit member and owner keys are stored only as SHA-256 hashes. Every authenticated member request reconciles against the current paid-through timestamp, tier, and manual revocations. Manual actions DO NOT change Ko-fi billing.
+
+**Still disabled:** `KOFI_MEMBER_ACCESS_READY` must remain unset/false until the old leaked webhook token has been rotated and a controlled real renewal, two-device activation, expiry/revocation and refund workflow have been tested. A public in-browser tier preview was added, but that preview is not a member entitlement or a checkout. There were zero verified real recurring payments on record when this release was prepared, so no actual member key could have been issued. New owner operational access uses the separate key in a private downloadable file, not the existing read-only diagnostics credential.

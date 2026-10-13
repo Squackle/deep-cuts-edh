@@ -1,0 +1,10 @@
+.member-preview{margin-top:30px;background:#e8dfcc;color:#21362c;border:1px solid #b8a779;padding:26px}
+.member-preview h2{font-family:Georgia,serif;font-size:32px;color:#21362c;margin:8px 0 12px}
+.member-preview p{color:#4a5449;line-height:1.65}
+.member-preview-controls{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.member-preview-controls button{background:#314d3d;color:#fbedd3;padding:12px 16px;border:1px solid #9e945f;cursor:pointer;font-weight:bold}
+.member-preview-controls button[aria-pressed="true"]{background:#b18c4b;color:#1c3127;border-color:#735c35}
+.member-preview-results{background:#fffaf0;border:1px solid #c4b798;padding:20px;margin:13px 0}
+.member-preview-results ul{padding-left:20px}.member-preview-results li{line-height:1.6;margin:6px 0}
+.member-preview [hidden]{display:none!important}
+.member-preview-demo{background:#f4eddb;padding:14px;margin-top:14px;border-left:4px solid #7a794c}

@@ -3,7 +3,7 @@
 <title>Member Field Office · Deep Cuts EDH</title><meta name="description" content="The Deep Cuts EDH private member field office: printable deck dossiers, research, advanced deck tools, and a key-only membership.">
 <link rel="icon" href="assets/favicon.svg">
 <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="site-glossary.css"><script defer src="card-lexicon.js"></script><script defer src="glossary-terms.js"></script><script defer src="site-glossary.js"></script><link rel="stylesheet" href="theme-v2.css"><link rel="stylesheet" href="workspace-ui.css"><link rel="stylesheet" href="members.css">
-<script type="module" src="members.js"></script><link rel="stylesheet" href="feedback.css"><script defer src="feedback.js"></script>
+<link rel="stylesheet" href="members-preview.css"><script type="module" src="members-preview.js"></script><script type="module" src="members.js"></script><link rel="stylesheet" href="feedback.css"><script defer src="feedback.js"></script>
 </head><body>
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol"><img src="assets/deep-cuts-mark.svg" alt="" width="46" height="56"></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>OLD LEGENDS · NEW TROUBLE</small></span></a>
@@ -18,8 +18,21 @@
   <div id="memberClaim" class="member-claim" hidden><strong>Membership verified — save your membership key</strong><p id="memberClaimText"></p><code id="memberNewKey" class="member-key-display"></code><button type="button" class="member-action-secondary" id="copyMemberKey">COPY KEY</button><p>Shown once. Activate this device, then use the key once more on another device.</p></div>
   <p class="member-fine">No username or password. We're migrating premium access to verified Ko-fi renewals. Ko-fi subscriptions do not automatically issue Deep Cuts keys yet. <a href="https://ko-fi.com/deepcutsedh" target="_blank" rel="noopener noreferrer">Visit our Ko-fi page ↗</a>.</p>
  </section>
+ <section id="memberPreview" class="member-preview" aria-labelledby="previewHeader">
+  <span class="member-eyebrow">EXPLORE THE THREE TIERS · PUBLIC DEMONSTRATION</span>
+  <h2 id="previewHeader">Explore the Field Office before joining.</h2>
+  <p>See exactly which tools belong to each tier and try a local, limited demonstration. These demos do not verify payment, unlock private reports, or upload your deck. Existing Ko-fi supporters need a securely issued member key before using the private services.</p>
+  <div class="member-preview-controls" role="group" aria-label="Preview membership tiers">
+   <button data-preview-tier="informant" aria-pressed="true" type="button">INFORMANT · $5</button>
+   <button data-preview-tier="detective" aria-pressed="false" type="button">DETECTIVE · $10</button>
+   <button data-preview-tier="chief" aria-pressed="false" type="button">CHIEF · $25</button>
+  </div>
+  <div class="member-preview-results" id="previewResults"></div>
+  <div class="member-actions"><button id="previewDossier" type="button" class="member-action-secondary">TRY LOCAL DOSSIER DEMO</button><button id="previewOdds" type="button" class="member-action-secondary" hidden>TRY SAMPLE PROBABILITY LAB</button><a href="supporters.html" class="member-text-link">Review membership limitations ↗</a></div>
+  <div id="previewDemoOutput" class="member-preview-demo" role="status" aria-live="polite">Select a tier to explore its planned tools.</div>
+ </section>
  <section id="memberOffice" hidden>
-  <div class="member-ribbon"><div><span>AUTHORIZED FIELD OFFICE</span><strong id="memberTierName">Member</strong></div><div><span>ACTIVATED DEVICES</span><strong id="memberDeviceCount">— / 2</strong></div><div><span>MY DEVICE</span><strong id="memberDeviceName">Active</strong></div></div>
+  <div class="member-ribbon"><div><span>AUTHORIZED FIELD OFFICE</span><strong id="memberTierName">Member</strong></div><div><span>ACTIVATED DEVICES</span><strong id="memberDeviceCount">— / 2</strong></div><div><span>MY DEVICE</span><strong id="memberDeviceName">Active</strong></div><div><span>VERIFIED PAID THROUGH</span><strong id="memberPaidUntil">—</strong></div></div>
   <div class="member-tabs" role="tablist" aria-label="Premium tools">
    <button type="button" class="member-tab active" data-view="dossier" role="tab" aria-selected="true">DECK DOSSIER</button>
    <button type="button" class="member-tab" data-view="research" role="tab" aria-selected="false">RESEARCH FILES</button>

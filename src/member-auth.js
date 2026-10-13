@@ -7,7 +7,16 @@ export async function sha(s){return hex(new Uint8Array(await crypto.subtle.diges
 export function originOK(request){const o=request.headers.get("Origin");if(!o)return true;try{return new URL(o).origin===new URL(request.url).origin}catch{return false}}
 /* Ko-fi payment intake is staged; member entitlement verification
  * remains locked until an authenticated redemption flow is tested. */
-export async function sync(){throw Error("Ko-fi membership access verification is not configured.");}
+// Ko-fi is payment-only: reconcile access against the latest VERIFIED renewal on EVERY request.
+// A stale key cannot outlive its paid-through date, and owner revocations take effect immediately.
+export async function sync(account,env){
+ if(!env.DB)throw Error("Membership storage unavailable.");
+ const row=await env.DB.prepare("SELECT l.revoked_at,r.tier,r.paid_until,r.last_paid_at FROM member_kofi_links l LEFT JOIN kofi_renewals r ON r.email_hash=l.email_hash WHERE l.member_id=?").bind(account.id).first();
+ const now=Math.floor(Date.now()/1000);
+ if(!row||row.revoked_at!=null||!Number.isInteger(Number(row.paid_until))||Number(row.paid_until)<=now||!["informant","detective","chief"].includes(row.tier))
+  return {...account,status:"inactive",paid_until:0};
+ return {...account,tier:row.tier,paid_until:Number(row.paid_until),status:"active"};
+}
 export const tierPower={informant:1,detective:2,chief:3};
 export async function authorize(request,env,minTier="informant"){
  if(!env.DB||env.KOFI_MEMBER_ACCESS_READY!=="true")return {error:reply({error:"Ko-fi premium key activation is not configured yet."},503)};

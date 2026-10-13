@@ -16,9 +16,9 @@ export async function onRequest(context){
  headers.set("Content-Security-Policy",csp);
  headers.set("Strict-Transport-Security","max-age=31536000");
  if(path.startsWith("/api/")&&path!=="/api/supporter-gallery"||
-    path==="/diagnostics.html"||path==="/diagnostics.js"||path==="/members.html")
+    path==="/diagnostics.html"||path==="/diagnostics.js"||path==="/members.html"||path==="/member-operations.html"||path==="/member-operations.js")
   headers.set("Cache-Control","no-store, private");
- if(path==="/diagnostics.html"||path==="/diagnostics.js"||path==="/members.html"||path==="/api/kofi-diagnostics")
+ if(path==="/diagnostics.html"||path==="/diagnostics.js"||path==="/members.html"||path==="/member-operations.html"||path==="/member-operations.js"||path==="/api/kofi-diagnostics"||path==="/api/kofi-member-issue")
   headers.set("X-Robots-Tag","noindex, nofollow, noarchive");
  return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
 }

@@ -8,7 +8,7 @@ export const hash=async x=>hex(new Uint8Array(await crypto.subtle.digest("SHA-25
 export const safe=(s,max=500)=>typeof s==="string"?s.trim().slice(0,max):"";
 export const AVATARS=["Chainer, Dementia Master","Commander Mustard","Alena, Kessig Trapper","Gilanra, Caller of Wirewood","Ekthi, Contaminator Priest"];
 export const CASES=["chainer-dementia-master","alena-and-gilanra","commander-mustard","ekthi-contaminator-priest"];
-export const publicProfile=p=>p&&({id:p.id,handle:p.handle,bio:p.bio,avatar:p.avatar,created_at:p.created_at});
+export const publicProfile=p=>p&&({id:p.id,handle:p.handle,bio:p.bio,avatar:p.avatar,focus_x:p.focus_x,focus_y:p.focus_y,created_at:p.created_at});
 export const topicOK=s=>/^case:(chainer-dementia-master|alena-and-gilanra|commander-mustard|ekthi-contaminator-priest)$/.test(s)||/^deck:[a-f0-9]{32}$/.test(s);
 export function originOK(req){const val=req.headers.get("Origin");if(!val)return true;try{return new URL(val).origin===new URL(req.url).origin}catch{return false}}
 export async function body(req){
@@ -20,7 +20,7 @@ export async function auth(req,db){
  const key=(req.headers.get("Authorization")||"").replace(/^Bearer /,"");
  const m=/^dcprofile1_([a-f0-9]{32})_([a-f0-9]{64})$/.exec(key);
  if(!m)return null;
- return db.prepare("SELECT id,handle,bio,avatar,created_at FROM community_profiles WHERE id=? AND key_hash=?").bind(m[1],await hash(key)).first();
+ return db.prepare("SELECT id,handle,bio,avatar,focus_x,focus_y,created_at FROM community_profiles WHERE id=? AND key_hash=?").bind(m[1],await hash(key)).first();
 }
 export async function quota(db,env,req,action,max,member){
  const ip=req.headers.get("CF-Connecting-IP");if(!ip||!env.TURNSTILE_SECRET)return false;

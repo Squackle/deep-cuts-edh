@@ -1,19 +1,23 @@
 import {send,fail,safe,rnd,hash,AVATARS,CASES,topicOK,verifyHuman,quota} from "./community-core.js";
 export async function register(req,db,env,d){
  const handle=safe(d.handle,24),bio=safe(d.bio,240),avatar=safe(d.avatar,130);
+ const x=Math.min(100,Math.max(0,Number(d.focusX??50))),y=Math.min(100,Math.max(0,Number(d.focusY??30)));
+ if(!Number.isInteger(x)||!Number.isInteger(y))return fail("Avatar focal point must be between 0 and 100.",400);
  if(!/^[a-zA-Z][a-zA-Z0-9_]{2,23}$/.test(handle)||!AVATARS.includes(avatar))return fail("Handle must be 3–24 letters, digits or underscores; select a listed portrait.",400);
  if(!(await verifyHuman(env,d.token,req)))return fail("Human verification failed.",403);
  if(!(await quota(db,env,req,"register",3)))return fail("Daily registration limit reached.",429);
  const id=rnd(),key="dcprofile1_"+id+"_"+rnd(32);
- try{await db.prepare("INSERT INTO community_profiles(id,handle,key_hash,bio,avatar) VALUES(?,?,?,?,?)").bind(id,handle,await hash(key),bio,avatar).run()}
+ try{await db.prepare("INSERT INTO community_profiles(id,handle,key_hash,bio,avatar,focus_x,focus_y) VALUES(?,?,?,?,?,?,?)").bind(id,handle,await hash(key),bio,avatar,x,y).run()}
  catch(e){if(String(e).includes("UNIQUE"))return fail("That handle is taken.",409);throw e}
- return send({ok:true,key,profile:{id,handle,bio,avatar},warning:"Save this key. No password or email recovery exists. Premium memberships are separate."},201);
+ return send({ok:true,key,profile:{id,handle,bio,avatar,focus_x:x,focus_y:y},warning:"Save this key. No password or email recovery exists. Premium memberships are separate."},201);
 }
 export async function socialWrite(db,a,d){
  const action=d.action;
  if(action==="update_profile"){
   const bio=safe(d.bio,240),avatar=safe(d.avatar,130);if(!AVATARS.includes(avatar))return fail("Choose a listed portrait.",400);
-  await db.prepare("UPDATE community_profiles SET bio=?,avatar=? WHERE id=?").bind(bio,avatar,a.id).run();return send({ok:true});
+  const x=Number(d.focusX),y=Number(d.focusY);
+  if(!Number.isInteger(x)||x<0||x>100||!Number.isInteger(y)||y<0||y>100)return fail("Invalid portrait position.",400);
+  await db.prepare("UPDATE community_profiles SET bio=?,avatar=?,focus_x=?,focus_y=? WHERE id=?").bind(bio,avatar,x,y,a.id).run();return send({ok:true});
  }
  if(action==="comment"){
   const topic=safe(d.topic,90),kind=d.kind==="doctor"?"doctor":"discussion",body=safe(d.body,1200);

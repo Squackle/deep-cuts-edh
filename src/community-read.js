@@ -4,7 +4,7 @@ export async function communityRead(req,db){
  if(action==="me"){const a=await auth(req,db);return a?send({profile:publicProfile(a)}):fail("Sign in with your profile recovery key.",401)}
  if(action==="profile"){
   const handle=safe(q.get("handle"),24);
-  const p=await db.prepare("SELECT id,handle,bio,avatar,created_at FROM community_profiles WHERE handle=? COLLATE NOCASE").bind(handle).first();
+  const p=await db.prepare("SELECT id,handle,bio,avatar,focus_x,focus_y,created_at FROM community_profiles WHERE handle=? COLLATE NOCASE").bind(handle).first();
   if(!p)return fail("Profile not found.",404);
   const decks=await db.prepare("SELECT id,title,commander,version,updated_at FROM community_decks WHERE owner_id=? ORDER BY updated_at DESC LIMIT 25").bind(p.id).all();
   const counts=await db.prepare("SELECT (SELECT COUNT(*) FROM community_comments WHERE author_id=? AND status='visible') comments,(SELECT COUNT(*) FROM community_playtests WHERE author_id=?) tests,(SELECT COUNT(*) FROM community_follows WHERE target_type='profile' AND target=?) followers").bind(p.id,p.id,p.id).first();
@@ -17,7 +17,7 @@ export async function communityRead(req,db){
  }
  if(action==="comments"){
   const topic=safe(q.get("topic"),90);if(!topicOK(topic))return fail("Invalid discussion.",400);
-  const r=await db.prepare("SELECT c.id,c.topic,c.kind,c.body,c.created_at,p.handle,p.avatar,(SELECT COUNT(*) FROM community_reactions r WHERE r.comment_id=c.id) likes FROM community_comments c JOIN community_profiles p ON p.id=c.author_id WHERE c.topic=? AND c.status='visible' ORDER BY c.created_at DESC LIMIT 60").bind(topic).all();
+  const r=await db.prepare("SELECT c.id,c.topic,c.kind,c.body,c.created_at,p.handle,p.avatar,p.focus_x,p.focus_y,(SELECT COUNT(*) FROM community_reactions r WHERE r.comment_id=c.id) likes FROM community_comments c JOIN community_profiles p ON p.id=c.author_id WHERE c.topic=? AND c.status='visible' ORDER BY c.created_at DESC LIMIT 60").bind(topic).all();
   return send({comments:r.results});
  }
  if(action==="decks"){
@@ -37,11 +37,18 @@ export async function communityRead(req,db){
   const r=await db.prepare("SELECT v.content,v.note,v.created_at FROM community_deck_versions v JOIN community_decks d ON d.id=v.deck_id WHERE v.deck_id=? AND v.version=?").bind(id,version).first();
   return r?send({version,deck:JSON.parse(r.content),note:r.note,created_at:r.created_at}):fail("Version not found.",404);
  }
+ if(action==="challenges"){
+  const sql="SELECT ch.id,ch.title,ch.commander,ch.format,ch.opens_at,ch.closes_at,(SELECT COUNT(*) FROM community_entries e WHERE e.challenge_id=ch.id) entrants FROM community_challenges ch WHERE ch.status='active' ORDER BY ch.opens_at DESC, ch.id ASC LIMIT 12";
+  const r=await db.prepare(sql).all();
+  return send({challenges:r.results||[]});
+ }
  if(action==="challenge"){
-  const ch=await db.prepare("SELECT * FROM community_challenges ORDER BY opens_at DESC LIMIT 1").first();
+  const id=safe(q.get("id"),48);
+  if(id&&!/^[a-z0-9-]{3,48}$/.test(id))return fail("Invalid challenge.",400);
+  const ch=id?await db.prepare("SELECT * FROM community_challenges WHERE id=? AND status='active'").bind(id).first():await db.prepare("SELECT * FROM community_challenges WHERE status='active' ORDER BY opens_at DESC LIMIT 1").first();
   if(!ch)return send({challenge:null,entries:[]});
   const r=await db.prepare("SELECT e.deck_id,d.title,d.commander,p.handle,(SELECT COUNT(*) FROM community_votes v WHERE v.challenge_id=e.challenge_id AND v.deck_id=e.deck_id) votes FROM community_entries e JOIN community_decks d ON d.id=e.deck_id JOIN community_profiles p ON p.id=e.member_id WHERE e.challenge_id=? ORDER BY votes DESC,d.title ASC LIMIT 50").bind(ch.id).all();
-  return send({challenge:ch,entries:r.results});
+  return send({challenge:ch,entries:r.results||[]});
  }
  if(action==="tests"){
   const commander=safe(q.get("commander"),130);if(commander.length<3)return fail("Choose a commander.",400);

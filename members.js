@@ -37,6 +37,7 @@ function markTier(){
  $("memberDeviceCount").textContent=(account.devices?.length||0)+" / 2";
  const current=account.devices?.find(x=>x.id===account.deviceId);
  $("memberDeviceName").textContent=current?.label||"This device";
+ $("memberPaidUntil").textContent=account.paidUntil?new Date(account.paidUntil*1000).toLocaleDateString():"Not verified";
  const detective=tierPower[account.tier]>=2;
  $("detectiveLock").hidden=detective;$("detectiveTools").hidden=!detective;
  $("memberRequestType").querySelectorAll("option").forEach(o=>o.disabled=tierPower[account.tier]<({showcase:1,question:2,consultation:3,editorial:3,credit:3}[o.value]||1));
@@ -44,13 +45,13 @@ function markTier(){
 async function enter(){
  try{
   account=await api("/api/member");
-  $("memberOffice").hidden=false;$("memberEntrance").hidden=true;
+  $("memberOffice").hidden=false;$("memberEntrance").hidden=true;$("memberPreview").hidden=true;
   markTier();
   status("Membership verified · "+(tierNames[account.tier]||account.tier));
   show(location.hash.slice(1)||"dossier");
   await Promise.allSettled([loadOverview(),loadDevices(),loadShowcase()]);
  }catch(e){
-  account=null;$("memberOffice").hidden=true;$("memberEntrance").hidden=false;
+  account=null;$("memberOffice").hidden=true;$("memberEntrance").hidden=false;$("memberPreview").hidden=false;
   status(e.message||"Activate this device to continue.",true);
  }
 }

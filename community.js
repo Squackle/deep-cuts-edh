@@ -4,7 +4,22 @@ export const state={key:"",me:null,caseSlug:"chainer-dementia-master",deck:null,
 export const el=(tag,content,cls)=>{const n=document.createElement(tag);if(content!==undefined&&content!==null)n.textContent=String(content);if(cls)n.className=cls;return n};
 export function clear(node){node.replaceChildren()}
 export function msg(t,isError=false){const n=$("cmStatus");n.textContent=t||"";n.dataset.error=isError?"true":"false"}
-export const avatarUrl=name=>"https://api.scryfall.com/cards/named?exact="+encodeURIComponent(name)+"&format=image&version=normal";
+export const avatarUrl=name=>"https://api.scryfall.com/cards/named?exact="+encodeURIComponent(name)+"&format=image&version=art_crop";
+// Art-crop framing presets. A face, mask or prominent head-like feature is prioritized.
+const focal={
+ "Chainer, Dementia Master":[51,32],
+ "Commander Mustard":[50,29],
+ "Alena, Kessig Trapper":[51,23],
+ "Gilanra, Caller of Wirewood":[51,27],
+ "Ekthi, Contaminator Priest":[51,28]
+};
+export const avatarImage=(name,small=false,focus=null)=>{
+ const img=el("img");img.src=avatarUrl(name);img.alt="Art portrait: "+name;
+ img.loading="lazy";img.decoding="async";img.className=small?"cm-avatar-small":"cm-avatar-crop";
+ const [x,y]=focus||focal[name]||[50,35];img.style.objectPosition=x+"% "+y+"%";
+ img.onerror=()=>{img.removeAttribute("src");img.alt="Commander art unavailable";};
+ return img;
+};
 export function badge(t){return el("span",t,"cm-tag")}
 export function button(label,fn,outline=false){const n=el("button",label,"cm-btn"+(outline?" cm-outline":""));n.type="button";n.addEventListener("click",fn);return n}
 export function link(label,url){const a=el("a",label);a.href=url;return a}
@@ -36,8 +51,13 @@ export function setTab(tab){
  if(tab==="account")updateIdentity();
 }
 export function portrait(p){
- const n=el("div",null,"cm-portrait"),img=el("img");img.src=avatarUrl(p.avatar);img.alt="Commander portrait: "+p.avatar;img.loading="lazy";
- const text=el("div");text.append(el("h3",p.handle),el("p",p.bio||"No biography yet."));n.append(img,text);return n;
+ const n=el("div",null,"cm-portrait"),wrap=el("div",null,"cm-portrait-art");
+ const frame=el("a",null,"cm-avatar-link");frame.href="https://scryfall.com/search?q="+encodeURIComponent('!"'+p.avatar+'"');
+ frame.target="_blank";frame.rel="noopener noreferrer";frame.title="View the original full card and illustrator credit";
+ frame.append(avatarImage(p.avatar,false,[p.focus_x??50,p.focus_y??30]));wrap.append(frame);
+ wrap.append(el("small","View full card / artist ↗","cm-art-credit"));
+ const details=el("div",null,"cm-portrait-details");details.append(el("h3",p.handle),el("p",p.bio||"No biography yet."));
+ n.append(wrap,details);return n;
 }
 export function updateIdentity(){
  $("identitySummary").replaceChildren(state.me?portrait(state.me):el("p","No profile signed in."));
@@ -46,6 +66,9 @@ export function updateIdentity(){
   $("ownProfile").replaceChildren(portrait(state.me),el("p","Save your recovery key somewhere private. This profile is public; your credential is not.","cm-note"));
   $("editProfileForm").elements.bio.value=state.me.bio||"";
   $("editProfileForm").elements.avatar.value=state.me.avatar;
+  $("editProfileForm").elements.focusX.value=state.me.focus_x??50;
+  $("editProfileForm").elements.focusY.value=state.me.focus_y??30;
+  renderEditAvatarPreview();
  }
 }
 export async function restore(){
@@ -72,6 +95,7 @@ export async function showComments(target,topic){
  if(!x.comments.length)return empty(target,"No evidence filed yet. You could be the first.");
  for(const c of x.comments){
   const n=card("@"+c.handle,c.body,c.created_at+(c.kind==="doctor"?" · Deck Doctor":""));
+  const author=n.querySelector("header strong");if(author){author.className="cm-card-author";author.prepend(avatarImage(c.avatar,true,[c.focus_x??50,c.focus_y??30]));}
   const footer=el("div",null,"cm-actions");
   footer.append(button("♥ "+c.likes,async()=>{const r=await attempt(()=>write({action:"react",id:c.id}));if(r)showComments(target,topic)},true));
   footer.append(button("REPORT",async()=>{if(!state.me){msg("Sign in to report content.",true);return}const reason=prompt("Briefly explain what violates the community rules (10+ characters):");if(reason){const r=await attempt(()=>write({action:"report",comment_id:c.id,reason}),"Report sent to moderation.");if(r)msg("Report sent to moderation.")}},true));
@@ -104,10 +128,38 @@ async function showProfile(handle){
  if(state.me&&state.me.id!==x.profile.id)n.append(button("FOLLOW / UNFOLLOW INVESTIGATOR",async()=>{const r=await attempt(()=>write({action:"follow",type:"profile",target:x.profile.id}));if(r)msg(r.following?"Following investigator.":"Unfollowed investigator.")}));
  x.decks.forEach(d=>n.append(el("p",null),link(d.title+" ↗","community.html?deck="+d.id)));
 }
+function renderAvatarChoice(){
+ const f=$("registerForm"),dest=$("avatarPreview");
+ if(!f||!dest)return;
+ const name=f.elements.avatar.value;
+ const row=el("div",null,"cm-portrait-preview");
+ row.append(avatarImage(name,false,[Number(f.elements.focusX.value),Number(f.elements.focusY.value)]));
+ const meta=el("div");
+ meta.append(el("strong",name),el("small","Face-focused art crop · final profile portrait"));
+ const source=link("View the original card and illustrator ↗","https://scryfall.com/search?q="+encodeURIComponent('!"'+name+'"'));
+ source.target="_blank";source.rel="noopener noreferrer";meta.append(source);row.append(meta);
+ dest.replaceChildren(row);
+}
+function renderEditAvatarPreview(){
+ const f=$("editProfileForm"),dest=$("editAvatarPreview");
+ if(!f||!dest)return;
+ const row=el("div",null,"cm-portrait-preview");
+ row.append(avatarImage(f.elements.avatar.value,false,[Number(f.elements.focusX.value),Number(f.elements.focusY.value)]));
+ row.append(el("span","Drag the sliders to center a face, mask, skull or other defining detail."));
+ dest.replaceChildren(row);
+}
 function bindAccount(){
+ $("registerForm").elements.avatar.addEventListener("change",()=>{
+  const v=focal[$("registerForm").elements.avatar.value]||[50,30];
+  $("registerForm").elements.focusX.value=v[0];$("registerForm").elements.focusY.value=v[1];renderAvatarChoice();
+ });
+ ["focusX","focusY"].forEach(k=>$("registerForm").elements[k].addEventListener("input",renderAvatarChoice));
+ $("editProfileForm").elements.avatar.addEventListener("change",()=>{const v=focal[$("editProfileForm").elements.avatar.value]||[50,30];$("editProfileForm").elements.focusX.value=v[0];$("editProfileForm").elements.focusY.value=v[1];renderEditAvatarPreview()});
+ ["focusX","focusY"].forEach(k=>$("editProfileForm").elements[k].addEventListener("input",renderEditAvatarPreview));
+ renderAvatarChoice();
  $("registerForm").addEventListener("submit",async ev=>{ev.preventDefault();const f=ev.currentTarget;
  const token=f.querySelector('input[name="cf-turnstile-response"]')?.value||"";
- const r=await attempt(()=>write({action:"register",handle:f.elements.handle.value,bio:f.elements.bio.value,avatar:f.elements.avatar.value,token},false));
+ const r=await attempt(()=>write({action:"register",handle:f.elements.handle.value,bio:f.elements.bio.value,avatar:f.elements.avatar.value,focusX:Number(f.elements.focusX.value),focusY:Number(f.elements.focusY.value),token},false));
  if(!r)return;
  $("newKeyBox").hidden=false;$("newKey").value=r.key;
  await saveSession(r.key,false);$("accountLoggedIn").prepend($("newKeyBox"));$("newKeyBox").hidden=false;$("newKeyBox").scrollIntoView({block:"center",behavior:"smooth"});
@@ -115,7 +167,7 @@ function bindAccount(){
  });
  $("copyKey").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("newKey").value);msg("Recovery key copied. Save it privately.")}catch{msg("Select and copy the recovery key manually.",true)}});
  $("loginForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;const key=f.elements.key.value.trim();const result=await attempt(()=>saveSession(key,f.elements.remember.checked));if(result!==null){f.reset();msg("Your profile is ready.")}});
- $("editProfileForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;const r=await attempt(()=>write({action:"update_profile",bio:f.elements.bio.value,avatar:f.elements.avatar.value}),"Profile saved.");if(r){state.me.bio=f.elements.bio.value.trim();state.me.avatar=f.elements.avatar.value;updateIdentity()}});
+ $("editProfileForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;const r=await attempt(()=>write({action:"update_profile",bio:f.elements.bio.value,avatar:f.elements.avatar.value,focusX:Number(f.elements.focusX.value),focusY:Number(f.elements.focusY.value)}),"Profile saved.");if(r){state.me.bio=f.elements.bio.value.trim();state.me.avatar=f.elements.avatar.value;state.me.focus_x=Number(f.elements.focusX.value);state.me.focus_y=Number(f.elements.focusY.value);updateIdentity()}});
  $("signOut").addEventListener("click",()=>{state.key="";state.me=null;try{sessionStorage.removeItem("dc-profile-key");localStorage.removeItem("dc-profile-key")}catch{}$("newKeyBox").hidden=true;updateIdentity();msg("Signed out on this device.")});
  $("deleteAccount").addEventListener("click",async()=>{const phrase=prompt("This permanently deletes your free community profile and all your public contributions. Type DELETE MY PROFILE to proceed.");if(phrase!=="DELETE MY PROFILE")return;const r=await attempt(()=>write({action:"delete_profile",confirm:phrase}));if(r){$("signOut").click();msg("Your community profile was deleted.")}});
 }

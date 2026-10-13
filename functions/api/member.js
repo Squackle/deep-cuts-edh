@@ -5,7 +5,7 @@ export async function onRequestGet({request,env}){
  const check=await authorize(request,env);
  if(check.error)return check.error;
  const rows=await env.DB.prepare("SELECT id,label,created_at FROM member_devices WHERE member_id=? AND revoked_at IS NULL ORDER BY created_at").bind(check.account.id).all();
- return reply({ok:true,tier:check.account.tier,active:true,deviceId:check.deviceId,devices:rows.results||[],limit:2,canReplaceAt:Number(check.account.last_replacement||0)+2592000,benefits:["dossier","alternate-builds","early-access","showcase","newsletter","themes","history","probability","collection","watches","question","consultation","editorial","recognition"]});
+ return reply({ok:true,tier:check.account.tier,active:true,deviceId:check.deviceId,devices:rows.results||[],limit:2,canReplaceAt:Number(check.account.last_replacement||0)+2592000,paidUntil:check.account.paid_until,benefits:["dossier","alternate-builds","early-access","showcase","newsletter","themes","history","probability","collection","watches","question","consultation","editorial","recognition"]});
 }
 export async function onRequestPost({request,env}){
  if(!originOK(request))return reply({error:"Origin not allowed."},403);

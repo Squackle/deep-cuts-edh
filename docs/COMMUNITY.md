@@ -29,3 +29,10 @@ One coordinated Cloudflare Pages + D1 change. New files: community.html/css/js, 
 - The current challenge is seeded explicitly and does not roll forward automatically. Change it by inserting another community_challenges row after the previous one closes. Only publish a vetted commander name with a valid UTC window.
 - API has two methods GET/POST at /api/community, with action dispatch and bearer-token authentication.
 - Backward compatibility: retiring /api/account remains 410; legacy key-only vaults are untouched.
+
+## October 13 follow-up: portraits and open-format challenges
+- Existing `Squackle` profile and its public deck `Shapeshifters` / `Nephilim Epochal` were confirmed in D1. The deck is intact; the original Chainer challenge excluded it because only Chainer lists were eligible.
+- `db/community-v2.sql` adds `format` to challenges and seeds an **Open Case Showcase** through November 13, 2026 UTC. Open-format entries accept any owned published deck, including clearly labeled experimental/pre-release subjects. The Chainer-only challenge retains its Commander requirement. Voting does not prove deck legality or win rate.
+- The challenge chooser lists **all** signed-in public decks, and explains eligibility instead of silently filtering nonmatching decks. A user must explicitly submit an entry.
+- `db/community-avatar-focus.sql` adds focus_x / focus_y to public profile records (0–100). Scryfall art-only crops are presented in circular frames; users can adjust the focal point with sliders. The full card and illustration credit are linked. Uploaded arbitrary images are not accepted.
+- The Field Network header now contains every global site destination available from the homepage.

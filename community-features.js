@@ -64,27 +64,83 @@ async function loadGallery(){
  }
  await loadMyDecks();
 }
+let selectedChallenge="";
+let challengeRecord=null;
+let currentEligibility=false;
+function isEligible(ch,deck){
+ if(ch.format==="open")return true;
+ return deck.commander.toLowerCase().split("&").some(x=>x.trim()===ch.commander.toLowerCase().trim());
+}
+function isPreviewCommander(name){return /nephilim epochal|ekthi, contaminator priest/i.test(name)}
+function formatDeckName(deck){
+ const preview=isPreviewCommander(deck.commander)?" · PRE-RELEASE / EXPERIMENTAL":"";
+ return deck.title+" — "+deck.commander+preview;
+}
+function updateEligibility(){
+ const picker=$("challengeDeck"),info=$("challengeEligibility"),id=picker.value;
+ const deck=state.myDecks.find(x=>x.id===id),ch=challengeRecord;
+ const now=new Date().toISOString().slice(0,19).replace("T"," ");
+ const active=!!ch&&now>=ch.opens_at&&now<=ch.closes_at;
+ currentEligibility=!!deck&&!!ch&&isEligible(ch,deck)&&active;
+ $("enterChallenge").disabled=!currentEligibility;
+ if(!state.me)info.textContent="Sign in with your Field Network profile to see your decks and submit an entry.";
+ else if(!state.myDecks.length)info.textContent="You have no published community decks yet. Publish one in the Deck Gallery first; private vaults aren't public entries.";
+ else if(!deck)info.textContent="All "+state.myDecks.length+" public decks are listed. Choose one to check whether it qualifies for this challenge.";
+ else if(!active)info.textContent="This event is closed, but your deck remains in the gallery.";
+ else if(!isEligible(ch,deck))info.textContent='"'+deck.title+'" is saved to your profile, but this specific challenge requires '+ch.commander+'. Choose the Open Case Showcase above to enter any commander.';
+ else if(isPreviewCommander(deck.commander))info.textContent='"'+deck.title+'" is eligible for this experimental Open Case showcase. IMPORTANT: '+deck.commander+' is a pre-release preview, NOT currently Commander-legal; entry is for discussion and future brewing only.';
+ else info.textContent='"'+deck.title+'" qualifies. Choose ENTER CHALLENGE to submit it (nothing is entered automatically).';
+ info.className="cm-challenge-notice"+(currentEligibility?" cm-eligible":deck?" cm-ineligible":"");
+}
 async function loadChallenge(){
- const x=await attempt(()=>api("challenge"));if(!x)return;
- const box=$("challengeInfo");clear(box);
- if(!x.challenge){box.append(el("p","No challenge scheduled yet."));return}
- const ch=x.challenge,open=new Date(ch.closes_at.replace(" ","T")+"Z").getTime()>=Date.now();
- box.append(el("h3",ch.title),el("p","Featured commander: "+ch.commander),el("p",open?"Submissions close "+ch.closes_at+" UTC":"Challenge closed "+ch.closes_at+" UTC","cm-note"));
- $("enterChallenge").disabled=!open;const select=$("challengeDeck");clear(select);
- const def=el("option","Select one of your public decks");def.value="";select.append(def);
- await loadMyDecks();
- for(const d of state.myDecks.filter(d=>d.commander.toLowerCase().includes(ch.commander.toLowerCase()))){
-  const o=el("option",d.title);o.value=d.id;select.append(o);
+ const list=await attempt(()=>api("challenges"));if(!list)return;
+ const picker=$("challengeSelect");
+ const prev=selectedChallenge||new URL(location.href).searchParams.get("challenge")||"open-001";
+ clear(picker);
+ const activeList=list.challenges||[];
+ if(!activeList.length){$("challengeInfo").textContent="No challenges are scheduled.";return}
+ for(const ch of activeList){
+  const o=el("option",ch.title+" ("+(ch.format==="open"?"open format":"featured commander")+")");
+  o.value=ch.id;picker.append(o);
  }
- const out=$("challengeEntries");clear(out);
- if(!x.entries.length)empty(out,"No entrants yet. Can you make the first rescue?");
+ selectedChallenge=activeList.some(x=>x.id===prev)?prev:activeList[0].id;
+ picker.value=selectedChallenge;
+ await loadChallengeDetail();
+}
+async function loadChallengeDetail(){
+ const x=await attempt(()=>api("challenge",{id:selectedChallenge}));if(!x)return;
+ challengeRecord=x.challenge;
+ const box=$("challengeInfo");clear(box);
+ if(!x.challenge){box.append(el("p","No challenge scheduled."));return}
+ const ch=x.challenge,now=new Date().toISOString().slice(0,19).replace("T"," ");
+ const open=now>=ch.opens_at&&now<=ch.closes_at;
+ box.append(el("h3",ch.title),el("p",ch.format==="open"?"OPEN FORMAT: Every public commander deck may enter, including explicitly labeled pre-release experiments.":"FEATURED COMMANDER: "+ch.commander));
+ box.append(el("p",(open?"Entries and votes close ":"Challenge closed ")+ch.closes_at+" UTC","cm-note"));
+ if(ch.format==="open")box.append(el("p","This is a community creativity showcase, not a tournament or Commander-legality certification.","cm-note"));
+ const select=$("challengeDeck"),previous=select.value;clear(select);
+ const defaultOption=el("option","Select a published deck");defaultOption.value="";select.append(defaultOption);
+ await loadMyDecks();
+ for(const deck of state.myDecks){
+  const ok=isEligible(ch,deck);const option=el("option",formatDeckName(deck)+(ok?"":" · NOT ELIGIBLE FOR THIS EVENT"));
+  option.value=deck.id;select.append(option);
+ }
+ select.value=state.myDecks.some(d=>d.id===previous)?previous:"";
+ updateEligibility();
+ const entries=$("challengeEntries");clear(entries);
+ if(!x.entries.length)empty(entries,"No entrants yet. You could be the first.");
  for(const entry of x.entries){
-  const n=card(entry.title,entry.commander,"@"+entry.handle+" · "+entry.votes+" votes");
+  const preview=isPreviewCommander(entry.commander);
+  const n=card(entry.title,entry.commander+(preview?" · PRE-RELEASE: showcase entry, not Commander-legal":""),
+   "@"+entry.handle+" · "+entry.votes+" community votes");
   n.append(button("SEE BUILD ↗",()=>openDeck(entry.deck_id),true));
-  if(open)n.append(button("VOTE FOR THIS BUILD",async()=>{const r=await attempt(()=>write({action:"vote",deck_id:entry.deck_id}),"Vote saved.");if(r)loadChallenge()}));
-  out.append(n);
+  if(open)n.append(button("VOTE FOR THIS BUILD",async()=>{
+   const r=await attempt(()=>write({action:"vote",challenge_id:ch.id,deck_id:entry.deck_id}),"Vote saved for this challenge.");
+   if(r)loadChallengeDetail();
+  }));
+  entries.append(n);
  }
 }
+
 async function loadLab(){
  const commander=$("labCommander").value.trim();if(commander.length<3){msg("Enter a commander.",true);return}
  const x=await attempt(()=>api("tests",{commander}));if(!x)return;
@@ -142,8 +198,13 @@ export function setupFeatures(){
   const r=await attempt(()=>write({action:"comment",topic:"deck:"+state.deck.id,kind:"doctor",body:f.elements.body.value}),"Deck Doctor recommendation submitted.");
   if(r){f.reset();showComments($("deckComments"),"deck:"+state.deck.id)}
  });
- $("enterChallenge").addEventListener("click",async()=>{const id=$("challengeDeck").value;if(!id)return msg("Select an eligible published deck.",true);
-  const r=await attempt(()=>write({action:"challenge_entry",deck_id:id}),"Challenge entry submitted.");if(r)loadChallenge();
+ $("challengeSelect").addEventListener("change",e=>{selectedChallenge=e.target.value;loadChallengeDetail()});
+ $("challengeDeck").addEventListener("change",updateEligibility);
+ $("enterChallenge").addEventListener("click",async()=>{
+  const id=$("challengeDeck").value;
+  if(!currentEligibility)return msg("Choose a deck eligible for the selected challenge.",true);
+  const r=await attempt(()=>write({action:"challenge_entry",challenge_id:selectedChallenge,deck_id:id}),"Entry submitted to "+challengeRecord.title+".");
+  if(r)loadChallengeDetail();
  });
  $("checkLab").addEventListener("click",loadLab);
  $("playtestForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;
