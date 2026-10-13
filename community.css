@@ -53,7 +53,7 @@
 .cm-decklist{max-height:240px;overflow:auto;white-space:pre-wrap;font-family:monospace;font-size:12px;line-height:1.6;padding:14px;background:#e4dcc7}
 .cm-stat{display:inline-block;border:1px solid #c6b895;padding:12px;margin:5px 8px 5px 0;background:#fff9e9}
 .cm-stat strong{display:block;font-size:23px}
-@media(max-width:900px){.cm-layout{grid-template-columns:1fr}.cm-sidebar{gap:12px}.cm-tabs{flex-direction:row;overflow-x:auto}.cm-tabs button{flex:0 0 auto;padding:11px;font-size:11px}.cm-hero{grid-template-columns:1fr}.cm-counts{max-width:470px}.cm-panel{padding:22px 17px}}
+@media(max-width:900px){.cm-layout{grid-template-columns:minmax(0,1fr)}.cm-sidebar{gap:12px}.cm-tabs{flex-direction:row;overflow-x:auto}.cm-tabs button{flex:0 0 auto;padding:11px;font-size:11px}.cm-hero{grid-template-columns:minmax(0,1fr)}.cm-counts{max-width:470px}.cm-panel{padding:22px 17px}}
 @media(max-width:500px){.cm-counts strong{font-size:25px}.cm-counts span{font-size:9px}.cm-page{padding-top:23px}.cm-hero{gap:15px}.cm-two{grid-template-columns:1fr}.cm-paper{padding:16px}}
 
 /* Maintain the complete global menu on the Field Network. */
@@ -118,3 +118,29 @@
 /* A soft gold halo for the uniquely most-voted deck, only after voting closes. */
 .cm-card.cm-challenge-winner{border-color:#c89c50;background:linear-gradient(130deg,#fffaf0,#fff4dc);box-shadow:0 0 0 1px rgba(209,162,78,.38),0 0 19px rgba(216,176,103,.22)}
 .cm-top-vote-label{display:inline-block;margin-bottom:9px;padding:5px 9px;border-radius:3px;border:1px solid #caaf79;background:#f6e6c2;color:#73521d;font:800 10px ui-sans-serif,system-ui,sans-serif;letter-spacing:.09em}
+
+/* Mobile intrinsic sizing guard.
+   Long Field Network navigation labels must scroll within the sidebar,
+   not widen the page and push profile forms beyond the viewport. */
+.cm-layout,.cm-sidebar,.cm-main,.cm-tabs,.cm-panel,.cm-paper{min-width:0}
+.cm-main,.cm-sidebar{max-width:100%}
+.cm-paper,.cm-panel{overflow-wrap:anywhere}
+@media(max-width:900px){
+ .cm-page .wrap{min-width:0}
+ .cm-layout{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;width:100%}
+ .cm-sidebar,.cm-main{min-width:0;width:100%}
+ .cm-hero{grid-template-columns:minmax(0,1fr)}
+ .cm-counts{width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .cm-counts>div{min-width:0}
+ .cm-tabs{display:flex;flex-direction:row;flex-wrap:nowrap;width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:5px}
+ .cm-tabs button{flex:0 0 auto}
+ .cm-panel,.cm-paper{max-width:100%}
+ .cm-portrait-preview{max-width:100%;flex-wrap:wrap}
+}
+@media(max-width:500px){
+ .cm-page>.wrap{width:calc(100% - 28px)}
+ .cm-panel{padding:20px 15px}
+ .cm-counts>div{padding:16px 5px}
+ .cm-focal-controls{grid-template-columns:minmax(0,1fr)}
+ .cm-panel input,.cm-panel textarea,.cm-panel select{min-width:0}
+}
