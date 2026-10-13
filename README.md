@@ -110,6 +110,10 @@ References:
 - The nominations page displays the total number of nominations, number of approved candidates with votes, pending count, and large per-commander totals. Suggestions prefill the anonymous nomination form but do **not** submit automatically.
 - `fill-deck.js` powers the optional **Fill to 100** button in the My Deck panel. It checks existing cards and commanders against Scryfall, uses mana curve/role heuristics, searches Commander-legal cards in the proper identity, proposes basic lands plus role-based spells, explains each suggestion, and preserves existing choices on confirmation. If it cannot find all missing cards within a budget, it doesn't apply a partial list. A complete Scryfall lookup and browser testing remain necessary for production confidence; estimates omit unavailable printings and shipping.
 
+## Moxgate free-play buttons on every Rescue Report (October 13, 2026)
+
+Every existing commander case file (Chainer; Alena and Gilanra; Commander Mustard; Ekthi preview) has a prominent gold Moxgate link below its hero/sidebar commander art. All four load the shared `reports/moxgate.css` styles. Standard new report pages that load `reports/guide.js` and use the report hero/media classes receive the button automatically if explicit markup is missing. For **every future** report, follow the required [report publishing checklist](docs/REPORT-PUBLISHING.md); pre-release reports must state their legality caveat. Links go to Moxgate, not an automatically imported/verified deck.
+
 ## Rescue Reports 002–004 (2026-10-12)
 
 - `reports/alena-and-gilanra.html`: Gruul burst-mana partner guide.
