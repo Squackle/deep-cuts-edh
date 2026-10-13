@@ -3,6 +3,10 @@
  * Configure Ko-fi verification and HMAC secrets in Cloudflare Pages. */
 const HEAD={"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
 const response=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:HEAD});
+/* Public health check: only reports readiness booleans; never outputs credentials. */
+export function onRequestGet({env}){
+ return response({ok:true,provider:"Ko-fi",webhookConfigured:Boolean(env.DB&&env.KOFI_VERIFICATION_TOKEN&&env.KOFI_EMAIL_HASH_SECRET),memberKeyDeliveryReady:false});
+}
 async function digest(secret,data){
  const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),"HMAC",false,["sign"]);
  return new Uint8Array(await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(data)));
@@ -56,12 +60,13 @@ export async function onRequestPost({request,env}){
  const emailHash=toHex(await digest(env.KOFI_EMAIL_HASH_SECRET,"ko-fi-member-v1:"+email));
  const paidUntil=addMonth(date);
  try{
-  const inserted=await env.DB.prepare("INSERT OR IGNORE INTO kofi_payment_events(message_id,email_hash,tier,paid_at,paid_until,amount_cents) VALUES(?,?,?,?,?,?)").bind(id,emailHash,tier.id,paidAt,paidUntil,cents).run();
-  if((inserted.meta?.changes||0)===0)return response({ok:true,duplicate:true});
-  await env.DB.prepare(`INSERT INTO kofi_renewals(email_hash,tier,last_paid_at,paid_until) VALUES(?,?,?,?)
-    ON CONFLICT(email_hash) DO UPDATE SET tier=CASE WHEN excluded.last_paid_at>=kofi_renewals.last_paid_at THEN excluded.tier ELSE kofi_renewals.tier END,
-    last_paid_at=MAX(kofi_renewals.last_paid_at,excluded.last_paid_at),
-    paid_until=MAX(kofi_renewals.paid_until,excluded.paid_until)`).bind(emailHash,tier.id,paidAt,paidUntil).run();
-  return response({ok:true,recorded:true});
+  const result=await env.DB.batch([
+    env.DB.prepare("INSERT OR IGNORE INTO kofi_payment_events(message_id,email_hash,tier,paid_at,paid_until,amount_cents) VALUES(?,?,?,?,?,?)").bind(id,emailHash,tier.id,paidAt,paidUntil,cents),
+    env.DB.prepare(`INSERT INTO kofi_renewals(email_hash,tier,last_paid_at,paid_until) VALUES(?,?,?,?)
+      ON CONFLICT(email_hash) DO UPDATE SET tier=CASE WHEN excluded.last_paid_at>=kofi_renewals.last_paid_at THEN excluded.tier ELSE kofi_renewals.tier END,
+      last_paid_at=MAX(kofi_renewals.last_paid_at,excluded.last_paid_at),
+      paid_until=MAX(kofi_renewals.paid_until,excluded.paid_until)`).bind(emailHash,tier.id,paidAt,paidUntil)
+   ]);
+  return response({ok:true,recorded:Boolean(result?.[0]?.meta?.changes),duplicate:!(result?.[0]?.meta?.changes)});
  }catch(e){console.error("Ko-fi payment record failed",String(e));return response({error:"Unable to record payment; retry later."},503)}
 }
