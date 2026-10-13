@@ -24,7 +24,7 @@ export function emailReady(env){
  ));
 }
 export async function emailHash(email,env){
- const key=await crypto.subtle.importKey("raw",encoder.encode(env.KOFI_EMAIL_HASH_SECRET),"HMAC",false,["sign"]);
+ const key=await crypto.subtle.importKey("raw",encoder.encode(env.KOFI_EMAIL_HASH_SECRET),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
  const sig=await crypto.subtle.sign("HMAC",key,encoder.encode("deep-cuts-profile-email-index:v1:"+email));
  return hex(new Uint8Array(sig));
 }
@@ -72,7 +72,7 @@ async function deliverViaGoogle(env,email,code,requestId,purpose){
  // Google Apps Script property. Never send it to the client or in the request URL.
  const ts=Date.now();
  const canonical=["v1",String(ts),requestId,purpose,email,code].join("\n");
- const secret=await crypto.subtle.importKey("raw",encoder.encode(env.GOOGLE_MAILER_SECRET),"HMAC",false,["sign"]);
+ const secret=await crypto.subtle.importKey("raw",encoder.encode(env.GOOGLE_MAILER_SECRET),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
  const signature=hex(new Uint8Array(await crypto.subtle.sign("HMAC",secret,encoder.encode(canonical))));
  const body=JSON.stringify({version:1,ts,id:requestId,purpose,email,code,signature});
  let res=await fetch(url,{method:"POST",
