@@ -49,3 +49,10 @@
  .field-inventory-row .cm-actions{margin-left:auto}
  .field-rank-line{align-items:flex-start}
 }
+
+/* Public investigator profile bling from authenticated daily puzzle victories. */
+.game-profile-bling{margin:13px 0 4px;border:1px solid #ccb48a;background:linear-gradient(135deg,#fff8e3,#eee7cf);padding:14px}
+.game-profile-bling h3{font:800 13px ui-monospace,monospace;color:#70521c;letter-spacing:.06em;margin:0 0 9px}
+.game-profile-badges{display:flex;flex-wrap:wrap;gap:6px}
+.game-profile-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:800;color:#395439;background:#fdfbf0;padding:8px 10px;border:1px solid #bfaa7d;box-shadow:0 2px 4px #2c341018}
+.game-profile-game-link{display:block;margin-top:11px;font-size:10px;font-weight:800;color:#275f40;text-decoration:underline;text-underline-offset:3px}

@@ -221,3 +221,16 @@ dialog{background:#faf9f2;color:#24352e;border:1px solid #94b09b;border-radius:1
 .research-link:focus-visible,.retro-button:focus-visible{outline:3px solid #3d8166;outline-offset:3px}
 @media(max-width:900px){.studio-preview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:580px){.studio-preview-grid{grid-template-columns:1fr}}
+
+/* Lightweight home-page teaser for two free daily MTG Commander games. */
+.home-daily-games{background:#253e33;border-top:1px solid #728872;border-bottom:1px solid #728872;color:#f6ead7;padding:30px 0}
+.home-daily-games-inner{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.home-daily-games h2{font:700 clamp(25px,3vw,36px) Georgia,serif;color:#f5ecd8;margin:5px 0 9px}
+.home-daily-games h2 em{color:#e4c68f}
+.home-daily-games p{font-size:13px;color:#d6e0d1;line-height:1.6;margin:0;max-width:660px}
+.home-daily-games p a{color:#f8d494;text-decoration:underline;text-underline-offset:2px}
+.home-daily-games .section-kicker{color:#d6bd8e;border:0;letter-spacing:.08em;font-size:10px}
+.home-daily-games-links{display:flex;gap:9px;flex:0 0 auto;flex-wrap:wrap}
+.home-daily-games-links .btn{font-size:11px;padding:12px 13px;white-space:nowrap}
+@media(max-width:970px){.home-daily-games-inner{flex-direction:column;align-items:flex-start}}
+@media(max-width:500px){.home-daily-games-links{width:100%}.home-daily-games-links .btn{flex:1}}

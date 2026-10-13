@@ -32,8 +32,37 @@ export async function loadReputation(){
   if(state.me){
    const response=await fieldGet("reputation",{handle:state.me.handle});
    my.replaceChildren(el("h3","YOUR INVESTIGATOR RANK"),card(response.profile,true));
+   const badges=await gameBadges(state.me.handle);
+   if(badges.length)appendGameBling(my,badges);
   }else my.replaceChildren(el("p","Sign in to see your personal achievements. Public standings appear below.","cm-note"));
  }catch(e){showFieldError(my,e)}
+}
+// Daily puzzle achievements are earned only from authenticated, validated
+// daily game results. They decorate public investigator dossiers but never add
+// paid perks or inflate contribution-reputation points.
+async function gameBadges(handle){
+ if(!/^[A-Za-z][A-Za-z0-9_]{2,23}$/.test(handle||""))return [];
+ try{
+  const u=new URL("/api/daily-games",location.href);
+  u.searchParams.set("action","badges");u.searchParams.set("handle",handle);
+  const res=await fetch(u,{cache:"no-store",credentials:"same-origin"});
+  if(!res.ok)return [];
+  const d=await res.json();
+  return Array.isArray(d.badges)?d.badges:[];
+ }catch{return []}
+}
+function appendGameBling(host,badges){
+ const section=el("section",null,"game-profile-bling");
+ section.append(el("h3","🎮 DAILY GAME TROPHIES"));
+ const grid=el("div",null,"game-profile-badges");
+ for(const b of badges){
+  const tag=el("span",b.title,"game-profile-badge");
+  tag.title=b.detail||"Daily MTG game achievement";
+  grid.append(tag);
+ }
+ section.append(grid);
+ const link=el("a","EARN MORE IN DAILY MTG GAMES ↗","game-profile-game-link");
+ link.href="/games.html";section.append(link);host.append(section);
 }
 export async function attachProfileReputation(target,handle){
  if(!target||!/^[a-z][a-z0-9_]{2,23}$/i.test(handle))return;
@@ -43,6 +72,8 @@ export async function attachProfileReputation(target,handle){
   const {profile}=await fieldGet("reputation",{handle});
   if(!target.contains(wrapper))return;
   wrapper.replaceChildren(card(profile));
+  const badges=await gameBadges(handle);
+  if(target.contains(wrapper)&&badges.length)appendGameBling(wrapper,badges);
  }catch{
   if(target.contains(wrapper))wrapper.replaceChildren(el("p","Investigator credentials are temporarily unavailable.","cm-note"));
  }
