@@ -1,0 +1,9 @@
+/* Shared Moxgate call-to-action: all current and future Rescue Reports. */
+.report-hero-right{display:flex;flex-direction:column;justify-content:space-between;gap:18px;min-width:0}
+.report-hero-right .report-hero-media{flex:1 1 auto}
+.report-moxgate-cta{position:relative;z-index:1;text-align:center}
+.report-moxgate-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 12px;border:1px solid #f3d7a2;border-radius:9px;background:linear-gradient(135deg,#f4dba7,#d7ad6b);color:#21382c;font-weight:850;font-size:12px;letter-spacing:.07em;text-decoration:none;box-shadow:0 5px 16px #0617105e;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease}
+.report-moxgate-button:hover,.report-moxgate-button:focus-visible{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 8px 22px #06171070}
+.report-moxgate-cta p{margin:10px 0 0;color:#d6e5d9;font-size:12px;line-height:1.5}
+@media(max-width:620px){.report-hero-right{gap:14px}.report-hero-right .report-hero-media{min-height:200px}.report-moxgate-cta{max-width:350px;width:100%;margin:0 auto}}
+@media(prefers-reduced-motion:reduce){.report-moxgate-button{transition:none}}
