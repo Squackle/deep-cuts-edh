@@ -25,3 +25,12 @@ CREATE TABLE IF NOT EXISTS kofi_webhook_audit (
  classification TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS kofi_webhook_audit_time_idx ON kofi_webhook_audit(received_at DESC);
+
+-- Bounded hourly delivery counters, including failed validation branches,
+-- without logging tokens, emails, URLs, IPs, payloads or customer details.
+CREATE TABLE IF NOT EXISTS kofi_webhook_diagnostics(
+ hour_bucket INTEGER NOT NULL,
+ reason TEXT NOT NULL,
+ events INTEGER NOT NULL DEFAULT 1,
+ PRIMARY KEY(hour_bucket,reason)
+);

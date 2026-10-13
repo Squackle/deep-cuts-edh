@@ -3,6 +3,16 @@
  * Configure Ko-fi verification and HMAC secrets in Cloudflare Pages. */
 const HEAD={"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
 const response=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:HEAD});
+/* Privacy-safe reception counters. These do not log payloads, IPs, emails,
+ * verification tokens, or names. Failed authentication stays failed. */
+async function diagnostic(env,reason){
+ if(!env.DB)return;
+ try {
+  const hour=Math.floor(Date.now()/3600000)*3600;
+  await env.DB.prepare("INSERT INTO kofi_webhook_diagnostics(hour_bucket,reason,events) VALUES(?,?,1) ON CONFLICT(hour_bucket,reason) DO UPDATE SET events=events+1").bind(hour,reason).run();
+ }catch(e){console.error("Ko-fi diagnostics write failed",String(e))}
+}
+
 /* Public health check: only reports readiness booleans; never outputs credentials. */
 export function onRequestGet({env}){
  return response({ok:true,provider:"Ko-fi",webhookConfigured:Boolean(env.DB&&env.KOFI_VERIFICATION_TOKEN&&env.KOFI_EMAIL_HASH_SECRET),memberKeyDeliveryReady:false});
@@ -30,11 +40,14 @@ function addMonth(date){
  d.setUTCDate(Math.min(day,end));return Math.floor(d.getTime()/1000);
 }
 export async function onRequestPost({request,env}){
- if(!env.DB||!env.KOFI_VERIFICATION_TOKEN||!env.KOFI_EMAIL_HASH_SECRET)
+ await diagnostic(env,"post_received");
+ if(!env.DB||!env.KOFI_VERIFICATION_TOKEN||!env.KOFI_EMAIL_HASH_SECRET){
+  await diagnostic(env,"secrets_missing");
   return response({error:"Ko-fi webhook not configured."},503);
- if(Number(request.headers.get("content-length")||0)>16000)return response({error:"Payload too large."},413);
+ }
+ if(Number(request.headers.get("content-length")||0)>16000){await diagnostic(env,"too_large");return response({error:"Payload too large."},413)}
  const ct=request.headers.get("content-type")||"";
- if(!ct.toLowerCase().includes("application/x-www-form-urlencoded"))return response({error:"Expected Ko-fi form data."},415);
+ if(!ct.toLowerCase().includes("application/x-www-form-urlencoded")){await diagnostic(env,"wrong_content_type");return response({error:"Expected Ko-fi form data."},415)}
  let obj;
  try{
   const body=await request.text();
@@ -42,13 +55,14 @@ export async function onRequestPost({request,env}){
   const data=new URLSearchParams(body).get("data");
   if(!data||data.length>15000)throw Error("Missing payload");
   obj=JSON.parse(data);
- }catch{return response({error:"Malformed Ko-fi payload."},400)}
- if(!obj||typeof obj!=="object"||typeof obj.verification_token!=="string")return response({error:"Invalid token."},403);
- if(!await tokenOK(obj.verification_token,env.KOFI_VERIFICATION_TOKEN))return response({error:"Invalid token."},403);
+ }catch{await diagnostic(env,"malformed_payload");return response({error:"Malformed Ko-fi payload."},400)}
+ if(!obj||typeof obj!=="object"||typeof obj.verification_token!=="string"){await diagnostic(env,"token_missing");return response({error:"Invalid token."},403)}
+ if(!await tokenOK(obj.verification_token,env.KOFI_VERIFICATION_TOKEN)){await diagnostic(env,"token_mismatch");return response({error:"Invalid token."},403)}
+ await diagnostic(env,"token_verified");
  // Record only the fact that a properly authenticated event arrived.
  // No email, name, message ID, card data or entire payload is logged.
  const classification=obj.type==="Subscription"&&obj.is_subscription_payment===true?"subscription_payment":"non_subscription_payment";
- const eventType=["Subscription","Donation","Shop Order","Commission"].includes(String(obj.type))?String(obj.type):"other";
+ const eventType=["Subscription","Tip","Shop Order","Commission"].includes(String(obj.type))?String(obj.type):"other";
  try {
   await env.DB.batch([
    env.DB.prepare("INSERT INTO kofi_webhook_audit(event_type,classification) VALUES(?,?)").bind(eventType,classification),
@@ -56,18 +70,20 @@ export async function onRequestPost({request,env}){
   ]);
  }catch(e){console.error("Unable to audit verified Ko-fi event",String(e));return response({error:"Unable to record Ko-fi delivery."},503)}
 
- // A Ko-fi webhook also reports one-time donations, shop orders and commissions.
+ // Ko-fi also reports tips, shop orders and commissions.
  // None of those grants a recurring membership.
- if(obj.type!=="Subscription"||obj.is_subscription_payment!==true)return response({ok:true,ignored:"not a subscription payment"});
+ if(obj.type!=="Subscription"||obj.is_subscription_payment!==true){await diagnostic(env,"valid_non_subscription");return response({ok:true,ignored:"not a subscription payment"})}
  const name=String(obj.tier_name||"").trim().toLowerCase().replace(/\s+/g," ");
  const tier=tiers[name];
  const cents=Math.round(Number(obj.amount)*100);
- if(!tier||obj.currency!=="USD"||!Number.isSafeInteger(cents)||cents<tier.minimum)
+ if(!tier||obj.currency!=="USD"||!Number.isSafeInteger(cents)||cents<tier.minimum){
+  await diagnostic(env,"unknown_tier_or_amount");
   return response({ok:true,ignored:"unknown membership tier or amount"});
+ }
  const email=String(obj.email||"").trim().toLowerCase(),id=String(obj.message_id||"").trim();
  const date=new Date(String(obj.timestamp||"")),paidAt=Math.floor(date.getTime()/1000),now=Math.floor(Date.now()/1000);
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>250||id.length<8||id.length>128||!/^[\x21-\x7e]+$/.test(id)||!Number.isFinite(paidAt)||paidAt<now-7776000||paidAt>now+300)
-  return response({error:"Incomplete or out-of-range Ko-fi payment event."},400);
+ {await diagnostic(env,"invalid_subscription_details");return response({error:"Incomplete or out-of-range Ko-fi payment event."},400)}
  const emailHash=toHex(await digest(env.KOFI_EMAIL_HASH_SECRET,"ko-fi-member-v1:"+email));
  const paidUntil=addMonth(date);
  try{
@@ -78,6 +94,7 @@ export async function onRequestPost({request,env}){
       last_paid_at=MAX(kofi_renewals.last_paid_at,excluded.last_paid_at),
       paid_until=MAX(kofi_renewals.paid_until,excluded.paid_until)`).bind(emailHash,tier.id,paidAt,paidUntil)
    ]);
+  await diagnostic(env,"subscription_recorded");
   return response({ok:true,recorded:Boolean(result?.[0]?.meta?.changes),duplicate:!(result?.[0]?.meta?.changes)});
- }catch(e){console.error("Ko-fi payment record failed",String(e));return response({error:"Unable to record payment; retry later."},503)}
+ }catch(e){console.error("Ko-fi payment record failed",String(e));await diagnostic(env,"subscription_db_error");return response({error:"Unable to record payment; retry later."},503)}
 }

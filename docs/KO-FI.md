@@ -66,3 +66,16 @@ SELECT datetime(received_at,'unixepoch') AS received_utc,event_type,classificati
 FROM kofi_webhook_audit ORDER BY id DESC LIMIT 5;
 ```
 If the audit table stays empty, a request might not have reached the correct endpoint, might have used an incorrect verification token, or may have failed before token verification. Check Ko-fi's displayed HTTP response code; it must receive HTTP 200. Never post the verification token publicly.
+
+## 2026-10-12 webhook delivery troubleshooting
+
+The POST handler now records aggregate hourly, privacy-safe diagnostic categories in `kofi_webhook_diagnostics`, even if the verification token mismatches. No raw payload, token, payer email, names, or IP addresses are stored. The original `kofi_webhook_audit` continues to show only *verified* event types, and the payments tables contain only accepted recurring membership payments.
+
+```sql
+SELECT datetime(hour_bucket,'unixepoch') AS hour_utc,reason,events
+FROM kofi_webhook_diagnostics ORDER BY hour_bucket DESC,reason;
+```
+
+Expected `post_received` count is nonzero for a Ko-fi test that reaches the Pages Function. If it is zero after another test, check Ko-fi's response status / delivery settings or routing. A nonzero `token_mismatch` means the Dashboard token is different from the encrypted Cloudflare secret; regenerate/rotate both securely. `valid_non_subscription` shows a successful one-time Tip test, while verified `Subscription` payments enter the separate payment tables when tier and amount match.
+
+The validator accepts Ko-fi's documented `Tip`, `Subscription`, `Commission`, and `Shop Order` event labels.
