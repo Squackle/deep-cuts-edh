@@ -106,10 +106,83 @@
    if(version===requestVersion)showProfile(null);
   }
  }
+ // Central navigation shared by every public page and future report.
+ function setupNavigation(root){
+  const nav=root.querySelector(".primary-nav");
+  if(!nav||root.querySelector(".site-menu-toggle"))return;
+  nav.id="site-primary-navigation";
+  if(!nav.querySelector('a[href="/set-watch.html"]')){
+   const watch=node("a","set-watch-nav-link","SET WATCH");
+   watch.href="/set-watch.html";
+   const after=nav.querySelector('a[href="/index.html#archive"]');
+   if(after)after.after(watch);else nav.append(watch);
+  }
+  if(location.pathname==="/set-watch.html"){
+   nav.querySelector('a[href="/set-watch.html"]')?.setAttribute("aria-current","page");
+  }
+  const links=Array.from(nav.children).filter(a=>a.tagName==="A");
+  const groups=[
+   ["DISCOVER",["/index.html#latest","/index.html#archive","/set-watch.html"]],
+   ["BUILD & PLAY",["/library.html","/deck.html","/games.html"]],
+   ["COMMUNITY",["/nominations.html","/community.html","/members.html"]]
+  ];
+  for(const [i,[label,urls]] of groups.entries()){
+   const group=node("div","site-nav-group");
+   const heading=node("span","site-nav-heading",label);
+   heading.id="site-nav-heading-"+i;
+   group.setAttribute("role","group");
+   group.setAttribute("aria-labelledby",heading.id);
+   group.append(heading);
+   for(const url of urls){
+    const link=links.find(a=>a.getAttribute("href")===url);
+    if(link)group.append(link);
+   }
+   nav.append(group);
+  }
+  const last=nav.querySelector(".site-nav-group:last-child");
+  for(const link of links)if(link.parentElement===nav)last?.append(link);
+  const toggle=node("button","site-menu-toggle");
+  toggle.type="button";
+  toggle.setAttribute("aria-controls",nav.id);
+  toggle.setAttribute("aria-expanded","false");
+  toggle.setAttribute("aria-label","Open site navigation menu");
+  const glyph=node("span","site-menu-glyph");
+  glyph.setAttribute("aria-hidden","true");
+  for(let i=0;i<3;i++)glyph.append(node("span"));
+  const title=node("span","site-menu-label","MENU");
+  toggle.append(glyph,title);
+  const shortcuts=node("div","site-mobile-shortcuts");
+  shortcuts.setAttribute("aria-label","Quick links");
+  const games=node("a","site-mobile-quick site-mobile-games","DAILY GAMES");
+  games.href="/games.html";
+  const watch=node("a","site-mobile-quick site-mobile-watch","SET WATCH ↗");
+  watch.href="/set-watch.html";
+  if(location.pathname==="/games.html"||location.pathname.startsWith("/games/"))games.setAttribute("aria-current","page");
+  if(location.pathname==="/set-watch.html")watch.setAttribute("aria-current","page");
+  shortcuts.append(games,watch);
+  root.insertBefore(toggle,nav);
+  root.insertBefore(shortcuts,nav);
+  const setOpen=open=>{
+   nav.classList.toggle("site-nav-open",open);
+   toggle.setAttribute("aria-expanded",String(open));
+   toggle.setAttribute("aria-label",open?"Close site navigation menu":"Open site navigation menu");
+   title.textContent=open?"CLOSE":"MENU";
+  };
+  toggle.addEventListener("click",()=>setOpen(!nav.classList.contains("site-nav-open")));
+  nav.addEventListener("click",event=>{if(event.target.closest("a"))setOpen(false)});
+  document.addEventListener("keydown",event=>{
+   if(event.key==="Escape"&&nav.classList.contains("site-nav-open")){
+    setOpen(false);toggle.focus();
+   }
+  });
+  const media=window.matchMedia("(max-width: 1180px)");
+  media.addEventListener?.("change",()=>setOpen(false));
+ }
  function setup(){
   const root=document.querySelector(".site-header .header-inner");
   if(!root||root.querySelector(".header-profile-button"))return;
   root.classList.add("header-profile-enabled");
+  setupNavigation(root);
   button=node("a","header-profile-button");
   button.href=ACCOUNT_URL;
   button.setAttribute("aria-label","Sign in or create your investigator profile");
