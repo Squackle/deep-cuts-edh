@@ -14,9 +14,12 @@ export async function onRequestGet({request,env}){
  const a=await auth(request,env.DB);
  if(!a)return fail("Sign in to view recovery settings.",401);
  const row=await env.DB.prepare("SELECT email_cipher,verified_at FROM community_profile_emails WHERE profile_id=?").bind(a.id).first();
+ const pending=await env.DB.prepare("SELECT email_mask FROM community_pending_recovery_contacts WHERE profile_id=?").bind(a.id).first();
+ const verified=!!row&&Number(row.verified_at)>0;
  let masked=null;
- if(row&&env.KOFI_EMAIL_HASH_SECRET){try{masked=hideEmail(await decryptEmail(row.email_cipher,env))}catch{masked="Verified address (unavailable for display)"}}
- return send({verified:!!row,maskedEmail:masked,emailSendingReady:configured(env),notice:configured(env)?"Recovery codes can be sent to verified addresses.":"Email verification and recovery require an authorized sender domain and email API configuration."});
+ if(verified&&env.KOFI_EMAIL_HASH_SECRET){try{masked=hideEmail(await decryptEmail(row.email_cipher,env))}catch{masked="Verified address (unavailable for display)"}}
+ return send({verified,maskedEmail:masked,pending:!!pending&&!verified,pendingMaskedEmail:pending?.email_mask||null,emailSendingReady:configured(env),
+  notice:verified?"Recovery email verified.":pending?"Address staged, but NOT active for key recovery. Sign in and complete email verification when sending is available.":"No recovery email connected."});
 }
 export async function onRequestPost({request,env}){
  if(!env.DB||!env.TURNSTILE_SECRET)return fail("Profile recovery service unavailable.",503);
@@ -58,7 +61,8 @@ export async function onRequestPost({request,env}){
   try{
    const results=await env.DB.batch([
     env.DB.prepare("UPDATE community_email_challenges SET used_at=? WHERE id=? AND profile_id=? AND purpose='verify' AND code_hash=? AND used_at IS NULL AND expires_at>? AND attempts<5").bind(now,id,a.id,actual,now),
-    env.DB.prepare("INSERT INTO community_profile_emails(profile_id,email_hash,email_cipher,verified_at) SELECT profile_id,email_hash,email_cipher,? FROM community_email_challenges WHERE id=? AND profile_id=? AND used_at=? ON CONFLICT(profile_id) DO UPDATE SET email_hash=excluded.email_hash,email_cipher=excluded.email_cipher,verified_at=excluded.verified_at").bind(now,id,a.id,now)
+    env.DB.prepare("INSERT INTO community_profile_emails(profile_id,email_hash,email_cipher,verified_at) SELECT profile_id,email_hash,email_cipher,? FROM community_email_challenges WHERE id=? AND profile_id=? AND used_at=? ON CONFLICT(profile_id) DO UPDATE SET email_hash=excluded.email_hash,email_cipher=excluded.email_cipher,verified_at=excluded.verified_at").bind(now,id,a.id,now),
+    env.DB.prepare("DELETE FROM community_pending_recovery_contacts WHERE profile_id=?").bind(a.id)
    ]);
    if(!results[0]?.meta?.changes)return fail("This code has already been used.",409);
   }catch{return fail("Unable to verify this address. It may already belong to another profile.",409)}

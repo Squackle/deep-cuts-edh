@@ -16,7 +16,8 @@ export async function onRequestGet({request,env}){
   if(view==="overview"){
    const stats=await env.DB.prepare(`SELECT
     (SELECT COUNT(*) FROM community_profiles) AS community_profiles,
-    (SELECT COUNT(*) FROM community_profile_emails) AS verified_recovery_emails,
+    (SELECT COUNT(*) FROM community_profile_emails WHERE verified_at>0) AS verified_recovery_emails,
+    (SELECT COUNT(*) FROM community_pending_recovery_contacts) AS pending_recovery_emails,
     (SELECT COUNT(*) FROM community_decks) AS public_decks,
     (SELECT COUNT(*) FROM member_accounts) AS membership_records,
     (SELECT COUNT(*) FROM member_complimentary_grants WHERE revoked_at IS NULL AND expires_at>unixepoch()) AS active_complimentary,
@@ -26,11 +27,12 @@ export async function onRequestGet({request,env}){
   }
   if(view==="profiles"){
    const r=await env.DB.prepare(`SELECT p.id,p.handle,p.avatar,p.created_at,
-     CASE WHEN e.profile_id IS NOT NULL THEN 1 ELSE 0 END recovery_verified,
+     CASE WHEN e.profile_id IS NOT NULL AND e.verified_at>0 THEN 1 ELSE 0 END recovery_verified,
+     CASE WHEN pend.profile_id IS NOT NULL THEN 1 ELSE 0 END recovery_pending,
      (SELECT COUNT(*) FROM community_decks d WHERE d.owner_id=p.id) AS decks,
      (SELECT COUNT(*) FROM community_comments c WHERE c.author_id=p.id AND c.status='visible') AS comments,
      (SELECT COUNT(*) FROM community_playtests t WHERE t.author_id=p.id) AS playtests
-     FROM community_profiles p LEFT JOIN community_profile_emails e ON e.profile_id=p.id
+     FROM community_profiles p LEFT JOIN community_profile_emails e ON e.profile_id=p.id LEFT JOIN community_pending_recovery_contacts pend ON pend.profile_id=p.id
      ORDER BY p.created_at DESC,p.id DESC LIMIT 50 OFFSET ?`).bind(offset).all();
    return reply({profiles:r.results||[],page:offset/50,limit:50});
   }

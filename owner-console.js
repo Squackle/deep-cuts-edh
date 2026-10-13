@@ -56,7 +56,7 @@
  function renderList(data){
   $("ownerPageLabel").textContent="Page "+(page+1);
   if(view==="profiles"){
-   table([["Username",r=>"@"+r.handle],["Joined",r=>date(r.created_at)],["Decks",r=>r.decks],["Comments",r=>r.comments],["Field tests",r=>r.playtests],["Recovery email",r=>r.recovery_verified?"Verified":"Not connected"]],data.profiles||[]);
+   table([["Username",r=>"@"+r.handle],["Joined",r=>date(r.created_at)],["Decks",r=>r.decks],["Comments",r=>r.comments],["Field tests",r=>r.playtests],["Recovery email",r=>r.recovery_verified?"Verified":r.recovery_pending?"Pending confirmation":"Not connected"]],data.profiles||[]);
    $("ownerNext").disabled=(data.profiles||[]).length<50;return;
   }
   if(view==="audit"){
@@ -91,7 +91,7 @@
   if(loading)return;loading=true;$("ownerRefresh").disabled=true;
   try{message("Loading private records…");const [overview,records]=await Promise.all([call("overview"),call(view,undefined,{page})]);
    const stats=$("ownerStats");stats.replaceChildren();
-   const labels=[["Profiles",overview.stats.community_profiles],["Verified emails",overview.stats.verified_recovery_emails],["Public decks",overview.stats.public_decks],["Memberships",overview.stats.membership_records],["Free grants active",overview.stats.active_complimentary],["Ko-fi linked",overview.stats.kofi_linked],["Device sessions",overview.stats.activated_devices]];
+   const labels=[["Profiles",overview.stats.community_profiles],["Verified emails",overview.stats.verified_recovery_emails],["Pending emails",overview.stats.pending_recovery_emails],["Public decks",overview.stats.public_decks],["Memberships",overview.stats.membership_records],["Free grants active",overview.stats.active_complimentary],["Ko-fi linked",overview.stats.kofi_linked],["Device sessions",overview.stats.activated_devices]];
    for(const [k,v] of labels){const box=node("div");box.className="owner-stat";box.append(node("strong",v),node("span",k));stats.append(box)}
    renderList(records);message("Private records loaded. No recovery keys or plaintext email addresses are exposed.");
   }catch(e){message(e.message);wrap.replaceChildren(node("p","Unable to load private records."))}

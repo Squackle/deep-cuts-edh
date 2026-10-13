@@ -18,7 +18,13 @@ async function status(){
   const res=await fetch("/api/profile-recovery",{headers:{Authorization:"Bearer "+state.key},cache:"no-store"});
   const data=await res.json();
   if(!res.ok)throw Error(data.error||"Recovery settings unavailable.");
-  dest.textContent=data.verified?"Verified recovery address: "+(data.maskedEmail||"Connected")+". "+(data.emailSendingReady?"Recovery enabled.":"Sending not configured."):data.emailSendingReady?"No recovery email verified. Add one below to enable email-based account recovery.":"Email recovery setup is not yet active. You can register and use your key normally, but the owner must configure an email sender before verification can be completed.";
+  dest.textContent=data.verified
+   ?"Verified recovery address: "+(data.maskedEmail||"Connected")+". "+(data.emailSendingReady?"Recovery enabled.":"Sending not configured; recovery unavailable.")
+   :data.pending
+    ?"Recovery email staged: "+(data.pendingMaskedEmail||"private address")+". NOT YET ACTIVE FOR ACCOUNT RECOVERY. Once the email sender is configured, re-enter the address below and verify the code while signed in."
+    :data.emailSendingReady
+     ?"No recovery email verified. Add one below to enable email-based account recovery."
+     :"Email recovery setup is not yet active. You can register and use your key normally, but the owner must configure an email sender before verification can be completed.";
  }catch(e){dest.textContent="Unable to check recovery status: "+err(e)}
 }
 export function refreshEmailStatus(){if(state.me)status()}

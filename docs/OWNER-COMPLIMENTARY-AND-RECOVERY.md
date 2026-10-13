@@ -57,3 +57,12 @@ When missing, registration and key-only sign-in still work, but email associatio
 - Keep owner credential secure. The existing Ko-fi subscriber verification and privacy guardrails still apply.
 
 Files: `functions/api/owner-members.js`, `src/owner-access.js`, `member-operations.html`, `owner-console.js`, `functions/api/profile-recovery.js`, `src/profile-email.js`, `community-recovery.js`, `src/member-auth.js` and `db/member-and-email-recovery.sql`.
+
+## October 13, 2026: encrypted, pending address for a legacy profile
+
+For a legacy profile that predates verified emails, the owner may record a **pending recovery contact** after independently confirming mailbox access through an authenticated, connected Gmail identity. A pending contact must *never* itself authorize a key reset. Its purpose is to preserve the owner's request and display a clear pending indicator until the site can email a confirmation code.
+
+- Table: `community_pending_recovery_contacts` (migration `db/community-email-pending.sql`). The full email is **AES-256-GCM encrypted with a key derived from the private random owner credential**, with a random 96-bit nonce and the profile ID as authenticated associated data. The address lookup is additionally HMAC-SHA256 keyed by the same owner credential. Only a masked address is displayed to the profile owner; the owner's raw credential and the plaintext address are never stored in D1 or committed to GitHub.
+- The site does not treat this table as verified. `GET /api/profile-recovery` reports `pending=true` but `verified=false`. `start_recovery` and `finish_recovery` continue to consult **only** `community_profile_emails` with a completed verification. No current or old profile key is rotated by adding a pending contact.
+- Once a transactional-email sender has been configured, the signed-in profile owner re-enters the full address and completes the standard 8-digit email challenge. Successful verification writes the email into the normal secret-encrypted verified table and deletes the pending record in the same D1 batch. Old staged ciphertext is then no longer needed.
+- No verification email is sent when pending contacts are created. Neither the owner directory nor any public profile page exposes the full address; the private owner directory can distinguish pending from verified.
