@@ -148,6 +148,9 @@ export function updateIdentity(){
   const rememberButton=$("rememberThisDevice");if(rememberButton)rememberButton.hidden=state.remembered||!state.key;
   refreshEmailStatus();
  }
+ // Keep the sitewide header portrait synchronized with sign-in, sign-out,
+ // recovery, and the saved portrait crop without exposing the profile key.
+ window.dispatchEvent(new CustomEvent("deepcuts:profile-change",{detail:{profile:state.me}}));
 }
 const LEGACY_KEY="dc-profile-key";
 async function deviceRequest(action,key=""){
