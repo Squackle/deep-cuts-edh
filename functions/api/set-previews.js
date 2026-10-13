@@ -12,10 +12,9 @@ const json=(data,maxAge=300,status=200)=>new Response(JSON.stringify(data),{
 async function fromScryfall(path){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7500);
  try{
-  const r=await fetch(ROOT+path,{headers:{"Accept":"application/json"},signal:controller.signal,
-    cf:{cacheEverything:true,cacheTtl:CACHE_TTL}});
+  const r=await fetch(ROOT+path,{headers:{"Accept":"application/json","User-Agent":"DeepCutsEDH/1.0 (+https://deep-cuts-edh.pages.dev)","Cache-Control":"no-cache"},signal:controller.signal});
   if(r.status===404)return null;
-  if(!r.ok)throw Error("Scryfall unavailable ("+r.status+")");
+  if(!r.ok){const why=(await r.text()).slice(0,180).replace(/<[^>]+>/g,"").replace(/[\r\n]+/g," ");throw Error("Scryfall unavailable ("+r.status+" "+why+")")}
   return await r.json();
  }finally{clearTimeout(timer)}
 }
