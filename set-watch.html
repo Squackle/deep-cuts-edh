@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172522">
+<title>MTG Set Watch — Upcoming Releases &amp; Previews | Deep Cuts EDH</title>
+<meta name="description" content="Track upcoming Magic: The Gathering sets and already-revealed preview cards. Automatically refreshed from Scryfall with release dates and Commander-focused legendary highlights.">
+<meta property="og:title" content="Set Watch — MTG previews and upcoming releases | Deep Cuts EDH">
+<meta property="og:description" content="Follow upcoming MTG sets, revealed cards, new legendary candidates and release dates with automatic Scryfall updates.">
+<link rel="canonical" href="https://deep-cuts-edh.pages.dev/set-watch.html">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/retro.css"><link rel="stylesheet" href="/theme-v2.css">
+<link rel="stylesheet" href="/set-watch.css"><link rel="stylesheet" href="/header-profile.css">
+<script defer src="/header-profile.js"></script>
+<script type="module" src="/set-watch.js"></script>
+</head><body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol" aria-hidden="true"><img src="assets/deep-cuts-mark.svg" alt="" width="46" height="56"></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>EVERY CARD HAS A STORY</small></span></a>
+<nav class="primary-nav" aria-label="Main navigation"><a href="/index.html#latest">RESCUE REPORT</a><a href="/index.html#archive">COMMANDERS</a><a href="/library.html">CARD LIBRARY</a><a href="/deck.html">DECK WORKSHOP</a><a class="daily-games-nav-link" href="/games.html">DAILY GAMES</a><a href="/nominations.html">NOMINATIONS</a><a href="/community.html">FIELD NETWORK</a><a class="member-nav-link" href="/members.html">FIELD OFFICE</a></nav>
+<a class="header-action" href="/library.html">OPEN CARD LIBRARY ↗</a></div></header>
+<main id="main" class="sw-main">
+ <section class="sw-hero"><div class="wrap">
+  <div class="sw-kicker">DEEP CUTS EDH / THE RELEASE DESK</div>
+  <h1>Set <em>Watch.</em></h1>
+  <p>Magic's next releases, revealed cards and potential Commander legends—before they hit the shelves. Live Scryfall data, no rumor mill.</p>
+  <div class="sw-hero-actions"><a class="btn btn-gold" href="#sets">SEE UPCOMING SETS ↓</a><a class="btn btn-outline" href="/library.html">EXPLORE THE CARD LIBRARY ↗</a></div>
+ </div></section>
+ <div class="wrap sw-layout">
+  <section class="sw-board" id="sets" aria-labelledby="sw-sets-title">
+   <div class="sw-section-head"><div><span class="sw-overline">01 / RELEASE CALENDAR</span><h2 id="sw-sets-title">On the <em>horizon.</em></h2></div><a href="https://scryfall.com/sets" target="_blank" rel="noopener noreferrer">ALL SETS ON SCRYFALL ↗</a></div>
+   <p class="sw-explainer">Upcoming paper sets and Commander products known to Scryfall. Reveals appear automatically as Scryfall indexes them. Announced dates may change.</p>
+   <div id="swUpcoming" class="sw-set-grid" aria-label="Upcoming sets" aria-live="polite"><p class="sw-loading">Checking upcoming releases…</p></div>
+   <div class="sw-recent"><h3>Recently released</h3><p>Catch up on the newest sets that have already launched.</p><div id="swRecent" class="sw-recent-grid" aria-label="Recent sets"><span class="sw-loading">Loading…</span></div></div>
+  </section>
+  <section class="sw-card-section" id="reveals" aria-labelledby="sw-reveals-title">
+   <div class="sw-section-head"><div><span class="sw-overline">02 / PREVIEW CASE FILE</span><h2 id="sw-reveals-title">Cards <em>revealed.</em></h2></div><span class="sw-refresh" id="swUpdated">SOURCE: SCRYFALL · REFRESHES ABOUT EVERY 4 HOURS</span></div>
+   <div class="sw-current"><div><strong id="swSelectedName">Choose a set above</strong><p id="swSelectedInfo">New images and card details appear as they are indexed—not when rumors circulate.</p></div><div class="sw-counters"><span id="swKnownCount">—</span><span>CARDS CURRENTLY INDEXED</span></div></div>
+   <div class="sw-toolbar"><div class="sw-toggle" role="group" aria-label="Preview card type"><button type="button" class="sw-tab is-active" data-watch-filter="all" aria-pressed="true">ALL REVEALED CARDS</button><button type="button" class="sw-tab" data-watch-filter="legendary" aria-pressed="false">LEGENDARY CARDS</button></div><span id="swCardStatus" class="sw-muted" role="status" aria-live="polite">Choose a set to view cards.</span></div>
+   <div id="swCards" class="sw-card-grid" aria-live="polite"></div>
+   <button id="swLoadMore" class="sw-more" type="button" hidden>SHOW MORE REVEALED CARDS ↓</button>
+   <p class="sw-caveat"><strong>Preview ≠ playable.</strong> Cards from unreleased products may not yet be Commander-legal. Collector numbers, prices, rules details and announced release dates can change. This gallery includes only cards already indexed by Scryfall; it isn't a complete checklist until a set's full card list is published.</p>
+  </section>
+ </div>
+</main>
+<footer class="site-footer"><div class="wrap footer-content"><div><strong>DEEP CUTS <span>EDH</span></strong><p>Bad commanders. Good decks. No excuses.</p></div><div class="footer-links"><a href="/privacy.html">PRIVACY &amp; ADS</a><a href="/library.html">CARD LIBRARY ↗</a><a href="/deck.html">DECK WORKSHOP ↗</a><a href="/games.html">GAMES ↗</a><a href="/supporters.html">SUPPORT</a><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">CARD DATA: SCRYFALL ↗</a><a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener noreferrer">FAN CONTENT POLICY ↗</a></div></div><div class="wrap fine-print">Deep Cuts EDH is unofficial Magic: The Gathering fan content permitted under the Fan Content Policy, not approved or endorsed by Wizards of the Coast. Portions of these materials are property of Wizards of the Coast LLC. Card data and images via Scryfall. We are not affiliated with Scryfall or EDHREC. Community posts and gameplay results are user-submitted; card prices, rankings and legality can change.</div></footer>
+</body></html>
