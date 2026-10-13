@@ -16,3 +16,12 @@ CREATE TABLE IF NOT EXISTS kofi_renewals (
  paid_until INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS kofi_payment_events_email_idx ON kofi_payment_events(email_hash,paid_at DESC);
+
+-- Only verified webhook event categories and timestamps; no payer information.
+CREATE TABLE IF NOT EXISTS kofi_webhook_audit (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ received_at INTEGER NOT NULL DEFAULT (unixepoch()),
+ event_type TEXT NOT NULL,
+ classification TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS kofi_webhook_audit_time_idx ON kofi_webhook_audit(received_at DESC);

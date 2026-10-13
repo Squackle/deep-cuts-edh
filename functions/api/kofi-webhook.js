@@ -45,6 +45,17 @@ export async function onRequestPost({request,env}){
  }catch{return response({error:"Malformed Ko-fi payload."},400)}
  if(!obj||typeof obj!=="object"||typeof obj.verification_token!=="string")return response({error:"Invalid token."},403);
  if(!await tokenOK(obj.verification_token,env.KOFI_VERIFICATION_TOKEN))return response({error:"Invalid token."},403);
+ // Record only the fact that a properly authenticated event arrived.
+ // No email, name, message ID, card data or entire payload is logged.
+ const classification=obj.type==="Subscription"&&obj.is_subscription_payment===true?"subscription_payment":"non_subscription_payment";
+ const eventType=["Subscription","Donation","Shop Order","Commission"].includes(String(obj.type))?String(obj.type):"other";
+ try {
+  await env.DB.batch([
+   env.DB.prepare("INSERT INTO kofi_webhook_audit(event_type,classification) VALUES(?,?)").bind(eventType,classification),
+   env.DB.prepare("DELETE FROM kofi_webhook_audit WHERE received_at<unixepoch()-2592000")
+  ]);
+ }catch(e){console.error("Unable to audit verified Ko-fi event",String(e));return response({error:"Unable to record Ko-fi delivery."},503)}
+
  // A Ko-fi webhook also reports one-time donations, shop orders and commissions.
  // None of those grants a recurring membership.
  if(obj.type!=="Subscription"||obj.is_subscription_payment!==true)return response({ok:true,ignored:"not a subscription payment"});

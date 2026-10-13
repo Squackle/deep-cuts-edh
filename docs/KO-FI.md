@@ -52,3 +52,17 @@ The software workspace provides the framework for Deck Dossiers, five alternate 
 - The webhook now writes payment event and renewal state inside one transactional D1 batch. Replayed deliveries are idempotent; a failure rolls back both writes.
 - **The owner still needs to set the URL in Ko-fi's Webhooks dashboard and send a test notification**. This integration has no API that can set that Ko-fi account preference remotely, and the endpoint does not automatically issue keys.
 - Ko-fi still has no membership cancellation events. Paid Field Office features remain off pending verified ownership/renewal tracking and service testing.
+
+## Ko-fi test webhook receipt diagnostics (October 2026)
+
+Ko-fi's test payment can be a **one-time donation**, which is intentionally ignored by the membership renewals table. To distinguish a delivery test from a recurring membership payment, the webhook now stores a privacy-preserving delivery record **only after verifying the Ko-fi token**:
+- `kofi_webhook_audit`: event type, subscription classification, receipt time; no email, name or transaction identifiers; auto-purged after 30 days.
+- `kofi_payment_events`: actual valid recurring member payments only.
+- `kofi_renewals`: the latest qualifying paid-through date per hashed subscriber email.
+
+To check the next test after this code is deployed:
+```sql
+SELECT datetime(received_at,'unixepoch') AS received_utc,event_type,classification
+FROM kofi_webhook_audit ORDER BY id DESC LIMIT 5;
+```
+If the audit table stays empty, a request might not have reached the correct endpoint, might have used an incorrect verification token, or may have failed before token verification. Check Ko-fi's displayed HTTP response code; it must receive HTTP 200. Never post the verification token publicly.
