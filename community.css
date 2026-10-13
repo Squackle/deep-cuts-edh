@@ -60,7 +60,7 @@
 /* Maintain the complete global menu on the Field Network. */
 .cm-page~*{box-sizing:border-box}
 .site-header .primary-nav{gap:clamp(5px,.7vw,14px);flex-wrap:wrap;align-items:center}
-.site-header .primary-nav a{font-size:clamp(9px,.71vw,12px);white-space:nowrap}
+.site-header .primary-nav a{font-size:clamp(10px,.8vw,12px);white-space:nowrap}
 .cm-card-author{display:flex;gap:9px;align-items:center}
 .cm-card-author strong{line-height:1.25}
 .cm-challenge-notice{background:#fff7e6;padding:12px 15px;border-left:4px solid #ac7938;margin:8px 0 15px;color:#423923;font-size:13px;line-height:1.55}
