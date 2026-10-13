@@ -5,7 +5,7 @@ export async function onRequestGet({request,env}){
  const check=await authorize(request,env);
  if(check.error)return check.error;
  const rows=await env.DB.prepare("SELECT id,label,created_at FROM member_devices WHERE member_id=? AND revoked_at IS NULL ORDER BY created_at").bind(check.account.id).all();
- return reply({ok:true,tier:check.account.tier,active:true,deviceId:check.deviceId,devices:rows.results||[],limit:2,canReplaceAt:Number(check.account.last_replacement||0)+2592000,paidUntil:check.account.paid_until,benefits:["dossier","alternate-builds","early-access","showcase","newsletter","themes","history","probability","collection","watches","question","consultation","editorial","recognition"]});
+ return reply({ok:true,tier:check.account.tier,active:true,deviceId:check.deviceId,devices:rows.results||[],limit:2,canReplaceAt:Number(check.account.last_replacement||0)+2592000,paidUntil:check.account.paid_until,accessSource:check.account.access_source,benefits:["dossier","alternate-builds","early-access","showcase","newsletter","themes","history","probability","collection","watches","question","consultation","editorial","recognition"]});
 }
 export async function onRequestPost({request,env}){
  if(!originOK(request))return reply({error:"Origin not allowed."},403);
@@ -13,14 +13,13 @@ export async function onRequestPost({request,env}){
  let d;try{d=await json(request,2500)}catch{return reply({error:"Invalid request."},400)}
  const action=String(d.action||"");
  if(action==="claim")return reply({error:"Direct Stripe enrollment is retired. Ko-fi member-key issuance is not configured yet."},410);
- if(env.KOFI_MEMBER_ACCESS_READY!=="true")return reply({error:"Ko-fi membership key operations are not enabled yet."},503);
  if(action==="activate"){
   const key=String(d.key||"");if(!goodKey(key))return reply({error:"Invalid membership key format."},400);
   const id=key.split("_")[1],digest=await sha(key);
   let member=await env.DB.prepare("SELECT * FROM member_accounts WHERE id=? AND key_hash=?").bind(id,digest).first();
   if(!member)return reply({error:"Membership key not recognized."},401);
   try{member=await sync(member,env)}catch{return reply({error:"Could not verify membership status."},503)}
-  if(member.status!=="active")return reply({error:"Membership is not active."},403);
+  if(member.status!=="active")return reply({error:"This membership is inactive or has expired."},403);
   const deviceId=random(16),token="dcdevice1_"+random(32),label=simple(d.label)||"My device";
   const r=await env.DB.prepare("INSERT INTO member_devices(id,member_id,token_hash,label) SELECT ?,?,?,? WHERE (SELECT COUNT(*) FROM member_devices WHERE member_id=? AND revoked_at IS NULL)<2").bind(deviceId,id,await sha(token),label,id).run();
   if((r.meta?.changes||0)!==1)return reply({error:"Both device slots are occupied. Remove a device from an already activated device before adding another."},409);

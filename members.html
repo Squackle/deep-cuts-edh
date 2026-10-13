@@ -16,7 +16,7 @@
   <div><h2>Unlock the Field Office</h2><p>Your member key activates up to two devices. The key is separate from your free deck-vault recovery key. Keep it secret and store it somewhere safe.</p></div>
   <form id="memberActivate" class="member-form"><label for="memberKey">Membership activation key</label><input type="text" id="memberKey" autocomplete="off" spellcheck="false" placeholder="dcmember1_…" required maxlength="120"><label for="memberDeviceLabel">Device label</label><input id="memberDeviceLabel" type="text" maxlength="36" value="My device"><div class="member-actions"><button class="member-action" type="submit">ACTIVATE THIS DEVICE ↗</button><button class="member-action-secondary" type="button" id="replaceLostDevice">REPLACE A LOST DEVICE</button></div></form>
   <div id="memberClaim" class="member-claim" hidden><strong>Membership verified — save your membership key</strong><p id="memberClaimText"></p><code id="memberNewKey" class="member-key-display"></code><button type="button" class="member-action-secondary" id="copyMemberKey">COPY KEY</button><p>Shown once. Activate this device, then use the key once more on another device.</p></div>
-  <p class="member-fine">No username or password. We're migrating premium access to verified Ko-fi renewals. Ko-fi subscriptions do not automatically issue Deep Cuts keys yet. <a href="https://ko-fi.com/deepcutsedh" target="_blank" rel="noopener noreferrer">Visit our Ko-fi page ↗</a>.</p>
+  <p class="member-fine">No username or password. We're migrating premium access to verified Ko-fi renewals. Ko-fi subscriptions do not automatically issue Deep Cuts keys yet. Owner-issued complimentary keys can be activated independently. <a href="https://ko-fi.com/deepcutsedh" target="_blank" rel="noopener noreferrer">Visit our Ko-fi page ↗</a>.</p>
  </section>
  <section id="memberPreview" class="member-preview" aria-labelledby="previewHeader">
   <span class="member-eyebrow">EXPLORE THE THREE TIERS · PUBLIC DEMONSTRATION</span>
@@ -32,7 +32,7 @@
   <div id="previewDemoOutput" class="member-preview-demo" role="status" aria-live="polite">Select a tier to explore its planned tools.</div>
  </section>
  <section id="memberOffice" hidden>
-  <div class="member-ribbon"><div><span>AUTHORIZED FIELD OFFICE</span><strong id="memberTierName">Member</strong></div><div><span>ACTIVATED DEVICES</span><strong id="memberDeviceCount">— / 2</strong></div><div><span>MY DEVICE</span><strong id="memberDeviceName">Active</strong></div><div><span>VERIFIED PAID THROUGH</span><strong id="memberPaidUntil">—</strong></div></div>
+  <div class="member-ribbon"><div><span>AUTHORIZED FIELD OFFICE</span><strong id="memberTierName">Member</strong></div><div><span>ACTIVATED DEVICES</span><strong id="memberDeviceCount">— / 2</strong></div><div><span>MY DEVICE</span><strong id="memberDeviceName">Active</strong></div><div><span>ACCESS EXPIRES</span><strong id="memberPaidUntil">—</strong></div></div>
   <div class="member-tabs" role="tablist" aria-label="Premium tools">
    <button type="button" class="member-tab active" data-view="dossier" role="tab" aria-selected="true">DECK DOSSIER</button>
    <button type="button" class="member-tab" data-view="research" role="tab" aria-selected="false">RESEARCH FILES</button>

@@ -45,3 +45,7 @@ The tier preview demonstrates the differences but does not leak private editoria
 - Store only hashed credentials, not raw email or card data. Ko-fi and payment processors still handle identity/payment information.
 - A stolen operator key can issue paid entitlements *only* for existing validated paid subscriber hashes, but it can also revoke/reissue existing keys. Rotate promptly if compromised.
 - Automatic member onboarding requires a verified transactional-email challenge or Ko-fi-supported identity authentication; neither is configured in this package.
+
+## Complimentary member keys and private directory
+
+The owner operations page now also supports complimentary tier keys (1–365 days), grant-expiration records, session activity, an audit history, and read-only listings of free community profiles alongside premium member accounts. The complimentary branch in `src/member-auth.js` works independently from Ko-fi activation, and revocation/expiration are checked on every request. A grant does not create a Ko-fi subscription or payment. Details and recovery setup: [OWNER-COMPLIMENTARY-AND-RECOVERY.md](OWNER-COMPLIMENTARY-AND-RECOVERY.md).

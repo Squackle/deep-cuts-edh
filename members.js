@@ -33,7 +33,7 @@ function validDeck(){
 }
 function scrubKey(){const u=new URL(location.href);u.searchParams.delete("session_id");history.replaceState(null,"",u.pathname+u.search+u.hash)}
 function markTier(){
- $("memberTierName").textContent=tierNames[account.tier]||"Member";
+ $("memberTierName").textContent=(tierNames[account.tier]||"Member")+(account.accessSource==="complimentary"?" · Complimentary":"");
  $("memberDeviceCount").textContent=(account.devices?.length||0)+" / 2";
  const current=account.devices?.find(x=>x.id===account.deviceId);
  $("memberDeviceName").textContent=current?.label||"This device";

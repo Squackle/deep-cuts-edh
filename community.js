@@ -1,4 +1,5 @@
 import {setupFeatures,refreshFeatures} from "./community-features.js";
+import {initializeRecovery,refreshEmailStatus,offerEmail} from "./community-recovery.js";
 export const $=id=>document.getElementById(id);
 export const state={key:"",me:null,caseSlug:"chainer-dementia-master",deck:null,editing:"",myDecks:[]};
 export const el=(tag,content,cls)=>{const n=document.createElement(tag);if(content!==undefined&&content!==null)n.textContent=String(content);if(cls)n.className=cls;return n};
@@ -69,6 +70,7 @@ export function updateIdentity(){
   $("editProfileForm").elements.focusX.value=state.me.focus_x??50;
   $("editProfileForm").elements.focusY.value=state.me.focus_y??30;
   renderEditAvatarPreview();
+  refreshEmailStatus();
  }
 }
 export async function restore(){
@@ -159,11 +161,13 @@ function bindAccount(){
  renderAvatarChoice();
  $("registerForm").addEventListener("submit",async ev=>{ev.preventDefault();const f=ev.currentTarget;
  const token=f.querySelector('input[name="cf-turnstile-response"]')?.value||"";
+ const recoveryEmail=f.elements.recoveryEmail?.value.trim()||"";
  const r=await attempt(()=>write({action:"register",handle:f.elements.handle.value,bio:f.elements.bio.value,avatar:f.elements.avatar.value,focusX:Number(f.elements.focusX.value),focusY:Number(f.elements.focusY.value),token},false));
  if(!r)return;
  $("newKeyBox").hidden=false;$("newKey").value=r.key;
  await saveSession(r.key,false);$("accountLoggedIn").prepend($("newKeyBox"));$("newKeyBox").hidden=false;$("newKeyBox").scrollIntoView({block:"center",behavior:"smooth"});
  window.turnstile?.reset();f.reset();msg("Profile created. Save the one-time recovery key displayed below.");
+ if(recoveryEmail)await offerEmail(recoveryEmail);
  });
  $("copyKey").addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("newKey").value);msg("Recovery key copied. Save it privately.")}catch{msg("Select and copy the recovery key manually.",true)}});
  $("loginForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;const key=f.elements.key.value.trim();const result=await attempt(()=>saveSession(key,f.elements.remember.checked));if(result!==null){f.reset();msg("Your profile is ready.")}});
@@ -180,7 +184,7 @@ function bindCases(){
 }
 async function boot(){
  document.querySelectorAll("[data-tab]").forEach(n=>n.addEventListener("click",()=>setTab(n.dataset.tab)));
- bindAccount();bindCases();setupFeatures();
+ bindAccount();bindCases();setupFeatures();initializeRecovery();
  await restore();await loadHome();
  const p=new URL(location.href).searchParams;
  if(p.has("case")&&["chainer-dementia-master","alena-and-gilanra","commander-mustard","ekthi-contaminator-priest"].includes(p.get("case")))state.caseSlug=p.get("case");

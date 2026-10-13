@@ -165,3 +165,10 @@ The new [Field Network](community.html) provides free **recovery-key profiles** 
 - Rescue Challenge supports the original Chainer event plus a separately labeled open-format showcase for experimental lists, including pre-release cards (not legal-game verification). Nonmatching decks are shown with reasons instead of silently hidden.
 - The Field Network carries the full navigation menu. Informant / Detective / Chief tools have a public interactive preview at [members.html](members.html) and protected API functionality remains tier-gated.
 - Owner-only Ko-fi key issuance is implemented for independently verified paid Ko-fi subscribers; **premium access remains disabled until the verified readiness switch and real payment tests are completed**. See [docs/MEMBER-OWNER-ISSUANCE.md](docs/MEMBER-OWNER-ISSUANCE.md) and the operator-only page, which is intentionally not linked from public navigation.
+
+
+### Owner console, complimentary keys & email recovery (October 2026)
+
+The existing private [owner operations page](member-operations.html) now includes a server-authenticated member directory (free Field Network profiles, paid/complimentary memberships, device activity, and audit trail). It can issue complimentary tier keys with expiration dates and revocation. These keys activate the existing two-device Field Office without requiring Ko-fi payment; paid Ko-fi membership activation remains gated off pending end-to-end payment testing.
+
+Free profile owners can associate an email **after verification**, then recover access by receiving a short-lived one-time code and replacing their lost `dcprofile1_` key. Old keys are not recoverable from their hashes. **Email recovery is staged and unavailable until a verified sending domain plus server-only `RESEND_API_KEY` and `PROFILE_EMAIL_FROM` are configured**. Existing profiles must link an email while they can still sign in. See [docs/OWNER-COMPLIMENTARY-AND-RECOVERY.md](docs/OWNER-COMPLIMENTARY-AND-RECOVERY.md) and the D1 migration [db/member-and-email-recovery.sql](db/member-and-email-recovery.sql).

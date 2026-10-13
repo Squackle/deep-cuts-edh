@@ -80,3 +80,10 @@
 .cm-panel .cm-focal-controls input[type="range"]{padding:0;height:28px;border:0;accent-color:#967034;background:transparent;cursor:ew-resize}
 .cm-focal-controls label{font-size:10px;line-height:1.45;margin:4px 0}
 @media(max-width:500px){.cm-focal-controls{grid-template-columns:1fr}}
+
+/* Secure profile recovery screens */
+.cm-one-time-key{border:2px solid #b48a3d;padding:17px;margin:17px 0;background:#fff9e7}
+.cm-one-time-key textarea{font-family:ui-monospace,monospace;overflow-wrap:anywhere;line-height:1.5;font-size:12px}
+#recoverStartForm .cf-turnstile,#registerForm .cf-turnstile{margin:14px 0}
+#linkedEmailStatus,#recoverMessage{padding:8px 0;line-height:1.5}
+#recoveryEmailCard{margin-top:18px}
