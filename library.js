@@ -1,5 +1,6 @@
 
 import {addCard,cardImage,scryfall} from "./shared.js";
+import {facetTerms,isFaceted,resetFacets,initFacets,shareURL,clearManaChips} from "./library-facets.js";
 const $=id=>document.getElementById(id);
 const form=$("librarySearch"),gallery=$("cardGallery"),status=$("libraryStatus"),
   more=$("loadMore"),pageStats=$("pageStats"),detail=$("cardDetail");
@@ -27,16 +28,19 @@ function priceFilter(id){
 function buildQuery(){
  const v=id=>$(id).value.trim(),terms=[];
  const raw=v("cardQuery");if(raw)terms.push(raw);
- if(v("formatFilter"))terms.push("f:"+v("formatFilter"));
- if(v("typeFilter"))terms.push("t:"+v("typeFilter"));
- if(v("identityFilter"))terms.push("id<="+v("identityFilter").toLowerCase());
- if(v("rarityFilter"))terms.push("r:"+v("rarityFilter"));
- if(v("maxMana"))terms.push("mv<="+v("maxMana"));
+ const format=v("formatFilter");if(format)terms.push("f:"+format);
+ const facets=facetTerms();terms.push(...facets);
+ const mv=v("maxMana");
+ if(mv){
+  if(!/^\\d{1,2}$/.test(mv)||Number(mv)>99)throw Error("Maximum mana value must be a whole number from 0 to 99.");
+  terms.push("mv<="+mv);
+ }
  const min=priceFilter("minPrice"),max=priceFilter("maxPrice");
  if(min&&max&&Number(min)>Number(max))throw Error("The minimum price cannot exceed the maximum price.");
  if(min)terms.push("usd>="+min);
  if(max)terms.push("usd<="+max);
- if(!raw&&!v("typeFilter")&&!v("identityFilter")&&!v("rarityFilter")&&!v("maxMana")&&!min&&!max)terms.unshift("t:legendary");
+ // Show a useful first screen without applying a secret filter to real queries.
+ if(!raw&&!isFaceted()&&!mv&&!min&&!max)terms.push("t:legendary");
  return terms.join(" ");
 }
 function currentSort(){return sortOptions[$("sortFilter").value]||sortOptions["edhrec-asc"]}
@@ -101,6 +105,10 @@ async function load(clear=false){
  if(clear){
   try{builtQuery=buildQuery()}catch(err){status.textContent=err.message;return}
   updateScryfallLink();
+  try{
+   const target=new URL(shareURL());
+   history.replaceState(null,"",target.pathname+target.search);
+  }catch{}
  }
  if(clear){if(controller)controller.abort();searchToken++;nextPage=null;shown=0;cards.clear();gallery.replaceChildren();more.hidden=true}
  controller=new AbortController();
@@ -129,15 +137,30 @@ async function load(clear=false){
  }catch(err){if(current!==searchToken||err.name==="AbortError")return;status.textContent=err.message;pageStats.textContent="Try a more specific card name or fewer filters."}
  finally{if(current===searchToken){loading=false;more.disabled=false}}
 }
-form.addEventListener("submit",e=>{e.preventDefault();load(true)});
-$("libraryReset").addEventListener("click",()=>{form.reset();load(true)});
+// Facets update results automatically, while free-text searches submit on Enter
+// to keep network traffic reasonable for Scryfall.
+let facetTimer=null;
+function scheduleSearch(){
+ clearTimeout(facetTimer);
+ facetTimer=setTimeout(()=>load(true),320);
+ updateScryfallLink();
+}
+initFacets(scheduleSearch);
+form.addEventListener("submit",e=>{e.preventDefault();clearTimeout(facetTimer);load(true)});
+$("libraryReset").addEventListener("click",()=>{clearTimeout(facetTimer);form.reset();resetFacets();load(true)});
 more.addEventListener("click",()=>load(false));
-$("browseAll").addEventListener("click",()=>{$("cardQuery").value="game:paper";$("formatFilter").value="";$("typeFilter").value="";$("identityFilter").value="";$("rarityFilter").value="";$("maxMana").value="";$("minPrice").value="";$("maxPrice").value="";load(true)});
+$("browseAll").addEventListener("click",()=>{clearTimeout(facetTimer);resetFacets();$("cardQuery").value="game:paper";$("formatFilter").value="";$("maxMana").value="";$("minPrice").value="";$("maxPrice").value="";load(true)});
 $("closeCard").addEventListener("click",()=>detail.close());
 detail.addEventListener("click",e=>{if(e.target===detail)detail.close()});
 const params=new URL(location.href).searchParams;
 if(params.get("q"))$("cardQuery").value=params.get("q").slice(0,250);
 form.addEventListener("input",updateScryfallLink);
-form.addEventListener("change",updateScryfallLink);
+form.addEventListener("change",e=>{
+ updateScryfallLink();
+ if(["formatFilter","printingFilter","maxMana","minPrice","maxPrice"].includes(e.target.id))scheduleSearch();
+});
+form.addEventListener("input",e=>{
+ if(e.target.id==="maxMana"&&e.target.value.trim()){clearManaChips();scheduleSearch()}
+});
 updateScryfallLink();
 load(true);
