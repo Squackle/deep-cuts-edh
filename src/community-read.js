@@ -4,7 +4,7 @@ export async function communityRead(req,db){
  if(action==="me"){const a=await auth(req,db);return a?send({profile:publicProfile(a)}):fail("Sign in with your profile recovery key.",401)}
  if(action==="profile"){
   const handle=safe(q.get("handle"),24);
-  const p=await db.prepare("SELECT id,handle,bio,avatar,focus_x,focus_y,focus_zoom,created_at FROM community_profiles WHERE handle=? COLLATE NOCASE").bind(handle).first();
+  const p=await db.prepare("SELECT id,handle,bio,bio_emoji,avatar,focus_x,focus_y,focus_zoom,created_at FROM community_profiles WHERE handle=? COLLATE NOCASE").bind(handle).first();
   if(!p)return fail("Profile not found.",404);
   const decks=await db.prepare("SELECT id,title,commander,version,updated_at FROM community_decks WHERE owner_id=? ORDER BY updated_at DESC LIMIT 25").bind(p.id).all();
   const counts=await db.prepare("SELECT (SELECT COUNT(*) FROM community_comments WHERE author_id=? AND status='visible') comments,(SELECT COUNT(*) FROM community_playtests WHERE author_id=?) tests,(SELECT COUNT(*) FROM community_follows WHERE target_type='profile' AND target=?) followers").bind(p.id,p.id,p.id).first();

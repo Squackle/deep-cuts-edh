@@ -7,6 +7,23 @@ let nextPage=null,loading=false,lastRequest=0,shown=0,searchToken=0,cards=new Ma
 const cache=new Map();
 const label=o=>String(o||"").replaceAll("_"," ");
 function create(tag,className,txt){const e=document.createElement(tag);if(className)e.className=className;if(txt!==undefined)e.textContent=txt;return e}
+const sortOptions={
+ "edhrec-asc":["edhrec","asc"],"edhrec-desc":["edhrec","desc"],
+ "usd-asc":["usd","asc"],"usd-desc":["usd","desc"],
+ "name-asc":["name","asc"],"name-desc":["name","desc"],
+ "cmc-asc":["cmc","asc"],"cmc-desc":["cmc","desc"],
+ "released-desc":["released","desc"],"released-asc":["released","asc"],
+ "rarity-asc":["rarity","asc"],"rarity-desc":["rarity","desc"],
+ "power-desc":["power","desc"],"toughness-desc":["toughness","desc"],
+ "color-asc":["color","asc"],"artist-asc":["artist","asc"],"set-desc":["set","desc"]
+};
+function priceFilter(id){
+ const raw=$(id).value.trim();if(raw==="")return "";
+ const value=Number(raw);
+ if(!/^\d{1,6}(?:\.\d{1,2})?$/.test(raw)||!Number.isFinite(value)||value<0||value>100000)
+  throw Error("Enter a valid dollar price from $0 to $100,000, in cents.");
+ return value.toFixed(2);
+}
 function buildQuery(){
  const v=id=>$(id).value.trim(),terms=[];
  const raw=v("cardQuery");if(raw)terms.push(raw);
@@ -15,11 +32,25 @@ function buildQuery(){
  if(v("identityFilter"))terms.push("id<="+v("identityFilter").toLowerCase());
  if(v("rarityFilter"))terms.push("r:"+v("rarityFilter"));
  if(v("maxMana"))terms.push("mv<="+v("maxMana"));
- if(v("maxPrice"))terms.push("usd<="+v("maxPrice"));
- if(!raw && !v("typeFilter") && !v("identityFilter") && !v("rarityFilter") && !v("maxMana") && !v("maxPrice")){
-   terms.unshift("t:legendary");
- }
+ const min=priceFilter("minPrice"),max=priceFilter("maxPrice");
+ if(min&&max&&Number(min)>Number(max))throw Error("The minimum price cannot exceed the maximum price.");
+ if(min)terms.push("usd>="+min);
+ if(max)terms.push("usd<="+max);
+ if(!raw&&!v("typeFilter")&&!v("identityFilter")&&!v("rarityFilter")&&!v("maxMana")&&!min&&!max)terms.unshift("t:legendary");
  return terms.join(" ");
+}
+function currentSort(){return sortOptions[$("sortFilter").value]||sortOptions["edhrec-asc"]}
+function currentUnique(){return ["cards","prints","art"].includes($("printingFilter").value)?$("printingFilter").value:"cards"}
+function updateScryfallLink(){
+ const out=$("openScryfallSearch");if(!out)return;
+ try{
+  const url=new URL("https://scryfall.com/search");
+  url.searchParams.set("q",buildQuery());
+  url.searchParams.set("unique",currentUnique());
+  const [order,dir]=currentSort();
+  url.searchParams.set("order",order);url.searchParams.set("dir",dir);
+  out.href=url.toString();
+ }catch{out.href="https://scryfall.com/advanced"}
 }
 function entry(card){
  const box=create("article","library-card");window.DeepCutsGuide?.registerCardNames([card.name]);
@@ -32,7 +63,15 @@ function entry(card){
  const buttons=create("div","card-controls");
  const info=create("button","","DETAILS");info.type="button";info.addEventListener("click",()=>showDetail(card));
  const add=create("button","primary","+ ADD TO DECK");add.type="button";add.addEventListener("click",()=>{if(addCard(card)){try{localStorage.setItem("deepcuts-workbench-tab","deck")}catch{}add.textContent="✓ ADDED";setTimeout(()=>{add.textContent="+ ADD TO DECK"},1400)}});
- const shop=create("a","shop-card-link","TCGplayer ↗");shop.href="https://www.tcgplayer.com/search/magic/product?productLineName=magic&q="+encodeURIComponent(card.name)+"&view=grid";shop.target="_blank";shop.rel="noopener noreferrer";shop.setAttribute("aria-label","Find "+card.name+" on TCGplayer");buttons.append(info,add);box.append(img,title,meta,buttons,shop);return box;
+ const shop=create("a","shop-card-link","TCGplayer ↗");shop.href="https://www.tcgplayer.com/search/magic/product?productLineName=magic&q="+encodeURIComponent(card.name)+"&view=grid";shop.target="_blank";shop.rel="noopener noreferrer";shop.setAttribute("aria-label","Find "+card.name+" on TCGplayer");buttons.append(info,add);box.append(img,title,meta,buttons,shop);
+ if(card.set&&card.collector_number){
+  const tagger=create("a","shop-card-link library-tagger-card-link","Tagger ↗");
+  tagger.href="https://tagger.scryfall.com/card/"+encodeURIComponent(card.set)+"/"+encodeURIComponent(card.collector_number);
+  tagger.target="_blank";tagger.rel="noopener noreferrer";
+  tagger.setAttribute("aria-label","Explore art and gameplay tags for "+card.name);
+  box.append(tagger);
+ }
+ return box;
 }
 function showDetail(c){
  const root=$("cardDetailBody");root.replaceChildren();
@@ -48,10 +87,21 @@ function showDetail(c){
  const add=create("button","retro-button","+ ADD TO DECK");add.addEventListener("click",()=>{if(addCard(c))add.textContent="✓ ADDED"});
  const outbound=create("a","text-link","VIEW ON SCRYFALL ↗");outbound.href=c.scryfall_uri||"https://scryfall.com";outbound.target="_blank";outbound.rel="noopener noreferrer";outbound.style.marginLeft="15px";
  const shop=create("a","text-link","TCGplayer ↗");shop.href="https://www.tcgplayer.com/search/magic/product?productLineName=magic&q="+encodeURIComponent(c.name)+"&view=grid";shop.target="_blank";shop.rel="noopener noreferrer";shop.style.marginLeft="12px";root.append(h,img,p,oracle,legal,price,add,outbound,shop);
+ if(c.set&&c.collector_number){
+  const tagger=create("a","text-link","SCRYFALL TAGGER ↗");
+  tagger.href="https://tagger.scryfall.com/card/"+encodeURIComponent(c.set)+"/"+encodeURIComponent(c.collector_number);
+  tagger.target="_blank";tagger.rel="noopener noreferrer";tagger.style.marginLeft="12px";
+  root.append(tagger);
+ }
  detail.showModal();
 }
 async function load(clear=false){
  if(loading&&!clear)return;
+ let builtQuery="";
+ if(clear){
+  try{builtQuery=buildQuery()}catch(err){status.textContent=err.message;return}
+  updateScryfallLink();
+ }
  if(clear){if(controller)controller.abort();searchToken++;nextPage=null;shown=0;cards.clear();gallery.replaceChildren();more.hidden=true}
  controller=new AbortController();
  if(!clear&&!nextPage)return;
@@ -59,10 +109,10 @@ async function load(clear=false){
  status.textContent="Searching the archive…";more.disabled=true;
  const url=clear?new URL("https://api.scryfall.com/cards/search"):new URL(nextPage);
  if(clear){
-  url.searchParams.set("q",buildQuery());url.searchParams.set("unique","cards");
-  const sort=$("sortFilter").value;
-  url.searchParams.set("order",sort==="edhrec-desc"?"edhrec":sort);
-  url.searchParams.set("dir",sort==="edhrec"?"asc":sort==="edhrec-desc"?"desc":"auto");
+  url.searchParams.set("q",builtQuery);
+  url.searchParams.set("unique",currentUnique());
+  const [order,dir]=currentSort();
+  url.searchParams.set("order",order);url.searchParams.set("dir",dir);
  }
  // Never request an arbitrary third-party URL from an untrusted next_page value.
  if(url.hostname!=="api.scryfall.com"||url.protocol!=="https:"){loading=false;return}
@@ -72,7 +122,7 @@ async function load(clear=false){
   let data=cache.get(url.toString());
   if(!data){data=await scryfall(url.toString(),{signal:controller.signal});cache.set(url.toString(),data);if(cache.size>8)cache.delete(cache.keys().next().value)}
   if(current!==searchToken)return;
-  for(const c of data.data||[]){if(!cards.has(c.oracle_id||c.id)){cards.set(c.oracle_id||c.id,c);gallery.append(entry(c));shown++}}
+  for(const c of data.data||[]){const id=currentUnique()==="prints"?c.id:(c.oracle_id||c.id);if(!cards.has(id)){cards.set(id,c);gallery.append(entry(c));shown++}}
   nextPage=data.has_more?data.next_page:null;
   more.hidden=!nextPage;status.textContent=shown+" cards loaded"+(data.total_cards?" · "+data.total_cards+" total matches":"");
   pageStats.textContent=nextPage?"Load more results for this search.":"End of search results.";
@@ -82,9 +132,12 @@ async function load(clear=false){
 form.addEventListener("submit",e=>{e.preventDefault();load(true)});
 $("libraryReset").addEventListener("click",()=>{form.reset();load(true)});
 more.addEventListener("click",()=>load(false));
-$("browseAll").addEventListener("click",()=>{$("cardQuery").value="game:paper";$("formatFilter").value="";$("typeFilter").value="";$("identityFilter").value="";$("rarityFilter").value="";$("maxMana").value="";$("maxPrice").value="";load(true)});
+$("browseAll").addEventListener("click",()=>{$("cardQuery").value="game:paper";$("formatFilter").value="";$("typeFilter").value="";$("identityFilter").value="";$("rarityFilter").value="";$("maxMana").value="";$("minPrice").value="";$("maxPrice").value="";load(true)});
 $("closeCard").addEventListener("click",()=>detail.close());
 detail.addEventListener("click",e=>{if(e.target===detail)detail.close()});
 const params=new URL(location.href).searchParams;
 if(params.get("q"))$("cardQuery").value=params.get("q").slice(0,250);
+form.addEventListener("input",updateScryfallLink);
+form.addEventListener("change",updateScryfallLink);
+updateScryfallLink();
 load(true);

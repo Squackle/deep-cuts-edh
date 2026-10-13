@@ -6,9 +6,10 @@ export const hex=x=>Array.from(x,v=>v.toString(16).padStart(2,"0")).join("");
 export const rnd=(n=16)=>hex(crypto.getRandomValues(new Uint8Array(n)));
 export const hash=async x=>hex(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(x)))));
 export const safe=(s,max=500)=>typeof s==="string"?s.trim().slice(0,max):"";
+export const BIO_EMOJIS=["","🧙","💀","🧪","🧟","⚔️","🛡️","🔮","🐉","🌳","🔥","🌊","✨","🌙","🕵️","🧠","💡","🎲","📚","🏰","🩸","🐺","🐈","🍄","🦇","👑","🗡️","🪄","🦋","⚡","🪦","♻️"];
 export const AVATARS=["Chainer, Dementia Master","Commander Mustard","Alena, Kessig Trapper","Gilanra, Caller of Wirewood","Ekthi, Contaminator Priest"];
 export const CASES=["chainer-dementia-master","alena-and-gilanra","commander-mustard","ekthi-contaminator-priest"];
-export const publicProfile=p=>p&&({id:p.id,handle:p.handle,bio:p.bio,avatar:p.avatar,focus_x:p.focus_x,focus_y:p.focus_y,focus_zoom:p.focus_zoom??2.8,created_at:p.created_at});
+export const publicProfile=p=>p&&({id:p.id,handle:p.handle,bio:p.bio,avatar:p.avatar,focus_x:p.focus_x,focus_y:p.focus_y,focus_zoom:p.focus_zoom??2.8,bio_emoji:p.bio_emoji||"",created_at:p.created_at});
 export const topicOK=s=>/^case:(chainer-dementia-master|alena-and-gilanra|commander-mustard|ekthi-contaminator-priest)$/.test(s)||/^deck:[a-f0-9]{32}$/.test(s);
 export function originOK(req){const val=req.headers.get("Origin");if(!val)return true;try{return new URL(val).origin===new URL(req.url).origin}catch{return false}}
 export async function body(req){
@@ -29,11 +30,11 @@ export async function auth(req,db){
  if(header){
   const m=/^Bearer (dcprofile1_([a-f0-9]{32})_[a-f0-9]{64})$/.exec(header);
   if(!m)return null; // Never fall back to a cookie after an invalid bearer key.
-  return db.prepare("SELECT id,handle,bio,avatar,focus_x,focus_y,focus_zoom,created_at FROM community_profiles WHERE id=? AND key_hash=?").bind(m[2],await hash(m[1])).first();
+  return db.prepare("SELECT id,handle,bio,bio_emoji,avatar,focus_x,focus_y,focus_zoom,created_at FROM community_profiles WHERE id=? AND key_hash=?").bind(m[2],await hash(m[1])).first();
  }
  const token=deviceToken(req);
  if(!token)return null;
- return db.prepare(`SELECT p.id,p.handle,p.bio,p.avatar,p.focus_x,p.focus_y,p.focus_zoom,p.created_at
+ return db.prepare(`SELECT p.id,p.handle,p.bio,p.bio_emoji,p.avatar,p.focus_x,p.focus_y,p.focus_zoom,p.created_at
   FROM community_device_sessions d JOIN community_profiles p ON p.id=d.profile_id
   WHERE d.token_hash=? AND d.expires_at>unixepoch() LIMIT 1`).bind(await hash(token)).first();
 }

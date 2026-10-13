@@ -92,3 +92,25 @@
 #recoverStartForm .cf-turnstile,#registerForm .cf-turnstile{margin:14px 0}
 #linkedEmailStatus,#recoverMessage{padding:8px 0;line-height:1.5}
 #recoveryEmailCard{margin-top:18px}
+
+
+/* Identity panel: full-width handle and clear avatar framing on narrow sidebars. */
+.cm-identity-card{text-align:center}
+.cm-identity-card>.retro-eyebrow{display:block;margin:0 auto 13px}
+.cm-identity-card #identitySummary{min-width:0}
+.cm-identity-card #identitySummary .cm-portrait{display:flex;flex-direction:column;align-items:center;gap:10px}
+.cm-identity-card #identitySummary .cm-portrait-art{width:106px;flex:0 0 auto;display:flex;flex-direction:column;align-items:center}
+.cm-identity-card #identitySummary .cm-avatar-link{width:96px;height:96px}
+.cm-identity-card #identitySummary .cm-portrait-details{width:100%;max-width:100%;text-align:center;overflow-wrap:anywhere}
+.cm-identity-card #identitySummary .cm-portrait h3{font-size:clamp(17px,2.1vw,24px);line-height:1.18;margin:7px auto 9px;word-break:break-word;letter-spacing:-.025em}
+.cm-identity-card #identitySummary .cm-portrait-bio{line-height:1.55;margin:6px auto 11px;font-size:12px}
+.cm-identity-card [data-tab="account"]{max-width:100%;line-height:1.4}
+.cm-profile-handle,.cm-profile-mention{color:#2e5d45;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.cm-profile-handle:hover,.cm-profile-mention:hover{color:#815b2a}
+.cm-card .cm-profile-mention{font-weight:750;color:#265a42}
+.cm-card header .cm-profile-mention{white-space:normal;overflow-wrap:anywhere}
+.cm-bio-emoji{font-size:1.25em;vertical-align:baseline}
+.cm-portrait-bio{overflow-wrap:anywhere}
+.cm-portrait-details h3{overflow-wrap:anywhere}
+.cm-card header{flex-wrap:wrap}
+.cm-identity-card #identitySummary .cm-avatar-link:hover{filter:brightness(1.05)}

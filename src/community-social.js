@@ -1,6 +1,7 @@
-import {send,fail,safe,rnd,hash,AVATARS,CASES,topicOK,verifyHuman,quota} from "./community-core.js";
+import {send,fail,safe,rnd,hash,AVATARS,BIO_EMOJIS,CASES,topicOK,verifyHuman,quota} from "./community-core.js";
 export async function register(req,db,env,d){
- const handle=safe(d.handle,24),bio=safe(d.bio,240),avatar=safe(d.avatar,130);
+ const handle=safe(d.handle,24),bio=safe(d.bio,240),avatar=safe(d.avatar,130),bioEmoji=String(d.bioEmoji??"");
+ if(!BIO_EMOJIS.includes(bioEmoji))return fail("Choose one available bio emoji.",400);
  const x=Number(d.focusX??50),y=Number(d.focusY??30),zoom=Number(d.focusZoom??2.8);
  if(!Number.isInteger(x)||x<0||x>100||!Number.isInteger(y)||y<0||y>100||
     !Number.isFinite(zoom)||zoom<1.8||zoom>4.2)
@@ -9,18 +10,20 @@ export async function register(req,db,env,d){
  if(!(await verifyHuman(env,d.token,req)))return fail("Human verification failed.",403);
  if(!(await quota(db,env,req,"register",3)))return fail("Daily registration limit reached.",429);
  const id=rnd(),key="dcprofile1_"+id+"_"+rnd(32);
- try{await db.prepare("INSERT INTO community_profiles(id,handle,key_hash,bio,avatar,focus_x,focus_y,focus_zoom) VALUES(?,?,?,?,?,?,?,?)").bind(id,handle,await hash(key),bio,avatar,x,y,zoom).run()}
+ try{await db.prepare("INSERT INTO community_profiles(id,handle,key_hash,bio,bio_emoji,avatar,focus_x,focus_y,focus_zoom) VALUES(?,?,?,?,?,?,?,?,?)").bind(id,handle,await hash(key),bio,bioEmoji,avatar,x,y,zoom).run()}
  catch(e){if(String(e).includes("UNIQUE"))return fail("That handle is taken.",409);throw e}
- return send({ok:true,key,profile:{id,handle,bio,avatar,focus_x:x,focus_y:y,focus_zoom:zoom},warning:"Save this key. No password or email recovery exists. Premium memberships are separate."},201);
+ return send({ok:true,key,profile:{id,handle,bio,bio_emoji:bioEmoji,avatar,focus_x:x,focus_y:y,focus_zoom:zoom},warning:"Save this key. No password or email recovery exists. Premium memberships are separate."},201);
 }
 export async function socialWrite(db,a,d){
  const action=d.action;
  if(action==="update_profile"){
-  const bio=safe(d.bio,240),avatar=safe(d.avatar,130);if(!AVATARS.includes(avatar))return fail("Choose a listed portrait.",400);
+  const bio=safe(d.bio,240),avatar=safe(d.avatar,130),bioEmoji=String(d.bioEmoji??"");
+  if(!BIO_EMOJIS.includes(bioEmoji))return fail("Choose one available bio emoji.",400);
+  if(!AVATARS.includes(avatar))return fail("Choose a listed portrait.",400);
   const x=Number(d.focusX),y=Number(d.focusY),zoom=Number(d.focusZoom??2.8);
   if(!Number.isInteger(x)||x<0||x>100||!Number.isInteger(y)||y<0||y>100||
      !Number.isFinite(zoom)||zoom<1.8||zoom>4.2)return fail("Invalid portrait position or zoom.",400);
-  await db.prepare("UPDATE community_profiles SET bio=?,avatar=?,focus_x=?,focus_y=?,focus_zoom=? WHERE id=?").bind(bio,avatar,x,y,zoom,a.id).run();return send({ok:true});
+  await db.prepare("UPDATE community_profiles SET bio=?,bio_emoji=?,avatar=?,focus_x=?,focus_y=?,focus_zoom=? WHERE id=?").bind(bio,bioEmoji,avatar,x,y,zoom,a.id).run();return send({ok:true});
  }
  if(action==="comment"){
   const topic=safe(d.topic,90),kind=d.kind==="doctor"?"doctor":"discussion",body=safe(d.body,1200);

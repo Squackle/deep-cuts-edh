@@ -1,4 +1,4 @@
-import {$,state,el,clear,msg,badge,button,link,card,empty,api,write,attempt,showComments,setTab} from "./community.js";
+import {$,state,el,clear,msg,badge,button,link,card,empty,api,write,attempt,showComments,setTab,appendProfileMentions} from "./community.js";
 function cardsFromInput(text){
  const rows=text.trim().split(/\r?\n/).filter(Boolean).map(line=>{const m=/^(\d+)\s+(.+)$/.exec(line.trim());return m?{qty:Number(m[1]),name:m[2].trim()}:null});
  if(!rows.length||rows.some(x=>!x||!x.name))throw Error("Use one quantity and card name per line (e.g. 1 Sol Ring).");
@@ -33,7 +33,7 @@ export async function openDeck(id){
  setTab("decks");history.replaceState(null,"",location.pathname+"?deck="+id);
  const section=$("deckDetail");section.hidden=false;
  const n=$("deckInfo");clear(n);
- n.append(el("h3",r.deck.title),el("p",r.deck.commander+" · @"+r.deck.handle+" · version "+r.deck.version));
+ n.append(el("h3",r.deck.title),appendProfileMentions(el("p"),r.deck.commander+" · @"+r.deck.handle+" · version "+r.deck.version));
  const raw=r.deck.content,pre=el("pre","COMMANDER\n"+raw.commanders.map(s=>"1 "+s).join("\n")+"\n\nMAINBOARD\n"+raw.cards.map(c=>c.qty+" "+c.name).join("\n"),"cm-decklist");n.append(pre);
  if(state.me?.id===r.deck.owner_id){
   n.append(button("EDIT NEW VERSION",()=>{state.editing=r.deck.id;fillForm(raw,r.deck.title);$("saveDeck").textContent="SAVE NEW VERSION ↗";$("deckForm").elements.title.disabled=true;$("deckForm").scrollIntoView({block:"start",behavior:"smooth"})}));

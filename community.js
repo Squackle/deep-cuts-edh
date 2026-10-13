@@ -53,12 +53,43 @@ export async function write(d,useKey=true){
  const v=await r.json();if(!r.ok)throw Error(v.error||"Unable to save.");return v;
 }
 export async function attempt(task,success){try{const x=await task();if(success)msg(success);return x}catch(e){msg(e.message,true);return null}}
+// Convert plain-text @Handle references to first-party profile links.
+ // Build real text nodes/anchors (never untrusted HTML) to avoid injection.
+export function appendProfileMentions(target,value){
+ const str=String(value??""),pattern=/@([A-Za-z][A-Za-z0-9_]{2,23})\b/g;
+ let cursor=0,match;
+ while((match=pattern.exec(str))){
+  const pos=match.index;
+  if(pos>0&&/[A-Za-z0-9_.]/.test(str[pos-1]))continue;
+  target.append(document.createTextNode(str.slice(cursor,pos)));
+  const href="community.html?profile="+encodeURIComponent(match[1]);
+  const a=el("a",match[0],"cm-profile-mention");a.href=href;
+  a.title="View @"+match[1]+"'s investigator profile";
+  target.append(a);cursor=pos+match[0].length;
+ }
+ target.append(document.createTextNode(str.slice(cursor)));
+ return target;
+}
 export function card(title,body,meta){
- const n=el("article",null,"cm-card"),h=el("header");h.append(el("strong",title),el("span",meta||"","cm-meta"));
- n.append(h,el("p",body||""));return n;
+ const n=el("article",null,"cm-card"),h=el("header");
+ const heading=el("strong"),metadata=el("span",null,"cm-meta"),copy=el("p");
+ appendProfileMentions(heading,title);
+ appendProfileMentions(metadata,meta||"");
+ appendProfileMentions(copy,body||"");
+ h.append(heading,metadata);n.append(h,copy);return n;
 }
 export function empty(target,text){clear(target);target.append(el("p",text,"cm-empty"))}
 export function setTab(tab){
+ const subtitles={
+  cases:"FIND YOUR FELLOW BREWERS",
+  decks:"SHOW YOUR DECK TECH",
+  challenge:"JOIN THE RESCUE CHALLENGE",
+  lab:"TEST THE UNEXPECTED",
+  network:"FOLLOW THE INVESTIGATION",
+  account:"YOUR INVESTIGATOR DOSSIER"
+ };
+ const tagline=document.querySelector(".site-header .wordmark-copy small");
+ if(tagline)tagline.textContent=subtitles[tab]||subtitles.cases;
  const panels=document.querySelectorAll("[data-panel]");panels.forEach(n=>n.hidden=n.dataset.panel!==tab);
  document.querySelectorAll("[data-tab]").forEach(n=>n.setAttribute("aria-current",n.dataset.tab===tab?"page":"false"));
  history.replaceState(null,"",location.pathname+(tab==="cases"?"?case="+encodeURIComponent(state.caseSlug):"#"+tab));
@@ -73,7 +104,13 @@ export function portrait(p){
  frame.target="_blank";frame.rel="noopener noreferrer";frame.title="View the original full card and illustrator credit";
  frame.append(avatarImage(p.avatar,false,[p.focus_x??50,p.focus_y??30],p.focus_zoom??DEFAULT_ZOOM));wrap.append(frame);
  wrap.append(el("small","View full card / artist ↗","cm-art-credit"));
- const details=el("div",null,"cm-portrait-details");details.append(el("h3",p.handle),el("p",p.bio||"No biography yet."));
+ const details=el("div",null,"cm-portrait-details");
+ const handle=el("h3"),handleLink=link("@"+p.handle,"community.html?profile="+encodeURIComponent(p.handle));
+ handleLink.className="cm-profile-handle";handle.append(handleLink);
+ const description=el("p",null,"cm-portrait-bio");
+ if(p.bio_emoji)description.append(el("span",p.bio_emoji,"cm-bio-emoji"),document.createTextNode(" "));
+ appendProfileMentions(description,p.bio||"No biography yet.");
+ details.append(handle,description);
  n.append(wrap,details);return n;
 }
 export function updateIdentity(){
@@ -82,6 +119,7 @@ export function updateIdentity(){
  if(state.me){
   $("ownProfile").replaceChildren(portrait(state.me),el("p","Save your recovery key somewhere private. This profile is public; your credential is not.","cm-note"));
   $("editProfileForm").elements.bio.value=state.me.bio||"";
+  $("editProfileForm").elements.bioEmoji.value=state.me.bio_emoji||"";
   $("editProfileForm").elements.avatar.value=state.me.avatar;
   $("editProfileForm").elements.focusX.value=state.me.focus_x??50;
   $("editProfileForm").elements.focusY.value=state.me.focus_y??30;
@@ -257,7 +295,7 @@ function bindAccount(){
  $("registerForm").addEventListener("submit",async ev=>{ev.preventDefault();const f=ev.currentTarget;
  const token=f.querySelector('input[name="cf-turnstile-response"]')?.value||"";
  const recoveryEmail=f.elements.recoveryEmail?.value.trim()||"";
- const r=await attempt(()=>write({action:"register",handle:f.elements.handle.value,bio:f.elements.bio.value,avatar:f.elements.avatar.value,focusX:Number(f.elements.focusX.value),focusY:Number(f.elements.focusY.value),focusZoom:formZoom(f),token},false));
+ const r=await attempt(()=>write({action:"register",handle:f.elements.handle.value,bio:f.elements.bio.value,bioEmoji:f.elements.bioEmoji.value,avatar:f.elements.avatar.value,focusX:Number(f.elements.focusX.value),focusY:Number(f.elements.focusY.value),focusZoom:formZoom(f),token},false));
  if(!r)return;
  $("newKeyBox").hidden=false;$("newKey").value=r.key;
  await saveSession(r.key,true);$("accountLoggedIn").prepend($("newKeyBox"));$("newKeyBox").hidden=false;$("newKeyBox").scrollIntoView({block:"center",behavior:"smooth"});
@@ -270,7 +308,7 @@ function bindAccount(){
   const result=await attempt(()=>saveSession(key,f.elements.remember.checked));
   if(result!==null){f.reset();if(state.remembered)msg("Welcome back. This device is remembered for up to 90 days.");else msg("Signed in for this browser session.")}
  });
- $("editProfileForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;const r=await attempt(()=>write({action:"update_profile",bio:f.elements.bio.value,avatar:f.elements.avatar.value,focusX:Number(f.elements.focusX.value),focusY:Number(f.elements.focusY.value),focusZoom:formZoom(f)}),"Profile saved.");if(r){state.me.bio=f.elements.bio.value.trim();state.me.avatar=f.elements.avatar.value;state.me.focus_x=Number(f.elements.focusX.value);state.me.focus_y=Number(f.elements.focusY.value);state.me.focus_zoom=formZoom(f);updateIdentity()}});
+ $("editProfileForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;const r=await attempt(()=>write({action:"update_profile",bio:f.elements.bio.value,bioEmoji:f.elements.bioEmoji.value,avatar:f.elements.avatar.value,focusX:Number(f.elements.focusX.value),focusY:Number(f.elements.focusY.value),focusZoom:formZoom(f)}),"Profile saved.");if(r){state.me.bio=f.elements.bio.value.trim();state.me.bio_emoji=f.elements.bioEmoji.value;state.me.avatar=f.elements.avatar.value;state.me.focus_x=Number(f.elements.focusX.value);state.me.focus_y=Number(f.elements.focusY.value);state.me.focus_zoom=formZoom(f);updateIdentity()}});
  $("rememberThisDevice").addEventListener("click",async()=>{
   if(!state.key)return msg("Sign in again to remember this browser.",true);
   const r=await attempt(()=>deviceRequest("remember",state.key));
