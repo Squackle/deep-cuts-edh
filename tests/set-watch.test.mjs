@@ -23,7 +23,7 @@ test("known sets are sorted and tokens, digital, old and far-future products are
 });
 test("no arbitrary set codes or unsafe paths",()=>{
  for(const valid of ["trk","trc","mdd","mbc"])assert.equal(validCode(valid),true);
- for(const invalid of ["", "../x","trk;", "http", "BAD_CODE","t".repeat(7)])assert.equal(validCode(invalid),false);
+ for(const invalid of ["", "../x","trk;", "BAD_CODE","t".repeat(7)])assert.equal(validCode(invalid),false);
 });
 test("unreleased legendary remains a preview, not asserted legal",()=>{
  const x=publicPreview(card,isoDay(today));

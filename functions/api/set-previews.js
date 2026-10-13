@@ -54,6 +54,6 @@ export async function onRequestGet({request}){
   return result;
  }catch(e){
   console.error("Set Watch upstream failure:",e);
-  return json({error:"Set data is temporarily unavailable. Try again shortly."},0,502);
+  return json({error:"Set data is temporarily unavailable ("+String(e?.message||"upstream error").slice(0,95)+")."},0,502);
  }
 }
