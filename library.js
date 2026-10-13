@@ -1,7 +1,7 @@
 
 import {addCard,cardImage,scryfall} from "./shared.js";
 import {facetTerms,isFaceted,resetFacets,initFacets,shareURL,clearManaChips} from "./library-facets.js";
-import {compileLibraryQuery} from "./library-query.js";
+import {compileLibraryQuery,libraryResultSummary} from "./library-query.js";
 const $=id=>document.getElementById(id);
 const form=$("librarySearch"),gallery=$("cardGallery"),status=$("libraryStatus"),
   more=$("loadMore"),pageStats=$("pageStats"),detail=$("cardDetail");
@@ -150,7 +150,7 @@ async function load(clear=false){
   if(current!==searchToken)return;
   for(const c of data.data||[]){const id=currentUnique()==="prints"?c.id:(c.oracle_id||c.id);if(!cards.has(id)){cards.set(id,c);const tile=entry(c);gallery.append(tile);if(shown<6)checkInclusion(c,tile);shown++}}
   nextPage=data.has_more?data.next_page:null;
-  more.hidden=!nextPage;status.textContent=shown+" cards loaded"+(data.total_cards?" · "+data.total_cards+" total matches":"");
+  more.hidden=!nextPage;status.textContent=libraryResultSummary(shown,data.total_cards);
   pageStats.textContent=nextPage?"Load more results for this search.":"End of search results.";
  }catch(err){if(current!==searchToken||err.name==="AbortError")return;status.textContent=err.message;pageStats.textContent="Try a more specific card name or fewer filters."}
  finally{if(current===searchToken){loading=false;more.disabled=false}}

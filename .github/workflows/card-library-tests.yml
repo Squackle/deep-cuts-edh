@@ -1,0 +1,30 @@
+name: Card Library regression tests
+on:
+  push:
+    paths:
+      - "library.js"
+      - "library-query.js"
+      - "library-facets.js"
+      - "library.html"
+      - "shared.js"
+      - "tests/library-*.test.mjs"
+      - ".github/workflows/card-library-tests.yml"
+  pull_request:
+    paths:
+      - "library.js"
+      - "library-query.js"
+      - "library-facets.js"
+      - "library.html"
+      - "shared.js"
+      - "tests/library-*.test.mjs"
+      - ".github/workflows/card-library-tests.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run Card Library regression suite
+        run: node --experimental-default-type=module --test tests/library-*.test.mjs

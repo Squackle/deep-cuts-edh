@@ -33,3 +33,10 @@ export function compileLibraryQuery({search="",format="commander",facetTerms=[],
  if(!raw&&!faceted&&mv===null&&min===null&&max===null)terms.push("t:legendary");
  return terms.join(" ");
 }
+
+/** Human-readable results with correct singular and zero counts. */
+export function libraryResultSummary(shown,total){
+ const n=Number(shown),t=Number(total);
+ const suffix=Number.isInteger(t)&&t>=0?" · "+t+" total "+(t===1?"match":"matches"):"";
+ return n+" "+(n===1?"card":"cards")+" loaded"+suffix;
+}

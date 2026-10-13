@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {dollarCents,manaLimit,compileLibraryQuery} from "../library-query.js";
+import {dollarCents,manaLimit,compileLibraryQuery,libraryResultSummary} from "../library-query.js";
 test("decimal prices including cents shorthand",()=>{
  for(const [input,expected] of [[".50",50],["0.50",50],["2.5",250],["$1.25",125],["0.01",1],["0",0],["100000",10000000],["$100000.00",10000000],[" 1.75 ",175]])assert.equal(dollarCents(input),expected,input);
  assert.equal(dollarCents(""),null);
@@ -24,4 +24,11 @@ test("format, facets, and mana assemble together",()=>{
  assert.equal(compileLibraryQuery(),"f:commander t:legendary");
  assert.equal(compileLibraryQuery({search:"game:paper",format:""}),"game:paper");
  assert.equal(compileLibraryQuery({format:"",faceted:true,facetTerms:["t:land"]}),"t:land");
+});
+
+test("singular, plural and zero card result messages",()=>{
+ assert.equal(libraryResultSummary(1,1),"1 card loaded · 1 total match");
+ assert.equal(libraryResultSummary(0,0),"0 cards loaded · 0 total matches");
+ assert.equal(libraryResultSummary(175,4142),"175 cards loaded · 4142 total matches");
+ assert.equal(libraryResultSummary(3,undefined),"3 cards loaded");
 });
