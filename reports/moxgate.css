@@ -7,3 +7,6 @@
 .report-moxgate-cta p{margin:10px 0 0;color:#d6e5d9;font-size:12px;line-height:1.5}
 @media(max-width:620px){.report-hero-right{gap:14px}.report-hero-right .report-hero-media{min-height:200px}.report-moxgate-cta{max-width:350px;width:100%;margin:0 auto}}
 @media(prefers-reduced-motion:reduce){.report-moxgate-button{transition:none}}
+/* The original Chainer report uses an article sidebar instead of the newer hero grid. */
+.report-side > .report-moxgate-cta{margin:18px 0 22px}
+.report-side > .report-moxgate-cta p{color:#c9d9ce}
