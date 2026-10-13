@@ -234,3 +234,26 @@ dialog{background:#faf9f2;color:#24352e;border:1px solid #94b09b;border-radius:1
 .home-daily-games-links .btn{font-size:11px;padding:12px 13px;white-space:nowrap}
 @media(max-width:970px){.home-daily-games-inner{flex-direction:column;align-items:flex-start}}
 @media(max-width:500px){.home-daily-games-links{width:100%}.home-daily-games-links .btn{flex:1}}
+
+/* A gentle pulse of attention for the daily Commander games navigation tab. */
+.site-header .primary-nav a.daily-games-nav-link {
+  color: #e4d2aa;
+  animation: dc-daily-games-glow 5s ease-in-out infinite;
+}
+@keyframes dc-daily-games-glow {
+  0%, 100% { color: #dbe5db; text-shadow: 0 0 2px rgba(229, 191, 124, .13); }
+  50% { color: #ffe1ac; text-shadow: 0 0 5px rgba(255, 214, 142, .58), 0 0 11px rgba(234, 184, 111, .3); }
+}
+.site-header .primary-nav a.daily-games-nav-link:hover,
+.site-header .primary-nav a.daily-games-nav-link:focus-visible {
+  animation-play-state: paused;
+  color: #ffe4b6;
+  text-shadow: 0 0 8px rgba(255, 216, 147, .58);
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header .primary-nav a.daily-games-nav-link {
+    animation: none;
+    color: #efd6a5;
+    text-shadow: none;
+  }
+}
