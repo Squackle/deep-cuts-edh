@@ -78,3 +78,24 @@
 #supportCheckout[hidden],#supportManageBilling[hidden]{display:none!important}
 @media(max-width:950px){.support-tier-grid{grid-template-columns:1fr}.support-tier-lead{min-height:0}.support-tier-card{padding:22px}.support-tier-grid{max-width:680px}}
 @media(max-width:670px){.support-launch-info{grid-template-columns:1fr}.support-launch-info>aside{border-left:0;border-top:1px solid #bdd2bf;padding:16px 0 0}}
+
+
+/* Membership field-office links and moderated community gallery */
+.site-header .primary-nav a.member-nav-link{font-weight:750}
+.member-workshop-link .summary-top{align-items:center}
+.member-workshop-link a{text-decoration:none}
+.support-field-office{display:flex;justify-content:space-between;align-items:center;gap:20px;background:#e7efe5;border:1px solid #c2d5c1;border-radius:10px;margin:0 0 25px;padding:18px 22px}
+.support-field-office h2{font:700 22px Georgia,serif;color:#2c523b;margin:4px 0 7px}
+.support-field-office p{font-size:13px;line-height:1.55;color:#54705a;margin:0}
+.support-field-office a{flex-shrink:0;text-decoration:none;padding:11px 15px;border-radius:7px;background:#316849;color:#fff;font-size:12px;font-weight:800;white-space:nowrap}
+.support-field-office a:hover{background:#235337;color:#fff}
+.support-tier-checkout{display:block;color:#fff!important;text-decoration:none;border-radius:7px;background:#2d6345;padding:11px 13px;font-weight:750;font-size:12px;text-align:center;margin:0 0 12px}
+.support-tier-checkout[hidden]{display:none!important}
+.support-gallery{padding:23px 0;margin:23px 0 7px;border-top:1px solid #cddcca}
+.support-gallery h2{font:700 28px Georgia,serif;color:#2c4f39;margin:6px 0}
+.support-gallery>p{font-size:13px;color:#5a725f}
+.support-gallery-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.support-gallery-entry{border:1px solid #cfddcb;border-radius:8px;background:#fffcf5;padding:14px}
+.support-gallery-entry strong{font-size:10px;letter-spacing:.1em;color:#4c7756}
+.support-gallery-entry p{font-size:13px;color:#3f5e49;line-height:1.6}
+@media(max-width:650px){.support-field-office{flex-direction:column;align-items:flex-start}.support-gallery-list{grid-template-columns:1fr}}

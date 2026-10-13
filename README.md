@@ -143,3 +143,6 @@ Do not link card names in decklist editors, deck rows or starter-core tables, wh
 
 ## Stripe subscriptions: prepared, not activated
 The supporter tier is **$5 USD per month**, recurring; Stripe-hosted Checkout is preferred. Current code includes a test-link-resistant URL gate and optional Stripe Billing portal link. See [`docs/STRIPE-IMPLEMENTATION.md`](docs/STRIPE-IMPLEMENTATION.md). Checkout is **not yet active**: Stripe product/price/link creation and live verification still require callable Stripe account access.
+
+## Premium Field Office (single package, October 2026)
+The key-only premium workspace is at [members.html](members.html); billing is deliberately **not active**. Backend routes: `/api/member`, `/api/member-data`, `/api/member-lab`, `/api/stripe-webhook`, and `/api/supporter-gallery`. All four phases have integration hooks, with full feature/launch limitations documented in [docs/MEMBERSHIPS.md](docs/MEMBERSHIPS.md). D1 migration applied from `db/premium.sql`. **Do not advertise incomplete features as delivered or enable Stripe checkout until live credentials, product taxes and editorial workflows are ready.**

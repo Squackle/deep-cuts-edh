@@ -3,7 +3,7 @@ Never add Stripe secret keys to this public file. A static link alone does not
 grant premium entitlements. Enable only after benefits, billing and access checks
 are implemented and each live recurring Price is verified. */
 window.DEEP_CUTS_SUPPORT=Object.freeze({
- monthlyUSD:5,currency:"USD",frequency:"month",provider:"Stripe",
+ monthlyUSD:5,currency:"USD",frequency:"month",provider:"Stripe",membershipInfrastructureReady:false,
  checkoutURL:null,verifiedLiveRecurring:false,manageBillingURL:null,
  tiers:Object.freeze({
   informant:{monthlyUSD:5,sandboxProduct:"prod_VQj1sN8fQn1Hff",sandboxPrice:"price_1UPrZWBDD2Zs8Kb6NMpeOFOu",liveCheckoutURL:null,ready:false},

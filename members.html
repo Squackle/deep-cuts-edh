@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#172522">
+<title>Member Field Office · Deep Cuts EDH</title><meta name="description" content="The Deep Cuts EDH private member field office: printable deck dossiers, research, advanced deck tools, and a key-only membership.">
+<link rel="icon" href="assets/favicon.svg">
+<link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="site-glossary.css"><script defer src="card-lexicon.js"></script><script defer src="glossary-terms.js"></script><script defer src="site-glossary.js"></script><link rel="stylesheet" href="theme-v2.css"><link rel="stylesheet" href="workspace-ui.css"><link rel="stylesheet" href="members.css">
+<script type="module" src="members.js"></script><link rel="stylesheet" href="feedback.css"><script defer src="feedback.js"></script>
+</head><body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol"><img src="assets/deep-cuts-mark.svg" alt="" width="46" height="56"></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>OLD LEGENDS · NEW TROUBLE</small></span></a>
+<nav class="primary-nav" aria-label="Main navigation"><a href="index.html#archive">RESCUE REPORTS</a><a href="library.html">CARD LIBRARY</a><a href="deck.html">DECK WORKSHOP</a><a href="nominations.html">NOMINATIONS</a><a href="supporters.html">SUPPORT</a><a href="members.html" aria-current="page">FIELD OFFICE</a></nav>
+<a class="header-action" href="supporters.html">MEMBERSHIP TIERS ↗</a></div></header>
+<main class="member-page" id="main"><div class="wrap member-wrap">
+ <div class="member-top"><span class="member-eyebrow">DEEP CUTS / PRIVATE FIELD OFFICE</span><h1>Every deck has <em>a story.</em></h1><p>Research the evidence, revisit previous builds, and submit the next case—all without a username or password.</p></div>
+ <div id="memberStatus" class="member-status" role="status" aria-live="polite">Checking member access…</div>
+ <section class="member-panel member-entrance" id="memberEntrance" hidden aria-label="Activate membership">
+  <div><h2>Unlock the Field Office</h2><p>Your member key activates up to two devices. The key is separate from your free deck-vault recovery key. Keep it secret and store it somewhere safe.</p></div>
+  <form id="memberActivate" class="member-form"><label for="memberKey">Membership activation key</label><input type="text" id="memberKey" autocomplete="off" spellcheck="false" placeholder="dcmember1_…" required maxlength="120"><label for="memberDeviceLabel">Device label</label><input id="memberDeviceLabel" type="text" maxlength="36" value="My device"><div class="member-actions"><button class="member-action" type="submit">ACTIVATE THIS DEVICE ↗</button><button class="member-action-secondary" type="button" id="replaceLostDevice">REPLACE A LOST DEVICE</button></div></form>
+  <div id="memberClaim" class="member-claim" hidden><strong>Checkout verified — save your membership key</strong><p id="memberClaimText"></p><code id="memberNewKey" class="member-key-display"></code><button type="button" class="member-action-secondary" id="copyMemberKey">COPY KEY</button><p>Shown once. Activate this device, then use the key once more on another device.</p></div>
+  <p class="member-fine">No username or password. Subscriptions aren't accepting live payments yet, so this space will unlock when verified checkout is connected. <a href="supporters.html">View the planned tiers</a>.</p>
+ </section>
+ <section id="memberOffice" hidden>
+  <div class="member-ribbon"><div><span>AUTHORIZED FIELD OFFICE</span><strong id="memberTierName">Member</strong></div><div><span>ACTIVATED DEVICES</span><strong id="memberDeviceCount">— / 2</strong></div><div><span>MY DEVICE</span><strong id="memberDeviceName">Active</strong></div></div>
+  <div class="member-tabs" role="tablist" aria-label="Premium tools">
+   <button type="button" class="member-tab active" data-view="dossier" role="tab" aria-selected="true">DECK DOSSIER</button>
+   <button type="button" class="member-tab" data-view="research" role="tab" aria-selected="false">RESEARCH FILES</button>
+   <button type="button" class="member-tab" data-view="lab" role="tab" aria-selected="false">DETECTIVE LAB</button>
+   <button type="button" class="member-tab" data-view="editorial" role="tab" aria-selected="false">EDITORIAL DESK</button>
+   <button type="button" class="member-tab" data-view="settings" role="tab" aria-selected="false">YOUR BADGE</button>
+  </div>
+  <section id="member-dossier" class="member-view member-panel"><span class="member-eyebrow">THE INFORMANT / CASE EVIDENCE</span><h2>Personal Deck Dossier</h2><p>Analyze the deck saved in this browser's free Workshop. We'll review mana balance, role shortages and expensive card choices—then create a printable investigation record.</p>
+   <div class="member-actions"><button id="runDossier" class="member-action">INVESTIGATE MY DECK ↗</button><button id="printDossier" class="member-action-secondary" disabled>PRINT / SAVE PDF</button><a href="deck.html#deck" class="member-text-link">Edit Workshop deck ↗</a></div>
+   <div id="dossierOutput" class="member-output" aria-live="polite">Your next investigation starts here.</div>
+   <p class="member-fine">Deck analysis uses card-role heuristics; the findings are advisory, not a verified power-level rating or a fully playtested deck.</p>
+  </section>
+  <section id="member-research" class="member-view member-panel" hidden><span class="member-eyebrow">THE INFORMANT / CLASSIFIED READING ROOM</span><h2>Research Files</h2><p>Alternate strategies, an inside look at upcoming dossiers, and the monthly classified memo.</p>
+   <div class="member-two-col"><div><h3>Alternate builds</h3><div id="alternateFiles" class="member-stack"></div></div><div><h3>Classified newsletter</h3><div id="newsletterFiles" class="member-stack"></div><h3>Early access</h3><div id="earlyFiles" class="member-stack"></div></div></div>
+   <div class="member-theme-select"><label for="memberTheme">Your field office theme</label><select id="memberTheme"><option value="classic">Classic pine & paper</option><option value="noir">Noir night shift</option><option value="parchment">Aged parchment</option><option value="laboratory">Phyrexian laboratory</option></select></div>
+  </section>
+  <section id="member-lab" class="member-view member-panel" hidden><span class="member-eyebrow">THE DETECTIVE / ANALYTICS DESK</span><h2>Research & Probability Lab</h2><p>Compare card ownership, examine land-drop odds and preserve older versions of your current deck. These features require The Detective or higher.</p>
+   <div class="member-gated" id="detectiveLock" hidden>Upgrade to The Detective to use these tools. <a href="supporters.html">Compare tiers ↗</a></div>
+   <div id="detectiveTools">
+    <div class="member-tool"><h3>Commander casting window</h3><p>Monte Carlo land-drop sample. Set total mana required; this deliberately excludes mulligans, ramp, colors, and opponents.</p><label for="memberManaCost">Mana required</label><input type="number" id="memberManaCost" min="1" max="12" value="4"><button class="member-action-secondary" id="runProbability" type="button">RUN 1,500 TRIALS ↗</button><div class="member-output" id="probabilityOutput" aria-live="polite"></div></div>
+    <div class="member-tool"><h3>Collection-aware comparison</h3><label for="memberOwned">Cards you already own (one name per line)</label><textarea id="memberOwned" rows="5" placeholder="Sol Ring&#10;Arcane Signet&#10;Swords to Plowshares"></textarea><button type="button" class="member-action-secondary" id="compareCollection">CHECK DECK AGAINST COLLECTION ↗</button><div class="member-output" id="collectionOutput"></div></div>
+    <div class="member-tool"><h3>Deck Version Archive</h3><p>Save up to 40 revisions per membership. Select a saved version to compare and restore it to this browser's Workshop.</p><div class="member-actions"><button type="button" class="member-action-secondary" id="saveMemberVersion">SAVE THIS VERSION</button><button type="button" class="member-action-secondary" id="refreshVersions">REFRESH ARCHIVE</button></div><div id="versionList" class="member-stack"></div></div>
+    <div class="member-tool"><h3>Commander watchlist</h3><p>Track up to 25 names. This is currently an on-demand watchlist—not automatic email or push alerts.</p><div class="member-actions"><input type="text" id="watchName" placeholder="Commander or card name" maxlength="125"><button class="member-action-secondary" id="addWatch" type="button">WATCH ↗</button></div><div id="watchList" class="member-stack"></div><button id="scanWatches" type="button" class="member-action-secondary">CHECK WATCHED CARDS FOR CHANGES ↗</button><div id="watchScanResult" class="member-output" aria-live="polite"></div></div>
+   </div>
+  </section>
+  <section id="member-editorial" class="member-view member-panel" hidden><span class="member-eyebrow">YOUR VOICE / THE EDITORIAL DESK</span><h2>Send a File to Headquarters</h2><p>Suggest a feature deck, ask a research question, or submit an investigation request. Submissions go into a private editorial queue; they aren't published automatically.</p>
+   <div class="member-two-col"><form id="memberRequest" class="member-form">
+    <label for="memberRequestType">Type of submission</label><select id="memberRequestType"><option value="showcase">Supporter Deck Showcase · Informant+</option><option value="question">Research Q&A · Detective+</option><option value="consultation">Quarterly deck consultation · Chief only</option><option value="editorial">Co-design a report · Chief only</option><option value="credit">Optional recognition / editorial credit · Chief only</option></select>
+    <label for="memberRequestBody">Case notes</label><textarea id="memberRequestBody" rows="6" minlength="20" maxlength="1600" required placeholder="Your commander, deck strategy, what you want us to examine, and any share link…"></textarea>
+    <button type="submit" class="member-action">SUBMIT FILE ↗</button><small>Consultations limited to one request every 90 days; other requests have monthly limits. Human editorial review and scheduling apply.</small></form>
+    <div><h3>Published Supporter Showcase</h3><div id="showcaseList" class="member-stack"></div><h3>My submissions</h3><div id="memberRequests" class="member-stack"></div></div></div>
+  </section>
+  <section id="member-settings" class="member-view member-panel" hidden><span class="member-eyebrow">YOUR PRIVATE BADGE</span><h2>Two devices. No passwords.</h2><p>The same subscription can be active on two devices. You may replace a device once per 30 days; a manual review can assist with genuine loss or replacement.</p>
+   <div id="deviceList" class="member-stack"></div><p class="member-fine">Devices use secure HttpOnly cookies, not a password or browser-readable long-term credential. Your original membership key should be stored securely. Revoking this device also signs it out.</p>
+   <div class="member-actions"><a class="member-text-link" href="supporters.html">Membership & billing information ↗</a></div>
+  </section>
+ </section>
+</div></main>
+<footer class="site-footer"><div class="wrap footer-content"><strong>DEEP CUTS <span>EDH</span></strong><div class="footer-links"><a href="index.html">HOME</a><a href="supporters.html">SUPPORTERS</a><a href="deck.html">WORKSHOP</a></div></div><div class="wrap fine-print">Unofficial fan content. Card data from Scryfall. Payment details remain with Stripe.</div></footer></body></html>
