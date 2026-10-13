@@ -75,9 +75,11 @@
    values.forEach(v=>tr.append(node("td",v)));
    const cell=node("td");if(r.source==="complimentary"){
     const controls=node("div");controls.className="member-actions";
-    if(r.active)actionButton(controls,"EXTEND",()=>changeGrant("extend",r));
-    actionButton(controls,"ROTATE KEY",()=>changeGrant("rotate",r));
-    if(r.active)actionButton(controls,"REVOKE",()=>changeGrant("revoke",r),true);
+    if(!r.revoked){
+     actionButton(controls,r.active?"EXTEND":"RENEW EXPIRED",()=>changeGrant("extend",r));
+     actionButton(controls,"ROTATE KEY",()=>changeGrant("rotate",r));
+     actionButton(controls,"REVOKE",()=>changeGrant("revoke",r),true);
+    }else controls.append(node("span","Revoked"));
     cell.append(controls);
    }else cell.textContent="—";
    tr.append(cell);tbody.append(tr);

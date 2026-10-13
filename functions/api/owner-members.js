@@ -51,7 +51,7 @@ export async function onRequestGet({request,env}){
     const active=m.status==="active"&&source==="complimentary"?m.grant_revoked==null&&Number(expiry)>now():
      m.status==="active"&&source==="kofi"?env.KOFI_MEMBER_ACCESS_READY==="true"&&m.kofi_revoked==null&&Number(expiry)>now():false;
     return {id:m.id,tier:source==="complimentary"?m.grant_tier:m.tier,
-      source,label:source==="complimentary"?m.grant_label:"Ko-fi / private",
+      source,label:source==="complimentary"?m.grant_label:"Ko-fi / private",revoked:source==="complimentary"&&m.grant_revoked!=null,
       expiresAt:expiry,active,createdAt:m.created_at,devices:m.devices,lastSeen:m.last_seen||0};
    });
    return reply({members:rows,page:offset/50,limit:50});
