@@ -7,8 +7,17 @@ async function request(body,authenticated=false){
  const headers={"Content-Type":"application/json"};
  if(authenticated&&state.key)headers.Authorization="Bearer "+state.key;
  const res=await fetch("/api/profile-recovery",{method:"POST",headers,cache:"no-store",credentials:"same-origin",body:JSON.stringify(body)});
- const data=await res.json();
- if(!res.ok)throw Error(data.error||"Recovery service unavailable.");
+ // Edge errors sometimes return an HTML error document, not JSON. Explain that
+ // clearly rather than displaying a confusing "Unexpected token '<'" exception.
+ let data;
+ try{
+  const type=res.headers.get("Content-Type")||"";
+  if(!type.toLowerCase().includes("application/json"))throw Error("non-json");
+  data=await res.json();
+ }catch{
+  throw Error("The recovery service returned an unexpected response (HTTP "+res.status+"). Refresh the page and try again. If it continues, contact Deep Cuts EDH support.");
+ }
+ if(!res.ok)throw Error(data.error||"Recovery service unavailable (HTTP "+res.status+").");
  return data;
 }
 async function status(){
