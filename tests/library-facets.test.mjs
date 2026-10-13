@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import {facetTerms,setFacet,resetFacets,clearManaChips,clearFacet,activeFacetCount,shareURL,initFacets,facetSelections} from "../library-facets.js";
 const fields=new Map();
 function element(id,tagName="INPUT"){
- const events={};const el={id,tagName,value:"",checked:false,hidden:false,textContent:"",children:[],dataset:{},options:[],classList:{toggle(){},add(){},remove(){}},setAttribute(){},replaceChildren(...children){this.children=children},addEventListener(type,fn){(events[type]??=[]).push(fn)},fire(type){for(const fn of events[type]||[])fn({target:this})}};
+ const events={};const el={id,tagName,value:"",checked:false,hidden:false,textContent:"",children:[],dataset:{},options:[],classList:{toggle(){},add(){},remove(){}},setAttribute(){},replaceChildren(...children){this.children=children},append(...children){this.children.push(...children)},addEventListener(type,fn){(events[type]??=[]).push(fn)},fire(type){for(const fn of events[type]||[])fn({target:this})}};
  fields.set(id,el);return el;
 }
 for(const id of ["identityExact","maxMana","minPrice","maxPrice","cardQuery","activeFacetCount","libraryFilterCount","libraryFacetSummary","libraryFilterEmpty","activeFilterChips","libraryFacetPanel","libraryToggleFilters","librarySearch","libraryReset","browseAll","librarySaveSearch","libraryShareFallback","openScryfallSearch"])element(id);
 for(const id of ["formatFilter","sortFilter","printingFilter"]){const e=element(id,"SELECT");e.options=["commander","standard","modern","edhrec-asc","edhrec-desc","usd-asc","usd-desc","cards","prints","art"].map(value=>({value}))}
 fields.get("formatFilter").value="commander";fields.get("sortFilter").value="edhrec-asc";fields.get("printingFilter").value="cards";
-globalThis.document={getElementById:id=>fields.get(id)||null,querySelectorAll:selector=>selector==="[data-facet]"?[facetButton]:selector==="[data-quick-sort]"?[sortButton]:selector==="[data-library-preset]"?[presetButton]:[]};
+globalThis.document={createElement:tagName=>element("generated-"+fields.size,tagName.toUpperCase()),getElementById:id=>fields.get(id)||null,querySelectorAll:selector=>selector==="[data-facet]"?[facetButton]:selector==="[data-quick-sort]"?[sortButton]:selector==="[data-library-preset]"?[presetButton]:[]};
 globalThis.location={href:"https://deep-cuts-edh.pages.dev/library.html",origin:"https://deep-cuts-edh.pages.dev"};
 globalThis.window={matchMedia:()=>({matches:false})};
 globalThis.sessionStorage={getItem:()=>null,setItem(){}};

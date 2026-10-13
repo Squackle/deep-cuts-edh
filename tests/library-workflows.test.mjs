@@ -17,8 +17,10 @@ test("bad cards don't save and invalid stored decks recover safely",()=>{
 });
 test("Library card-details and external links are wired",()=>{
  const source=readFileSync(new URL("../library.js",import.meta.url),"utf8");
- for(const marker of ["cardDetailBody","detail.showModal()","closeCard","addCard(card)","addCard(c)","card.scryfall_uri","TCGplayer","SCRYFALL TAGGER","loadMore","browseAll","libraryReset","librarySaveSearch","openScryfallSearch"])
+ for(const marker of ["cardDetailBody","detail.showModal()","closeCard","addCard(card)","addCard(c)","card.scryfall_uri","TCGplayer","SCRYFALL TAGGER","loadMore","browseAll","libraryReset","openScryfallSearch"])
   assert.ok(source.includes(marker),"Missing "+marker);
+ const facets=readFileSync(new URL("../library-facets.js",import.meta.url),"utf8");
+ assert.ok(facets.includes("librarySaveSearch"),"Missing share search handler");
 });
 test("HTML presents sort presets, facets, decimal inputs, and accessible results",()=>{
  const html=readFileSync(new URL("../library.html",import.meta.url),"utf8");
