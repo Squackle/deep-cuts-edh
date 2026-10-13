@@ -78,8 +78,8 @@
 @media(max-width:620px){.report-hero{grid-template-columns:1fr;padding:25px}.report-hero-media{grid-row:1;min-height:240px}.report-hero-media img{width:165px}.report-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.report-tech-grid,.report-phase-grid{grid-template-columns:1fr}.report-side{display:block}.report-guide{padding-top:22px}.report-core-table th,.report-core-table td{padding:9px}.report-core-table td:first-child{white-space:normal}}
 
 /* Subtle pulsing radiance on all report commander displays */
-.report-hero-media:before,.report-side:has(>img):before{content:"";position:absolute;z-index:0;inset:8% -6%;border-radius:36%;pointer-events:none;background:radial-gradient(ellipse at center,rgba(230,201,127,.24),rgba(130,178,127,.13) 46%,transparent 71%);filter:blur(24px);animation:deep-cuts-aura 5.8s ease-in-out infinite}
-.report-hero-media img{filter:drop-shadow(0 3px 9px #0002)}
+.report-hero-media:before,.report-side:has(>img):before{content:"";position:absolute;z-index:0;inset:8% -6%;border-radius:36%;pointer-events:none;background:radial-gradient(ellipse at center,rgba(230,201,127,.34),rgba(130,178,127,.19) 46%,transparent 71%);filter:blur(26px);animation:deep-cuts-aura 5.8s ease-in-out infinite}
+.report-hero-media img{filter:drop-shadow(0 3px 10px rgba(229,191,123,.23)) drop-shadow(0 5px 10px #0003)}
 .report-hero-partners{min-height:320px;isolation:isolate;display:flex;align-items:center;justify-content:center;gap:0;margin-right:0;padding:16px 8px}
 .report-hero-partners .partner-card-frame{position:relative;z-index:1;flex:0 0 auto;width:49%;min-width:0}
 .report-hero-partners .partner-card-frame:first-child{transform:rotate(-7deg) translate(7%,-4%)}
@@ -88,7 +88,7 @@
 .report-hero-partners .report-image-backup{width:100%;height:190px;font-size:17px;padding:12px;border-radius:9px}
 .report-hero-partners .partner-card-frame[data-failed] img{display:none}
 .report-hero-partners .partner-card-frame[data-failed] .report-image-backup{display:flex}
-@keyframes deep-cuts-aura{0%,100%{opacity:.43;transform:scale(.95)}50%{opacity:.92;transform:scale(1.08)}}
-@media(prefers-reduced-motion:reduce){.report-hero-media:before,.report-side:has(>img):before{animation:none;opacity:.55}}
+@keyframes deep-cuts-aura{0%,100%{opacity:.5;transform:scale(.95)}50%{opacity:.97;transform:scale(1.08)}}
+@media(prefers-reduced-motion:reduce){.report-hero-media:before,.report-side:has(>img):before{animation:none;opacity:.62}}
 @media(min-width:651px){.report-hero:has(.report-hero-partners){grid-template-columns:minmax(0,1fr) 320px}}
 @media(max-width:650px){.report-hero-partners{min-height:260px;width:100%;max-width:340px;margin:0 auto;padding:0 10px}.report-hero-partners .partner-card-frame{width:48%}.report-hero:has(.report-hero-partners){grid-template-columns:1fr}}
