@@ -496,3 +496,7 @@ body.lair-active .leaderboard-panel{display:none!important}
 
 /* Brood Trail has no boss expeditions. */
 #gameChallenge[hidden],#gameChallengeLabel[hidden]{display:none!important}
+
+/* Old replay-verified Arcade scores remain visible without misleading version claims. */
+.board-legacy,.personal-record-legacy{font:800 8px/1 ui-monospace,monospace;color:#bfab7c;
+ letter-spacing:0;border:1px solid #665b40;border-radius:2px;padding:3px 2px;white-space:nowrap}

@@ -14,6 +14,11 @@ export function renderLeaderboard(root,data){
   r.append(el(doc,"span",ordinal(i+1),"rank"));
   const player=el(doc,"div",undefined,"board-player");
   player.append(el(doc,"strong",entry.alias||"???"));
+  if(entry.rulesVersion&&entry.rulesVersion!==data.rulesVersion){
+   const legacy=el(doc,"small","OLD","board-legacy");
+   legacy.title="Verified score from an earlier Hive Run ruleset";
+   player.append(legacy);
+  }
   if(entry.profileVerified&&entry.profileHandle){
    const href=profileLink(entry.profileHandle);
    if(href){
@@ -46,6 +51,8 @@ export function renderPersonalBest(root,data,localBest=0){
   identity.replaceChildren();
   if(verified){
    identity.append(el(root.ownerDocument,"span",String(data.personalBest.alias||"???")+" · ","personal-record-initials"));
+   if(data.personalBest.rulesVersion&&data.personalBest.rulesVersion!==data.rulesVersion)
+    identity.append(el(root.ownerDocument,"small","LEGACY RULES · ","personal-record-legacy"));
    const href=profileLink(data.profile.handle);
    if(href){
     const link=el(root.ownerDocument,"a","@"+data.profile.handle+" ↗","personal-record-account");
