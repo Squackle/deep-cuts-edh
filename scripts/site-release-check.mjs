@@ -10,7 +10,7 @@ const extra=['members.html','404.html'];
 const children=dir=>fs.readdirSync(dir,{withFileTypes:true}).filter(x=>x.isFile()&&x.name.endsWith('.html')).map(x=>dir+'/'+x.name);
 const publicPages=[...main,...children('games'),...children('reports')];
 const menuPages=[...new Set([...publicPages,...extra])];
-const expected=['RESCUE REPORT','COMMANDERS','CARD LIBRARY','DECK WORKSHOP','ARCADE','NOMINATIONS','COMMUNITY','MEMBERS' LOUNGE'];
+const expected=['RESCUE REPORT','COMMANDERS','CARD LIBRARY','DECK WORKSHOP','ARCADE','NOMINATIONS','COMMUNITY',"MEMBERS' LOUNGE"];
 let checks=0;
 function check(ok,msg){assert.ok(ok,msg);checks++;}
 for(const file of publicPages){
