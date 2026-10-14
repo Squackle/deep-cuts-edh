@@ -1,26 +1,26 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#172522">
-<title>Member Field Office · Deep Cuts EDH</title><meta name="description" content="The Deep Cuts EDH private member field office: printable deck dossiers, research, advanced deck tools, and a key-only membership.">
+<title>Members' Lounge · Deep Cuts EDH</title><meta name="description" content="The Deep Cuts EDH private members' lounge: printable deck dossiers, research, advanced deck tools, and a key-only membership.">
 <link rel="icon" href="assets/favicon.svg">
 <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="site-glossary.css"><script defer src="card-lexicon.js"></script><script defer src="glossary-terms.js"></script><script defer src="site-glossary.js"></script><link rel="stylesheet" href="theme-v2.css"><link rel="stylesheet" href="workspace-ui.css"><link rel="stylesheet" href="members.css">
 <link rel="stylesheet" href="members-preview.css"><script type="module" src="members-preview.js"></script><script type="module" src="members.js"></script><link rel="stylesheet" href="feedback.css"><script defer src="feedback.js"></script>
 <link rel="stylesheet" href="/header-profile.css"><script defer src="/header-profile.js"></script></head><body>
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol"><img src="assets/deep-cuts-mark.svg" alt="" width="46" height="56"></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>INSIDE THE FIELD OFFICE</small></span></a>
-<nav class="primary-nav" aria-label="Main navigation"><a href="/index.html#latest">RESCUE REPORT</a><a href="/index.html#archive">COMMANDERS</a><a href="/library.html">CARD LIBRARY</a><a href="/deck.html">DECK WORKSHOP</a><a class="daily-games-nav-link" href="/games.html">ARCADE</a><a href="/nominations.html">NOMINATIONS</a><a href="/community.html">FIELD NETWORK</a><a class="member-nav-link workshop-link" href="/members.html" aria-current="page">FIELD OFFICE</a></nav>
+<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="index.html"><span class="wordmark-symbol"><img src="assets/deep-cuts-mark.svg" alt="" width="46" height="56"></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>INSIDE THE MEMBERS' LOUNGE</small></span></a>
+<nav class="primary-nav" aria-label="Main navigation"><a href="/index.html#latest">RESCUE REPORT</a><a href="/index.html#archive">COMMANDERS</a><a href="/library.html">CARD LIBRARY</a><a href="/deck.html">DECK WORKSHOP</a><a class="daily-games-nav-link" href="/games.html">ARCADE</a><a href="/nominations.html">NOMINATIONS</a><a href="/community.html">COMMUNITY</a><a class="member-nav-link workshop-link" href="/members.html" aria-current="page">MEMBERS' LOUNGE</a></nav>
 <a class="header-action" href="supporters.html">MEMBERSHIP TIERS ↗</a></div></header>
 <main class="member-page" id="main"><div class="wrap member-wrap">
- <div class="member-top"><span class="member-eyebrow">DEEP CUTS / PRIVATE FIELD OFFICE</span><h1>Every deck has <em>a story.</em></h1><p>Research the evidence, revisit previous builds, and submit the next case—all without a username or password.</p></div>
+ <div class="member-top"><span class="member-eyebrow">DEEP CUTS / PRIVATE MEMBERS' LOUNGE</span><h1>Members' <em>Lounge.</em></h1><p>Research the evidence, revisit previous builds, and submit the next case—all without a username or password.</p></div>
  <div id="memberStatus" class="member-status" role="status" aria-live="polite">Checking member access…</div>
  <section class="member-panel member-entrance" id="memberEntrance" hidden aria-label="Activate membership">
-  <div><h2>Unlock the Field Office</h2><p>Your member key activates up to three devices. The key is separate from your free deck-vault recovery key. Keep it secret and store it somewhere safe.</p></div>
+  <div><h2>Unlock the Members' Lounge</h2><p>Your member key activates up to three devices. The key is separate from your free deck-vault recovery key. Keep it secret and store it somewhere safe.</p></div>
   <form id="memberActivate" class="member-form"><label for="memberKey">Membership activation key</label><input type="text" id="memberKey" autocomplete="off" spellcheck="false" placeholder="dcmember1_…" required maxlength="120"><label for="memberDeviceLabel">Device label</label><input id="memberDeviceLabel" type="text" maxlength="36" value="My device"><div class="member-actions"><button class="member-action" type="submit">ACTIVATE THIS DEVICE ↗</button><button class="member-action-secondary" type="button" id="replaceLostDevice">REPLACE A LOST DEVICE</button></div></form>
   <div id="memberClaim" class="member-claim" hidden><strong>Membership verified — save your membership key</strong><p id="memberClaimText"></p><code id="memberNewKey" class="member-key-display"></code><button type="button" class="member-action-secondary" id="copyMemberKey">COPY KEY</button><p>Shown once. Activate this device, then use the key once more on another device.</p></div>
   <p class="member-fine">No username or password. We're migrating premium access to verified Ko-fi renewals. Ko-fi subscriptions do not automatically issue Deep Cuts keys yet. Owner-issued complimentary keys can be activated independently. <a href="https://ko-fi.com/deepcutsedh" target="_blank" rel="noopener noreferrer">Visit our Ko-fi page ↗</a>.</p>
  </section>
  <section id="memberPreview" class="member-preview" aria-labelledby="previewHeader">
   <span class="member-eyebrow">EXPLORE THE THREE TIERS · PUBLIC DEMONSTRATION</span>
-  <h2 id="previewHeader">Explore the Field Office before joining.</h2>
+  <h2 id="previewHeader">Explore the Members' Lounge before joining.</h2>
   <p>See exactly which tools belong to each tier and try a local, limited demonstration. These demos do not verify payment, unlock private reports, or upload your deck. Existing Ko-fi supporters need a securely issued member key before using the private services.</p>
   <div class="member-preview-controls" role="group" aria-label="Preview membership tiers">
    <button data-preview-tier="informant" aria-pressed="true" type="button">INFORMANT · $5</button>
@@ -32,7 +32,7 @@
   <div id="previewDemoOutput" class="member-preview-demo" role="status" aria-live="polite">Select a tier to explore its planned tools.</div>
  </section>
  <section id="memberOffice" hidden>
-  <div class="member-ribbon"><div><span>AUTHORIZED FIELD OFFICE</span><strong id="memberTierName">Member</strong></div><div><span>ACTIVATED DEVICES</span><strong id="memberDeviceCount">— / 3</strong></div><div><span>MY DEVICE</span><strong id="memberDeviceName">Active</strong></div><div><span>ACCESS EXPIRES</span><strong id="memberPaidUntil">—</strong></div></div>
+  <div class="member-ribbon"><div><span>MEMBERS' LOUNGE ACCESS</span><strong id="memberTierName">Member</strong></div><div><span>ACTIVATED DEVICES</span><strong id="memberDeviceCount">— / 3</strong></div><div><span>MY DEVICE</span><strong id="memberDeviceName">Active</strong></div><div><span>ACCESS EXPIRES</span><strong id="memberPaidUntil">—</strong></div></div>
   <div class="member-tabs" role="tablist" aria-label="Premium tools">
    <button type="button" class="member-tab active" data-view="dossier" role="tab" aria-selected="true">DECK DOSSIER</button>
    <button type="button" class="member-tab" data-view="research" role="tab" aria-selected="false">RESEARCH FILES</button>
@@ -47,7 +47,7 @@
   </section>
   <section id="member-research" class="member-view member-panel" hidden><span class="member-eyebrow">THE INFORMANT / CLASSIFIED READING ROOM</span><h2>Research Files</h2><p>Alternate strategies, an inside look at upcoming dossiers, and the monthly classified memo.</p>
    <div class="member-two-col"><div><h3>Alternate builds</h3><div id="alternateFiles" class="member-stack"></div></div><div><h3>Classified newsletter</h3><div id="newsletterFiles" class="member-stack"></div><h3>Early access</h3><div id="earlyFiles" class="member-stack"></div></div></div>
-   <div class="member-theme-select"><label for="memberTheme">Your field office theme</label><select id="memberTheme"><option value="classic">Classic pine & paper</option><option value="noir">Noir night shift</option><option value="parchment">Aged parchment</option><option value="laboratory">Phyrexian laboratory</option></select></div>
+   <div class="member-theme-select"><label for="memberTheme">Your lounge theme</label><select id="memberTheme"><option value="classic">Classic pine & paper</option><option value="noir">Noir night shift</option><option value="parchment">Aged parchment</option><option value="laboratory">Phyrexian laboratory</option></select></div>
   </section>
   <section id="member-lab" class="member-view member-panel" hidden><span class="member-eyebrow">THE DETECTIVE / ANALYTICS DESK</span><h2>Research & Probability Lab</h2><p>Compare card ownership, examine land-drop odds and preserve older versions of your current deck. These features require The Detective or higher.</p>
    <div class="member-gated" id="detectiveLock" hidden>Upgrade to The Detective to use these tools. <a href="supporters.html">Compare tiers ↗</a></div>
