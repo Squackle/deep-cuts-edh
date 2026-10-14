@@ -4,7 +4,7 @@ import {DatabaseSync} from "node:sqlite";
 import {readFileSync} from "node:fs";
 import {onRequestGet} from "../../../src/hive-server/leaderboard.js";
 import {RULES_VERSION} from "../src/engine.js";
-import {chicagoDay} from "../src/modes.js";
+ 
 import {renderLeaderboard,renderPersonalBest} from "../src/leaderboard-ui.js";
 
 function database(){
