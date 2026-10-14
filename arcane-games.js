@@ -91,7 +91,7 @@
    const controls=node("div","arcane-hint-controls");
    const hint=node("button","arcane-hint-button","✦ REVEAL "+state.hintRevealCount+" GREEN "+(state.hintRevealCount===1?"LETTER":"LETTERS")+" · COSTS 1 GUESS");
    hint.type="button";
-   hint.disabled=!state.hintAvailable||working||entry.length>0;
+   hint.disabled=!state.hintAvailable||entry.length>0;
    hint.setAttribute("aria-label",state.hintAvailable?"Reveal "+state.hintRevealCount+" correct letters, spend one guess":"No hints available");
    hint.addEventListener("click",()=>move("hint",{}));
    const summary=node("span","arcane-hint-count","HINTS "+state.hintCount+" / "+state.maxHints);
