@@ -237,6 +237,48 @@
   const media=window.matchMedia("(max-width: 1180px)");
   media.addEventListener?.("change",()=>{setOpen(false);closeDesktop()});
  }
+ // Tiny editorial supporter roll beneath the shared top bar. No donor
+ // names are inferred from payments; the endpoint returns opt-in credits only.
+ function setupSupporterTicker(root){
+  const header=root.closest(".site-header");
+  if(!header||header.querySelector(".site-supporter-strip"))return;
+  const strip=node("div","site-supporter-strip");
+  strip.setAttribute("aria-label","Supporter recognition");
+  const inner=node("div","site-supporter-inner");
+  const label=node("span","site-supporter-label","BROUGHT TO YOU BY OUR SUPPORTERS:");
+  const view=node("div","site-supporter-window");
+  const track=node("div","site-supporter-track");
+  const empty=node("span","site-supporter-empty");
+  empty.append("Your name could be here · ");
+  const join=node("a",null,"SUPPORT THE ARCHIVE ↗");join.href="/supporters";empty.append(join);
+  track.append(empty);view.append(track);inner.append(label,view);strip.append(inner);
+  header.append(strip);
+  fetch("/api/supporter-ticker",{credentials:"omit",cache:"no-store"})
+   .then(async response=>{if(!response.ok)throw Error("Supporter roll unavailable");return response.json()})
+   .then(data=>{
+    const values=Array.isArray(data?.supporters)?data.supporters.filter(x=>
+     x&&typeof x.name==="string"&&x.name.length>=2&&x.name.length<=36&&
+     ["chief","detective","informant"].includes(x.tier)).slice(0,50):[];
+    if(!values.length)return; // No unverified or imaginary names.
+    const group=()=>{const row=node("span","site-supporter-group");
+     for(const entry of values){
+      const link=node("a","site-supporter-name site-supporter-"+entry.tier,entry.name);
+      link.href="/supporters";
+      const tier={chief:"Chief Investigator",detective:"Detective",informant:"Informant"}[entry.tier];
+      link.setAttribute("aria-label",entry.name+" · "+tier+" supporter");
+      link.title=tier+" supporter";
+      row.append(link);
+     }return row;
+    };
+    track.replaceChildren(group());
+    // Duplicate only for the seamless animation, never twice for screen readers.
+    const copy=group();copy.setAttribute("aria-hidden","true");
+    copy.querySelectorAll("a").forEach(a=>a.tabIndex=-1);
+    track.append(copy);
+    track.classList.add("is-scrolling");
+    strip.classList.add("has-supporters");
+   }).catch(()=>{}); // A network failure never affects the header or games.
+ }
  function setup(){
   // Hive Run uses a slim arcade header but shares our real account avatar,
   // portrait crop, sign-in link and account-change events.
@@ -245,6 +287,7 @@
   if(!root||root.querySelector(".header-profile-button"))return;
   root.classList.add("header-profile-enabled");
   setupNavigation(root);
+  setupSupporterTicker(root);
   button=node("a","header-profile-button");
   button.href=ACCOUNT_URL;
   button.setAttribute("aria-label","Sign in or create your investigator profile");
