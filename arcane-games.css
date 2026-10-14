@@ -121,3 +121,16 @@
 .arcane-hub-grid{width:min(210px,70%);display:grid;grid-template-columns:repeat(4,1fr);gap:6px;transform:rotate(4deg);filter:drop-shadow(0 7px 8px #10291c77)}
 .arcane-hub-grid b{height:27px;display:grid;place-items:center;color:#fcebd2;border:1px solid #b8b28a;background:#477057;font-size:15px}
 .arcane-hub-grid b:nth-child(4n+2){background:#9b7c47}.arcane-hub-grid b:nth-child(4n+3){background:#6d7a80}.arcane-hub-grid b:nth-child(4n){background:#8a6e79}
+
+/* Arcane Cipher: spend a turn for permanently locked green-letter evidence. */
+.arcane-hint-controls{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:9px 12px;margin:4px auto 12px;text-align:center}
+.arcane-hint-button{min-height:42px;padding:9px 14px;border:1px solid #b08b4a;border-radius:5px;background:linear-gradient(135deg,#214b38,#366c4e);color:#fcebc7;font:850 11px/1.3 ui-sans-serif,system-ui;letter-spacing:.04em;cursor:pointer}
+.arcane-hint-button:hover:not(:disabled){background:#3a7452;border-color:#d2ab64}
+.arcane-hint-button:focus-visible{outline:3px solid #d4ac5a;outline-offset:3px}
+.arcane-hint-button:disabled{opacity:.55;cursor:not-allowed}
+.arcane-hint-count{color:#365b41;font:850 10px ui-monospace,monospace;letter-spacing:.08em}
+.arcane-hint-reason{flex-basis:100%;color:#6b7060;font-size:11px}
+.arcane-hint-row{position:relative;filter:drop-shadow(0 1px 2px #65816b22)}
+.arcane-hint-row .arcane-letter:not(.arcane-separator):not(.correct){background:#f0eedf;border-color:#dfd8c7}
+.arcane-assisted{color:#69502f!important;font:850 10px ui-monospace,monospace!important;letter-spacing:.08em}
+@media(max-width:620px){.arcane-hint-button{font-size:10px;padding:10px 9px}.arcane-hint-controls{gap:8px}}
