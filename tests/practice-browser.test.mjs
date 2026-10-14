@@ -86,6 +86,25 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
     await page.route(/^https:\/\//,route=>route.abort());
     try{
      await page.goto(origin+"/games/"+games[game]+".html?practice="+seed,{waitUntil:"domcontentloaded"});
+     // Exercise the real hover and tap preview in both Commander games.
+     // Game actions remain separate; preview must not submit guesses.
+     if(game==="cold"||game==="ladder"){
+      await page.locator(".games-commander-link").first().waitFor();
+      const firstName=await page.locator(".games-commander-link").first().innerText();
+      const originAttempts=game==="cold"?await page.locator(".games-guess-chip").count():null;
+      await page.locator(".games-commander-link").first().hover();
+      await page.locator(".games-card-tooltip").waitFor({state:"visible"});
+      const source=await page.locator(".games-card-tooltip img").getAttribute("src");
+      assert.ok(source.includes("format=image&version=normal"),"Full card preview, not art crop");
+      assert.ok(source.includes(encodeURIComponent(firstName)),"Correct hovered commander card");
+      await page.keyboard.press("Escape");
+      await page.locator(".games-card-tooltip").waitFor({state:"hidden"});
+      await page.locator(".games-card-peek").first().click();
+      await page.locator(".games-card-tooltip").waitFor({state:"visible"});
+      await page.keyboard.press("Escape");
+      await page.locator(".games-card-tooltip").waitFor({state:"hidden"});
+      if(game==="cold")assert.equal(await page.locator(".games-guess-chip").count(),originAttempts,"Card preview must never submit suspect");
+     }
      if(game==="cold"){
       await page.locator(".games-suspect").first().waitFor();
       const puzzle=await getPuzzle(fx.env.DB,"cold","2026-10-14","practice",seed);
