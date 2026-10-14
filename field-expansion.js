@@ -5,7 +5,10 @@ import {loadReputation,attachProfileReputation} from "./field-reputation-ui.js";
 import {initDispatches,loadDispatches,refreshDispatchBadge} from "./field-dispatch-ui.js";
 export {attachProfileReputation,refreshDispatchBadge};
 export function setupFieldExpansion(){
- initEvidenceBoard();initCollection();initComparison();initDispatches();
+ if(document.getElementById("evidenceForm"))initEvidenceBoard();
+ if(document.getElementById("collectionAddForm"))initCollection();
+ if(document.getElementById("compareRun"))initComparison();
+ if(document.getElementById("dispatchRefresh"))initDispatches();
 }
 export function refreshFieldExpansion(tab){
  if(tab==="evidence")alignEvidenceCase();

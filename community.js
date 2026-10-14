@@ -6,7 +6,7 @@ export const $=id=>document.getElementById(id);
 export const state={key:"",me:null,remembered:false,legacyStored:false,caseSlug:"chainer-dementia-master",deck:null,editing:"",myDecks:[]};
 export const el=(tag,content,cls)=>{const n=document.createElement(tag);if(content!==undefined&&content!==null)n.textContent=String(content);if(cls)n.className=cls;return n};
 export function clear(node){node.replaceChildren()}
-export function msg(t,isError=false){const n=$("cmStatus");n.textContent=t||"";n.dataset.error=isError?"true":"false"}
+export function msg(t,isError=false){const n=$("cmStatus");if(!n)return;n.textContent=t||"";n.dataset.error=isError?"true":"false"}
 export const avatarUrl=name=>"https://api.scryfall.com/cards/named?exact="+encodeURIComponent(name)+"&format=image&version=art_crop";
 // Face-close-up portraits use a true clipped zoom so BOTH focal sliders work.
 // object-position alone cannot move landscape art vertically in a square frame.
@@ -87,7 +87,9 @@ export function setTab(tab){
   decks:"SHOW YOUR DECK TECH",
   challenge:"JOIN THE RESCUE CHALLENGE",
   lab:"TEST THE UNEXPECTED",
-  network:"FOLLOW THE INVESTIGATION",
+  network:"FIND YOUR FELLOW BREWERS",
+  overview:"YOUR PERSONAL DASHBOARD",
+  following:"YOUR FOLLOWED INVESTIGATIONS",
   account:"YOUR INVESTIGATOR DOSSIER",
   evidence:"THE EVIDENCE NEVER RESTS",
   collection:"EVERY CARD COUNTS",
@@ -108,7 +110,7 @@ export function setTab(tab){
   directProfile?"?profile="+encodeURIComponent(profile):"#"+tab;
  history.replaceState(null,"",location.pathname+destination);
  if(tab==="cases")loadCase();
- if(tab==="network")loadNetwork();
+ if(tab==="network"||tab==="following")loadNetwork();
  if(["decks","challenge","lab"].includes(tab))refreshFeatures(tab);
  if(["evidence","collection","compare","reputation","dispatches"].includes(tab))refreshFieldExpansion(tab);
  if(tab==="account")updateIdentity();
@@ -129,9 +131,14 @@ export function portrait(p){
  n.append(wrap,details);return n;
 }
 export function updateIdentity(){
- $("identitySummary").replaceChildren(state.me?portrait(state.me):el("p","No profile signed in."));
- $("accountLoggedOut").hidden=!!state.me;$("accountLoggedIn").hidden=!state.me;
- if(state.me){
+ const identity=$("identitySummary");if(identity)identity.replaceChildren(state.me?portrait(state.me):el("p","No profile signed in."));
+ const loggedOut=$("accountLoggedOut"),loggedIn=$("accountLoggedIn");
+ if(loggedOut)loggedOut.hidden=!!state.me;
+ if(loggedIn)loggedIn.hidden=!state.me;
+ const overviewOut=$("profileOverviewSignedOut"),overviewIn=$("profileOverviewSignedIn");
+ if(overviewOut)overviewOut.hidden=!!state.me;
+ if(overviewIn)overviewIn.hidden=!state.me;
+ if(state.me&&loggedIn){
   $("ownProfile").replaceChildren(portrait(state.me),el("p","Save your recovery key somewhere private. This profile is public; your credential is not.","cm-note"));
   attachProfileReputation($("ownProfile"),state.me.handle);
   void attachHiveRecords($("ownProfile"),state.me.handle);
@@ -243,6 +250,7 @@ export async function loadCase(){
  $("followCase").textContent=followed?"★ FOLLOWING CASE":"☆ FOLLOW THIS CASE";
 }
 async function loadNetwork(){
+ if(!$("watchlist")||!$("activityFeed"))return;
  if(!state.me){empty($("watchlist"),"Sign in to follow profiles and case files.");empty($("activityFeed"),"Your watchlist feed appears here.");return}
  const [f,x]=await Promise.all([attempt(()=>api("follows")),attempt(()=>api("feed"))]);
  if(f){clear($("watchlist"));if(!f.follows.length)empty($("watchlist"),"No follows yet.");
@@ -363,15 +371,43 @@ function bindCases(){
  $("profileSearch").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();showProfile(e.target.value.trim())}});
 }
 async function boot(){
+ const isProfile=document.body.dataset.communityPage==="profile";
+ // Keep old account and private collection bookmarks working.
+ if(!isProfile&&["account","collection","dispatches","following"].includes(location.hash.slice(1))){
+  location.replace("/profile"+location.hash);return;
+ }
+ if(!isProfile&&location.hash==="#profile"){location.replace("/profile");return;}
  document.querySelectorAll("[data-tab]").forEach(n=>n.addEventListener("click",()=>setTab(n.dataset.tab)));
- bindAccount();bindCases();setupFeatures();setupFieldExpansion();initializeRecovery();
- await restore();refreshDispatchBadge();await loadHome();
- const p=new URL(location.href).searchParams;
- if(p.has("case")&&["chainer-dementia-master","alena-and-gilanra","commander-mustard","ekthi-contaminator-priest"].includes(p.get("case")))state.caseSlug=p.get("case");
- const tab=p.has("deck")||p.has("publish")?"decks":p.has("profile")?"network":p.has("evidence")?"evidence":location.hash.slice(1)||"cases";
- setTab(["cases","decks","challenge","lab","network","account","evidence","collection","compare","reputation","dispatches"].includes(tab)?tab:"cases");
- if(p.has("profile")){$("profileSearch").value=p.get("profile");showProfile(p.get("profile"))}
- if(p.has("deck")){const id=p.get("deck");if(/^[a-f0-9]{32}$/.test(id))window.DeepCutsOpenDeck?.(id)}
- if(p.has("publish"))$("fromWorkshop").click();
+ if(isProfile){
+  bindAccount();
+  setupFieldExpansion();
+  initializeRecovery();
+  await restore();
+  refreshDispatchBadge();
+  const tab=location.hash.slice(1)||"overview";
+  setTab(["overview","account","collection","dispatches","following"].includes(tab)?tab:"overview");
+ }else{
+  bindCases();
+  setupFeatures();
+  setupFieldExpansion();
+  await restore();
+  await loadHome();
+  const p=new URL(location.href).searchParams;
+  if(p.has("case")&&["chainer-dementia-master","alena-and-gilanra","commander-mustard","ekthi-contaminator-priest"].includes(p.get("case")))state.caseSlug=p.get("case");
+  const tab=p.has("deck")||p.has("publish")?"decks":p.has("profile")?"network":p.has("evidence")?"evidence":location.hash.slice(1)||"cases";
+  setTab(["cases","decks","challenge","lab","network","evidence","compare","reputation"].includes(tab)?tab:"cases");
+  if(p.has("profile")){$("profileSearch").value=p.get("profile");showProfile(p.get("profile"))}
+  if(p.has("deck")){const id=p.get("deck");if(/^[a-f0-9]{32}$/.test(id))window.DeepCutsOpenDeck?.(id)}
+  if(p.has("publish"))$("fromWorkshop").click();
+ }
 }
+window.addEventListener("hashchange",()=>{
+ const page=document.body.dataset.communityPage;
+ const tab=location.hash.slice(1);
+ if(page==="community"&&["account","collection","dispatches","following"].includes(tab)){
+  location.replace("/profile#"+tab);
+ }else if(page==="profile"&&["overview","account","collection","dispatches","following"].includes(tab)){
+  setTab(tab);
+ }
+});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
