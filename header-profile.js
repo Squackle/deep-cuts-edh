@@ -1,4 +1,4 @@
-/* Shared header profile shortcut. The avatar is the signed-in Field Network
+/* Shared header profile shortcut. The avatar is the signed-in Community
    commander's saved portrait; anonymous users get a sign-in silhouette.
    Authentication uses the existing HttpOnly device cookie or an existing
    temporary profile key. No secrets are persisted or exposed in the header. */
@@ -53,7 +53,7 @@
    button.classList.remove("has-portrait");
    photo.removeAttribute("src");
    caption.textContent="PROFILE";
-   button.title="Sign in or create a Field Network profile";
+   button.title="Sign in or create a Community profile";
    button.setAttribute("aria-label","Sign in or create your investigator profile");
    return;
   }
@@ -129,7 +129,7 @@
   const mobileGroups=[
    ["DISCOVER",["RESCUE REPORT","COMMANDERS","SET WATCH","DEEP CUT FINDER"]],
    ["BUILD & PLAY",["CARD LIBRARY","DECK WORKSHOP","BINDER TO BREW","ARCADE"]],
-   ["COMMUNITY",["NOMINATIONS","FIELD NETWORK","FIELD OFFICE"]]
+   ["CONNECT",["NOMINATIONS","COMMUNITY","MEMBERS' LOUNGE"]]
   ];
   for(const [i,[label,names]] of mobileGroups.entries()){
    const group=node("div","site-nav-group");
@@ -188,7 +188,7 @@
    if(pagePath==="/games"||pagePath.startsWith("/games/"))arcade.setAttribute("aria-current","page");
    desktop.append(arcade);
   }
-  section("COMMUNITY",["NOMINATIONS","FIELD NETWORK","FIELD OFFICE"]);
+  section("CONNECT",["NOMINATIONS","COMMUNITY","MEMBERS' LOUNGE"]);
   const closeDesktop=()=>{for(const d of desktopDetails)d.open=false};
   desktop.addEventListener("click",e=>{if(e.target.closest("a"))closeDesktop()});
   document.addEventListener("pointerdown",e=>{if(!desktop.contains(e.target))closeDesktop()});
@@ -248,7 +248,7 @@
   button=node("a","header-profile-button");
   button.href=ACCOUNT_URL;
   button.setAttribute("aria-label","Sign in or create your investigator profile");
-  button.title="Sign in or create a Field Network profile";
+  button.title="Sign in or create a Community profile";
   const frame=node("span","header-profile-frame");
   placeholder=node("span","header-profile-placeholder");
   placeholder.setAttribute("aria-hidden","true");
