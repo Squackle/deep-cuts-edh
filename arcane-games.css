@@ -23,9 +23,17 @@
 .arcane-panel-heading p{margin:0;color:#697360;font-size:12px}
 .arcane-progress-rail{height:4px;background:#ddd0b4;margin:11px 0 17px;overflow:hidden}
 .arcane-progress-rail span{display:block;height:100%;background:#548368;transition:width .25s}
-.arcane-word-grid{width:min(100%,360px);margin:18px auto 20px;display:grid;grid-template-rows:repeat(6,minmax(0,1fr));gap:7px}
-.arcane-word-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
-.arcane-letter{aspect-ratio:1;display:grid;place-items:center;border:2px solid #c7b896;background:#fffdf6;color:#304c3b;font:850 clamp(18px,4.5vw,27px) ui-sans-serif,system-ui;min-width:0;line-height:1;user-select:none;border-radius:3px;transition:background .15s,border-color .15s,transform .15s}
+.arcane-word-grid{
+ width:min(100%,calc(var(--cipher-columns,5) * 68px));max-width:690px;
+ margin:18px auto 20px;display:grid;grid-template-rows:repeat(6,minmax(0,1fr));gap:7px;
+ overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin;
+}
+.arcane-word-row{
+ display:grid;grid-template-columns:repeat(var(--cipher-columns,5),minmax(28px,1fr));
+ gap:5px;width:max(100%,calc(var(--cipher-columns,5) * 30px));
+}
+.arcane-letter{aspect-ratio:1;display:grid;place-items:center;border:2px solid #c7b896;background:#fffdf6;color:#304c3b;font:850 clamp(12px,2.5vw,25px) ui-sans-serif,system-ui;min-width:0;line-height:1;user-select:none;border-radius:3px;transition:background .15s,border-color .15s,transform .15s}
+.arcane-letter.arcane-separator{border-color:transparent;background:transparent;color:#526b5a;font-weight:900}
 .arcane-letter.filled{border-color:#9c8766;background:#fff9ea}
 .arcane-letter.correct,.arcane-key.correct{background:#315d47;border-color:#315d47;color:#fffef3}
 .arcane-letter.present,.arcane-key.present{background:#af8945;border-color:#af8945;color:#fff9e7}
@@ -91,7 +99,7 @@
  .arcane-board-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  .arcane-card button{min-height:77px;font-size:12px}
  .arcane-hero-tags span{font-size:9px}
- .arcane-word-grid{gap:5px;width:min(100%,325px)}
+ .arcane-word-grid{gap:5px}
  .arcane-word-row{gap:5px}
  .arcane-letter{border-width:2px}
  .arcane-keyboard{gap:5px}
