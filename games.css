@@ -155,3 +155,20 @@
 @keyframes dc-earned-sheen{0%{box-shadow:0 0 0 rgba(215,177,92,0);transform:translateY(2px)}45%{box-shadow:0 0 0 1px rgba(217,177,99,.5),0 0 16px rgba(219,181,103,.38);transform:none}100%{box-shadow:0 0 0 rgba(215,177,92,0);transform:none}}
 .games-award-popup.dc-earned-achievement{animation:dc-earned-sheen 1.6s ease-out both}
 @media(prefers-reduced-motion:reduce){.games-award-popup.dc-earned-achievement{animation:none;border-color:#c69b5a}}
+
+/* Card-name links in both daily games. Keep game actions and external links separate. */
+.games-commander-link{color:inherit;font:inherit;font-weight:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:#9a855c;text-decoration-thickness:1px;overflow-wrap:anywhere}
+.games-commander-link::after{content:" ↗";font-size:.8em;color:#547b58}
+.games-commander-link:hover{color:#1f7652;text-decoration-color:currentColor}
+.games-commander-link:focus-visible{outline:3px solid #ac7533;outline-offset:3px;border-radius:2px}
+.games-suspect-entry{display:flex;align-items:center;justify-content:space-between;min-width:0;gap:9px;min-height:53px;padding:5px 6px 5px 11px;border:1px solid #bcac8c;border-radius:4px;background:#fdf9ee}
+.games-suspect-entry .games-commander-link{flex:1;min-width:0;font-size:12px;line-height:1.45;font-weight:750;color:#3a4838}
+.games-suspect-entry .games-suspect{min-height:44px;min-width:60px;flex:0 0 auto;text-align:center;white-space:nowrap;padding:8px 9px;font-size:10px;letter-spacing:.03em}
+.games-suspect-entry.games-suspect-selected{background:#dcebd7;border-color:#2b684c;box-shadow:inset 0 0 0 1px #2b684c}
+.games-suspect-entry .games-suspect[aria-pressed="true"]{background:#2b684c;border-color:#2b684c;color:#fff;box-shadow:none}
+.games-suspect-entry .games-suspect-tried{opacity:.55;text-decoration:none}
+.games-guess-chip .games-commander-link{color:inherit}
+.games-ladder-name .games-commander-link,.games-rank-reveal .games-commander-link{color:#2b4533}
+@media(max-width:600px){
+ .games-suspect-entry .games-suspect{min-height:44px}
+}
