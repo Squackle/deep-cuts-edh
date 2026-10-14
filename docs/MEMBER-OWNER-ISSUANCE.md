@@ -15,7 +15,7 @@ No qualifying recurring payments or membership keys were recorded at the time of
 3. Check their **actual** completed, qualifying recurring payment in the Ko-fi dashboard. Check exact tier and USD monthly amount. Do not use a sample webhook or a tip.
 4. Open `https://deep-cuts-edh.pages.dev/member-operations.html`, enter the independent owner issuer key and subscriber email, and select **CHECK VERIFIED PAYMENT**. This checks only the HMAC-hashed email lookup against successfully authenticated Ko-fi webhook records in `kofi_renewals`.
 5. Confirm both owner-attestation checkboxes and choose **ISSUE ONE-TIME KEY**. The server checks the verified renewal remains within the paid-through window, refuses duplicate issuance, issues a random 256-bit secret only once, and inserts the hashed key into the existing two-device membership infrastructure. Deliver this key securely through the verified contact channel. The site does not automatically email keys.
-6. The subscriber activates up to two devices at `/members.html`. This activation remains unavailable until the owner has completed the paid-access verification and readiness switch.
+6. The subscriber activates up to three devices at `/members.html`. This activation remains unavailable until the owner has completed the paid-access verification and readiness switch.
 7. If a key is lost, after repeating identity checks, choose **REPLACE LOST KEY**. This revokes all existing device tokens. For a refund or support problem, **REVOKE ACCESS**; this does not cancel Ko-fi billing or cause a refund.
 8. Each protected API request re-evaluates the verified `paid_until` from the latest Ko-fi renewal, the subscriber's tier, and owner revocation status. An inactive membership is rejected, even if an old device token remains.
 
@@ -36,7 +36,7 @@ The tier preview demonstrates the differences but does not leak private editoria
 - Paid access reconciliation: `src/member-auth.js` checks `member_kofi_links` joined to `kofi_renewals` for every member API authorization. The previous Stripe checkout path remains retired.
 - Admin page is marked `noindex`, not linked from the public site navigation. Every response is `Cache-Control: no-store`.
 - Existing Ko-fi webhook authentication, replay prevention and HMAC email hashing remain unchanged.
-- Remaining launch tests: rotate webhook token; confirm real Ko-fi tier creation, payment, renewal, expiry, refunds and manual revocation; issue a controlled real membership and test two devices, role gates, member content, lost-device replacement, and inactivity rejection. Do not set the readiness flag until tests pass.
+- Remaining launch tests: rotate webhook token; confirm real Ko-fi tier creation, payment, renewal, expiry, refunds and manual revocation; issue a controlled real membership and test three devices, fourth-device rejection, role gates, member content, lost-device replacement, and inactivity rejection. Do not set the readiness flag until tests pass.
 - Keep a review workflow for member showcase and editorial submissions. Advertised staff responses and consultations must not exceed available editorial capacity.
 
 ## Recovery and privacy
