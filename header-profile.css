@@ -1,4 +1,4 @@
-/* Always-present Field Network profile shortcut.
+/* Always-present Community profile shortcut.
    Loaded after theme-v2.css so the new avatar has a dedicated rightmost slot. */
 .site-header .header-inner.header-profile-enabled{
  width:min(1370px,calc(100% - 44px));
