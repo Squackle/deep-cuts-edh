@@ -75,3 +75,9 @@ test("Responsive profile layout, privacy notice and account navigation exist",()
  for(const token of [".profile-quick-grid","max-width:750px","max-width:430px",":focus-visible"])assert.ok(css.includes(token));
  assert.match(profile,/Your collection and account settings are only visible to you/);
 });
+
+test("Community sections use clear names without gaps from removed private tabs",()=>{
+ const nav=community.match(/<nav class="cm-tabs"[\s\S]*?<\/nav>/)?.[0]||"";
+ for(const name of ["DISCUSSIONS","DECK GALLERY","CHALLENGES","PLAYTESTING","FIND PLAYERS","RESEARCH BOARDS","COMPARE DECKS","RANKINGS"])assert.ok(nav.includes(name),name+" missing");
+ assert.doesNotMatch(nav,/>\d{2} \/ /);
+});
