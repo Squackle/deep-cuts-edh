@@ -5,11 +5,16 @@ import {loadCreatureArt,variantForSegment} from "./creature-sprites.js";
 import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
 import {drawBroodPickup} from "./pickups.js";
 import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
+import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
+import {drawPlayerLocator,drawQueuedTurn} from "./player-visibility.js";
+import {drawTrapHints} from "./trap-assist.js";
+import {KEY_DIRECTIONS,keyboardDirection} from "./input-controls.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
 import {drawPrey,drawCapture} from "./enemy-render.js";
 import {drawAbilityMeter,drawMiniboss,drawWebs,drawBurrowWarning} from "./boss-art.js";
 import {abilityState,ABILITIES} from "./miniboss.js";
+import {BRIEFINGS,BossBriefingGate} from "./boss-briefing.js";
 import {LeaderboardClient} from "./leaderboard-client.js";
 import {renderLeaderboard,updateSubmission} from "./leaderboard-ui.js";
 import {createGameOnlyMode} from "./game-only.js";
@@ -39,8 +44,9 @@ const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: red
 let selectedMode="hunt",selectedChallenge="arcade";
 try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hunt"}catch{}
 $("gameMode").value=selectedMode;
-const STORE="deepcuts-hive-run-best-v3",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
+const STORE="deepcuts-hive-run-best-v4",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
+const bossGate=new BossBriefingGate();
 // Encounter director selects music automatically; no player-facing track previews.
 function setEncounterMusic(encounterType){
  soundtrack.setTrack(trackForEncounter(encounterType));
@@ -69,6 +75,10 @@ function syncUI(){
  $("enemyCount").textContent=String(run.mode==="classic"?run.body.length:run.enemies.length).padStart(2,"0");
  $("collectionLabel").textContent=run.mode==="classic"?"ORBS":"CAPTURES";
  $("populationLabel").textContent=run.mode==="classic"?"SWARM LENGTH":"PREY ON BOARD";
+ $("playerAids").hidden=run.mode==="classic";
+ $("mercyStatus").textContent=run.mercy>0?"◆ INSTINCT READY · 1 FREE PREY DODGE":"◆ INSTINCT USED";
+ $("trapHelp").textContent=run.encounter?"◇ BOSS · NO TRAP HINTS":
+  run.evolutionsChosen<3?"◇ AMBER = LIMITED ESCAPES":"◇ TRAP TRAINING COMPLETE";
  const p=progress(run);
  $("progress").textContent=run.status==="won"?"HIVE COMPLETE":
   run.status==="draft"?"CHOOSE YOUR EVOLUTION":("NEXT MUTATION IN "+p.untilNext+" ENERGY");
@@ -76,15 +86,17 @@ function syncUI(){
  $("evoCount").textContent=run.evolutionsChosen+" "+(run.evolutionsChosen===1?"EVOLUTION":"EVOLUTIONS");
  drawMutationHud($("mutationInventory"),run);
  $("lastEvolution").textContent=run.lastMutation?"LAST: "+run.lastMutation.name.toUpperCase():"FIVE COLORS · FIVE POWERS";
- $("stateLabel").textContent=({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:"HIVE COMPLETE"})[run.status];
+ $("stateLabel").textContent=bossGate.phase==="briefing"?"BOSS DOSSIER · PAUSED":
+  bossGate.phase==="countdown"?"REGROUP · "+bossGate.seconds:
+  ({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:"HIVE COMPLETE"})[run.status];
  const playable=run.status==="running";
- $("pauseButton").disabled=!playable;
+ $("pauseButton").disabled=!playable||bossGate.blocking;
  $("pauseButton").textContent="Ⅱ PAUSE";
  $("soundButton").textContent=state.audio?"♪ SOUND ON":"♪ SOUND OFF";
  $("soundButton").setAttribute("aria-pressed",String(state.audio));
  $("musicButton").textContent=state.musicOn?"♫ MUSIC ON":"♫ MUSIC OFF";
  $("musicButton").setAttribute("aria-pressed",String(state.musicOn));
- $("soundStatus").textContent=state.musicOn?"♫ "+TRACKS[soundtrack.trackId].type.toUpperCase():state.audio?"FX ON":"AUDIO OFF";
+ $("soundStatus").textContent=state.musicOn?(state.ctx?.state==="running"?"♫ "+TRACKS[soundtrack.trackId].type.toUpperCase():"♫ TAP TO ENABLE MUSIC"):state.audio?"FX ON":"AUDIO OFF";
  const ability=abilityState(run),panel=$("abilityPanel"),banner=$("encounterBanner");
  panel.hidden=!ability;
  if(ability){
@@ -114,26 +126,48 @@ function saveBest(){
  state.best=state.run.score;
  try{localStorage.setItem(bestKey(),String(state.best))}catch{}
 }
+// Restore music preferences without attempting background autoplay.
+// The first genuine click or keyboard gesture unlocks desktop Web Audio.
 function getAudioContext(){
  try{
   const AudioContextClass=window.AudioContext||window.webkitAudioContext;
   if(!AudioContextClass)return null;
-  const audio=state.ctx??(state.ctx=new AudioContextClass());
-  if(audio.state==="suspended")audio.resume().catch(()=>{});
-  return audio;
+  if(state.ctx?.state==="closed")state.ctx=null;
+  if(state.ctx)return state.ctx;
+  const created=new AudioContextClass();
+  state.ctx=created;
+  created.addEventListener?.("statechange",()=>{
+   if(state.ctx!==created)return;
+   syncSoundtrack();syncUI();
+  });
+  return created;
  }catch{return null}
 }
 function syncSoundtrack(){
- const allowed=state.musicOn&&(state.run.status==="ready"||state.run.status==="running")&&!document.hidden;
- if(!allowed){soundtrack.stop();return}
+ if(!canPlayMusic(state.musicOn,state.run.status,document.hidden)){
+  soundtrack.stop();return;
+ }
+ if(bossGate.blocking){soundtrack.stop();return}
+ const audio=state.ctx;
+ if(audio?.state==="running")soundtrack.start(audio);
+ else soundtrack.stop();
+}
+function wakeAudio(){
+ if(!state.musicOn&&!state.audio)return;
  const audio=getAudioContext();
- if(audio)soundtrack.start(audio);
+ if(!audio)return;
+ resumeFromGesture(audio,()=>{
+  if(state.ctx!==audio)return;
+  syncSoundtrack();syncUI();
+ });
+ syncSoundtrack();syncUI();
 }
 function playTone(hz,duration=0.09,volume=.025){
  if(!state.audio)return;
  try{
   const audio=getAudioContext();
   if(!audio)return;
+  if(audio.state!=="running"){wakeAudio();return}
   const oscillator=audio.createOscillator(),gain=audio.createGain();
   oscillator.type="square";oscillator.frequency.value=hz;
   gain.gain.setValueAtTime(volume,audio.currentTime);
@@ -151,6 +185,52 @@ function showOverlay(title,description,buttonLabel){
  $("submitShortcut").hidden=!["over","won"].includes(state.run.status)||!state.ranked;
 }
 function hideOverlay(){$("gameOverlay").hidden=true}
+/** Once per encounter, not per phase: a presentation-only pause. */
+function showBossBriefing(){
+ const run=state.run;
+ if(run.status!=="running"||run.mode!=="hunt"||!bossGate.begin(run.encounter))return false;
+ const info=BRIEFINGS[run.encounter.kind];
+ $("bossBriefingName").textContent=info.name;
+ $("bossBriefingTitle").textContent=info.title;
+ $("bossBriefingTag").textContent=info.tag;
+ $("bossBriefingRank").textContent=info.rank;
+ $("bossBriefingPhases").textContent=info.captures+" CAPTURES TO DEFEAT";
+ $("bossBriefingTips").textContent=info.tip;
+ const list=$("bossBriefingMechanics");list.replaceChildren();
+ for(const description of info.mechanics){
+  const item=document.createElement("li");item.textContent=description;list.appendChild(item);
+ }
+ drawAbilityMeter($("bossBriefingIcon"),run.encounter.kind,0);
+ $("bossBriefing").style.setProperty("--boss-ink",info.accent);
+ $("bossBriefing").hidden=false;$("bossCountdown").hidden=true;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ soundtrack.stop();syncUI();
+ $("bossBriefingResume").focus({preventScroll:true});
+ announce(info.name+" incoming. The hive is paused; review the dossier and begin when ready.");
+ return true;
+}
+function reopenBossBriefing(){
+ if(!bossGate.interrupt())return false;
+ $("bossCountdown").hidden=true;$("bossBriefing").hidden=false;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ soundtrack.stop();syncUI();
+ $("bossBriefingResume").focus({preventScroll:true});
+ announce("The encounter was held. Begin the regroup countdown again when ready.");
+ return true;
+}
+function resetBossBriefing(){
+ bossGate.reset();$("bossBriefing").hidden=true;$("bossCountdown").hidden=true;
+}
+function beginBossCountdown(){
+ if(!bossGate.resume(performance.now()))return;
+ $("bossBriefing").hidden=true;$("bossCountdown").hidden=false;
+ $("bossCountdownNumber").textContent="3";
+ state.lastFrame=0;state.accumulator=0;state.pointer=null;
+ soundtrack.stop();syncUI();
+ $("bossCountdown").focus({preventScroll:true});
+ announce("Encounter resumes in three seconds.");
+}
+$("bossBriefingResume").addEventListener("click",beginBossCountdown);
 function showDraftScreen(){
  soundtrack.stop();
  showMutationDraft($("mutationOverlay"),$("mutationChoices"),state.run.draftOptions,selectMutation);
@@ -171,11 +251,11 @@ function selectMutation(color){
   announce(ABILITIES[state.run.encounter.kind].name+" approaching! "+state.run.encounter.phases+" captures to win.");
   playTone(244,.18,.04);
  }else announce(MUTATIONS[color].name+" acquired. "+MUTATIONS[color].short+".");
- syncUI();
- canvas.focus({preventScroll:true});
+ if(!showBossBriefing()){syncUI();canvas.focus({preventScroll:true})}
 }
 async function begin(){
- if(startingRun)return;
+ if(startingRun||bossGate.blocking)return;
+ wakeAudio(); // Unlock before the awaited leaderboard request drops user activation.
  if(["ready","over","won"].includes(state.run.status)){
   startingRun=true;
   $("gameMode").disabled=true;$("gameChallenge").disabled=true;$("primaryButton").disabled=true;$("primaryButton").textContent="PREPARING RUN...";
@@ -183,6 +263,7 @@ async function begin(){
    const session=await leaderboard.start(selectedMode,selectedChallenge);
    state.ranked=session.ranked;state.day=session.day;loadBest();
    state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed,mode:selectedMode});
+   resetBossBriefing();
    lastCapture=null;visualBurst=null;lastEncounterSeen=null;
    $("rankedNotice").textContent=session.ranked?"RANKED · REPLAY VERIFIED AFTER GAME OVER":"PRACTICE · RANKED SERVICE UNAVAILABLE";
   }finally{startingRun=false;$("gameMode").disabled=false;$("gameChallenge").disabled=false;$("primaryButton").disabled=false}
@@ -197,6 +278,7 @@ async function begin(){
 }
 function reset(){
  if(startingRun)return;
+ resetBossBriefing();
  state.run=newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";loadBest();
  leaderboard.session=null;leaderboard.events=[];
  state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;
@@ -209,6 +291,7 @@ function reset(){
  announce("New run ready. Select Start Run to play.");
 }
 function togglePause(){
+ if(bossGate.blocking)return;
  if(state.run.status==="running"){
   pause(state.run);state.pointer=null;
   showOverlay("RUN PAUSED","Your swarm will wait here until you're ready.","RESUME RUN ▶");
@@ -220,9 +303,12 @@ function togglePause(){
  syncSoundtrack();syncUI();
 }
 function handleDirection(direction){
- if(state.run.status!=="running")return false;
+ if(bossGate.blocking||state.run.status!=="running")return false;
  if(!turn(state.run,direction))return false;
  leaderboard.action(state.run.runTicks,"turn",direction);
+ // Draw in the same keydown/pointer event: players see their buffered turn
+ // immediately rather than waiting for a movement tick or animation frame.
+ draw();
  playTone(210,.02,.009);
  return true;
 }
@@ -322,21 +408,26 @@ function draw(){
  if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
  if(run.encounter)drawWebs(context,run.encounter.webs,CELLS);
  drawPrey(context,run.enemies,CELLS,performance.now(),prefersReducedMotion());
+ drawTrapHints(context,run,CELLS);
  if(run.encounter){
   drawMiniboss(context,run.enemies,CELLS,run.encounter.phase);
   drawBurrowWarning(context,run.encounter.telegraph,CELLS);
  }
+ // The head tile is framed independently from the detailed creature sprite.
+ drawPlayerLocator(context,run.body[0],run.direction,CELLS,"below");
  // A single outlined spine connects the independently colored WUBRG plates.
  // Draw back-to-front so the pointed head stays visible over the neck.
  if(creatureArt)drawConnectedSpine(run.body);
  for(let i=run.body.length-1;i>=0;i--){
   const part=run.body[i],next=run.body[i+1];
-  const heading=i===0?run.direction:orientation(next??run.body[i-1],part);
+  const heading=i===0?(run.turnQueue[0]??run.direction):orientation(next??run.body[i-1],part);
   const kind=i===0?"head":i===run.body.length-1?"tail":"body";
   const id=variantForSegment(Math.max(0,i-1));
   if(creatureArt)drawArtCreature(part,kind,id,heading);
   else drawCreaturePiece(part,kind,id,heading);
  }
+ drawPlayerLocator(context,run.body[0],run.turnQueue[0]??run.direction,CELLS,"above");
+ drawQueuedTurn(context,run.body[0],run.turnQueue[0],COLS,ROWS,CELLS);
  renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
  if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,performance.now(),lastCapture.until,prefersReducedMotion());
  if(run.status==="over"){
@@ -345,6 +436,25 @@ function draw(){
  }
 }
 function loop(time){
+ // The dossier and countdown are UI-only: game time and ranked replay freeze.
+ if(bossGate.blocking){
+  if(bossGate.phase==="countdown"){
+   const finished=bossGate.advance(time);
+   if(finished){
+    $("bossCountdown").hidden=true;
+    state.lastFrame=0;state.accumulator=0;state.pointer=null;
+    canvas.focus({preventScroll:true});
+    setEncounterMusic(musicForRun());syncUI();
+    announce("Encounter active. Keep your escape route open.");
+   }else{
+    const value=String(bossGate.seconds);
+    if($("bossCountdownNumber").textContent!==value){
+     $("bossCountdownNumber").textContent=value;syncUI();
+    }
+   }
+  }
+  draw();requestAnimationFrame(loop);return;
+ }
  let dt=0;
  if(state.lastFrame)dt=Math.min(time-state.lastFrame,250);
  state.lastFrame=time;
@@ -391,6 +501,8 @@ function loop(time){
     announce("Brood collected! +1 evolution energy.");
    }
    if(state.run.status==="draft")showDraftScreen();
+   // A queued boss can spawn from an engine step rather than mutation choice.
+   if(state.run.status==="running"&&showBossBriefing())break;
    // Maintain miniboss soundtrack throughout its multi-capture phases;
    // first cue follows the safe warning, never preview high-tier music.
    const nextTrack=musicForRun();
@@ -414,6 +526,8 @@ function loop(time){
  draw();
  requestAnimationFrame(loop);
 }
+// Unlock on direct interaction; an async score request is too late for autoplay rules.
+document.addEventListener("pointerdown",wakeAudio,{capture:true,passive:true});
 $("primaryButton").addEventListener("click",begin);
 $("submitShortcut").addEventListener("click",event=>{
  // A ranked Game Only run should never strand the submission form behind
@@ -449,8 +563,9 @@ $("soundButton").addEventListener("click",()=>{
 $("musicButton").addEventListener("click",()=>{
  state.musicOn=!state.musicOn;
  try{localStorage.setItem(MUSIC_STORE,state.musicOn?"on":"off")}catch{}
+ if(state.musicOn)wakeAudio();
  syncSoundtrack();syncUI();
- announce(state.musicOn?TRACKS[soundtrack.trackId].name+" enabled. Original retro soundtrack playing.":"Background music muted.");
+ announce(state.musicOn?(state.ctx?.state==="running"?TRACKS[soundtrack.trackId].name+" playing.":"Music enabled. Use a game control to allow desktop audio."):"Background music muted.");
 });
 document.querySelectorAll("[data-direction]").forEach(b=>{
  const steer=()=>{
@@ -468,20 +583,28 @@ document.querySelectorAll("[data-direction]").forEach(b=>{
   if(event.detail===0)steer();
  });
 });
-const keys={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",
- w:"up",s:"down",a:"left",d:"right",W:"up",S:"down",A:"left",D:"right"};
 document.addEventListener("keydown",event=>{
+ if(bossGate.blocking){
+  if(event.key==="Tab"&&bossGate.phase==="briefing"){
+   event.preventDefault();$("bossBriefingResume").focus({preventScroll:true});
+  }else if(Object.hasOwn(KEY_DIRECTIONS,event.key)||event.key==="Escape"||event.key==="Tab"||
+   (event.key===" "&&document.activeElement!==$("bossBriefingResume"))){
+   event.preventDefault();
+  }
+  return;
+ }
  const focus=document.activeElement;
  if(["INPUT","TEXTAREA","SELECT"].includes(focus?.tagName))return;
+ if(!event.repeat)wakeAudio();
  if(state.run.status==="draft"&&["1","2","3"].includes(event.key)){
   event.preventDefault();
   selectMutation(state.run.draftOptions[Number(event.key)-1]);
   return;
  }
- if(Object.hasOwn(keys,event.key)){
-  if(state.run.status==="running"){
-   event.preventDefault();handleDirection(keys[event.key]);
-  }
+ if(Object.hasOwn(KEY_DIRECTIONS,event.key)&&state.run.status==="running"){
+  event.preventDefault(); // Stop page scroll, including repeated arrow presses.
+  const requested=keyboardDirection(event.key,event.repeat);
+  if(requested)handleDirection(requested);
  }
  if(event.key==="Escape"&&state.run.status==="running"){event.preventDefault();togglePause()}
  if(event.key===" "&&focus===canvas&&["running","paused"].includes(state.run.status)){
@@ -519,18 +642,24 @@ canvas.addEventListener("pointercancel",event=>{
 });
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
-  if(state.run.status==="running")togglePause();
+  if(bossGate.blocking)reopenBossBriefing();
+   else if(state.run.status==="running")togglePause();
   soundtrack.stop(); // Also silence title-screen music in hidden tabs.
- }
- state.lastFrame=0;state.accumulator=0;
+ }else syncSoundtrack();
+ syncUI();state.lastFrame=0;state.accumulator=0;
+});
+window.addEventListener("focus",()=>{
+ if(!document.hidden){syncSoundtrack();syncUI()}
 });
 window.addEventListener("pagehide",()=>{
- if(state.run.status==="running")togglePause();
+ if(bossGate.blocking)reopenBossBriefing();
+ else if(state.run.status==="running")togglePause();
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
 window.addEventListener("blur",()=>{
- if(state.run.status==="running")togglePause();
+ if(bossGate.blocking)reopenBossBriefing();
+ else if(state.run.status==="running")togglePause();
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });

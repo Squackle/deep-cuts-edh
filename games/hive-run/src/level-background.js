@@ -1,14 +1,22 @@
 import {BIOMES,biomeForEvolution} from "./environments.js";
 /**
- * HIVE RUN / Level 01: The Hatchery
- * Original user-approved painted background, contrast-corrected for gameplay.
+ * Four individually painted original cavern scenes, packed into one tiny WebP
+ * texture atlas (two columns × two rows) for a single image load.
+ * At 144×176 source pixels per scene, 360×440 display is deliberately crisp.
  */
-export const LEVEL_ONE={
- id:1,
- name:"THE HATCHERY",
- asset:new URL("../assets/backgrounds/hatchery.webp",import.meta.url).toString()
-};
-export function levelForStage(stage){const b=biomeForEvolution(Math.max(0,stage-1));return b.id===1?LEVEL_ONE:b}
+export const TILE_WIDTH=144, TILE_HEIGHT=176;
+export const BACKGROUNDS=Object.freeze(BIOMES.map((biome,index)=>Object.freeze({
+ id:biome.id,name:biome.name,
+ asset:new URL("../assets/backgrounds/hive-run-atlas.webp",import.meta.url).toString(),
+ sourceX:(index%2)*TILE_WIDTH,
+ sourceY:Math.floor(index/2)*TILE_HEIGHT,
+ width:TILE_WIDTH,height:TILE_HEIGHT
+})));
+export const LEVEL_ONE=BACKGROUNDS[0];
+export function levelForStage(stage){
+ const biome=biomeForEvolution(Math.max(0,stage-1));
+ return BACKGROUNDS[biome.id-1];
+}
 export function loadLevelBackground(onReady=()=>{}){
  if(typeof Image==="undefined")return null;
  const image=new Image();image.decoding="async";
@@ -17,37 +25,57 @@ export function loadLevelBackground(onReady=()=>{}){
  image.src=LEVEL_ONE.asset;
  return image;
 }
+/** Readable cell edges on top of decorative pixel-art cave flooring. */
+export function drawArenaGrid(ctx,cols,rows,cellSize,biome=1){
+ ctx.save();
+ ctx.fillStyle=biome===1?"rgba(3,14,12,.12)":"rgba(4,8,15,.12)";
+ for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+  if((x+y)%2===0)ctx.fillRect(x*cellSize+1,y*cellSize+1,cellSize-1,cellSize-1);
+ }
+ for(let x=1;x<cols;x++){
+  ctx.fillStyle=x%5===0?"rgba(244,213,159,.37)":"rgba(228,220,185,.24)";
+  ctx.fillRect(x*cellSize-1,0,1,rows*cellSize);
+ }
+ for(let y=1;y<rows;y++){
+  ctx.fillStyle=y%5===0?"rgba(244,213,159,.37)":"rgba(228,220,185,.24)";
+  ctx.fillRect(0,y*cellSize-1,cols*cellSize,1);
+ }
+ ctx.restore();
+}
 export function drawLevelBackground(ctx,canvas,background,cols,rows,cellSize,biome=1){
  const width=canvas.width,height=canvas.height;
+ const selected=BACKGROUNDS[Math.max(0,Math.min(BACKGROUNDS.length-1,biome-1))];
  ctx.save();
  ctx.fillStyle="#14251e";ctx.fillRect(0,0,width,height);
- if(biome>1){drawCavern(ctx,width,height,biome)}
- else if(background?.complete&&background.naturalWidth>0){
-  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
-  ctx.drawImage(background,0,0,width,height);
-  // Background is stage atmosphere, not gameplay information.
-  ctx.fillStyle="rgba(3,8,11,0.36)";
-  ctx.fillRect(0,0,width,height);
-  // Bright border eggs must not compete with the small collectible.
+ if(background?.complete&&background.naturalWidth>0){
+  // Source crop is determined solely by biome, so transitions are instant
+  // and don't require extra image requests or simulation RNG.
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(background,selected.sourceX,selected.sourceY,selected.width,selected.height,0,0,width,height);
+  // Pixel art is intentionally subdued so snakes, telegraphs, and pickups
+  // remain readable even against the bright crystal / lava scenes.
+  const veil=["rgba(3,8,11,0.36)","rgba(3,8,11,0.34)",
+   "rgba(3,8,11,0.42)","rgba(3,8,11,0.49)"][selected.id-1];
+  ctx.fillStyle=veil;ctx.fillRect(0,0,width,height);
+  // Stronger perimeter shadow minimizes competition from scenery details.
+  const shadow=selected.id===4?"rgba(3,8,11,0.50)":"rgba(3,8,11,0.42)";
   const left=ctx.createLinearGradient(0,0,width*.38,0);
-  left.addColorStop(0,"rgba(3,8,11,0.42)");
-  left.addColorStop(1,"rgba(3,8,11,0)");
+  left.addColorStop(0,shadow);left.addColorStop(1,"rgba(3,8,11,0)");
   ctx.fillStyle=left;ctx.fillRect(0,0,width*.38,height);
   const right=ctx.createLinearGradient(width,0,width*.62,0);
-  right.addColorStop(0,"rgba(3,8,11,0.42)");
-  right.addColorStop(1,"rgba(3,8,11,0)");
+  right.addColorStop(0,shadow);right.addColorStop(1,"rgba(3,8,11,0)");
   ctx.fillStyle=right;ctx.fillRect(width*.62,0,width*.38,height);
+ }else if(selected.id>1){
+  // Original built-in scenery remains as the offline/loading fallback.
+  drawCavern(ctx,width,height,selected.id);
  }else{
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
    ctx.fillStyle=(x+y)%2===0?"#1b3427":"#1a3024";
    ctx.fillRect(x*cellSize,y*cellSize,cellSize,cellSize);
   }
  }
- ctx.strokeStyle="rgba(226,216,180,.045)";
- ctx.lineWidth=.65;ctx.beginPath();
- for(let x=1;x<cols;x++){const pos=x*cellSize+.5;ctx.moveTo(pos,0);ctx.lineTo(pos,height)}
- for(let y=1;y<rows;y++){const pos=y*cellSize+.5;ctx.moveTo(0,pos);ctx.lineTo(width,pos)}
- ctx.stroke();ctx.restore();
+ drawArenaGrid(ctx,cols,rows,cellSize,selected.id);
+ ctx.restore();
 }
 /** Hand-built pixel architecture, fixed to the arena; no random frame noise. */
 function drawCavern(ctx,w,h,biome){
