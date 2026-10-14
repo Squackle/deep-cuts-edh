@@ -19,6 +19,8 @@ import {LeaderboardClient} from "./leaderboard-client.js";
 import {renderLeaderboard,renderPersonalBest,updateSubmission} from "./leaderboard-ui.js";
 import {editArcadeInitials,parseArcadeInitials} from "./arcade-initials.js";
 import {createSessionBest} from "./session-best.js";
+import {isLairChallenge,createLairRun,completeLairRun,lairDetails} from "./lair.js";
+import {lairFlashEvent,drawLairEffects} from "./lair-visuals.js";
 import {createGameOnlyMode} from "./game-only.js";
 
 /* HIVE RUN Alpha 0.4 — hand-authored pixel-art minibosses and encounter powers. */
@@ -31,6 +33,19 @@ const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
 let arenaBackground=null;
 let visualBurst=null,lastCapture=null,startingRun=false,lastEncounterSeen=null;
+let lairBurst=null,selectedLairBoss="stalker";
+const lairActive=()=>isLairChallenge(selectedMode,selectedChallenge);
+function showLairPicker(){
+ const active=lairActive();
+ $("lairPicker").hidden=!active;
+ document.body.classList.toggle("lair-active",active);
+ $("lairPracticeInfo").hidden=!active;
+ for(const button of document.querySelectorAll("[data-lair-boss]"))
+  button.setAttribute("aria-pressed",String(button.dataset.lairBoss===selectedLairBoss));
+ if(active){const detail=lairDetails(selectedLairBoss);
+  $("lairTip").textContent=detail.ability+" · "+detail.captures+" captures. "+detail.tip}
+}
+function lairTitle(){return "THE LAIR · "+lairDetails(selectedLairBoss).name}
 let awaitingMutationResume=false;
 const sessionBests=createSessionBest();
 const leaderboard=new LeaderboardClient();
@@ -38,6 +53,11 @@ let latestLeaderboard=null,leaderboardRefreshVersion=0;
 function updateOwnRecord(){renderPersonalBest($("personalRecord"),latestLeaderboard,state.best)}
 async function refreshLeaderboard(){
  const requestVersion=++leaderboardRefreshVersion;
+ if(lairActive()){
+  latestLeaderboard=null;$("gameProfileBridge").hidden=true;
+  $("leaderboardStatus").textContent="THE LAIR · UNRANKED PRACTICE";
+  return;
+ }
  try{
   const data=await leaderboard.load(selectedMode,selectedChallenge);
   if(requestVersion!==leaderboardRefreshVersion)return;
@@ -86,7 +106,11 @@ try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0);
  state.musicOn=localStorage.getItem(MUSIC_STORE)==="on";
 }catch{}
 function bestKey(){return STORE+"|"+boardKey(selectedMode,selectedChallenge,state?.day||chicagoDay())}
-function loadBest(){try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0)}catch{state.best=0}state.sessionBest=sessionBests.get(bestKey());updateOwnRecord()}
+function loadBest(){
+ if(lairActive()){state.best=0;state.sessionBest=0;return}
+ try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0)}catch{state.best=0}
+ state.sessionBest=sessionBests.get(bestKey());updateOwnRecord()
+}
 function musicForRun(){
  const r=state.run;soundtrack.setLevel(r.biome);
  return r.encounter?(r.encounter.phases===3?"boss":"miniboss"):r.mode==="classic"?["hatchery","hunt","miniboss","boss"][r.biome-1]:"hunt";
@@ -107,7 +131,7 @@ function syncUI(){
  $("trapHelp").textContent=run.encounter?"◇ BOSS · NO TRAP HINTS":
   run.evolutionsChosen<3?"◇ AMBER = LIMITED ESCAPES":"◇ TRAP TRAINING COMPLETE";
  const p=progress(run);
- $("progress").textContent=run.status==="won"?"HIVE COMPLETE":
+ $("progress").textContent=lairActive()?"LAIR PRACTICE · UNRANKED":run.status==="won"?"HIVE COMPLETE":
   run.status==="draft"?"CHOOSE YOUR EVOLUTION":("NEXT MUTATION IN "+p.untilNext+" ENERGY");
  $("evoCountdown").textContent=run.status==="draft"?"READY":p.energy+" / 5 EV";
  $("evoCount").textContent=run.evolutionsChosen+" "+(run.evolutionsChosen===1?"EVOLUTION":"EVOLUTIONS");
@@ -149,6 +173,7 @@ function announce(message){
  }
 }
 function saveBest(){
+ if(lairActive())return;
  state.sessionBest=sessionBests.record(bestKey(),state.run.score);
  if(state.run.score<=state.best)return;
  state.best=state.run.score;
@@ -206,6 +231,7 @@ function playTone(hz,duration=0.09,volume=.025){
  }catch{}
 }
 function showOverlay(title,description,buttonLabel){
+ showLairPicker();
  $("overlayTitle").textContent=title;
  $("overlayDescription").textContent=description;
  $("primaryButton").textContent=buttonLabel;
@@ -315,12 +341,20 @@ async function begin(){
   startingRun=true;
   $("gameMode").disabled=true;$("gameChallenge").disabled=true;$("primaryButton").disabled=true;$("primaryButton").textContent="PREPARING RUN...";
   try{
-   const session=await leaderboard.start(selectedMode,selectedChallenge);
-   state.ranked=session.ranked;state.day=session.day;loadBest();
-   state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed,mode:selectedMode});
    resetBossBriefing();
-   lastCapture=null;visualBurst=null;lastEncounterSeen=null;
-   $("rankedNotice").textContent=session.ranked?"RANKED · REPLAY VERIFIED AFTER GAME OVER":"PRACTICE · RANKED SERVICE UNAVAILABLE";
+   if(lairActive()){
+    // No ranked token can be created or reused for boss practice.
+    leaderboard.session=null;leaderboard.events=[];
+    state.ranked=false;state.day="";loadBest();
+    state.run=createLairRun(selectedLairBoss,COLS,ROWS);
+    $("rankedNotice").textContent="THE LAIR · UNRANKED · NO SCORE SUBMISSIONS";
+   }else{
+    const session=await leaderboard.start(selectedMode,selectedChallenge);
+    state.ranked=session.ranked;state.day=session.day;loadBest();
+    state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed,mode:selectedMode});
+    $("rankedNotice").textContent=session.ranked?"RANKED · REPLAY VERIFIED AFTER GAME OVER":"PRACTICE · RANKED SERVICE UNAVAILABLE";
+   }
+   lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;
   }finally{startingRun=false;$("gameMode").disabled=false;$("gameChallenge").disabled=false;$("primaryButton").disabled=false}
  }
  start(state.run);
@@ -328,20 +362,23 @@ async function begin(){
  hideOverlay();hideMutationDraft($("mutationOverlay"));
  updateSubmission($("submissionPanel"),null,false);
  setEncounterMusic(musicForRun());syncUI();
- announce(MODES[selectedMode].description);
+ announce(lairActive()?"Unranked boss practice. Face "+lairDetails(selectedLairBoss).name+".":MODES[selectedMode].description);
+ if(lairActive())showBossBriefing();
  canvas.focus({preventScroll:true});
 }
 function reset(){
  if(startingRun)return;
  resetBossBriefing();clearMutationResume();
- state.run=newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";latestLeaderboard=null;loadBest();
+ state.run=lairActive()?createLairRun(selectedLairBoss,COLS,ROWS):newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";latestLeaderboard=null;loadBest();
  leaderboard.session=null;leaderboard.events=[];
- state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;
+ state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
  hideMutationDraft($("mutationOverlay"));
- showOverlay(MODES[selectedMode].name.toUpperCase(),MODES[selectedMode].description,"START "+MODES[selectedMode].verb+" ▶");
+ showOverlay(lairActive()?lairTitle():MODES[selectedMode].name.toUpperCase(),
+ lairActive()?"Practice a single boss in a repeatable, unranked encounter.":MODES[selectedMode].description,
+ lairActive()?"ENTER THE LAIR ▶":"START "+MODES[selectedMode].verb+" ▶");
  updateSubmission($("submissionPanel"),null,false);
- $("rankedNotice").textContent=selectedChallenge==="daily"?"DAILY RITUAL · RESETS MIDNIGHT CENTRAL":"ARCADE · NEW SEED EACH RUN";
+ $("rankedNotice").textContent=lairActive()?"THE LAIR · UNRANKED":selectedChallenge==="daily"?"DAILY RITUAL · RESETS MIDNIGHT CENTRAL":"ARCADE · NEW SEED EACH RUN";
  soundtrack.setTrack("hatchery");syncSoundtrack();syncUI();draw();
  announce("New run ready. Select Start Run to play.");
 }
@@ -360,7 +397,7 @@ function togglePause(){
 function handleDirection(direction){
  if(bossGate.blocking||awaitingMutationResume||state.run.status!=="running")return false;
  if(!turn(state.run,direction))return false;
- leaderboard.action(state.run.runTicks,"turn",direction);
+ if(!lairActive())leaderboard.action(state.run.runTicks,"turn",direction);
  // Draw in the same keydown/pointer event: players see their buffered turn
  // immediately rather than waiting for a movement tick or animation frame.
  draw();
@@ -484,6 +521,7 @@ function draw(){
  drawPlayerLocator(context,run.body[0],run.turnQueue[0]??run.direction,CELLS,"above");
  drawQueuedTurn(context,run.body[0],run.turnQueue[0],COLS,ROWS,CELLS);
  renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
+ drawLairEffects(context,run,CELLS,performance.now(),lairBurst,prefersReducedMotion());
  if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,performance.now(),lastCapture.until,prefersReducedMotion());
  if(run.status==="over"){
   context.fillStyle="#dcb78b";
@@ -525,6 +563,7 @@ function loop(time){
    const prevBrood=state.run.brood,prevEvent=state.run.eventSerial,prevKills=state.run.kills;
    const enemyBefore=state.run.enemies.map(e=>({id:e.id,pos:{...e.pos}}));
    step(state.run);
+   if(lairActive())completeLairRun(state.run);
    state.accumulator=Math.max(0,state.accumulator-currentTick);
    catchUps++;
    // Mutation duration indicators, shields and active effects update with each step.
@@ -540,6 +579,7 @@ function loop(time){
     if(lastEncounterSeen!==id){
      lastEncounterSeen=id;
      lastCapture={pos:encounterMoment.at,until:performance.now()+850};
+      lairBurst=lairFlashEvent(encounterMoment,performance.now());
      if(encounterMoment.type==="phase"){
       announce(ABILITIES[encounterMoment.kind].name+" captured! Phase "+encounterMoment.phase+".");
       playTone(490,.22,.055);
@@ -571,11 +611,12 @@ function loop(time){
     saveBest();syncUI();
     playTone(state.run.status==="won"?720:135,.2,.03);
     const final=state.run.status==="won";
-    showOverlay(final?"HIVE COMPLETE!":"GAME OVER",
-     state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Session best: "+state.sessionBest.toLocaleString()+".",
-     "PLAY AGAIN ↺");
-    updateSubmission($("submissionPanel"),state.run,state.ranked);
-    $("finalRunSummary").textContent=(state.run.mode==="classic"?state.run.brood+" orbs":state.run.kills+" captures")+" · "+state.run.evolutionsChosen+" evolutions · "+state.run.score+" points";
+    showOverlay(lairActive()?(final?"LAIR CONQUERED":"ENCOUNTER LOST"):(final?"HIVE COMPLETE!":"GAME OVER"),
+     lairActive()?state.run.endReason+" Practice is unranked. Retry or choose another boss.":
+      state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Session best: "+state.sessionBest.toLocaleString()+".",
+     lairActive()?"RETRY BOSS ↺":"PLAY AGAIN ↺");
+    updateSubmission($("submissionPanel"),state.run,state.ranked&&!lairActive());
+    if(!lairActive())$("finalRunSummary").textContent=(state.run.mode==="classic"?state.run.brood+" orbs":state.run.kills+" captures")+" · "+state.run.evolutionsChosen+" evolutions · "+state.run.score+" points";
     announce((final?"Win! ":"Game over. ")+state.run.endReason+" Final score "+state.run.score+". Submit your ranked replay below.");
    }
   }
@@ -726,10 +767,21 @@ window.addEventListener("blur",()=>{
  state.lastFrame=0;state.accumulator=0;
 });
 $("gameMode").addEventListener("change",()=>{
- selectedMode=$("gameMode").value;try{localStorage.setItem("hive-mode-v1",selectedMode)}catch{}
+ selectedMode=$("gameMode").value;
+ if(selectedMode==="classic"&&selectedChallenge==="practice"){selectedChallenge="arcade";$("gameChallenge").value="arcade";}
+ $("gameChallenge").querySelector('option[value="practice"]').disabled=selectedMode==="classic";
+ try{localStorage.setItem("hive-mode-v1",selectedMode)}catch{}
  reset();void refreshLeaderboard();
 });
-$("gameChallenge").addEventListener("change",()=>{selectedChallenge=$("gameChallenge").value;reset();void refreshLeaderboard()});
+$("gameChallenge").addEventListener("change",()=>{
+ selectedChallenge=$("gameChallenge").value;
+ if(selectedMode==="classic"&&selectedChallenge==="practice"){selectedChallenge="arcade";$("gameChallenge").value="arcade";}
+ reset();void refreshLeaderboard();
+});
+for(const button of document.querySelectorAll("[data-lair-boss]")){
+ button.addEventListener("click",()=>{selectedLairBoss=button.dataset.lairBoss;reset()});
+}
+$("gameChallenge").querySelector('option[value="practice"]').disabled=selectedMode==="classic";
 reset();refreshLeaderboard();
 try{$("playerAlias").value=editArcadeInitials(localStorage.getItem("hive-arcade-initials-v1")||"")}catch{}
 // The Hatchery remains the sole arena during the first Predator release.
