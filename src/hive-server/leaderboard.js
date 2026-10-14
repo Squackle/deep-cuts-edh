@@ -1,4 +1,4 @@
-import {MODES,chicagoDay,dailySeed} from "../../games/hive-run/src/modes.js";
+import {MODES} from "../../games/hive-run/src/modes.js";
 /**
  * Hive Run leaderboard — Cloudflare Pages Function.
  * Uses a separate Game Lab D1 database. Exact same simulation is replayed
@@ -66,21 +66,21 @@ export function replayScore(seed,events,expected,mode="hunt"){
 export async function onRequestGet({request,env,data={}}){
  if(!env.HIVE_DB)return error("Leaderboard storage unavailable.",503);
  const url=new URL(request.url),mode=url.searchParams.get("mode")||"hunt",challenge=url.searchParams.get("challenge")||"arcade";
- if(!Object.hasOwn(MODES,mode)||!["arcade","daily"].includes(challenge))return error("Unknown mode or challenge.");
- const day=challenge==="daily"?chicagoDay():"";
+ if(!Object.hasOwn(MODES,mode)||challenge!=="arcade")return error("Only permanent Arcade rankings are supported.");
+ const day="";
  try{
-  const rows=await env.HIVE_DB.prepare("SELECT id,alias,profile_id AS profileId,profile_handle AS profileHandle,profile_verified AS profileVerified,score,kills,evolutions,created_at AS createdAt FROM hive_scores_v1 WHERE rules_version=? AND mode=? AND challenge_day=? ORDER BY score DESC,kills DESC,created_at ASC,id ASC LIMIT 10").bind(RULES_VERSION,mode,day).all();
+  const rows=await env.HIVE_DB.prepare("SELECT id,alias,profile_id AS profileId,profile_handle AS profileHandle,profile_verified AS profileVerified,score,kills,evolutions,rules_version AS rulesVersion,created_at AS createdAt FROM hive_scores_v1 WHERE mode=? AND challenge_day=? ORDER BY score DESC,kills DESC,created_at ASC,id ASC LIMIT 10").bind(mode,day).all();
   const entries=rows.results||[];
   // The signed-in player's VERIFIED record, even if it sits outside top ten.
   // Computing rank over every score keeps tied ranks deterministic.
   let personalBest=null;
   if(data.hiveProfile?.id){
-   personalBest=await env.HIVE_DB.prepare(`SELECT alias,score,kills,evolutions,position FROM (
-    SELECT alias,score,kills,evolutions,profile_id,profile_verified,
+   personalBest=await env.HIVE_DB.prepare(`SELECT alias,score,kills,evolutions,rulesVersion,position FROM (
+    SELECT alias,score,kills,evolutions,rules_version AS rulesVersion,profile_id,profile_verified,
      ROW_NUMBER() OVER (ORDER BY score DESC,kills DESC,created_at ASC,id ASC) AS position
-    FROM hive_scores_v1 WHERE rules_version=? AND mode=? AND challenge_day=?
+    FROM hive_scores_v1 WHERE mode=? AND challenge_day=?
    ) WHERE profile_id=? AND profile_verified=1 ORDER BY position ASC LIMIT 1`)
-    .bind(RULES_VERSION,mode,day,data.hiveProfile.id).first()||null;
+    .bind(mode,day,data.hiveProfile.id).first()||null;
   }
   // Resolve live identity on the integrated site. Deleted profiles lose public ownership.
   if(data.resolveProfiles)await data.resolveProfiles(entries);
@@ -89,7 +89,7 @@ export async function onRequestGet({request,env,data={}}){
    entry.isYou=!!(data.hiveProfile?.id&&entry.profileVerified&&entry.profileId===data.hiveProfile.id);
    delete entry.profileId;
   }
-  return json({season:"1.0",mode,challenge,day,rulesVersion:RULES_VERSION,verifiedScores:true,
+  return json({season:"1.2",mode,challenge,day,rulesVersion:RULES_VERSION,verifiedScores:true,
    profile:data.hiveProfile?{handle:data.hiveProfile.handle}:null,personalBest,entries});
  }catch{return error("Could not load leaderboard.",503)}
 }
@@ -109,10 +109,10 @@ export async function onRequestPost({request,env,data:contextData={}}){
  try{
   if(data?.action==="start"){
    const mode=data.mode||"hunt",challenge=data.challenge||"arcade";
-   if(!Object.hasOwn(MODES,mode)||!["arcade","daily"].includes(challenge))return error("Unknown mode or challenge.");
+   if(!Object.hasOwn(MODES,mode)||challenge!=="arcade")return error("Daily Ritual and other challenges are retired.");
    if(!await throttle(db,key,"start",60))return error("Too many games started. Try again later.",429);
-   const day=challenge==="daily"?chicagoDay():"";
-   const token=crypto.randomUUID(),seed=day?dailySeed(day,mode):crypto.getRandomValues(new Uint32Array(1))[0]||1;
+   const day="";
+   const token=crypto.randomUUID(),seed=crypto.getRandomValues(new Uint32Array(1))[0]||1;
    await db.prepare("INSERT INTO hive_sessions_v1(token,seed,issued_at,subject,mode,challenge_day,rules_version) VALUES(?,?,?,?,?,?,?)").bind(token,seed,now(),key,mode,day,RULES_VERSION).run();
    return json({token,seed,mode,challenge,day,rulesVersion:RULES_VERSION,sessionExpiresSeconds:7200},201);
   }
@@ -123,7 +123,7 @@ export async function onRequestPost({request,env,data:contextData={}}){
   const {token,events,summary}=data;
   if(typeof token!=="string"||!/^[-a-f0-9]{36}$/.test(token)||!validEvents(events))return error("Invalid game session or replay.");
   const record=await db.prepare("SELECT seed,issued_at,used_at,subject,mode,challenge_day,rules_version FROM hive_sessions_v1 WHERE token=?").bind(token).first();
-  if(!record||record.used_at!==null||record.subject!==key||now()-record.issued_at>7200||record.rules_version!==RULES_VERSION)
+  if(!record||record.used_at!==null||record.subject!==key||now()-record.issued_at>7200||record.rules_version!==RULES_VERSION||record.challenge_day!=="")
    return error("Game session expired or already submitted.",409);
   const result=replayScore(record.seed,events,summary,record.mode);
   if(!result.ok)return error("Score verification failed: "+result.reason,422);

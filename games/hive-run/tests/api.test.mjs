@@ -12,21 +12,24 @@ const url='https://test.invalid/api/leaderboard';
 function request(value,origin='https://test.invalid'){return new Request(url,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.10'},body:JSON.stringify(value)})}
 async function call(env,value,data){const r=await onRequestPost({env,request:request(value),data});return {status:r.status,body:await r.json()}}
 function ended(seed,mode){const r=newRun({seed,mode});start(r);while(r.status==='running')step(r);return {score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks}}
-test('D1 end-to-end: mode-bound daily sessions, verified profile identity, replay and one-use transaction',async()=>{
+test('permanent Arcade D1 session, profile identity and one-use replay',async()=>{
  const db=database(),env={HIVE_DB:db};
- const a=await call(env,{action:'start',mode:'classic',challenge:'daily'});assert.equal(a.status,201);
- const b=await call(env,{action:'start',mode:'classic',challenge:'daily'});assert.equal(a.body.seed,b.body.seed);
- const hunt=await call(env,{action:'start',mode:'hunt',challenge:'daily'});assert.notEqual(a.body.seed,hunt.body.seed);
+ assert.equal((await call(env,{action:'start',mode:'classic',challenge:'daily'})).status,400);
+ const a=await call(env,{action:'start',mode:'classic',challenge:'arcade'});assert.equal(a.status,201);
+ const b=await call(env,{action:'start',mode:'hunt',challenge:'arcade'});assert.equal(b.status,201);
+ assert.equal(a.body.day,"");assert.equal(b.body.day,"");
  const submit={action:'submit',token:a.body.token,events:[],alias:'t9x',profileHandle:'Imposter',summary:ended(a.body.seed,'classic')};
  const who={id:'profile1',handle:'RealOwner'};
- const s=await call(env,submit,{hiveProfile:who});assert.equal(s.status,201,JSON.stringify(s));assert.equal(s.body.profileVerified,true);assert.equal(s.body.initials,'T9X');assert.equal(s.body.profileHandle,'RealOwner');
- assert.equal(db.sqlite.prepare('SELECT alias FROM hive_scores_v1').get().alias,'T9X');
- assert.equal(db.sqlite.prepare('SELECT profile_handle FROM hive_scores_v1').get().profile_handle,'RealOwner');
+ const result=await call(env,submit,{hiveProfile:who});assert.equal(result.status,201,JSON.stringify(result));
+ assert.equal(result.body.initials,'T9X');assert.equal(result.body.profileHandle,'RealOwner');
  assert.equal((await call(env,submit,{hiveProfile:who})).status,409);
- const board=await onRequestGet({env,request:new Request(url+'?mode=classic&challenge=daily'),data:{resolveProfiles:async()=>{}}});
- const rows=await board.json();assert.equal(rows.entries.length,1);assert.equal(rows.entries[0].profileHandle,'RealOwner');assert.equal(rows.entries[0].profileId,undefined);
- const other=await onRequestGet({env,request:new Request(url+'?mode=hunt&challenge=daily')});assert.equal((await other.json()).entries.length,0);
- const arcade=await onRequestGet({env,request:new Request(url+'?mode=classic&challenge=arcade')});assert.equal((await arcade.json()).entries.length,0);
+ const board=await onRequestGet({env,request:new Request(url+'?mode=classic&challenge=arcade'),data:{resolveProfiles:async()=>{}}});
+ const rows=await board.json();assert.equal(rows.entries.length,1);
+ assert.equal(rows.entries[0].profileHandle,'RealOwner');assert.equal(rows.entries[0].rulesVersion,'hive-1.2');
+ assert.equal(rows.entries[0].profileId,undefined);
+ const other=await onRequestGet({env,request:new Request(url+'?mode=hunt&challenge=arcade')});
+ assert.equal((await other.json()).entries.length,0);
+ assert.equal((await onRequestGet({env,request:new Request(url+'?mode=classic&challenge=daily')})).status,400);
  db.sqlite.close();
 });
 test('API rejects cross-origin writes, invalid modes, inflated replays, and preserves rejected session',async()=>{

@@ -4,7 +4,7 @@
  <meta charset="utf-8">
  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
  <meta name="theme-color" content="#101e17">
- <meta name="description" content="Hive Run: a free pixel-art arcade game. Hunt evolving bosses or follow Brood Trail, a classic Snake adventure. Daily challenges and five mutations.">
+ <meta name="description" content="Hive Run: a free pixel-art arcade game. Hunt evolving bosses or follow Brood Trail, a classic Snake adventure. Five mutations and permanent high-score leaderboards.">
  <title>HIVE RUN — Free Arcade | Deep Cuts EDH</title>
  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
  <link rel="stylesheet" href="./styles.css">
@@ -19,7 +19,7 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>ARCADE</strong><small>TWO PATHS. ONE HIVE.</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.1 · LAIR</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.2 · SNARE</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
@@ -55,8 +55,8 @@
         <div id="modeMenu" class="mode-menu">
          <label for="gameMode">CHOOSE YOUR PATH</label>
          <select id="gameMode"><option value="hunt">PREDATOR HUNT</option><option value="classic">BROOD TRAIL · CLASSIC SNAKE</option></select>
-         <label for="gameChallenge">EXPEDITION</label>
-         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="daily">DAILY RITUAL · SHARED SEED</option><option value="practice">THE LAIR · BOSS PRACTICE</option></select>
+         <label for="gameChallenge" id="gameChallengeLabel">EXPEDITION</label>
+         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="practice">THE LAIR · BOSS PRACTICE</option></select>
 <div class="lair-picker" id="lairPicker" hidden aria-label="Choose a boss to practice">
   <strong class="lair-label">◈ SELECT YOUR PREY</strong>
   <div class="lair-choices" role="group" aria-label="Boss selection">
@@ -167,7 +167,7 @@
       </form>
       <p id="scoreSubmitStatus" role="status" aria-live="polite"></p>
      </div>
-     <p class="board-integrity">Three-character initials identify each arcade entry. Only a signed-in Field Network session can attach a verified profile link; guest entries remain unlinked. The server replays every submitted score.</p>
+     <p class="board-integrity">Permanent Arcade standings retain verified records from older rule versions, marked OLD. Three-character initials identify each arcade entry. Only a signed-in Field Network session can attach a verified profile link; guest entries remain unlinked. The server replays every submitted score.</p>
     </section>
     <details class="mutation-guide" id="fieldGuide"><summary>FIELD GUIDE · HOW TO PLAY &amp; ENCOUNTERS</summary>
 <p><strong>PREDATOR HUNT:</strong> Trap prey with your living body. Your first ordinary-prey collision is forgiven; early enemies move more slowly. Minibosses take two captures and full bosses take three.</p>
@@ -175,7 +175,7 @@
 <p><strong>EVOLUTIONS:</strong> Captures earn 3 energy; Brood Trail orbs earn 1. At 5 energy, pick an adaptation: white shields, blue slows, black sheds the tail, red boosts speed and points, green grants growth.</p>
 <p><strong>ENCOUNTERS:</strong> Evolution 2: Burrow Stalker moves five tiles after a warning. Evolution 4: Hatchery Warden seals tiles. Evolution 6: Tunnel Weaver lays webs that stun. Evolution 8: Rift Guardian creates ruptures. Their powers charge for 10 active seconds, indicated by an ochre ring.</p>
 <p><strong>ENVIRONMENTS:</strong> The background changes after evolutions 4, 8 and 12. Dashed tiles warn before hazards become solid. Boss briefings pause the game, then begin with a three-second countdown.</p>
-<p><strong>EXPEDITIONS:</strong> Arcade starts a fresh run; Daily Ritual shares a seed until midnight Central Time. Signed-in Field Network profiles can submit server-verified ranked runs.</p>
+<p><strong>EXPEDITIONS:</strong> Arcade is the permanent ranked competition with a fresh seed each run. Predator Hunt also offers unranked boss practice. Signed-in Field Network profiles can submit server-verified Arcade scores.</p>
 </details>
     </aside>
   </div>
