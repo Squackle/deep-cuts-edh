@@ -1,0 +1,33 @@
+name: First-party Hive Run verification
+on:
+  push:
+    paths:
+      - "games/hive-run/**"
+      - "src/hive-server/**"
+      - "functions/games/hive-run/**"
+      - "functions/api/hive-profile.js"
+      - "hive-profile.js"
+      - ".github/workflows/hive-integration-tests.yml"
+  pull_request:
+    paths:
+      - "games/hive-run/**"
+      - "src/hive-server/**"
+      - "functions/games/hive-run/**"
+      - "functions/api/hive-profile.js"
+      - "hive-profile.js"
+      - ".github/workflows/hive-integration-tests.yml"
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "24"}
+      - name: Verify all game rules, UI integrations and replay validation
+        run: node --test games/hive-run/tests/*.test.mjs tests/hive-main-integration.test.mjs
+      - name: Check first-party game syntax
+        run: |
+          node --check games/hive-run/src/main.js
+          node --check src/hive-server/leaderboard.js
+          node --check functions/games/hive-run/api/leaderboard.js
+          node --check functions/api/hive-profile.js
