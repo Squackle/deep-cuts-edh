@@ -36,13 +36,74 @@ function image(name){
 function appendLink(host,title,url){
  const link=el("a","games-link",title);link.href=url;link.target="_blank";link.rel="noopener noreferrer";host.append(link);return link;
 }
-// Exact-name Scryfall search resolves punctuation-heavy commander names.
+// Scryfall full-card previews use only an image request: no external scripts,
+// tracked links, name lookup API or new data collection. Links still open Scryfall.
+let previewPanel=null,previewTimer=0,previewSource=null,previewPinned=false;
+function hideCardPreview(force=false){
+ clearTimeout(previewTimer);
+ if(previewPinned&&!force)return;
+ if(previewSource)previewSource.setAttribute("aria-expanded","false");
+ if(previewPanel)previewPanel.hidden=true;
+ previewSource=null;previewPinned=false;
+}
+function previewElement(){
+ if(previewPanel)return previewPanel;
+ previewPanel=el("div","games-card-tooltip");previewPanel.id="gamesCardTooltip";
+ previewPanel.hidden=true;previewPanel.setAttribute("role","tooltip");
+ const img=el("img","games-full-card-image");img.alt="";img.decoding="async";
+ img.referrerPolicy="no-referrer";
+ img.addEventListener("error",()=>{previewPanel.classList.add("games-card-preview-error")});
+ previewPanel.append(img);document.body.append(previewPanel);
+ document.addEventListener("pointerdown",event=>{
+  if(previewPinned&&!event.target.closest(".games-commander-name"))hideCardPreview(true);
+ });
+ document.addEventListener("keydown",event=>{if(event.key==="Escape")hideCardPreview(true)});
+ window.addEventListener("scroll",()=>hideCardPreview(true),{passive:true});
+ window.addEventListener("resize",()=>hideCardPreview(true));
+ return previewPanel;
+}
+function showCardPreview(name,anchor,pinned=false){
+ clearTimeout(previewTimer);
+ const panel=previewElement();
+ if(previewSource&&previewSource!==anchor)previewSource.setAttribute("aria-expanded","false");
+ previewSource=anchor;previewPinned=pinned;
+ anchor.setAttribute("aria-expanded","true");
+ const img=panel.querySelector("img");
+ const src="https://api.scryfall.com/cards/named?exact="+encoded(name)+"&format=image&version=normal";
+ if(img.getAttribute("src")!==src){panel.classList.remove("games-card-preview-error");img.alt="Full Magic card preview: "+name;img.src=src}
+ panel.hidden=false;
+ const rect=anchor.getBoundingClientRect();
+ const width=Math.min(292,window.innerWidth-22),height=Math.min(416,window.innerHeight-24);
+ const left=Math.min(window.innerWidth-width-11,Math.max(11,
+  window.innerWidth<620?(window.innerWidth-width)/2:(rect.right+width+16<window.innerWidth?rect.right+10:rect.left-width-10)));
+ const top=Math.max(10,Math.min(rect.top-45,window.innerHeight-height-10));
+ panel.style.left=left+"px";panel.style.top=top+"px";
+ panel.style.width=width+"px";
+}
 function commanderLink(name){
+ const wrapper=el("span","games-commander-name");
  const link=el("a","games-commander-link",name);
  link.href="https://scryfall.com/search?q="+encoded('!"'+name+'"');
  link.target="_blank";link.rel="noopener noreferrer";
- link.title="View "+name+" on Scryfall (opens in a new tab)";
- return link;
+ link.title="Hover for full card; click to open Scryfall";
+ link.addEventListener("pointerenter",event=>{
+  if(event.pointerType==="touch")return;
+  clearTimeout(previewTimer);
+  previewTimer=setTimeout(()=>showCardPreview(name,link),180);
+ });
+ link.addEventListener("pointerleave",()=>hideCardPreview());
+ link.addEventListener("focus",()=>showCardPreview(name,link));
+ link.addEventListener("blur",()=>{if(!previewPinned)hideCardPreview()});
+ const peek=el("button","games-card-peek","▣");
+ peek.type="button";peek.setAttribute("aria-label","Preview "+name+" card");
+ peek.setAttribute("aria-expanded","false");peek.title="Show full card preview";
+ peek.addEventListener("click",event=>{
+  event.preventDefault();event.stopPropagation();
+  if(previewPinned&&previewSource===peek){hideCardPreview(true);return}
+  showCardPreview(name,peek,true);
+ });
+ wrapper.append(link,peek);
+ return wrapper;
 }
 function fullUrl(){
  return location.origin+(game==="cold"?"/games/cold-case.html":"/games/obscurity-ladder.html");

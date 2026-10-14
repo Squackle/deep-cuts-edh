@@ -193,3 +193,40 @@
 .games-hive-copy .games-button-quiet{background:#193c2e;color:#f3e3bd;border-color:#87977b}
 .games-hive-copy .games-hive-small{font:650 11px/1.45 system-ui,sans-serif;color:#c9cfaf;margin:12px 0 0}
 @media(max-width:660px){.games-hive-feature{grid-template-columns:1fr}.games-hive-art{min-height:160px;background-position:left top}.games-hive-copy{padding:18px 16px}}
+
+/* Full Scryfall card on hover, keyboard focus or the dedicated touch preview.
+   Tooltip lives under <body> to avoid clipping inside game cards/dossiers. */
+.games-commander-name{display:inline-flex;align-items:baseline;gap:4px;min-width:0;max-width:100%;vertical-align:baseline}
+.games-commander-name .games-commander-link{flex:0 1 auto;min-width:0}
+.games-commander-name .games-card-peek{
+ display:inline-flex;justify-content:center;align-items:center;flex:0 0 22px;
+ width:22px;height:22px;background:#efe6d0;border:1px solid #ac9873;
+ border-radius:4px;color:#315640;cursor:pointer;font-size:14px;line-height:1;
+ padding:1px;vertical-align:middle;
+}
+.games-commander-name .games-card-peek:hover,.games-commander-name .games-card-peek[aria-expanded=true]{
+ border-color:#31694a;background:#dce9d8;
+}
+.games-commander-name .games-card-peek:focus-visible{outline:3px solid #c29b59;outline-offset:2px}
+.games-suspect-entry .games-commander-name{flex:1;min-width:0}
+.games-suspect-entry .games-commander-link{font-size:12px;line-height:1.45;font-weight:750;color:#3a4838}
+.games-card-tooltip{
+ position:fixed;z-index:250;
+ padding:5px;border-radius:13px;
+ border:1px solid #d8b980;background:#183323;
+ box-shadow:0 22px 60px #071510b8,0 0 0 3px #a48a4c45;
+ pointer-events:none;overflow:hidden;
+ max-width:calc(100vw - 22px);
+}
+.games-card-tooltip[hidden]{display:none}
+.games-card-tooltip img{display:block;width:100%;height:auto;aspect-ratio:488/680;object-fit:contain;border-radius:8px;background:#263f2e}
+.games-card-preview-error:after{
+ content:"Card preview unavailable. Open the card on Scryfall instead.";
+ display:block;padding:18px;color:#f3e1ba;font-size:12px;text-align:center;
+}
+.games-card-preview-error img{display:none}
+@media(max-width:540px){
+ .games-card-tooltip{box-shadow:0 12px 40px #071510e0;max-height:calc(100vh - 18px)}
+ .games-commander-name .games-card-peek{flex-basis:28px;width:28px;height:28px}
+}
+@media(prefers-reduced-motion:reduce){.games-card-tooltip{scroll-behavior:auto}}

@@ -16,3 +16,14 @@
 @media(max-width:750px){.profile-layout{grid-template-columns:1fr}.profile-layout .cm-tabs{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.profile-layout .cm-tabs button{border-radius:6px;text-align:center;justify-content:center}.profile-page .profile-hero{align-items:flex-start;flex-direction:column}.profile-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:430px){.profile-quick-grid{gap:8px}.profile-quick-grid :is(a,button){min-height:104px;padding:13px}.profile-quick-grid strong{font-size:16px}.profile-layout .cm-tabs button{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.profile-quick-grid :is(a,button):hover{transform:none}}
+
+/* Consent is visible only to the authenticated profile owner. */
+#supporterCreditSettings{margin:16px 0;border-left:3px solid #b99a5b}
+#supporterCreditSettings .supporter-credit-consent{
+ display:flex;gap:9px;align-items:flex-start;max-width:590px;line-height:1.5;
+ font-weight:650;font-size:12px;color:#314d3a;margin:12px 0;
+}
+#supporterCreditSettings .supporter-credit-consent input{flex:none;width:18px;height:18px;accent-color:#37684a}
+#supporterCreditSettings input[type=text]{width:min(100%,390px);display:block}
+#supporterCreditSettings #supporterCreditStatus[data-error=true]{color:#984835}
+#supporterCreditSettings .cm-btn{margin:6px 8px 6px 0}
