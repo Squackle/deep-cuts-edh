@@ -25,7 +25,7 @@ test('permanent Arcade D1 session, profile identity and one-use replay',async()=
  assert.equal((await call(env,submit,{hiveProfile:who})).status,409);
  const board=await onRequestGet({env,request:new Request(url+'?mode=classic&challenge=arcade'),data:{resolveProfiles:async()=>{}}});
  const rows=await board.json();assert.equal(rows.entries.length,1);
- assert.equal(rows.entries[0].profileHandle,'RealOwner');assert.equal(rows.entries[0].rulesVersion,'hive-1.2');
+ assert.equal(rows.entries[0].profileHandle,'RealOwner');assert.equal(rows.entries[0].rulesVersion,'hive-1.3');
  assert.equal(rows.entries[0].profileId,undefined);
  const other=await onRequestGet({env,request:new Request(url+'?mode=hunt&challenge=arcade')});
  assert.equal((await other.json()).entries.length,0);
