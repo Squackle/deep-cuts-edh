@@ -140,14 +140,18 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
       assert.equal(await page.locator(".games-reveal").count(),0,"Practice verdict should not lock next playthrough");
      }else if(game==="cipher"){
       await page.locator(".arcane-keyboard").waitFor();
-      for(const letter of "ZZZZZ")await page.getByRole("button",{name:letter,exact:true}).click();
+      const wordLength=await page.locator(".arcane-word-row").first().locator(".arcane-letter:not(.arcane-separator)").count();
+      assert.ok(wordLength>=2&&wordLength<=24,"Incorrect adaptive tile count");
+      const pattern=await page.locator(".arcane-word-row").first().locator(".arcane-separator").allTextContents();
+      assert.ok(pattern.every(mark=>/^[ ’-]$/.test(mark)));
+      for(const letter of "Z".repeat(wordLength))await page.getByRole("button",{name:letter,exact:true}).click();
       await page.getByRole("button",{name:"Submit guess"}).click();
       await page.locator(".arcane-letter.correct, .arcane-letter.present, .arcane-letter.absent").first().waitFor();
       assert.match(await page.locator("#arcaneProgress").innerText(),/GUESS 2/);
       await page.reload({waitUntil:"domcontentloaded"});
       await page.getByRole("button",{name:"Submit guess"}).waitFor();
       assert.match(await page.locator("#arcaneProgress").innerText(),/GUESS 2/);
-      for(const letter of "YYYYY")await page.getByRole("button",{name:letter,exact:true}).click();
+      for(const letter of "Y".repeat(wordLength))await page.getByRole("button",{name:letter,exact:true}).click();
       await page.getByRole("button",{name:"Submit guess"}).click();
       await page.waitForFunction(()=>document.querySelector("#arcaneProgress")?.textContent?.includes("GUESS 3"));
      }else{
