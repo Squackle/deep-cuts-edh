@@ -154,13 +154,13 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
       await page.getByRole("button",{name:/Reveal .* correct letters, spend one guess/}).click();
       await page.waitForFunction(()=>document.querySelector(".arcane-hint-count")?.textContent?.includes("1 / 2"));
       assert.equal(await page.locator(".arcane-hint-row").count(),1,"Hint must spend an entire row");
-      const greenCount=await page.locator(".arcane-word-row").last().locator(".arcane-letter.correct").count();
+      const greenCount=await page.locator(".arcane-word-row").nth(2).locator(".arcane-letter.correct").count();
       assert.ok(greenCount>=1&&greenCount<=3,"Adaptive hint should pin one to three letters");
       await page.reload({waitUntil:"domcontentloaded"});
       await page.getByRole("button",{name:"Submit guess"}).waitFor();
       assert.equal(await page.locator(".arcane-hint-row").count(),1,"Hint must persist after reload");
       assert.match(await page.locator("#arcaneProgress").innerText(),/GUESS 3/);
-      const openLetters=wordLength-await page.locator(".arcane-word-row").last().locator(".arcane-letter.correct").count();
+      const openLetters=wordLength-await page.locator(".arcane-word-row").nth(2).locator(".arcane-letter.correct").count();
       for(const letter of "Y".repeat(openLetters))await page.getByRole("button",{name:letter,exact:true}).click();
       await page.getByRole("button",{name:"Submit guess"}).click();
       await page.waitForFunction(()=>document.querySelector("#arcaneProgress")?.textContent?.includes("GUESS 4"));
