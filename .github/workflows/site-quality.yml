@@ -1,0 +1,28 @@
+name: Site quality and navigation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  site-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: SEO, accessibility, navigation and existing-feature guards
+        run: node scripts/site-release-check.mjs
+      - name: Magic daily game regression suite
+        run: node --experimental-default-type=module --test tests/arcane-daily.test.mjs
+      - name: JavaScript syntax
+        run: |
+          node --check arcane-games.js
+          node --check daily-games.js
+          node --check header-profile.js
+          node --check set-watch.js
+          node --check functions/api/arcane-games.js
+          node --check functions/api/daily-games.js
