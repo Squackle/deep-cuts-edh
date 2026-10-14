@@ -3,6 +3,7 @@
 import {send,fail,auth,body,originOK,quota,safe} from "../../src/community-core.js";
 import {SNAPSHOT_DATE,todayChicago,previousDay} from "../../src/daily-games-data.js";
 import {getPuzzle,getAutoStatus} from "../../src/automated-games.js";
+import {ARCANE_BADGES} from "./arcane-games.js";
 const BADGES={
  case_closer:{title:"🕵️ Cold Case Closer",detail:"Solve your first Cold Case."},
  first_clue:{title:"🔍 First Clue Sleuth",detail:"Solve Cold Case on the first guess."},
@@ -141,7 +142,11 @@ export async function onRequestGet({request,env}){
    const handle=safe(u.searchParams.get("handle"),24);
    if(!/^[A-Za-z][A-Za-z0-9_]{2,23}$/.test(handle))return fail("Invalid investigator.",400);
    const p=await env.DB.prepare("SELECT id FROM community_profiles WHERE handle=? COLLATE NOCASE").bind(handle).first();
-   return p?send({badges:await awardsFor(env.DB,p.id)}):fail("Investigator not found.",404);
+   if(!p)return fail("Investigator not found.",404);
+   const classic=await awardsFor(env.DB,p.id);
+   const recent=await env.DB.prepare("SELECT badge,awarded_at FROM daily_arcane_badges WHERE profile_id=? ORDER BY awarded_at DESC").bind(p.id).all();
+   const arcane=(recent.results||[]).filter(r=>ARCANE_BADGES[r.badge]).map(r=>({id:r.badge,...ARCANE_BADGES[r.badge],awardedAt:r.awarded_at}));
+   return send({badges:[...classic,...arcane]});
   }
   const params=modeData(u);
   if(!params)return fail("Choose Cold Case or Obscurity Ladder.",400);
