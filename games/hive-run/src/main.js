@@ -17,6 +17,7 @@ import {abilityState,ABILITIES} from "./miniboss.js";
 import {BRIEFINGS,BossBriefingGate} from "./boss-briefing.js";
 import {LeaderboardClient} from "./leaderboard-client.js";
 import {renderLeaderboard,updateSubmission} from "./leaderboard-ui.js";
+import {editArcadeInitials,parseArcadeInitials} from "./arcade-initials.js";
 import {createGameOnlyMode} from "./game-only.js";
 
 /* HIVE RUN Alpha 0.4 — hand-authored pixel-art minibosses and encounter powers. */
@@ -34,20 +35,18 @@ async function refreshLeaderboard(){
  try{
   const data=await leaderboard.load(selectedMode,selectedChallenge);
   renderLeaderboard($("leaderboardEntries"),data);
-  $("playerProfile").disabled=!!data.profile;
   $("gameSignInLink").hidden=!!data.profile;
   $("gameProfileLink").hidden=!data.profile;
   if(data.profile){
    const name=data.profile.handle;
-   $("playerProfile").value=name;
-   $("profileNotice").textContent="Verified ownership is automatic: new ranked submissions will be attached to @"+name+".";
+   $("profileNotice").textContent="SIGNED IN · Your initials will automatically link to @"+name+" when the verified replay is submitted.";
    $("gameProfileTitle").textContent="SIGNED IN · @"+name.toUpperCase();
    $("gameProfileExplanation").textContent="Your future ranked replays will appear on your Field Network profile after successful server verification.";
    $("gameProfileLink").href="/community.html?profile="+encodeURIComponent(name);
   }else{
    $("gameProfileTitle").textContent="LINK YOUR FIELD NETWORK PROFILE";
    $("gameProfileExplanation").textContent="Sign in and remember this device before starting a ranked run. Guest handle links are not proof of ownership.";
-   $("profileNotice").textContent="Optional guest handle links are always labeled unverified. To verify future scores, use Field Network sign-in and remember this device first.";
+   $("profileNotice").textContent="Guest score: initials only, no profile link. Sign in to Field Network before submitting to link your next verified score.";
   }
 
   $("leaderboardStatus").textContent=MODES[selectedMode].name.toUpperCase()+" · "+(selectedChallenge==="daily"?"DAILY "+data.day:"ARCADE")+" · TOP 25";
@@ -553,17 +552,28 @@ $("submitShortcut").addEventListener("click",event=>{
  requestAnimationFrame(()=>$("submissionPanel").scrollIntoView({block:"start",behavior:"smooth"}));
 });
 $("leaderboardRefresh").addEventListener("click",refreshLeaderboard);
+$("playerAlias").addEventListener("input",event=>{
+ const filtered=editArcadeInitials(event.target.value);
+ if(event.target.value!==filtered)event.target.value=filtered;
+});
 $("leaderboardForm").addEventListener("submit",async event=>{
  event.preventDefault();const button=$("submitScoreButton"),notice=$("scoreSubmitStatus");
  if(!state.ranked||!["over","won"].includes(state.run.status))return;
+ const initials=parseArcadeInitials($("playerAlias").value);
+ if(!initials){
+  $("playerAlias").setCustomValidity("Enter exactly three letters or numbers.");
+  $("playerAlias").reportValidity();
+  $("playerAlias").setCustomValidity("");
+  return;
+ }
  button.disabled=true;notice.textContent="REPLAYING RUN ON SERVER...";
  try{
-  const alias=$("playerAlias").value.trim();
-  const handle=$("playerProfile").value.trim();
-  const submitted=await leaderboard.submit(state.run,alias,handle);
-  notice.textContent="RANKED! VERIFIED "+submitted.score+" POINTS";
+  const submitted=await leaderboard.submit(state.run,initials);
+  notice.textContent=submitted.profileVerified&&submitted.profileHandle?
+   "FILED "+submitted.initials+" · "+submitted.score+" POINTS · LINKED TO @"+submitted.profileHandle:
+   "FILED "+submitted.initials+" · "+submitted.score+" POINTS · GUEST ENTRY";
   state.ranked=false;$("submitShortcut").hidden=true;
-  try{localStorage.setItem("hive-last-alias-v1",alias)}catch{}
+  try{localStorage.setItem("hive-arcade-initials-v1",initials)}catch{}
   await refreshLeaderboard();
  }catch(error){notice.textContent=error.message||"Could not submit this run."}
  finally{button.disabled=!leaderboard.session}
@@ -668,7 +678,7 @@ $("gameMode").addEventListener("change",()=>{
 });
 $("gameChallenge").addEventListener("change",()=>{selectedChallenge=$("gameChallenge").value;reset();void refreshLeaderboard()});
 reset();refreshLeaderboard();
-try{$("playerAlias").value=localStorage.getItem("hive-last-alias-v1")||""}catch{}
+try{$("playerAlias").value=editArcadeInitials(localStorage.getItem("hive-arcade-initials-v1")||"")}catch{}
 // The Hatchery remains the sole arena during the first Predator release.
 arenaBackground=loadLevelBackground(()=>draw());
 loadCreatureArt().then(art=>{

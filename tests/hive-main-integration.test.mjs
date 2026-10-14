@@ -14,6 +14,9 @@ test("main-site game route and all first-party assets are present",()=>{
  assert.ok(existsSync(atlas));
  assert.match(html,/id="gameSignInLink" href="\/community\.html#account"/);
  assert.match(html,/id="gameProfileBridge"/);
+ assert.match(html,/id="playerAlias"/);
+ assert.match(html,/maxlength="3" pattern="\[A-Za-z0-9\]\{3\}"/);
+ assert.doesNotMatch(html,/id="playerProfile"/);
  assert.match(html,/bossBriefing/);
  assert.match(hub,/class="games-hive-feature"/);
  assert.ok(hub.indexOf('class="games-hive-feature"')<hub.indexOf('class="games-hub-grid"'));

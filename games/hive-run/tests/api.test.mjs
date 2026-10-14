@@ -17,9 +17,10 @@ test('D1 end-to-end: mode-bound daily sessions, verified profile identity, repla
  const a=await call(env,{action:'start',mode:'classic',challenge:'daily'});assert.equal(a.status,201);
  const b=await call(env,{action:'start',mode:'classic',challenge:'daily'});assert.equal(a.body.seed,b.body.seed);
  const hunt=await call(env,{action:'start',mode:'hunt',challenge:'daily'});assert.notEqual(a.body.seed,hunt.body.seed);
- const submit={action:'submit',token:a.body.token,events:[],alias:'Test Player',profileHandle:'Imposter',summary:ended(a.body.seed,'classic')};
+ const submit={action:'submit',token:a.body.token,events:[],alias:'t9x',profileHandle:'Imposter',summary:ended(a.body.seed,'classic')};
  const who={id:'profile1',handle:'RealOwner'};
- const s=await call(env,submit,{hiveProfile:who});assert.equal(s.status,201,JSON.stringify(s));assert.equal(s.body.profileVerified,true);
+ const s=await call(env,submit,{hiveProfile:who});assert.equal(s.status,201,JSON.stringify(s));assert.equal(s.body.profileVerified,true);assert.equal(s.body.initials,'T9X');assert.equal(s.body.profileHandle,'RealOwner');
+ assert.equal(db.sqlite.prepare('SELECT alias FROM hive_scores_v1').get().alias,'T9X');
  assert.equal(db.sqlite.prepare('SELECT profile_handle FROM hive_scores_v1').get().profile_handle,'RealOwner');
  assert.equal((await call(env,submit,{hiveProfile:who})).status,409);
  const board=await onRequestGet({env,request:new Request(url+'?mode=classic&challenge=daily'),data:{resolveProfiles:async()=>{}}});
@@ -34,8 +35,15 @@ test('API rejects cross-origin writes, invalid modes, inflated replays, and pres
  assert.equal((await call(env,{action:'start',mode:'fake'})).status,400);
  const a=(await call(env,{action:'start',mode:'hunt'})).body;
  const valid=ended(a.seed,'hunt');
- const bad=await call(env,{action:'submit',token:a.token,events:[],summary:{...valid,score:999999}});assert.equal(bad.status,422);
- const ok=await call(env,{action:'submit',token:a.token,events:[],summary:valid,profileHandle:'GuestUser'});assert.equal(ok.status,201);assert.equal(ok.body.profileVerified,false);
- assert.equal(db.sqlite.prepare('SELECT profile_verified FROM hive_scores_v1').get().profile_verified,0);
+ const bad=await call(env,{action:'submit',token:a.token,events:[],alias:'ABC',summary:{...valid,score:999999}});assert.equal(bad.status,422);
+ for(const invalid of [undefined,"","A","AB","ABCD","A-B","A B","🐉🐉🐉"]){
+  const result=await call(env,{action:'submit',token:a.token,events:[],alias:invalid,summary:valid});
+  assert.equal(result.status,400,"rejected initials "+JSON.stringify(invalid));
+ }
+ const ok=await call(env,{action:'submit',token:a.token,events:[],alias:'A7Z',summary:valid,profileHandle:'GuestUser'});
+ assert.equal(ok.status,201);assert.equal(ok.body.profileVerified,false);assert.equal(ok.body.profileHandle,null);
+ const row=db.sqlite.prepare('SELECT alias,profile_handle,profile_id,profile_verified FROM hive_scores_v1').get();
+ assert.equal(row.alias,'A7Z');assert.equal(row.profile_verified,0);
+ assert.equal(row.profile_handle,null);assert.equal(row.profile_id,null);
  db.sqlite.close();
 });
