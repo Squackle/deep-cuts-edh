@@ -8,7 +8,7 @@ import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
 import {drawPlayerLocator,drawQueuedTurn} from "./player-visibility.js";
 import {drawTrapHints} from "./trap-assist.js";
-import {KEY_DIRECTIONS,keyboardDirection} from "./input-controls.js";
+import {KEY_DIRECTIONS,keyboardDirection,mutationSelectionIndex,isTouchMutationSelection,resumeHeading} from "./input-controls.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
 import {drawPrey,drawCapture} from "./enemy-render.js";
@@ -18,6 +18,7 @@ import {BRIEFINGS,BossBriefingGate} from "./boss-briefing.js";
 import {LeaderboardClient} from "./leaderboard-client.js";
 import {renderLeaderboard,renderPersonalBest,updateSubmission} from "./leaderboard-ui.js";
 import {editArcadeInitials,parseArcadeInitials} from "./arcade-initials.js";
+import {createSessionBest} from "./session-best.js";
 import {createGameOnlyMode} from "./game-only.js";
 
 /* HIVE RUN Alpha 0.4 — hand-authored pixel-art minibosses and encounter powers. */
@@ -30,6 +31,8 @@ const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
 let arenaBackground=null;
 let visualBurst=null,lastCapture=null,startingRun=false,lastEncounterSeen=null;
+let awaitingMutationResume=false;
+const sessionBests=createSessionBest();
 const leaderboard=new LeaderboardClient();
 let latestLeaderboard=null,leaderboardRefreshVersion=0;
 function updateOwnRecord(){renderPersonalBest($("personalRecord"),latestLeaderboard,state.best)}
@@ -76,14 +79,14 @@ function setEncounterMusic(encounterType){
  soundtrack.setTrack(trackForEncounter(encounterType));
  syncSoundtrack();syncUI();
 }
-const state={run:newRun({cols:COLS,rows:ROWS,mode:selectedMode}),best:0,audio:false,musicOn:false,ctx:null,
+const state={run:newRun({cols:COLS,rows:ROWS,mode:selectedMode}),best:0,sessionBest:0,audio:false,musicOn:false,ctx:null,
  lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null,ranked:false};
 try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0);
  state.audio=localStorage.getItem(SOUND_STORE)==="on";
  state.musicOn=localStorage.getItem(MUSIC_STORE)==="on";
 }catch{}
 function bestKey(){return STORE+"|"+boardKey(selectedMode,selectedChallenge,state?.day||chicagoDay())}
-function loadBest(){try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0)}catch{state.best=0}updateOwnRecord()}
+function loadBest(){try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0)}catch{state.best=0}state.sessionBest=sessionBests.get(bestKey());updateOwnRecord()}
 function musicForRun(){
  const r=state.run;soundtrack.setLevel(r.biome);
  return r.encounter?(r.encounter.phases===3?"boss":"miniboss"):r.mode==="classic"?["hatchery","hunt","miniboss","boss"][r.biome-1]:"hunt";
@@ -92,7 +95,7 @@ const padScore=n=>String(Math.floor(Math.max(0,n))).padStart(6,"0");
 function syncUI(){
  const run=state.run;
  $("score").textContent=padScore(run.score);
- $("best").textContent=padScore(state.best);
+ $("best").textContent=padScore(state.sessionBest);
  $("biomeLabel").textContent="◈ "+BIOMES[run.biome-1].name;
  $("stage").textContent=String(run.evolutionsChosen).padStart(2,"0");
  $("killCount").textContent=String(run.mode==="classic"?run.brood:run.kills).padStart(2,"0");
@@ -146,6 +149,7 @@ function announce(message){
  }
 }
 function saveBest(){
+ state.sessionBest=sessionBests.record(bestKey(),state.run.score);
  if(state.run.score<=state.best)return;
  state.best=state.run.score;
  try{localStorage.setItem(bestKey(),String(state.best))}catch{}
@@ -172,7 +176,7 @@ function syncSoundtrack(){
  if(!canPlayMusic(state.musicOn,state.run.status,document.hidden)){
   soundtrack.stop();return;
  }
- if(bossGate.blocking){soundtrack.stop();return}
+ if(bossGate.blocking||awaitingMutationResume){soundtrack.stop();return}
  const audio=state.ctx;
  if(audio?.state==="running")soundtrack.start(audio);
  else soundtrack.stop();
@@ -258,11 +262,11 @@ function beginBossCountdown(){
 $("bossBriefingResume").addEventListener("click",beginBossCountdown);
 function showDraftScreen(){
  soundtrack.stop();
- showMutationDraft($("mutationOverlay"),$("mutationChoices"),state.run.draftOptions,selectMutation);
+ showMutationDraft($("mutationOverlay"),$("mutationChoices"),state.run.draftOptions,selectMutation,state.run.mode);
  syncUI();
  announce("Evolution ready. Choose one of three mutations after five earned energy.");
 }
-function selectMutation(color){
+function selectMutation(color,inputEvent){
  if(state.run.status!=="draft"||!state.run.draftOptions.includes(color))return;
  leaderboard.action(state.run.runTicks,"choose",color);
  if(!chooseMutation(state.run,color))return;
@@ -276,10 +280,36 @@ function selectMutation(color){
   announce(ABILITIES[state.run.encounter.kind].name+" approaching! "+state.run.encounter.phases+" captures to win.");
   playTone(244,.18,.04);
  }else announce(MUTATIONS[color].name+" acquired. "+MUTATIONS[color].short+".");
- if(!showBossBriefing()){syncUI();canvas.focus({preventScroll:true})}
+ if(!showBossBriefing()){
+  const coarse=window.matchMedia?.("(pointer:coarse)")?.matches??false;
+  if(!isTouchMutationSelection(inputEvent,coarse)){
+   awaitingMutationResume=true;
+   $("mutationResume").hidden=false;
+   soundtrack.stop();
+   announce("Mutation chosen. Press an arrow key or W A S D to resume. Your swarm is frozen.");
+  }
+  syncUI();canvas.focus({preventScroll:true});
+ }
+}
+function clearMutationResume(){
+ awaitingMutationResume=false;$("mutationResume").hidden=true;
+ state.lastFrame=0;state.accumulator=0;state.pointer=null;
+}
+function resumeMutationByKey(key){
+ if(!awaitingMutationResume)return false;
+ if(!resumeHeading(state.run,key,heading=>{
+  if(!turn(state.run,heading))return false;
+  leaderboard.action(state.run.runTicks,"turn",heading);
+  return true;
+ }))return false;
+ clearMutationResume();
+ canvas.focus({preventScroll:true});
+ setEncounterMusic(musicForRun());syncUI();draw();
+ announce("Swarm moving. Keep an escape route open.");
+ return true;
 }
 async function begin(){
- if(startingRun||bossGate.blocking)return;
+ if(startingRun||bossGate.blocking||awaitingMutationResume)return;
  wakeAudio(); // Unlock before the awaited leaderboard request drops user activation.
  if(["ready","over","won"].includes(state.run.status)){
   startingRun=true;
@@ -294,7 +324,7 @@ async function begin(){
   }finally{startingRun=false;$("gameMode").disabled=false;$("gameChallenge").disabled=false;$("primaryButton").disabled=false}
  }
  start(state.run);
- state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ clearMutationResume();
  hideOverlay();hideMutationDraft($("mutationOverlay"));
  updateSubmission($("submissionPanel"),null,false);
  setEncounterMusic(musicForRun());syncUI();
@@ -303,7 +333,7 @@ async function begin(){
 }
 function reset(){
  if(startingRun)return;
- resetBossBriefing();
+ resetBossBriefing();clearMutationResume();
  state.run=newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";latestLeaderboard=null;loadBest();
  leaderboard.session=null;leaderboard.events=[];
  state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;
@@ -316,7 +346,7 @@ function reset(){
  announce("New run ready. Select Start Run to play.");
 }
 function togglePause(){
- if(bossGate.blocking)return;
+ if(bossGate.blocking||awaitingMutationResume)return;
  if(state.run.status==="running"){
   pause(state.run);state.pointer=null;
   showOverlay("RUN PAUSED","Your swarm will wait here until you're ready.","RESUME RUN ▶");
@@ -328,7 +358,7 @@ function togglePause(){
  syncSoundtrack();syncUI();
 }
 function handleDirection(direction){
- if(bossGate.blocking||state.run.status!=="running")return false;
+ if(bossGate.blocking||awaitingMutationResume||state.run.status!=="running")return false;
  if(!turn(state.run,direction))return false;
  leaderboard.action(state.run.runTicks,"turn",direction);
  // Draw in the same keydown/pointer event: players see their buffered turn
@@ -480,6 +510,10 @@ function loop(time){
   }
   draw();requestAnimationFrame(loop);return;
  }
+ if(awaitingMutationResume){
+  state.lastFrame=0;state.accumulator=0;
+  draw();requestAnimationFrame(loop);return;
+ }
  let dt=0;
  if(state.lastFrame)dt=Math.min(time-state.lastFrame,250);
  state.lastFrame=time;
@@ -538,7 +572,7 @@ function loop(time){
     playTone(state.run.status==="won"?720:135,.2,.03);
     const final=state.run.status==="won";
     showOverlay(final?"HIVE COMPLETE!":"GAME OVER",
-     state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Best: "+state.best.toLocaleString()+".",
+     state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Session best: "+state.sessionBest.toLocaleString()+".",
      "PLAY AGAIN ↺");
     updateSubmission($("submissionPanel"),state.run,state.ranked);
     $("finalRunSummary").textContent=(state.run.mode==="classic"?state.run.brood+" orbs":state.run.kills+" captures")+" · "+state.run.evolutionsChosen+" evolutions · "+state.run.score+" points";
@@ -616,9 +650,17 @@ document.addEventListener("keydown",event=>{
  const focus=document.activeElement;
  if(["INPUT","TEXTAREA","SELECT"].includes(focus?.tagName))return;
  if(!event.repeat)wakeAudio();
- if(state.run.status==="draft"&&["1","2","3"].includes(event.key)){
-  event.preventDefault();
-  selectMutation(state.run.draftOptions[Number(event.key)-1]);
+ if(state.run.status==="draft"){
+  const index=mutationSelectionIndex(event.key,event.repeat);
+  if(index!==null){event.preventDefault();selectMutation(state.run.draftOptions[index]);}
+  else if(Object.hasOwn(KEY_DIRECTIONS,event.key))event.preventDefault();
+  return;
+ }
+ if(awaitingMutationResume){
+  if(Object.hasOwn(KEY_DIRECTIONS,event.key)){
+   event.preventDefault();
+   if(!event.repeat)resumeMutationByKey(event.key);
+  }
   return;
  }
  if(Object.hasOwn(KEY_DIRECTIONS,event.key)&&state.run.status==="running"){
@@ -663,7 +705,7 @@ canvas.addEventListener("pointercancel",event=>{
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
   if(bossGate.blocking)reopenBossBriefing();
-   else if(state.run.status==="running")togglePause();
+   else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
   soundtrack.stop(); // Also silence title-screen music in hidden tabs.
  }else syncSoundtrack();
  syncUI();state.lastFrame=0;state.accumulator=0;
@@ -673,13 +715,13 @@ window.addEventListener("focus",()=>{
 });
 window.addEventListener("pagehide",()=>{
  if(bossGate.blocking)reopenBossBriefing();
- else if(state.run.status==="running")togglePause();
+ else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
 window.addEventListener("blur",()=>{
  if(bossGate.blocking)reopenBossBriefing();
- else if(state.run.status==="running")togglePause();
+ else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
