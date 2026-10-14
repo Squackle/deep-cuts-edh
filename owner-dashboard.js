@@ -107,6 +107,11 @@
     issued.classList.add("owner-one-time-key");
     stage.before(issued);
   }
+  const directoryStatus = $("ownerConsoleStatus");
+  if (directoryStatus) {
+    directoryStatus.classList.add("owner-global-status");
+    stage.before(directoryStatus);
+  }
   const directoryTitle = element("h2", "", "Member directory & audit");
   panels.directory.append(directoryTitle, consoleArea);
   const moveFormSection = (formId, panelId, title) => {
@@ -133,7 +138,6 @@
       const active = key === id;
       panel.hidden = !active;
       buttons[key].setAttribute("aria-pressed", String(active));
-      buttons[key].tabIndex = active ? 0 : 0;
     }
   }
   show("overview");
