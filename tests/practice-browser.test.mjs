@@ -88,7 +88,7 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
      await page.goto(origin+"/games/"+games[game]+".html?practice="+seed,{waitUntil:"domcontentloaded"});
      if(game==="cold"){
       await page.locator(".games-suspect").first().waitFor();
-      const puzzle=await getPuzzle(fx.env.DB,"cold","practice","practice",seed);
+      const puzzle=await getPuzzle(fx.env.DB,"cold","2026-10-14","practice",seed);
       const wrong=await page.locator(".games-suspect-entry").evaluateAll((items,answer)=>{
        const row=items.find(el=>el.querySelector("a")?.textContent?.trim()!==answer);
        return row?.querySelector("a")?.textContent?.trim();
