@@ -66,7 +66,7 @@ test("verified identity comes from the remembered-device cookie, not the typed h
  const prepares=[];
  const env={
   DB:{prepare(sql){prepares.push(sql);return{bind(){return{async first(){return{id:"verified-id",handle:"Squackle"}}}}}}},
-  HIVE_DB:{prepare(sql){prepares.push(sql);return{bind(){return{async all(){return{results:[]}}}}}}}
+  HIVE_DB:{prepare(sql){prepares.push(sql);return{bind(){return{async all(){return{results:[]}},async first(){return null}}}}}}
  };
  const url="https://deep-cuts-edh.pages.dev/games/hive-run/api/leaderboard?mode=classic&challenge=arcade";
  const get=async headers=>{
