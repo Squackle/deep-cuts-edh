@@ -94,3 +94,15 @@ test("Brood Trail has no expedition control; neither game page exposes Daily Rit
  assert.match(main,/\$\("gameChallengeLabel"\)\.hidden=selectedMode==="classic"/);
  assert.match(css,/#gameChallenge\[hidden\],#gameChallengeLabel\[hidden\]/);
 });
+
+test("public score API retires daily sessions but retains permanent Arcade listings across rules versions",()=>{
+ const server=readFileSync(new URL("../../../src/hive-server/leaderboard.js",import.meta.url),"utf8");
+ const client=readFileSync(new URL("../src/leaderboard-client.js",import.meta.url),"utf8");
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ assert.match(server,/challenge!=="arcade"/);
+ assert.match(server,/WHERE mode=\? AND challenge_day=\?/);
+ assert.match(server,/rules_version AS rulesVersion/);
+ assert.doesNotMatch(server,/dailySeed\(/);
+ assert.doesNotMatch(client,/dailySeed\(|chicagoDay\(/);
+ assert.doesNotMatch(html,/value="daily"/);
+});
