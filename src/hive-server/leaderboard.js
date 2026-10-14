@@ -69,13 +69,28 @@ export async function onRequestGet({request,env,data={}}){
  if(!Object.hasOwn(MODES,mode)||!["arcade","daily"].includes(challenge))return error("Unknown mode or challenge.");
  const day=challenge==="daily"?chicagoDay():"";
  try{
-  const rows=await env.HIVE_DB.prepare("SELECT id,alias,profile_id AS profileId,profile_handle AS profileHandle,profile_verified AS profileVerified,score,kills,evolutions,created_at AS createdAt FROM hive_scores_v1 WHERE rules_version=? AND mode=? AND challenge_day=? ORDER BY score DESC,kills DESC,created_at ASC LIMIT 25").bind(RULES_VERSION,mode,day).all();
+  const rows=await env.HIVE_DB.prepare("SELECT id,alias,profile_id AS profileId,profile_handle AS profileHandle,profile_verified AS profileVerified,score,kills,evolutions,created_at AS createdAt FROM hive_scores_v1 WHERE rules_version=? AND mode=? AND challenge_day=? ORDER BY score DESC,kills DESC,created_at ASC,id ASC LIMIT 10").bind(RULES_VERSION,mode,day).all();
   const entries=rows.results||[];
+  // The signed-in player's VERIFIED record, even if it sits outside top ten.
+  // Computing rank over every score keeps tied ranks deterministic.
+  let personalBest=null;
+  if(data.hiveProfile?.id){
+   personalBest=await env.HIVE_DB.prepare(`SELECT alias,score,kills,evolutions,position FROM (
+    SELECT alias,score,kills,evolutions,profile_id,profile_verified,
+     ROW_NUMBER() OVER (ORDER BY score DESC,kills DESC,created_at ASC,id ASC) AS position
+    FROM hive_scores_v1 WHERE rules_version=? AND mode=? AND challenge_day=?
+   ) WHERE profile_id=? AND profile_verified=1 ORDER BY position ASC LIMIT 1`)
+    .bind(RULES_VERSION,mode,day,data.hiveProfile.id).first()||null;
+  }
   // Resolve live identity on the integrated site. Deleted profiles lose public ownership.
   if(data.resolveProfiles)await data.resolveProfiles(entries);
   else for(const entry of entries){if(entry.profileVerified){entry.profileHandle=null;entry.profileVerified=0}}
-  for(const entry of entries)delete entry.profileId;
-  return json({season:"1.0",mode,challenge,day,rulesVersion:RULES_VERSION,verifiedScores:true,profile:data.hiveProfile?{handle:data.hiveProfile.handle}:null,entries});
+  for(const entry of entries){
+   entry.isYou=!!(data.hiveProfile?.id&&entry.profileVerified&&entry.profileId===data.hiveProfile.id);
+   delete entry.profileId;
+  }
+  return json({season:"1.0",mode,challenge,day,rulesVersion:RULES_VERSION,verifiedScores:true,
+   profile:data.hiveProfile?{handle:data.hiveProfile.handle}:null,personalBest,entries});
  }catch{return error("Could not load leaderboard.",503)}
 }
 async function boundedJSON(request){
