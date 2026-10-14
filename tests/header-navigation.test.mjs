@@ -9,7 +9,7 @@ test("Desktop navigation is a progressive enhancement, not a replacement for fai
  assert.match(js,/root\.insertBefore\(desktop,nav\)/);
 });
 test("Four concise desktop destinations and 3 grouped dropdowns",()=>{
- for(const group of ['section("DISCOVER"','section("BUILD"','section("COMMUNITY"'])
+ for(const group of ['section("DISCOVER"','section("BUILD"','section("CONNECT"'])
   assert.ok(js.includes(group),"Missing grouped destination "+group);
  assert.match(js,/site-desktop-arcade/);
  assert.match(js,/node\("details","site-desktop-group"\)/);
@@ -17,7 +17,7 @@ test("Four concise desktop destinations and 3 grouped dropdowns",()=>{
 });
 test("Core site pages and the two new Commander tools remain reachable",()=>{
  for(const label of ["RESCUE REPORT","COMMANDERS","CARD LIBRARY","SET WATCH","DEEP CUT FINDER",
-   "DECK WORKSHOP","BINDER TO BREW","ARCADE","NOMINATIONS","FIELD NETWORK","FIELD OFFICE"]){
+   "DECK WORKSHOP","BINDER TO BREW","ARCADE","NOMINATIONS","COMMUNITY","MEMBERS' LOUNGE"]){
   assert.ok(js.includes('"'+label+'"'),"Lost navigation link "+label);
  }
  assert.ok(js.includes('"/deep-cut-finder"'));
@@ -51,7 +51,7 @@ test("All public pages retain the same eight fallback links",()=>{
  const pages=["index.html","games.html","community.html","deck.html","library.html","nominations.html",
  "set-watch.html","supporters.html","deep-cut-finder.html","binder-to-brew.html",
  "games/arcane-cipher.html","games/conspiracy-board.html"];
- const expected=["RESCUE REPORT","COMMANDERS","CARD LIBRARY","DECK WORKSHOP","ARCADE","NOMINATIONS","FIELD NETWORK","FIELD OFFICE"];
+ const expected=["RESCUE REPORT","COMMANDERS","CARD LIBRARY","DECK WORKSHOP","ARCADE","NOMINATIONS","COMMUNITY","MEMBERS' LOUNGE"];
  for(const file of pages){
   const html=fs.readFileSync(file,"utf8");
   const match=html.match(/<nav\b[^>]*class="primary-nav"[^>]*>([\s\S]*?)<\/nav>/);
