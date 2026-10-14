@@ -17,7 +17,7 @@ function element(tag){
   },
   append:(...children)=>node.children.push(...children),setAttribute:(k,v)=>attrs.set(k,String(v)),
   getAttribute:k=>attrs.get(k)||null,removeAttribute:k=>attrs.delete(k),
-  addEventListener:(type,listener)=>{listeners[type]=listener},querySelector:()=>null,
+  addEventListener:(type,listener)=>{listeners[type]=listener},querySelector:()=>null,closest:()=>null,
   get naturalWidth(){return 150},get complete(){return true},listeners
  };
  return node;
