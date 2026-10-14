@@ -35,7 +35,20 @@ async function refreshLeaderboard(){
   const data=await leaderboard.load(selectedMode,selectedChallenge);
   renderLeaderboard($("leaderboardEntries"),data);
   $("playerProfile").disabled=!!data.profile;
-  if(data.profile){$("playerProfile").value=data.profile.handle;$("profileNotice").textContent="Signed in as @"+data.profile.handle+". Scores will link to your verified Field Network profile.";}
+  $("gameSignInLink").hidden=!!data.profile;
+  $("gameProfileLink").hidden=!data.profile;
+  if(data.profile){
+   const name=data.profile.handle;
+   $("playerProfile").value=name;
+   $("profileNotice").textContent="Verified ownership is automatic: new ranked submissions will be attached to @"+name+".";
+   $("gameProfileTitle").textContent="SIGNED IN · @"+name.toUpperCase();
+   $("gameProfileExplanation").textContent="Your future ranked replays will appear on your Field Network profile after successful server verification.";
+   $("gameProfileLink").href="/community.html?profile="+encodeURIComponent(name);
+  }else{
+   $("gameProfileTitle").textContent="LINK YOUR FIELD NETWORK PROFILE";
+   $("gameProfileExplanation").textContent="Sign in and remember this device before starting a ranked run. Guest handle links are not proof of ownership.";
+   $("profileNotice").textContent="Optional guest handle links are always labeled unverified. To verify future scores, use Field Network sign-in and remember this device first.";
+  }
 
   $("leaderboardStatus").textContent=MODES[selectedMode].name.toUpperCase()+" · "+(selectedChallenge==="daily"?"DAILY "+data.day:"ARCADE")+" · TOP 25";
  }catch{$("leaderboardStatus").textContent="BOARD UNAVAILABLE · PRACTICE STILL WORKS"}
