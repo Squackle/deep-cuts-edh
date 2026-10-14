@@ -32,7 +32,7 @@ test('All destination pages remain reachable from explicit semantic links',()=>{
   assert.ok(html.includes('href="'+link+'"'),link+' is accessible');
  }
  assert.ok(html.includes('href="#latest"'));
- assert.ok(html.includes('href="#archive"'));
+ assert.ok(html.includes('href="/#archive"'));
  assert.ok(html.includes('href="#directory"'));
 });
 test('Homepage loads only the shared lightweight UI scripts',()=>{
