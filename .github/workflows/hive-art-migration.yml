@@ -1,0 +1,23 @@
+name: Stage verified Hive Run art for main-site migration
+on:
+  push:
+    branches: ["hive-main-migration"]
+    paths: [".github/workflows/hive-art-migration.yml"]
+permissions:
+  contents: write
+jobs:
+  stage-art:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Copy verified background atlas
+        run: |
+          mkdir -p games/hive-run/assets/backgrounds
+          curl --fail --location --silent --show-error --retry 3 'https://raw.githubusercontent.com/Squackle/deep-cuts-game-lab-/4f3560b9a0e529b0f2c33cfde4db01e7faba3a0c/assets/backgrounds/hive-run-atlas.webp' -o games/hive-run/assets/backgrounds/hive-run-atlas.webp
+          echo "6dd8da97328b392d4a977de599e2e4f33c365d02845ce23fec2c3c1fedb8e6f3  games/hive-run/assets/backgrounds/hive-run-atlas.webp" | sha256sum --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add games/hive-run/assets/backgrounds/hive-run-atlas.webp
+          git diff --staged --quiet || (git commit -m "Stage verified Hive Run atlas for integrated arcade" && git push origin HEAD:hive-main-migration)
