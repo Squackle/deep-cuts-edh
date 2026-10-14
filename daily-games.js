@@ -222,7 +222,7 @@ function renderCold(){
    selected=name;
    for(const b of grid.querySelectorAll(".games-suspect")){
     const active=b===option;
-    b.setAttribute("aria-pressed",String(active));b.textContent=active?"PICKED":"PICK";
+    b.setAttribute("aria-pressed",String(active));b.textContent=b.disabled?"USED":active?"PICKED":"PICK";
     b.parentElement.classList.toggle("games-suspect-selected",active);
    }
    submit.disabled=false;submit.textContent="SUBMIT "+name.toUpperCase()+" ↗";
