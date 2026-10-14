@@ -45,7 +45,8 @@ for(const signed of [false,true]){
    assert.equal(start.mode,"practice");assert.equal(start.seed,seed);
    if(game==="cold"){
     assert.equal(start.attempts.length,0);
-    const first=start.choices.find(name=>!start.solution?.name||name!==start.solution.name);
+    const truth=await getPuzzle(fixture.env.DB,"cold","2026-10-14","practice",seed);
+    const first=start.choices.find(name=>name!==truth.answer.name);
     const one=await post(game,"guess",seed,{guess:first,history:[]},signed);
     assert.equal(one.attempts.length,1);
     const resumed=await get(one.attempts);assert.deepEqual(resumed.attempts,one.attempts);
