@@ -59,16 +59,21 @@ test("only top ten rows appear, but a verified personal best outside top ten sti
   assert.equal(guest.profile,null);
  }finally{sqlite.close()}
 });
-test("personal best and top ten are both scoped to selected mode and daily challenge",async()=>{
- const {sqlite,db}=database(),env={HIVE_DB:db},day=chicagoDay();
+test("retired Daily scores stay archived; old-version verified Arcade records remain in top ten",async()=>{
+ const {sqlite,db}=database(),env={HIVE_DB:db};
  try{
   seedScore(sqlite,0,{profileId:"x",verified:1,score:9000});
   seedScore(sqlite,1,{mode:"hunt",profileId:"x",verified:1,score:8000});
-  seedScore(sqlite,2,{day,profileId:"x",verified:1,score:7000});
-  const p={id:"x",handle:"Squackle"};
-  const arcade=await get(env,p);assert.equal(arcade.personalBest.score,9000);assert.equal(arcade.entries.length,1);
-  const hunt=await get(env,p,"hunt");assert.equal(hunt.personalBest.score,8000);assert.equal(hunt.entries.length,1);
-  const daily=await get(env,p,"classic","daily");assert.equal(daily.personalBest.score,7000);assert.equal(daily.entries.length,1);
+  seedScore(sqlite,2,{day:"2026-10-14",profileId:"x",verified:1,score:7000});
+  sqlite.prepare("UPDATE hive_scores_v1 SET rules_version='hive-1.0.2' WHERE mode='classic'").run();
+  const profile={id:"x",handle:"Squackle"},arcade=await get(env,profile);
+  assert.equal(arcade.entries.length,1);
+  assert.equal(arcade.entries[0].rulesVersion,"hive-1.0.2");
+  assert.equal(arcade.personalBest.rulesVersion,"hive-1.0.2");
+  assert.equal(arcade.personalBest.score,9000);
+  assert.equal((await get(env,profile,"hunt")).entries.length,1);
+  const retired=await onRequestGet({env,request:new Request("https://example.test/api/leaderboard?mode=classic&challenge=daily")});
+  assert.equal(retired.status,400);
  }finally{sqlite.close()}
 });
 
