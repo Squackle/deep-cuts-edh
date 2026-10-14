@@ -4,7 +4,7 @@
    temporary profile key. No secrets are persisted or exposed in the header. */
 (() => {
  "use strict";
- const ACCOUNT_URL="/community.html#account";
+ const ACCOUNT_URL="/profile";
  const endpoint="/api/community?action=me";
  const KEY="dc-profile-key";
  const NAME_PATTERN=/^dcprofile1_[a-f0-9]{32}_[a-f0-9]{64}$/;
@@ -269,6 +269,22 @@
   button.append(frame,presence,caption);
   // After the last navigation link and any existing action button.
   root.append(button);
+  if(root.querySelector(".site-desktop-navigation")){
+   const menu=node("details","header-profile-menu");
+   const trigger=node("summary","header-profile-menu-trigger");
+   trigger.setAttribute("aria-label","Open profile quick menu");
+   trigger.title="Profile shortcuts";
+   trigger.textContent="⌄";
+   const panel=node("nav","header-profile-menu-panel");
+   panel.setAttribute("aria-label","Profile shortcuts");
+   for(const [label,url] of [["MY PROFILE","/profile"],["MY COLLECTION","/profile#collection"],["NOTIFICATIONS","/profile#dispatches"],["ACCOUNT SETTINGS","/profile#account"]]){
+    const a=node("a",null,label);a.href=url;panel.append(a);
+   }
+   menu.append(trigger,panel);root.append(menu);
+   document.addEventListener("pointerdown",e=>{if(!menu.contains(e.target))menu.open=false});
+   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&menu.open){menu.open=false;trigger.focus()}});
+   menu.addEventListener("click",e=>{if(e.target.closest("a"))menu.open=false});
+  }
   window.addEventListener("deepcuts:profile-change",event=>{
    requestVersion++;
    lastCheck=Date.now();
