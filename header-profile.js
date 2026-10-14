@@ -154,7 +154,7 @@
   toggle.append(glyph,title);
   const shortcuts=node("div","site-mobile-shortcuts");
   shortcuts.setAttribute("aria-label","Quick links");
-  const games=node("a","site-mobile-quick site-mobile-games","DAILY GAMES");
+  const games=node("a","site-mobile-quick site-mobile-games","GAMES & ARCADE");
   games.href="/games.html";
   const watch=node("a","site-mobile-quick site-mobile-watch","SET WATCH ↗");
   watch.href="/set-watch.html";

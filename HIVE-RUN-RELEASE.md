@@ -11,3 +11,11 @@ Owner-authorized game release on 2026-10-14. Source game repository: `Squackle/d
 - Source export: `node scripts/export-main-site.mjs /path/to/deep-cuts-edh` from the game repository. Identity wrapper and profile integration remain site-owned.
 
 Verification: 75 game/API tests; 320/375/390/768/1280px browser layouts and Game Only controls; deterministic replay checks. Physical iPhone/Android playfeel remains a real-device check. Existing daily Commander-game changes were retained. Deploy through Git-connected Cloudflare Pages; inspect the successful deployed commit.
+
+## First-party game refresh — 2026-10-14
+- Synced the current standalone 1.0.4 client into /games/hive-run/ including all keyboard responsiveness improvements, easier ordinary prey, boss briefing/countdown and the optimized four-biome art atlas.
+- Replaced the outdated Hive Run API replay engine with the matching client rules version. The same HIVE_DB is bound to both live Cloudflare projects.
+- Field Network auth continues to use the main site's HttpOnly remembered-device cookie; the server, not a typed guest handle, decides whether a submission has verified profile ownership.
+- Made the main site Games hub and homepage link to the first-party arcade prominently; profile sign-in lives at /community.html#account.
+- Public investigator dossiers include verified Hive Run records from all historical rules versions, kept separate per ruleset.
+- Past self-declared guest handles are intentionally not promoted to verified identities, even when the same display handle is later used to sign in.

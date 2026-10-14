@@ -7,7 +7,7 @@ export async function onRequestGet({request,env}){
  const profile=await env.DB.prepare('SELECT id,handle FROM community_profiles WHERE handle=? COLLATE NOCASE').bind(handle).first();
  if(!profile)return fail('Profile not found.',404);
  try{
-  const rows=await env.HIVE_DB.prepare('SELECT mode,MAX(score) AS bestScore,MAX(evolutions) AS bestEvolution,COUNT(*) AS rankedRuns FROM hive_scores_v1 WHERE profile_id=? AND profile_verified=1 AND rules_version=? GROUP BY mode').bind(profile.id,'hive-1.0.0').all();
+  const rows=await env.HIVE_DB.prepare('SELECT mode,rules_version AS rulesVersion,MAX(score) AS bestScore,MAX(evolutions) AS bestEvolution,COUNT(*) AS rankedRuns FROM hive_scores_v1 WHERE profile_id=? AND profile_verified=1 GROUP BY mode,rules_version ORDER BY mode ASC,rules_version DESC').bind(profile.id).all();
   return send({handle:profile.handle,records:rows.results||[]});
  }catch{return fail('Game records unavailable.',503)}
 }
