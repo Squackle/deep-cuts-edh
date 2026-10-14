@@ -1,7 +1,7 @@
 /* Arcane Cipher + Conspiracy Board. The server alone validates and scores
    daily moves, stores authenticated progress, and freezes dated puzzles. */
 import {send,fail,auth,body,originOK,quota,safe} from "../../src/community-core.js";
-import {buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,boardMatch,boardOneAway,chicagoDate} from "../../src/arcane-game-data.js";
+import {buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,gameHash,gameShuffle,boardMatch,boardOneAway,chicagoDate} from "../../src/arcane-game-data.js";
 const GAMES=new Set(["cipher","board"]);
 export const ARCANE_BADGES={
  cipher_solved:{title:"🔐 Cipher Breaker",detail:"Solve a daily Arcane Cipher."},
@@ -31,24 +31,53 @@ async function puzzleFor(db,params){
  if(!frozen?.payload)throw Error("Puzzle snapshot unavailable");
  return JSON.parse(frozen.payload);
 }
+// Hints are recorded as a server-validated turn, never as caller-supplied
+// positions or letters. Replaying the same history reconstructs the reveal.
+const HINT_TURN="!HINT";
+const maxHints=2;
+const hintSize=length=>length<=5?1:length<=9?2:3;
 function cipherState(puzzle,history){
  const target=cipherLetters(puzzle.word),wordLength=target.length;
  const pattern=cipherPattern(puzzle.word);
- const guesses=[],seen=new Set();
+ const guesses=[],seen=new Set(),knownPositions=new Set(),hintPositions=new Set();
+ let hintCount=0,won=false;
  if(!Array.isArray(history)||history.length>6||wordLength<2||wordLength>24)return null;
+ const priority=gameShuffle(Array.from({length:wordLength},(_,i)=>i),gameHash("cipher-hints-v1:"+puzzle.word));
  for(const raw of history){
+  if(won)return null;
+  if(raw===HINT_TURN){
+   // A hint must leave a playable guess and reveal at least one new tile.
+   if(hintCount>=maxHints||guesses.length>=5)return null;
+   const fresh=priority.filter(i=>!knownPositions.has(i)).slice(0,hintSize(wordLength));
+   if(!fresh.length)return null;
+   for(const index of fresh){knownPositions.add(index);hintPositions.add(index);}
+   hintCount++;
+   guesses.push({hint:true,guess:"",feedback:Array(wordLength).fill(""),revealed:fresh,
+    locked:[...hintPositions].sort((a,b)=>a-b)});
+   continue;
+  }
   if(typeof raw!=="string"||!/^[A-Z]+$/.test(raw)||raw.length!==wordLength||
-     seen.has(raw)||guesses.some(x=>x.guess===target))return null;
+     seen.has(raw))return null;
+  if([...hintPositions].some(i=>raw[i]!==target[i]))return null;
   seen.add(raw);
-  guesses.push({guess:raw,feedback:cipherFeedback(raw,target)});
+  const feedback=cipherFeedback(raw,target);
+  feedback.forEach((color,i)=>{if(color==="correct")knownPositions.add(i)});
+  guesses.push({guess:raw,feedback,locked:[...hintPositions].sort((a,b)=>a-b)});
+  if(raw===target)won=true;
  }
- const won=guesses.some(x=>x.guess===target),finished=won||guesses.length===6;
+ const finished=won||guesses.length===6;
+ const hintLetters=[...hintPositions].sort((a,b)=>a-b).map(index=>({index,letter:target[index]}));
+ const hintAvailable=!finished&&hintCount<maxHints&&guesses.length<5&&knownPositions.size<wordLength;
  const score=finished&&won?100-(guesses.length-1)*15:0;
- return {game:"cipher",wordLength,pattern,guesses,attempts:guesses.length,attemptsLeft:6-guesses.length,won,finished,score,
+ return {game:"cipher",wordLength,pattern,guesses,attempts:guesses.length,
+  attemptsLeft:6-guesses.length,hintCount,maxHints,hintLetters,
+  hintRevealCount:hintAvailable?Math.min(hintSize(wordLength),wordLength-knownPositions.size):0,
+  hintAvailable,assisted:hintCount>0,won,finished,score,
   ...(finished?{answer:{word:puzzle.word,definition:puzzle.definition,
    ...(String(puzzle.edition).startsWith("creature-types-")?{isCreatureType:true,scryfall:"https://scryfall.com/search?q="+encodeURIComponent('t:creature t:"'+puzzle.word+'"')}
     :{example:puzzle.example,scryfall:exactCardUrl(puzzle.example)})}}:{})};
 }
+
 function boardState(puzzle,history){
  if(!Array.isArray(history)||history.length>8)return null;
  const solved=[],attempts=[],attemptKeys=new Set();let mistakes=0,lastOneAway=false;
@@ -81,7 +110,7 @@ async function grantBadges(db,profileId,game,day,state){
  if(!state.finished)return [];
  const toGrant=[];
  if(game==="cipher"&&state.won)toGrant.push("cipher_solved");
- if(game==="cipher"&&state.won&&state.attempts===1)toGrant.push("cipher_perfect");
+ if(game==="cipher"&&state.won&&!state.assisted&&state.attempts===1)toGrant.push("cipher_perfect");
  if(game==="board"&&state.won)toGrant.push("board_solved");
  if(game==="board"&&state.won&&state.mistakes===0)toGrant.push("board_perfect");
  const both=await db.prepare("SELECT COUNT(DISTINCT game) AS n FROM daily_arcane_runs WHERE profile_id=? AND day=? AND finished_at IS NOT NULL").bind(profileId,day).first();
@@ -116,8 +145,10 @@ export async function onRequestGet({request,env}){
   }
   const p=normalizeGame(url);if(!p)return fail("Unknown daily game.",400);
   if(action==="board"){
-   const r=await env.DB.prepare("SELECT p.handle,r.score,r.won,r.finished_at FROM daily_arcane_runs r JOIN community_profiles p ON p.id=r.profile_id WHERE r.game=? AND r.day=? AND r.finished_at IS NOT NULL ORDER BY r.score DESC,r.finished_at ASC LIMIT 12").bind(p.game,p.day).all();
-   return send({game:p.game,day:p.day,leaders:r.results||[]});
+   const r=await env.DB.prepare("SELECT p.handle,r.score,r.won,r.finished_at,r.progress FROM daily_arcane_runs r JOIN community_profiles p ON p.id=r.profile_id WHERE r.game=? AND r.day=? AND r.finished_at IS NOT NULL ORDER BY r.score DESC,r.finished_at ASC LIMIT 12").bind(p.game,p.day).all();
+   return send({game:p.game,day:p.day,leaders:(r.results||[]).map(({progress,...row})=>({
+    ...row,assisted:p.game==="cipher"&&(parseHistory(progress)||[]).includes(HINT_TURN)
+   }))});
   }
   if(action!=="state")return fail("Unknown game action.",404);
   const history=parseHistory(url.searchParams.get("history")||"[]");
@@ -140,7 +171,7 @@ export async function onRequestPost({request,env}){
  const game=String(d.game||""),mode=normalizeMode(d.mode),day=chicagoDate(),seed=Number(d.seed||0);
  if(!GAMES.has(game)||!validSeed(seed))return fail("Unknown daily game.",400);
  if(mode==="daily"&&d.day!==day)return fail("The daily puzzle has changed. Refresh to continue.",409);
- if(!["guess","group"].includes(d.action)||(game==="cipher"&&d.action!=="guess")||(game==="board"&&d.action!=="group"))return fail("Unsupported move.",400);
+ if(!["guess","hint","group"].includes(d.action)||(game==="cipher"&&!["guess","hint"].includes(d.action))||(game==="board"&&d.action!=="group"))return fail("Unsupported move.",400);
  const a=await auth(request,env.DB),p={game,mode,seed,day};
  if(!await quota(env.DB,env,request,"arcane-"+game,120,a||undefined))return fail("Daily request limit reached. Try again tomorrow.",429);
  try{
@@ -154,8 +185,9 @@ export async function onRequestPost({request,env}){
   if(!prior)return fail("Invalid move history.",400);
   const before=stateFor(puzzle,game,prior);
   if(!before||before.finished)return fail("This game is already finished.",409);
-  const move=game==="cipher"?String(d.guess||"").trim().toUpperCase():d.cards;
-  if(game==="cipher"&&(!/^[A-Z]+$/.test(move)||move.length!==cipherLetters(puzzle.word).length))return fail("Enter exactly "+cipherLetters(puzzle.word).length+" letters.",400);
+  if(game==="cipher"&&d.action==="hint"&&!before.hintAvailable)return fail("No hints available for this puzzle.",400);
+  const move=game==="cipher"?(d.action==="hint"?HINT_TURN:String(d.guess||"").trim().toUpperCase()):d.cards;
+  if(game==="cipher"&&d.action==="guess"&&(!/^[A-Z]+$/.test(move)||move.length!==cipherLetters(puzzle.word).length))return fail("Enter exactly "+cipherLetters(puzzle.word).length+" letters.",400);
   if(game==="board"&&(!Array.isArray(move)||move.length!==4||new Set(move).size!==4))return fail("Select exactly four different cards.",400);
   const next=[...prior,move],state=stateFor(puzzle,game,next);
   if(!state)return fail(game==="cipher"?"That guess has already been used.":"That group was already tried or includes solved cards.",400);
