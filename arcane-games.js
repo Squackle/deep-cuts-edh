@@ -211,6 +211,7 @@
    const history=readLocal(centralDay());
    const data=await request("GET","state",{...{history}});
    state=data;entry="";selected.clear();displayOrder=[...(data.tiles||[])];render();
+   setBusy(false); // The puzzle is playable even if leaderboard retrieval is slow.
    await loadLeaderboard();
   }catch(e){status(e.message,true);host.replaceChildren(node("p","games-muted","The case cannot be opened yet. Please try again shortly."))}
   finally{setBusy(false)}
@@ -236,7 +237,7 @@
   $("arcanePractice").addEventListener("click",beginPractice);
   if(practice){$("arcaneReturn").hidden=false;$("arcanePracticeNote").hidden=false;}
   window.addEventListener("keydown",e=>{
-   if(game!=="cipher"||!state||state.finished||e.ctrlKey||e.altKey||e.metaKey||/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName||""))return;
+   if(game!=="cipher"||!state||state.finished||e.ctrlKey||e.altKey||e.metaKey||/INPUT|TEXTAREA|SELECT|BUTTON|A/.test(e.target?.tagName||""))return;
    if(e.key==="Enter"){e.preventDefault();inputKey("enter")}
    else if(e.key==="Backspace"){e.preventDefault();inputKey("backspace")}
    else if(/^[A-Za-z]$/.test(e.key)){e.preventDefault();inputKey(e.key)}
