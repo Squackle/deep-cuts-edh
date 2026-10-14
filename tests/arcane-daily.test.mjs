@@ -38,7 +38,7 @@ test('Variable-length feedback ignores separators and preserves duplicate-letter
  assert.deepEqual(cipherFeedback('ASSEMBLYWORKER','ASSEMBLY-WORKER'),Array(14).fill('correct'));
  assert.deepEqual(cipherFeedback('CTAN','C’TAN'),Array(4).fill('correct'));
  assert.deepEqual(cipherFeedback('SHIAR','SHI’AR'),Array(5).fill('correct'));
- assert.deepEqual(cipherFeedback('AAA','BAT'),['present','correct','absent']);
+ assert.deepEqual(cipherFeedback('AAA','BAT'),['absent','correct','absent']);
  assert.throws(()=>cipherFeedback('ABCDE','DRAGON'),RangeError);
 });
 test('Each curated connection belongs to exactly one four-card category',()=>{
