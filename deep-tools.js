@@ -102,6 +102,17 @@ function runFinder(){
   }catch(err){status("finderStatus",err.message,true);renderFinder()}
   finally{busy=false;button.disabled=false}
  });
+ let suggestVersion=0,suggestTimer=null;
+ $("finderCommander").addEventListener("input",()=>{
+  clearTimeout(suggestTimer);const q=$("finderCommander").value.trim(),serial=++suggestVersion;
+  if(q.length<3){$("finderCommanderSuggestions").replaceChildren();return}
+  suggestTimer=setTimeout(async()=>{
+   try{const d=await jsonReq("https://api.scryfall.com/cards/autocomplete?q="+encodeURIComponent(q),{credentials:"omit"});
+    if(serial!==suggestVersion)return;const options=$("finderCommanderSuggestions");options.replaceChildren();
+    for(const n of (d.data||[]).slice(0,18)){const op=node("option");op.value=n;options.append(op)}
+   }catch{/* Autocomplete is optional; searching by full or partial name still works. */}
+  },500);
+ });
  const preset=new URLSearchParams(location.search).get("commander");
  if(preset&&preset.length<=130){$("finderCommander").value=preset;$("finderForm").requestSubmit()}
 }
