@@ -19,7 +19,7 @@
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>ARCADE</strong><small>TWO PATHS. ONE HIVE.</small></span>
   </a>
-  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.0.5 · INSTINCT</span>
+  <span class="lab-badge"><span class="lab-dot" aria-hidden="true"></span> 1.1 · LAIR</span>
  </header>
  <main>
   <section class="intro" aria-labelledby="mainTitle">
@@ -56,7 +56,18 @@
          <label for="gameMode">CHOOSE YOUR PATH</label>
          <select id="gameMode"><option value="hunt">PREDATOR HUNT</option><option value="classic">BROOD TRAIL · CLASSIC SNAKE</option></select>
          <label for="gameChallenge">EXPEDITION</label>
-         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="daily">DAILY RITUAL · SHARED SEED</option></select>
+         <select id="gameChallenge"><option value="arcade">ARCADE · NEW SEED EACH RUN</option><option value="daily">DAILY RITUAL · SHARED SEED</option><option value="practice">THE LAIR · BOSS PRACTICE</option></select>
+<div class="lair-picker" id="lairPicker" hidden aria-label="Choose a boss to practice">
+  <strong class="lair-label">◈ SELECT YOUR PREY</strong>
+  <div class="lair-choices" role="group" aria-label="Boss selection">
+   <button type="button" class="lair-choice" data-lair-boss="stalker" aria-pressed="true"><strong>BURROW STALKER</strong><small>DASH · 2 CAPTURES</small></button>
+   <button type="button" class="lair-choice" data-lair-boss="warden" aria-pressed="false"><strong>HATCHERY WARDEN</strong><small>SEAL · 3 CAPTURES</small></button>
+   <button type="button" class="lair-choice" data-lair-boss="weaver" aria-pressed="false"><strong>TUNNEL WEAVER</strong><small>WEBS · 2 CAPTURES</small></button>
+   <button type="button" class="lair-choice" data-lair-boss="guardian" aria-pressed="false"><strong>RIFT GUARDIAN</strong><small>RIFTS · 3 CAPTURES</small></button>
+  </div>
+  <p class="lair-selection-info" id="lairTip" aria-live="polite">Watch the marked exit. Two captures to win.</p>
+  <p class="lair-disclaimer">UNRANKED · REPEATABLE PRACTICE · INSTANT RETRY · NO PUBLIC SCORES</p>
+ </div>
         </div>
         <button id="primaryButton" class="primary-button" type="button">START HUNT ▶</button>
         <a id="submitShortcut" class="submit-shortcut" href="#submissionPanel" hidden>↓ SUBMIT YOUR SCORE TO THE LEADERBOARD</a>
@@ -125,7 +136,8 @@
     <p class="sr-only" id="gameAnnouncement" role="status" aria-live="polite"></p>
    </section>
    <aside class="mission" aria-label="Hive Run leaderboard and field guide">
-     <section class="leaderboard-panel" id="leaderboard" aria-labelledby="leaderboardTitle">
+     <section class="lair-practice-aside" id="lairPracticeInfo" hidden aria-labelledby="lairPracticeTitle"><span>◈ HIVE RUN / UNRANKED</span><h3 id="lairPracticeTitle">THE LAIR</h3><p>Challenge one boss at a time. Train your traps, learn ability warnings, and retry as often as you like.</p><p>Practice cannot submit or modify public high scores.</p></section>
+      <section class="leaderboard-panel" id="leaderboard" aria-labelledby="leaderboardTitle">
      <div class="board-heading"><span>FIELD NETWORK / HIVE RUN</span><button type="button" id="leaderboardRefresh">↻ REFRESH</button></div>
      <div class="personal-record" id="personalRecord" aria-label="Your personal best score" aria-live="polite">
       <span class="personal-record-label" id="personalRecordContext">YOUR PERSONAL BEST</span>

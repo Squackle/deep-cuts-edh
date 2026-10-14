@@ -17,7 +17,7 @@ function element(tag){
   },
   append:(...children)=>node.children.push(...children),setAttribute:(k,v)=>attrs.set(k,String(v)),
   getAttribute:k=>attrs.get(k)||null,removeAttribute:k=>attrs.delete(k),
-  addEventListener:(type,listener)=>{listeners[type]=listener},querySelector:()=>null,
+  addEventListener:(type,listener)=>{listeners[type]=listener},querySelector:()=>null,closest:()=>null,
   get naturalWidth(){return 150},get complete(){return true},listeners
  };
  return node;
@@ -46,7 +46,7 @@ test("game top-right avatar reuses the actual site-wide account component",async
  await new Promise(done=>setImmediate(done));
  const button=header.children.find(el=>el.className==="header-profile-button");
  assert.ok(button,"shared component renders in arcade header");
- assert.equal(button.href,"/community.html#account");
+ assert.equal(button.href,"/profile");
  assert.equal(button.title,"Open @Squackle's investigator dossier");
  assert.ok(button.classList.contains("is-signed-in"));
  const image=button.children[0].children[1];

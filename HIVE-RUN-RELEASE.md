@@ -33,3 +33,11 @@ Verification: 75 game/API tests; 320/375/390/768/1280px browser layouts and Game
 Version 1.0.5: keyboard mutation selection via W/A/S, ↑/←/↓ and 1/2/3. Desktop waits for a fresh valid movement key after selection (no time passes, no simulation changes); touch immediately resumes. Brood Trail upgrade copy references only orbs instead of captures/kills. Top HUD SESSION BEST is in-memory per mode/expedition, resetting on page reload; persistent personal best and verified leaderboards are untouched. No replay rules-version bump because movement and mutation simulation are unchanged.
 
 **Permanent release-title convention:** See [docs/HIVE-RUN-RELEASE-NAMING.md](docs/HIVE-RUN-RELEASE-NAMING.md). Every update gets one thematic word as its title.
+
+## Lair
+
+Version 1.1 · **Lair**. Unranked, repeatable single-boss practice for Burrow Stalker, Hatchery Warden, Tunnel Weaver, and Rift Guardian. Each scenario uses a fixed seed and correct biome/evolution speed, with the existing boss dossier and 3-second countdown. Boss selection, immediate retry after death/victory, attack warning overlays, and pixel capture/defeat bursts are presentation/solo-only additions. Completing a practice boss ends the practice run; no new mutations or ordinary prey are spawned.
+
+**Ranked safety:** Practice does not request a leaderboard session, cannot submit a score, and cannot modify local or personal record values. Simulation and server replay modules are unchanged; RULES_VERSION remains hive-1.0.2. Brood Trail is unchanged. Full regression tests include all four bosses, seeded reproduction, briefing timing, warning effects, practice victory and ranked-mode isolation.
+
+**One-word release title:** Lair. Preserve the permanent naming policy in docs/HIVE-RUN-RELEASE-NAMING.md.
