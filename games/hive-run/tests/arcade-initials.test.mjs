@@ -61,3 +61,51 @@ test("submission form displays only three-slot input and identity explanation",(
  assert.match(main,/parseArcadeInitials\(\$\("playerAlias"\)\.value\)/);
  assert.doesNotMatch(main,/hive-last-alias-v1/);
 });
+
+test("temporary Field Network recovery-key sessions auto-link exactly like the shared profile header",async()=>{
+ const before={fetch:globalThis.fetch,localStorage:globalThis.localStorage,sessionStorage:globalThis.sessionStorage};
+ const key="dcprofile1_"+"a".repeat(32)+"_"+"b".repeat(64);
+ const urls=[];
+ globalThis.sessionStorage={getItem:name=>name==="dc-profile-key"?key:null};
+ globalThis.localStorage={getItem:()=>null};
+ globalThis.fetch=async(url,options={})=>{
+  urls.push({url,headers:options.headers});
+  if(url==="/api/community?action=me"){
+   assert.equal(options.headers.Authorization,"Bearer "+key);
+   return new Response(JSON.stringify({profile:{handle:"Squackle"}}),{status:200,headers:{"Content-Type":"application/json"}});
+  }
+  if(options.method==="POST")return new Response(JSON.stringify({ok:true,score:500,profileVerified:true,profileHandle:"Squackle"}),{status:201,headers:{"Content-Type":"application/json"}});
+  return new Response(JSON.stringify({entries:[],profile:{handle:"Squackle"}}),{status:200,headers:{"Content-Type":"application/json"}});
+ };
+ try{
+  const client=new LeaderboardClient("/games/hive-run/api/leaderboard");
+  const board=await client.load();
+  assert.deepEqual(board.profile,{handle:"Squackle"});
+  client.session={token:"abc",seed:13};
+  const run=await client.submit({score:500,kills:1,evolutionsChosen:1,runTicks:8},"LOG");
+  assert.equal(run.profileVerified,true);
+  assert.equal(urls.length,3,"one account validation and two authenticated leaderboard calls");
+  assert.ok(urls.slice(1).every(x=>x.headers.Authorization==="Bearer "+key));
+ }finally{
+  for(const [name,value] of Object.entries(before)){if(value===undefined)delete globalThis[name];else globalThis[name]=value}
+ }
+});
+test("stale recovery key does not override a remembered-device cookie",async()=>{
+ const before={fetch:globalThis.fetch,localStorage:globalThis.localStorage,sessionStorage:globalThis.sessionStorage};
+ const key="dcprofile1_"+"c".repeat(32)+"_"+"d".repeat(64),urls=[];
+ globalThis.sessionStorage={getItem:()=>key};globalThis.localStorage={getItem:()=>null};
+ globalThis.fetch=async(url,options={})=>{
+  urls.push({url,headers:options.headers});
+  if(url==="/api/community?action=me")return new Response("{}",{status:401});
+  return new Response(JSON.stringify({entries:[],profile:{handle:"CookieOwner"}}),{status:200,headers:{"Content-Type":"application/json"}});
+ };
+ try{
+  const client=new LeaderboardClient("/games/hive-run/api/leaderboard");
+  const board=await client.load();
+  assert.equal(board.profile.handle,"CookieOwner");
+  assert.equal(urls.length,2);
+  assert.equal(Object.hasOwn(urls[1].headers,"Authorization"),false);
+ }finally{
+  for(const [name,value] of Object.entries(before)){if(value===undefined)delete globalThis[name];else globalThis[name]=value}
+ }
+});
