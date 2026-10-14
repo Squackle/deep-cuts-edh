@@ -13,7 +13,7 @@
  <div class="member-top"><span class="member-eyebrow">DEEP CUTS / PRIVATE FIELD OFFICE</span><h1>Every deck has <em>a story.</em></h1><p>Research the evidence, revisit previous builds, and submit the next case—all without a username or password.</p></div>
  <div id="memberStatus" class="member-status" role="status" aria-live="polite">Checking member access…</div>
  <section class="member-panel member-entrance" id="memberEntrance" hidden aria-label="Activate membership">
-  <div><h2>Unlock the Field Office</h2><p>Your member key activates up to two devices. The key is separate from your free deck-vault recovery key. Keep it secret and store it somewhere safe.</p></div>
+  <div><h2>Unlock the Field Office</h2><p>Your member key activates up to three devices. The key is separate from your free deck-vault recovery key. Keep it secret and store it somewhere safe.</p></div>
   <form id="memberActivate" class="member-form"><label for="memberKey">Membership activation key</label><input type="text" id="memberKey" autocomplete="off" spellcheck="false" placeholder="dcmember1_…" required maxlength="120"><label for="memberDeviceLabel">Device label</label><input id="memberDeviceLabel" type="text" maxlength="36" value="My device"><div class="member-actions"><button class="member-action" type="submit">ACTIVATE THIS DEVICE ↗</button><button class="member-action-secondary" type="button" id="replaceLostDevice">REPLACE A LOST DEVICE</button></div></form>
   <div id="memberClaim" class="member-claim" hidden><strong>Membership verified — save your membership key</strong><p id="memberClaimText"></p><code id="memberNewKey" class="member-key-display"></code><button type="button" class="member-action-secondary" id="copyMemberKey">COPY KEY</button><p>Shown once. Activate this device, then use the key once more on another device.</p></div>
   <p class="member-fine">No username or password. We're migrating premium access to verified Ko-fi renewals. Ko-fi subscriptions do not automatically issue Deep Cuts keys yet. Owner-issued complimentary keys can be activated independently. <a href="https://ko-fi.com/deepcutsedh" target="_blank" rel="noopener noreferrer">Visit our Ko-fi page ↗</a>.</p>
@@ -32,7 +32,7 @@
   <div id="previewDemoOutput" class="member-preview-demo" role="status" aria-live="polite">Select a tier to explore its planned tools.</div>
  </section>
  <section id="memberOffice" hidden>
-  <div class="member-ribbon"><div><span>AUTHORIZED FIELD OFFICE</span><strong id="memberTierName">Member</strong></div><div><span>ACTIVATED DEVICES</span><strong id="memberDeviceCount">— / 2</strong></div><div><span>MY DEVICE</span><strong id="memberDeviceName">Active</strong></div><div><span>ACCESS EXPIRES</span><strong id="memberPaidUntil">—</strong></div></div>
+  <div class="member-ribbon"><div><span>AUTHORIZED FIELD OFFICE</span><strong id="memberTierName">Member</strong></div><div><span>ACTIVATED DEVICES</span><strong id="memberDeviceCount">— / 3</strong></div><div><span>MY DEVICE</span><strong id="memberDeviceName">Active</strong></div><div><span>ACCESS EXPIRES</span><strong id="memberPaidUntil">—</strong></div></div>
   <div class="member-tabs" role="tablist" aria-label="Premium tools">
    <button type="button" class="member-tab active" data-view="dossier" role="tab" aria-selected="true">DECK DOSSIER</button>
    <button type="button" class="member-tab" data-view="research" role="tab" aria-selected="false">RESEARCH FILES</button>
@@ -65,7 +65,7 @@
     <button type="submit" class="member-action">SUBMIT FILE ↗</button><small>Consultations limited to one request every 90 days; other requests have monthly limits. Human editorial review and scheduling apply.</small></form>
     <div><h3>Published Supporter Showcase</h3><div id="showcaseList" class="member-stack"></div><h3>My submissions</h3><div id="memberRequests" class="member-stack"></div></div></div>
   </section>
-  <section id="member-settings" class="member-view member-panel" hidden><span class="member-eyebrow">YOUR PRIVATE BADGE</span><h2>Two devices. No passwords.</h2><p>The same subscription can be active on two devices. You may replace a device once per 30 days; a manual review can assist with genuine loss or replacement.</p>
+  <section id="member-settings" class="member-view member-panel" hidden><span class="member-eyebrow">YOUR PRIVATE BADGE</span><h2>Three devices. No passwords.</h2><p>The same subscription can be active on three devices. You may replace a device once per 30 days; a manual review can assist with genuine loss or replacement.</p>
    <div id="deviceList" class="member-stack"></div><p class="member-fine">Devices use secure HttpOnly cookies, not a password or browser-readable long-term credential. Your original membership key should be stored securely. Revoking this device also signs it out.</p>
    <div class="member-actions"><a class="member-text-link" href="supporters.html">Membership & billing information ↗</a></div>
   </section>
