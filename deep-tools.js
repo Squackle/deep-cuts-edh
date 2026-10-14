@@ -96,7 +96,7 @@ function runFinder(){
    }catch(err){if(!source.length)throw err;status("finderStatus","Editorial cases loaded; automated rule-text candidates are currently unavailable.")}
    if(!source.length)throw Error("No legal cards were found using these signals. Try another Commander.");
    window.__finderCandidates=source;
-   try{await loadAccountCollection()}catch{inventory=[];if($("finderOwned").checked)status("finderStatus","Sign in and remember your device in Field Network to use the owned-only filter.",true)}
+   try{await loadAccountCollection()}catch{inventory=[];if($("finderOwned").checked)status("finderStatus","Sign in and remember your device in Community to use the owned-only filter.",true)}
    renderFinder();
    if(!$("finderOwned").checked)status("finderStatus",source.length+" Commander-legal candidates found. Editorial findings are distinct from exploratory text matches.");
   }catch(err){status("finderStatus",err.message,true);renderFinder()}
@@ -153,13 +153,13 @@ function runBinder(){
  });
  $("binderLoad").addEventListener("click",async()=>{
   if(busy)return;setBusy(true);try{rows=await loadAccountCollection();unknown=[];validated=[];draft=null;preview();
-   status("binderImportStatus","Loaded "+rows.length+" private card names from Field Network.");
-  }catch(e){status("binderImportStatus",e.message+" Sign in and remember this device in Field Network first.",true)}
+   status("binderImportStatus","Loaded "+rows.length+" private card names from Community.");
+  }catch(e){status("binderImportStatus",e.message+" Sign in and remember this device in Community first.",true)}
   finally{setBusy(false)}
  });
  $("binderSave").addEventListener("click",async()=>{
   if(busy||!rows.length)return;
-  if(!confirm("REPLACE your existing private Field Network collection with these "+rows.length+" card names? This may overwrite earlier quantities. Choose Cancel to keep your saved collection."))return;
+  if(!confirm("REPLACE your existing private Community collection with these "+rows.length+" card names? This may overwrite earlier quantities. Choose Cancel to keep your saved collection."))return;
   setBusy(true);
   try{
    // Confirm auth before issuing the first destructive replace batch.
@@ -168,14 +168,14 @@ function runBinder(){
     status("binderImportStatus","Saving "+Math.min(rows.length,i+100)+" / "+rows.length+"…");
     await jsonReq("/api/field-expansion",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"collection_import",mode:i===0?"replace":"merge",cards:rows.slice(i,i+100)})});
    }
-   status("binderImportStatus","Saved privately to your Field Network collection. You can export or delete it here, or open Community → Card Collection.");
+   status("binderImportStatus","Saved privately to your Community collection. You can export or delete it here, or open Community → Card Collection.");
   }catch(e){status("binderImportStatus","Save interrupted: "+e.message+". Earlier batches might already be saved. Reload your collection to verify.",true)}
   finally{setBusy(false)}
  });
  $("binderExportCollection").addEventListener("click",()=>download("deep-cuts-collection.csv","Name,Quantity\n"+rows.map(x=>'"'+(/^[=+@-]/.test(x.name)?"\u0027":"")+x.name.replaceAll('"','""')+'",'+x.quantity).join("\n")));
  $("binderDeleteCollection").addEventListener("click",async()=>{
   if(busy)return;
-  if(prompt("Delete all cards in your saved Field Network collection? Type ERASE COLLECTION:")!=="ERASE COLLECTION")return;
+  if(prompt("Delete all cards in your saved Community collection? Type ERASE COLLECTION:")!=="ERASE COLLECTION")return;
   setBusy(true);
   try{await jsonReq("/api/field-expansion",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"collection_clear",confirm:"ERASE COLLECTION"})});
    rows=[];validated=[];unknown=[];draft=null;preview();status("binderImportStatus","Private collection deleted. Your local preview is cleared.");
