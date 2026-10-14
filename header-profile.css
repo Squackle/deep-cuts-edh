@@ -456,3 +456,39 @@
 .site-header .site-support-action:focus-visible,.site-header .header-profile-menu :is(summary,a):focus-visible{
  outline:3px solid #f5d695;outline-offset:3px;
 }
+
+/* Slim opt-in supporter recognition ribbon; adds only 28px below the header. */
+.site-header .site-supporter-strip{
+ border-top:1px solid #36533e;background:linear-gradient(90deg,#17291f,#1e3829 55%,#18291f);
+ width:100%;min-height:28px;overflow:hidden;
+}
+.site-header .site-supporter-inner{
+ width:min(1370px,calc(100% - 44px));margin:auto;display:flex;align-items:center;
+ gap:14px;height:28px;min-width:0;
+}
+.site-header .site-supporter-label{
+ flex:0 0 auto;white-space:nowrap;color:#d0c19a;
+ font:800 9px/1.2 ui-sans-serif,system-ui;letter-spacing:.075em;
+}
+.site-header .site-supporter-window{flex:1;min-width:0;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.site-header .site-supporter-track{width:max-content;min-width:100%;display:flex;align-items:center;white-space:nowrap;font:700 10px/1.2 ui-sans-serif,system-ui}
+.site-header .site-supporter-group{display:inline-flex;align-items:center;gap:23px;padding-inline-end:23px;flex:none}
+.site-header .site-supporter-track.is-scrolling{min-width:0;animation:site-supporter-roll 36s linear infinite}
+.site-header .site-supporter-name{display:inline-block;white-space:nowrap;padding:5px 0;text-shadow:0 0 7px #0004}
+.site-header .site-supporter-chief{color:#f4d17f}
+.site-header .site-supporter-detective{color:#d5e2e8}
+.site-header .site-supporter-informant{color:#d5a07e}
+.site-header .site-supporter-name:hover{text-decoration:underline;text-underline-offset:3px}
+.site-header .site-supporter-empty{color:#a8bba6;font-size:10px}
+.site-header .site-supporter-empty a{color:#e6c893;text-decoration:underline;text-underline-offset:2px}
+.site-header .site-supporter-track.is-scrolling:hover,
+.site-header .site-supporter-track.is-scrolling:focus-within{animation-play-state:paused}
+@keyframes site-supporter-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(max-width:680px){
+ .site-header .site-supporter-inner{width:calc(100% - 26px);gap:8px}
+ .site-header .site-supporter-label{font-size:8px;max-width:142px;white-space:normal}
+ .site-header .site-supporter-name,.site-header .site-supporter-empty{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ .site-header .site-supporter-track.is-scrolling{animation:none;max-width:100%;overflow-x:auto}
+}
