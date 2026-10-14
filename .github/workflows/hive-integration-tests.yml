@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: "24"}
       - name: Verify all game rules, UI integrations and replay validation
-        run: node --test games/hive-run/tests/*.test.mjs tests/hive-main-integration.test.mjs
+        run: node --test games/hive-run/tests/*.test.mjs tests/hive-main-integration.test.mjs tests/hive-audit-fixes.test.mjs
       - name: Check first-party game syntax
         run: |
           node --check games/hive-run/src/main.js
