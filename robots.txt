@@ -1,7 +1,7 @@
 User-agent: *
 Disallow: /api/
-Disallow: /diagnostics.html
-Disallow: /member-operations.html
-Disallow: /members.html
+Disallow: /diagnostics
+Disallow: /member-operations
+Disallow: /members
 Allow: /
 Sitemap: https://deep-cuts-edh.pages.dev/sitemap.xml
