@@ -225,3 +225,6 @@ Publisher code `ca-pub-1885127351876276` is installed only on the homepage, Card
 ### Ad-free for active monthly Ko-fi supporters
 
 Any tier's verified recurring Ko-fi subscription payment now grants ad-free browsing to a Field Network account whose **verified email matches the Ko-fi payment email**, while the subscription is paid through. The server removes the AdSense script before sending applicable pages to a recognized member; normal visitors still receive the publisher code. The system records keyed email identifiers, supports owner-verified reconciliation for subscriptions paid before the webhook upgrade, and automatically expires ad-free eligibility when renewals stop. Private Field Office key issuance is *not* enabled by this benefit. [Full privacy, setup and QA notes](docs/KOFI-ADFREE.md).
+
+
+**Hive Run release naming:** [docs/HIVE-RUN-RELEASE-NAMING.md](docs/HIVE-RUN-RELEASE-NAMING.md) requires a one-word thematic title for each game update. Current title: **Instinct**.

@@ -27,3 +27,9 @@ Verification: 75 game/API tests; 320/375/390/768/1280px browser layouts and Game
 - A signed-in Field Network profile is linked **exclusively** from server-validated cookie authentication at submission time, independent of the three-character tag. Guests can still submit unlinked initials.
 - Removed the self-reported profile-handle field and prevent legacy unverified guest handles from displaying clickable ownership claims.
 - Regression tests verify valid and invalid initials, server-enforced length, uppercase storage, replay integrity, guest spoofing resistance, and verified account links.
+
+## Instinct
+
+Version 1.0.5: keyboard mutation selection via W/A/S, ↑/←/↓ and 1/2/3. Desktop waits for a fresh valid movement key after selection (no time passes, no simulation changes); touch immediately resumes. Brood Trail upgrade copy references only orbs instead of captures/kills. Top HUD SESSION BEST is in-memory per mode/expedition, resetting on page reload; persistent personal best and verified leaderboards are untouched. No replay rules-version bump because movement and mutation simulation are unchanged.
+
+**Permanent release-title convention:** See [docs/HIVE-RUN-RELEASE-NAMING.md](docs/HIVE-RUN-RELEASE-NAMING.md). Every update gets one thematic word as its title.
