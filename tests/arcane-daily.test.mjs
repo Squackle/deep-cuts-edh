@@ -18,10 +18,11 @@ test('Cipher answers are only official five-letter creature types',()=>{
 test('Word bank is curated, correctly sized and non-repeating',()=>{
  assert.ok(CIPHER_WORDS.length>=40);
  assert.equal(new Set(CIPHER_WORDS.map(c=>c[0])).size,CIPHER_WORDS.length);
- for(const [word,definition,example] of CIPHER_WORDS){
+ for(const [word,definition] of CIPHER_WORDS){
   assert.match(word,/^[A-Z]{5}$/);
   assert.ok(definition.length>12);
-  assert.ok(example.length>3);
+  // Creature-type answers no longer have a single arbitrary example card.
+  assert.equal(CIPHER_WORDS.find(entry=>entry[0]===word).length,2);
  }
 });
 test('Repeated letter feedback never creates phantom matches',()=>{
