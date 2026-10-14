@@ -27,6 +27,8 @@ jobs:
           node --check deep-tools.js
           node --check deep-tools-core.js
           node --check functions/api/tool-cards.js
+      - name: Compact desktop and mobile navigation regression tests
+        run: node --test tests/header-navigation.test.mjs
       - name: Magic daily game regression suite
         run: node --experimental-default-type=module --test tests/arcane-daily.test.mjs
       - name: JavaScript syntax
