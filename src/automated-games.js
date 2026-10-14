@@ -123,7 +123,12 @@ async function getCachedCatalog(db){
   row=await db.prepare("SELECT payload,updated_at,refresh_attempt_at FROM game_auto_catalog WHERE id=1").first();
  }
  const cached=safeCatalog(sqlSafeJson(row?.payload));
- const valid=cached.length>=110;
+ // Old cached snapshots flattened each {symbol} to "mana". Such a cache
+ // must never be used for newly generated games if a refresh is unavailable.
+ const valid=cached.length>=110&&cached.every(c=>
+  (!c.mana||/^(?:\\{[^{}]+\\})+$/.test(c.mana))&&
+  !/manamana/i.test(c.oracle||"")
+ );
  if(valid&&row.updated_at>now-CACHE_SECONDS)return {pool:cached,updatedAt:row.updated_at,source:"scryfall"};
  // If a refresh is already in progress, return the last known snapshot safely.
  const locked=await db.prepare("UPDATE game_auto_catalog SET refresh_attempt_at=? WHERE id=1 AND refresh_attempt_at<? AND (updated_at<? OR length(payload)<5) RETURNING id")
