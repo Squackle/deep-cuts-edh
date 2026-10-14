@@ -5,7 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(p,'utf8'),exists=p=>fs.existsSync(p);
 const root='https://deep-cuts-edh.pages.dev';
-const main=['index.html','games.html','community.html','deck.html','library.html','nominations.html','supporters.html','set-watch.html','privacy.html','deep-cut-finder.html','binder-to-brew.html'];
+const main=['index.html','games.html','community.html','deck.html','library.html','nominations.html','supporters.html','set-watch.html','privacy.html','deep-cut-finder.html','binder-to-brew.html','profile.html'];
 const extra=['members.html','404.html'];
 const children=dir=>fs.readdirSync(dir,{withFileTypes:true}).filter(x=>x.isFile()&&x.name.endsWith('.html')).map(x=>dir+'/'+x.name);
 const publicPages=[...main,...children('games'),...children('reports')];
@@ -42,6 +42,18 @@ check(read('index.html').includes('<strong>Arcade</strong>'),'Homepage Arcade ti
 check(read('index.html').includes('ENTER THE ARCADE'),'Homepage Arcade CTA missing');
 for(const tab of ['cases','decks','account'])check(read('community.html').includes('data-tab="'+tab+'"'),'Community onboarding lacks '+tab);
 check(read('community.html').includes('Choose your first assignment.'),'Community onboarding absent');
+check(read('profile.html').includes('data-community-page="profile"'),'Missing separate personal profile dashboard');
+check(!read('community.html').includes('id="registerForm"'),'Public Community still embeds sign-in and recovery forms');
+check(!read('community.html').includes('id="collectionItems"'),'Public Community still embeds private card inventory');
+check(!read('community.html').includes('id="dispatchList"'),'Public Community still embeds private dispatches');
+check(!read('community.html').includes('Free profiles use their own recovery keys.'),'Obsolete recovery-key disclaimer remains');
+for(const id of ['registerForm','editProfileForm','ownProfile','collectionItems','dispatchList','profileOverviewSignedOut','profileOverviewSignedIn']){
+ check(read('profile.html').includes('id="'+id+'"'),'Profile dashboard missing '+id);
+}
+check(read('profile.html').includes('name="robots" content="noindex,follow"'),'Profile settings should be noindex');
+check(read('header-profile.js').includes('const ACCOUNT_URL="/profile"'),'Avatar must link to dedicated profile page');
+check(read('community.js').includes('location.replace("/profile"+location.hash)'),'Legacy private Community bookmarks must migrate');
+
 check(read('404.html').includes('<h1>That commander is <em>very</em> obscure.</h1>'),'404 heading not fixed');
 check(read('header-profile.js').includes('"ARCADE"'),'Mobile shortcut label inconsistent');
 check(!read('header-profile.js').includes('"DAILY GAMES"'),'Old mixed game navigation label persists');
