@@ -102,3 +102,14 @@
 }
 @media(max-width:360px){.arcane-key{font-size:11px}.arcane-key.special{font-size:8px}.arcane-card button{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.arcane-solved-group{animation:none}.arcane-letter,.arcane-card{transition:none}}
+
+/* Editorial illustrations on the four-game hub. Drawn with CSS, not card art. */
+.games-card-illustration.arcane-hub-cipher{background:radial-gradient(circle at 50% 10%,#557b62,#1a362b 80%);padding:19px}
+.arcane-hub-tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;width:min(100%,285px);transform:rotate(-3deg);filter:drop-shadow(0 8px 9px #0f231b55)}
+.arcane-hub-tiles b{display:grid;place-items:center;aspect-ratio:1;background:#4d8566;color:#fff3d4;border:2px solid #aac2a1;font:900 clamp(17px,2vw,28px) ui-sans-serif,system-ui}
+.arcane-hub-tiles b:nth-child(2),.arcane-hub-tiles b:nth-child(4){background:#b28e4c;border-color:#dcc58a}
+.arcane-hub-tiles b:nth-child(3){background:#606e68;border-color:#a6aaa2}
+.games-card-illustration.arcane-hub-board{background:radial-gradient(circle at 72% 20%,#57715f,#20382e 78%);padding:18px}
+.arcane-hub-grid{width:min(210px,70%);display:grid;grid-template-columns:repeat(4,1fr);gap:6px;transform:rotate(4deg);filter:drop-shadow(0 7px 8px #10291c77)}
+.arcane-hub-grid b{height:27px;display:grid;place-items:center;color:#fcebd2;border:1px solid #b8b28a;background:#477057;font-size:15px}
+.arcane-hub-grid b:nth-child(4n+2){background:#9b7c47}.arcane-hub-grid b:nth-child(4n+3){background:#6d7a80}.arcane-hub-grid b:nth-child(4n){background:#8a6e79}
