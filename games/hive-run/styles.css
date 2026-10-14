@@ -329,3 +329,18 @@ body.game-only .boss-dossier{max-width:365px;padding:9px 12px 6px}
 .field-network-bridge a:hover,.field-network-bridge a:focus-visible{background:#466a4f;color:#fff6d8}
 .field-network-bridge a[hidden]{display:none}
 @media(max-width:440px){.field-network-bridge{padding:10px;gap:9px}.field-network-bridge a{width:100%}}
+
+/* Compact public arcade: diagnostic counters are opt-in through ?debug=1. */
+.dev-diagnostics[hidden]{display:none!important}
+.dev-diagnostics{margin-top:9px;padding:7px;border:1px solid #52694e;background:#111f19}
+.dev-diagnostics summary{cursor:pointer;color:#e9c787;font:850 10px/1.4 ui-monospace,monospace;letter-spacing:.05em}
+.dev-diagnostics .evolution-hud{margin-top:8px}
+body.game-only .dev-diagnostics{display:none!important}
+body.game-only .arcade-frame{grid-template-rows:auto auto minmax(0,1fr) auto}
+.mutation-guide{margin-top:16px}
+.mutation-guide strong{color:#f1d5a2}
+.arcade-home-link{display:inline-flex;align-items:center;justify-content:center;min-height:34px;max-width:170px;padding:7px 9px;border:1px solid #9a865d;border-radius:4px;
+ background:#284634;color:#f4dba7;font:850 9px/1.2 ui-monospace,monospace;letter-spacing:.02em;text-align:center}
+.arcade-home-link:hover,.arcade-home-link:focus-visible{background:#45644c;color:#fff6dc}
+body.game-only .arcade-home-link{min-height:31px;padding:5px 6px}
+@media(max-width:430px){.arcade-home-link{font-size:8px;padding:6px 5px}.cabinet-top-right{gap:4px}}

@@ -25,11 +25,11 @@
     <h1 id="mainTitle">HIVE <em>RUN.</em></h1>
     <p class="intro-description">Two ways to grow. Trap evolving predators in Predator Hunt, or collect glowing brood in Brood Trail. Descend through ancient chambers with five colors of mutation.</p>
    </div>
-   <p class="prototype-note">Original pixel-art creature inspired by classic hive-serpent fantasy. Five WUBRG color families; no official MTG art is used.</p>
+   
   </section>
   <div class="game-layout">
    <section class="arcade-frame" id="game" aria-label="Playable arcade game">
-    <div class="cabinet-top"><span id="biomeLabel">◈ THE HATCHERY</span><div class="cabinet-top-right"><span id="soundStatus">AUDIO OFF</span><button id="fullscreenButton" class="game-only-button" type="button" aria-pressed="false" aria-label="Expand to Game Only fullscreen mode" title="Play without page scrolling">⛶ GAME ONLY</button></div></div>
+    <div class="cabinet-top"><span id="biomeLabel">◈ THE HATCHERY</span><div class="cabinet-top-right"><a class="arcade-home-link" href="/" aria-label="Return to Deep Cuts EDH home page">← DEEP CUTS HOME</a><span id="soundStatus">AUDIO OFF</span><button id="fullscreenButton" class="game-only-button" type="button" aria-pressed="false" aria-label="Expand to Game Only fullscreen mode" title="Play without page scrolling">⛶ GAME ONLY</button></div></div>
     <div class="hud" aria-label="Game scores">
      <div><span class="hud-label">SCORE</span><strong id="score" aria-live="off">000000</strong></div>
      <div><span class="hud-label">BEST</span><strong class="gold" id="best">000000</strong></div>
@@ -101,7 +101,8 @@
        </div>
      </div>
     </div>
-    <div class="evolution-hud" aria-label="Mutation status">
+    <div class="dev-diagnostics" id="devDiagnostics" hidden><details><summary>DEVELOPER DIAGNOSTICS</summary>
+<div class="evolution-hud" aria-label="Mutation status">
       <div class="evolution-summary"><span>EVOLUTION PROGRESS <strong id="evoCountdown">0 / 5 EV</strong></span><span id="evoCount">0 EVOLUTIONS</span></div>
       <div id="mutationInventory" class="mutation-inventory" aria-label="Owned mutations and active effects"><span class="mutation-none">NO MUTATIONS YET</span></div>
       <p id="lastEvolution" class="last-evolution">FIVE COLORS · FIVE POWERS</p>
@@ -110,29 +111,18 @@
     <div class="player-aids" id="playerAids" aria-label="Predator Hunt beginner assistance"><span id="mercyStatus">◆ INSTINCT READY · 1 FREE PREY DODGE</span><span id="trapHelp">◇ AMBER = LIMITED ESCAPES</span></div>
     <div class="cabinet-bottom"><span id="progress">NEXT MUTATION IN 5 ENERGY</span><span id="stateLabel">AWAITING PLAYER</span></div>
     <p id="rankedNotice" class="ranked-notice">START A HUNT TO GET A RANKED SEED</p>
-    <div class="game-actions">
+    </details></div>
+     <div class="game-actions">
      <button id="pauseButton" type="button" disabled>Ⅱ PAUSE</button>
      <button id="restartButton" type="button">↺ RESTART</button>
      <button id="soundButton" type="button" aria-pressed="false" aria-label="Toggle game sound effects">♪ SOUND OFF</button>
      <button id="musicButton" type="button" aria-pressed="false" aria-label="Toggle Hatchery chiptune music">♫ MUSIC OFF</button>
     </div>
-    <div class="touch-pad" aria-label="Optional directional controls">
-     <div class="pad-top"><button type="button" data-direction="up" aria-label="Turn up">▲</button></div>
-     <div class="pad-bottom">
-      <button type="button" data-direction="left" aria-label="Turn left">◀</button>
-      <button type="button" data-direction="down" aria-label="Turn down">▼</button>
-      <button type="button" data-direction="right" aria-label="Turn right">▶</button>
-     </div>
-    </div>
     <p class="cabinet-help">SWIPE TO TURN · KEYBOARD: ↑ ↓ ← → / WASD <span aria-hidden="true">·</span> TURN HIGHLIGHTS APPEAR INSTANTLY</p>
     <p class="sr-only" id="gameAnnouncement" role="status" aria-live="polite"></p>
    </section>
-   <aside class="mission" aria-labelledby="missionTitle">
-    <span class="mission-kicker">CHOOSE YOUR PATH / CHASE YOUR RECORD</span>
-    <h2 id="missionTitle">PATHS OF <em>THE HIVE.</em></h2>
-    <p>Predator Hunt turns your body into a trap. Your first prey collision gets a free instinct dodge; early prey move more slowly, one at a time, with extra evolution orbs and amber hints when escape options are limited. Bosses plan their escapes: Burrow Stalker and Tunnel Weaver need two captures; Hatchery Warden and Rift Guardian need three. Brood Trail follows the classic Snake rhythm: collect an orb, grow, repeat. Both paths descend through the Hatchery, Burrows and Fracture.</p>
-    <p class="mode-detail" id="modeDetail">Daily Ritual uses a shared seed and resets at midnight Central. Retry freely; each completed run can be submitted. Rankings are separate for every path and expedition.</p>
-    <section class="leaderboard-panel" id="leaderboard" aria-labelledby="leaderboardTitle">
+   <aside class="mission" aria-label="Hive Run leaderboard and field guide">
+     <section class="leaderboard-panel" id="leaderboard" aria-labelledby="leaderboardTitle">
      <div class="board-heading"><span>FIELD NETWORK / HIVE RUN</span><button type="button" id="leaderboardRefresh">↻ REFRESH</button></div>
      <h3 id="leaderboardTitle">HIVE <em>LEADERBOARD.</em></h3>
      <div class="field-network-bridge" id="gameProfileBridge" aria-live="polite">
@@ -158,14 +148,17 @@
      </div>
      <p class="board-integrity">Scores are replayed by the server against a seeded run. This verifies game rules, not human input. Signed-in main-site profiles receive verified ownership. Guest profile links are self-reported.</p>
     </section>
-    <div class="mission-row"><span>01</span><div><strong>HUNT OR FOLLOW THE TRAIL</strong><p>Predator Hunt: trap prey for 3 energy. Brood Trail: collect orbs for 1 energy. Every 5 energy offers three mutations.</p></div></div>
-    <div class="mission-row"><span>02</span><div><strong>READ THE CHAMBER</strong><p>Burrows introduce stone islands. Fracture rifts mark their tiles before they become dangerous. Dashed tiles are warnings; solid tiles block your path.</p></div></div>
-    <div class="mission-row"><span>03</span><div><strong>EVOLVE TO SURVIVE</strong><p>White shields. Blue slows. Black sheds your tail to save you. Red speeds up and doubles points. Green adds growth.</p></div></div>
-    <div class="release-note"><span>PATHS OF THE HIVE</span><strong>1.0.4 / TWO MODES · FOUR PAINTED DEPTHS</strong><p>Distinct bosses, living terrain, daily seeded challenges and separate records. Slower opening movement gives you time to plan. Four original, detailed cavern paintings change every four evolutions, while music builds from the Hatchery to the deepest Fracture.</p></div>
-    <details class="mutation-guide"><summary>FIELD GUIDE · ENCOUNTERS &amp; MUTATIONS</summary><p>Evolution 2: Burrow Stalker relocates five tiles after a warning. Evolution 4: Hatchery Warden seals up to three tiles. Evolution 6: Tunnel Weaver places webs that briefly freeze the hunt. Evolution 8: Rift Guardian warns before rupturing nearby tiles.</p><p>Boss powers charge for ten active seconds. The ochre ring closes when ready. The field pauses between capture phases. Only the final capture grants a reward. Brood Trail has no encounters.</p><p>Areas change every four evolutions. Reach twelve for the Deep Fracture. Expeditions finish after 6,000 simulation steps, or earlier if your swarm crashes. Shields and molts can save you; the walls and your own body remain dangerous.</p></details>
-   </aside>
+    <details class="mutation-guide" id="fieldGuide"><summary>FIELD GUIDE · HOW TO PLAY &amp; ENCOUNTERS</summary>
+<p><strong>PREDATOR HUNT:</strong> Trap prey with your living body. Your first ordinary-prey collision is forgiven; early enemies move more slowly. Minibosses take two captures and full bosses take three.</p>
+<p><strong>BROOD TRAIL:</strong> Classic Snake. Swipe or use arrow keys / WASD, collect brood orbs and grow the swarm. No bosses or enemies.</p>
+<p><strong>EVOLUTIONS:</strong> Captures earn 3 energy; Brood Trail orbs earn 1. At 5 energy, pick an adaptation: white shields, blue slows, black sheds the tail, red boosts speed and points, green grants growth.</p>
+<p><strong>ENCOUNTERS:</strong> Evolution 2: Burrow Stalker moves five tiles after a warning. Evolution 4: Hatchery Warden seals tiles. Evolution 6: Tunnel Weaver lays webs that stun. Evolution 8: Rift Guardian creates ruptures. Their powers charge for 10 active seconds, indicated by an ochre ring.</p>
+<p><strong>ENVIRONMENTS:</strong> The background changes after evolutions 4, 8 and 12. Dashed tiles warn before hazards become solid. Boss briefings pause the game, then begin with a three-second countdown.</p>
+<p><strong>EXPEDITIONS:</strong> Arcade starts a fresh run; Daily Ritual shares a seed until midnight Central Time. Signed-in Field Network profiles can submit server-verified ranked runs.</p>
+</details>
+    </aside>
   </div>
  </main>
- <footer class="site-footer"><span>DEEP CUTS EDH · ARCADE</span><span>ORIGINAL PIXEL-ART ARCADE · FREE TO PLAY</span><a href="/games.html">MORE DEEP CUTS GAMES ↗</a></footer>
+ <footer class="site-footer"><span>DEEP CUTS EDH · ARCADE</span><a href="/games.html">MORE DEEP CUTS GAMES ↗</a></footer>
 </body>
 </html>
