@@ -66,12 +66,16 @@ for(const signed of [false,true]){
     const second=await get([]);assert.equal(second.finished,false);
    }else if(game==="cipher"){
     assert.equal(start.attempts,0);
-    const one=await post(game,"guess",seed,{guess:"ZZZZZ",history:[]},signed);
+    const wrong="Z".repeat(start.wordLength),next="Y".repeat(start.wordLength);
+    assert.match(start.pattern,/^[_ ’-]+$/);
+    assert.equal(start.pattern.split("_").length-1,start.wordLength);
+    const one=await post(game,"guess",seed,{guess:wrong,history:[]},signed);
     assert.equal(one.attempts,1);
-    assert.equal((await get(["ZZZZZ"])).attempts,1);
-    const two=await post(game,"guess",seed,{guess:"YYYYY",history:["ZZZZZ"]},signed);
+    assert.equal(one.guesses[0].feedback.length,start.wordLength);
+    assert.equal((await get([wrong])).attempts,1);
+    const two=await post(game,"guess",seed,{guess:next,history:[wrong]},signed);
     assert.equal(two.attempts,2);
-    assert.equal((await get(["ZZZZZ","YYYYY"])).attempts,2);
+    assert.equal((await get([wrong,next])).attempts,2);
    }else{
     assert.equal(start.solved.length,0);assert.equal(start.tiles.length,16);
     const first=start.tiles.slice(0,4),second=start.tiles.slice(4,8);
