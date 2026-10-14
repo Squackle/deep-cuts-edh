@@ -1,4 +1,4 @@
-import {chicagoDay,dailySeed} from "./modes.js";
+
 import {API_URL} from "./integration.js";
 import {RULES_VERSION} from "./engine.js";
 const SAFE_SEED=()=>Math.floor(Math.random()*4294967295)||1;
@@ -52,7 +52,7 @@ export class LeaderboardClient{
    if(data.rulesVersion!==RULES_VERSION)throw Error("Leaderboard rules version mismatch.");
    this.session={token:data.token,seed:data.seed};
    return {seed:data.seed,ranked:true,day:data.day};
-  }catch(error){this.error=String(error.message||error);return {seed:challenge==="daily"?dailySeed(chicagoDay(),mode):SAFE_SEED(),day:challenge==="daily"?chicagoDay():"",ranked:false}}
+  }catch(error){this.error=String(error.message||error);return {seed:SAFE_SEED(),day:"",ranked:false}}
  }
  action(tick,kind,value){
   if(!this.session)return;
