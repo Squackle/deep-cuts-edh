@@ -19,7 +19,7 @@ function database(){
    return null;
   },async all(){
    if(sql.includes("FROM supporter_ticker_optins o")){
-    return{results:[...entries.values()].filter(x=>x.visible).map(x=>({display_name:x.display_name,email_cipher:null}))};
+    return{results:await Promise.all([...entries.values()].filter(x=>x.visible).map(async x=>({display_name:x.display_name,email_cipher:await cipherPromise})))};
    }return{results:[]};
   },async run(){
    writes.push(sql);
@@ -64,6 +64,7 @@ test("Public response strips all email, ids, hashes and credentials",async()=>{
  assert.equal(response.status,200);
  const raw=await response.text();
  assert.doesNotMatch(raw,/email|cipher|profile1|secret|payment/i);
+ assert.deepEqual(JSON.parse(raw).supporters,[{name:"Somebody",tier:"chief"}]);
 });
 test("Ticker in shared header has distinct gold, silver, bronze and reduced-motion styles",()=>{
  const js=fs.readFileSync("header-profile.js","utf8"),css=fs.readFileSync("header-profile.css","utf8");
