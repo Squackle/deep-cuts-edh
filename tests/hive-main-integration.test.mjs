@@ -37,7 +37,7 @@ test("main-site game route and all first-party assets are present",()=>{
 test("the site game, its replay verifier, and versioned rankings share the ruleset",async()=>{
  const game=readFileSync(new URL("../games/hive-run/src/engine.js",import.meta.url),"utf8");
  const server=readFileSync(new URL("../src/hive-server/leaderboard.js",import.meta.url),"utf8");
- assert.equal(RULES_VERSION,"hive-1.0.2");
+ assert.equal(RULES_VERSION,"hive-1.2");
  assert.match(game,/RULES_VERSION="hive-1\.0\.2"/);
  assert.match(server,/import \{newRun,start,step,turn,chooseMutation,RULES_VERSION\}/);
  const wrapper=readFileSync(new URL("../functions/games/hive-run/api/leaderboard.js",import.meta.url),"utf8");
@@ -47,7 +47,7 @@ test("the site game, its replay verifier, and versioned rankings share the rules
 test("public profile displays every verified rules version while excluding guest claims",async()=>{
  const seen={};const env={
   DB:{prepare(sql){seen.profileSql=sql;return{bind(handle){seen.handle=handle;return{async first(){return{id:"real-profile-id",handle:"Squackle"}}}}}}},
-  HIVE_DB:{prepare(sql){seen.scoresSql=sql;return{bind(...values){seen.params=values;return{async all(){return{results:[{mode:"classic",rulesVersion:"hive-1.0.2",bestScore:6500,bestEvolution:13,rankedRuns:1},{mode:"hunt",rulesVersion:"hive-1.0.0",bestScore:3000,bestEvolution:4,rankedRuns:2}]}}}}}}}
+  HIVE_DB:{prepare(sql){seen.scoresSql=sql;return{bind(...values){seen.params=values;return{async all(){return{results:[{mode:"classic",rulesVersion:"hive-1.2",bestScore:6500,bestEvolution:13,rankedRuns:1},{mode:"hunt",rulesVersion:"hive-1.0.0",bestScore:3000,bestEvolution:4,rankedRuns:2}]}}}}}}}
  };
  const response=await profileGet({env,request:new Request("https://deep-cuts-edh.pages.dev/api/hive-profile?handle=Squackle")});
  assert.equal(response.status,200);
