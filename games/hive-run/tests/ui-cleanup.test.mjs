@@ -20,6 +20,7 @@ test("only swipe and keyboard controls remain; debug stats are hidden by default
  assert.match(html,/id="devDiagnostics" hidden/);
  for(const id of ["evoCountdown","mutationInventory","killCount","enemyCount","stateLabel"])
  assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(main,/get\("debug"\)==="1"/);
+ assert.doesNotMatch(main,/get\("debug"\)==="1"/);
+ assert.match(css,/body\.game-only \.arcade-frame>\.mutation-guide\{display:none!important\}/);
  assert.match(css,/\.dev-diagnostics\[hidden\]/);
 });

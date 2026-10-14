@@ -347,3 +347,8 @@ body.game-only .arcade-home-link{min-height:31px;padding:5px 6px}
 
 /* Compact return-home affordance must not crowd a narrow phone's Game Only top bar. */
 @media(max-width:440px){body.game-only .arcade-home-link{font-size:0;padding:6px}body.game-only .arcade-home-link::after{content:'← HOME';font-size:9px}}
+
+/* Audit 2026-10-14: Field Guide belongs to the page, never inside Game Only.
+ * The playable arena and navigation are the only fullscreen priorities.
+ */
+body.game-only .arcade-frame>.mutation-guide{display:none!important}

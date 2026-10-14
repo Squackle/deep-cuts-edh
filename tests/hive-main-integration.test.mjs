@@ -40,7 +40,12 @@ test("public profile displays every verified rules version while excluding guest
  assert.equal(response.status,200);
  const body=await response.json();assert.equal(body.records.length,2);
  assert.ok(seen.scoresSql.includes("profile_verified=1"));
- assert.ok(seen.scoresSql.includes("GROUP BY mode,rules_version"));
+ assert.ok(seen.scoresSql.includes("ROW_NUMBER() OVER"));
+ assert.ok(seen.scoresSql.includes("COUNT(*) OVER"));
+ assert.ok(seen.scoresSql.includes("PARTITION BY mode,rules_version"));
+ assert.ok(seen.scoresSql.includes("ORDER BY score DESC,kills DESC,created_at ASC,id ASC"));
+ assert.ok(seen.scoresSql.includes("WHERE placement=1"));
+ assert.ok(!seen.scoresSql.includes("MAX(evolutions)"));
  assert.deepEqual(seen.params,["real-profile-id"]);
 });
 test("verified identity comes from the remembered-device cookie, not the typed handle",async()=>{

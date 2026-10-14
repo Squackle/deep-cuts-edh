@@ -1,5 +1,7 @@
 name: Site quality and navigation
 on:
+  push:
+    branches: [main, "fix/audit-five-20261014"]
   pull_request:
     branches: [main]
   workflow_dispatch:

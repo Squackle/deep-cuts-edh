@@ -53,8 +53,8 @@ async function refreshLeaderboard(){
   $("leaderboardStatus").textContent=MODES[selectedMode].name.toUpperCase()+" · "+(selectedChallenge==="daily"?"DAILY "+data.day:"ARCADE")+" · TOP 25";
  }catch{$("leaderboardStatus").textContent="BOARD UNAVAILABLE · PRACTICE STILL WORKS"}
 }
-// Detailed metrics are developer opt-in, not part of the public game layout.
-if(new URLSearchParams(window.location.search).get("debug")==="1")$("devDiagnostics").hidden=false;
+// Instrumentation nodes are inert and permanently hidden on the public site.
+// Gameplay counters remain readable from the local DOM in developer tools only.
 const prefersReducedMotion=()=>window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches??false;
 let selectedMode="hunt",selectedChallenge="arcade";
 try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hunt"}catch{}
