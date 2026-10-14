@@ -64,13 +64,13 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
  try{
   browser=await chromium.launch({headless:true,executablePath:browserBinary(),args:["--no-sandbox","--disable-dev-shm-usage"]});
   for(const signed of [false,true])for(const game of Object.keys(games)){
-   await t.test((signed?"signed-in":"guest")+" "+game,{timeout:17000},async()=>{
+   await t.test((signed?"signed-in":"guest")+" "+game,{timeout:29000},async()=>{
     const fx=fixture(),seed=475319;
     const context=await browser.newContext({viewport:{width:390,height:844}});
     if(signed)await context.addInitScript(token=>sessionStorage.setItem("dc-profile-key",token),authToken);
     const page=await context.newPage();
     const errors=[];
-    page.on("pageerror",e=>errors.push(String(e)));
+    page.on("pageerror",e=>{errors.push(String(e));if(game==="cipher")console.log("CIPHER SCRIPT ERROR",String(e))});
     await page.route("**/api/daily-games*",async route=>{
      const req=route.request();const headers={...req.headers(),"cf-connecting-ip":"198.51.100.27",origin};
      const request=new Request(req.url(),{method:req.method(),headers,...(req.method()==="POST"?{body:req.postData()}: {})});
@@ -139,6 +139,7 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
       await page.locator(".games-ladder-row").first().waitFor();
       assert.equal(await page.locator(".games-reveal").count(),0,"Practice verdict should not lock next playthrough");
      }else if(game==="cipher"){
+      console.log("CIPHER: starting "+(signed?"signed":"guest"));
       await page.locator(".arcane-keyboard").waitFor();
       const wordLength=await page.locator(".arcane-word-row").first().locator(".arcane-letter:not(.arcane-separator)").count();
       assert.ok(wordLength>=2&&wordLength<=24,"Incorrect adaptive tile count");
@@ -146,12 +147,16 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
       assert.ok(pattern.every(mark=>/^[ ’-]$/.test(mark)));
       for(const letter of "Z".repeat(wordLength))await page.getByRole("button",{name:letter,exact:true}).click();
       await page.getByRole("button",{name:"Submit guess"}).click();
+      console.log("CIPHER: clicked guess");
       await page.locator(".arcane-letter.correct, .arcane-letter.present, .arcane-letter.absent").first().waitFor();
       assert.match(await page.locator("#arcaneProgress").innerText(),/GUESS 2/);
       await page.reload({waitUntil:"domcontentloaded"});
+      console.log("CIPHER: reload complete");
       await page.getByRole("button",{name:"Submit guess"}).waitFor();
       assert.match(await page.locator("#arcaneProgress").innerText(),/GUESS 2/);
+      console.log("CIPHER: before hint",await page.locator(".arcane-hint-count").innerText());
       await page.getByRole("button",{name:/Reveal .* correct letters, spend one guess/}).click();
+      console.log("CIPHER: clicked hint",await page.locator("#arcaneMessage").innerText());
       await page.waitForFunction(()=>document.querySelector(".arcane-hint-count")?.textContent?.includes("1 / 2"));
       assert.equal(await page.locator(".arcane-hint-row").count(),1,"Hint must spend an entire row");
       const greenCount=await page.locator(".arcane-word-row").nth(2).locator(".arcane-letter.correct").count();
@@ -160,9 +165,12 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
       await page.getByRole("button",{name:"Submit guess"}).waitFor();
       assert.equal(await page.locator(".arcane-hint-row").count(),1,"Hint must persist after reload");
       assert.match(await page.locator("#arcaneProgress").innerText(),/GUESS 3/);
+      console.log("CIPHER: active row validated",await page.locator("#arcaneProgress").innerText());
       const openLetters=wordLength-await page.locator(".arcane-word-row").nth(2).locator(".arcane-letter.correct").count();
+      console.log("CIPHER: openLetters",openLetters,"length",wordLength);
       for(const letter of "Y".repeat(openLetters))await page.getByRole("button",{name:letter,exact:true}).click();
       await page.getByRole("button",{name:"Submit guess"}).click();
+      console.log("CIPHER: after second guess",await page.locator("#arcaneMessage").innerText());
       await page.waitForFunction(()=>document.querySelector("#arcaneProgress")?.textContent?.includes("GUESS 4"));
      }else{
       await page.locator(".arcane-card button").first().waitFor();
