@@ -34,7 +34,7 @@ function validDeck(){
 function scrubKey(){const u=new URL(location.href);u.searchParams.delete("session_id");history.replaceState(null,"",u.pathname+u.search+u.hash)}
 function markTier(){
  $("memberTierName").textContent=(tierNames[account.tier]||"Member")+(account.accessSource==="complimentary"?" · Complimentary":"");
- $("memberDeviceCount").textContent=(account.devices?.length||0)+" / 2";
+ $("memberDeviceCount").textContent=(account.devices?.length||0)+" / "+(account.limit||3);
  const current=account.devices?.find(x=>x.id===account.deviceId);
  $("memberDeviceName").textContent=current?.label||"This device";
  $("memberPaidUntil").textContent=account.paidUntil?new Date(account.paidUntil*1000).toLocaleDateString():"Not verified";
