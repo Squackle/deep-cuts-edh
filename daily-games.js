@@ -347,7 +347,8 @@ function setupHub(){
  const buttons=document.querySelectorAll("[data-random-practice]");
  for(const button of buttons){
   button.addEventListener("click",()=>{
-   const kind=button.dataset.randomPractice==="cold"?"cold-case":"obscurity-ladder";
+   const routes={cold:"cold-case",ladder:"obscurity-ladder",cipher:"arcane-cipher",board:"conspiracy-board"};
+   const kind=routes[button.dataset.randomPractice];if(!kind)return;
    const n=new Uint32Array(1);crypto.getRandomValues(n);
    location.href="/games/"+kind+".html?practice="+(n[0]%999999998+1);
   });
