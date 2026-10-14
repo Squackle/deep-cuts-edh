@@ -36,6 +36,14 @@ function image(name){
 function appendLink(host,title,url){
  const link=el("a","games-link",title);link.href=url;link.target="_blank";link.rel="noopener noreferrer";host.append(link);return link;
 }
+// Exact-name Scryfall search resolves punctuation-heavy commander names.
+function commanderLink(name){
+ const link=el("a","games-commander-link",name);
+ link.href="https://scryfall.com/search?q="+encoded('!"'+name+'"');
+ link.target="_blank";link.rel="noopener noreferrer";
+ link.title="View "+name+" on Scryfall (opens in a new tab)";
+ return link;
+}
 function fullUrl(){
  return location.origin+(game==="cold"?"/games/cold-case.html":"/games/obscurity-ladder.html");
 }
@@ -177,13 +185,16 @@ function renderCold(){
  if(state.attempts?.length){
   const previous=el("div","games-guess-history");
   previous.append(el("p","games-overline","YOUR EARLIER SUSPECTS"));
-  for(const g of state.attempts)previous.append(el("span","games-guess-chip"+(g===state.solution?.name?" games-guess-right":""),g));
+  for(const g of state.attempts){
+   const chip=el("span","games-guess-chip"+(g===state.solution?.name?" games-guess-right":""));
+   chip.append(commanderLink(g));previous.append(chip);
+  }
   host.append(previous);
  }
  if(state.finished){
   const result=el("section","games-reveal");
   result.append(el("p","games-overline",state.won?"✓ CASE SOLVED":"CASE CLOSED · ANSWER REVEALED"));
-  result.append(el("h2","",state.solution.name));
+  const answerHeading=el("h2");answerHeading.append(commanderLink(state.solution.name));result.append(answerHeading);
   result.append(el("p","games-reveal-score",state.won?"Solved in "+state.attempts.length+" of 5 guesses · "+state.score+" points":"The commander evaded all five guesses."));
   const media=el("div","games-reveal-card");
   const art=el("div","games-art-frame");art.append(image(state.solution.name));
@@ -196,20 +207,28 @@ function renderCold(){
  }
  const choose=el("section","games-choose-suspect");
  choose.append(el("h2","","Name your suspect"));
- choose.append(el("p","games-muted","Pick one commander. A wrong guess unseals the next clue."));
+ choose.append(el("p","games-muted","Open a commander name to view its Scryfall card, or use PICK to select your suspect. A wrong guess unseals the next clue."));
  const grid=el("div","games-suspect-grid");selected="";
  const tried=new Set(state.attempts||[]);
  for(const name of state.choices||[]){
-  const option=el("button","games-suspect",name);option.type="button";
+  // Keep Scryfall navigation separate from the guess selection control.
+  const entry=el("div","games-suspect-entry");
+  const option=el("button","games-suspect",tried.has(name)?"USED":"PICK");option.type="button";
+  option.setAttribute("aria-label","Pick "+name+" as your suspect");
   if(tried.has(name)){
    option.disabled=true;option.classList.add("games-suspect-tried");
    option.title="Already questioned";
   }else option.addEventListener("click",()=>{
    selected=name;
-   for(const b of grid.querySelectorAll("button"))b.setAttribute("aria-pressed",b===option?"true":"false");
+   for(const b of grid.querySelectorAll(".games-suspect")){
+    const active=b===option;
+    b.setAttribute("aria-pressed",String(active));b.textContent=active?"PICKED":"PICK";
+    b.parentElement.classList.toggle("games-suspect-selected",active);
+   }
    submit.disabled=false;submit.textContent="SUBMIT "+name.toUpperCase()+" ↗";
   });
-  option.setAttribute("aria-pressed","false");grid.append(option);
+  option.setAttribute("aria-pressed","false");
+  entry.append(commanderLink(name),option);grid.append(entry);
  }
  choose.append(grid);
  const submit=el("button","games-button games-button-primary","SELECT A SUSPECT TO CONTINUE");
@@ -259,7 +278,8 @@ function renderLadder(){
    const frame=el("span","games-small-art");frame.append(image(c.name));
    const text=el("div");
    const metric=byRank?"Scryfall EDHREC card rank #"+Number(c.rank).toLocaleString():Number(c.decks).toLocaleString()+" EDHREC commander decks";
-   text.append(el("strong","",c.name),el("span","games-muted",metric));
+   const commanderName=el("strong");commanderName.append(commanderLink(c.name));
+    text.append(commanderName,el("span","games-muted",metric));
    row.append(frame,text);
    appendLink(row,"SOURCE ↗",c.edhrec);ordered.append(row);
   }
@@ -274,7 +294,8 @@ function renderLadder(){
   const c=list[index],row=el("li","games-ladder-row");row.id="ladderRow"+index;
   const num=el("span","games-ladder-position",index===0?"LEAST":index===4?"MOST":String(index+1));
   const art=el("span","games-small-art");art.append(image(c.name));
-  const desc=el("div","games-ladder-name");desc.append(el("strong","",c.name));
+  const desc=el("div","games-ladder-name");
+   const commanderName=el("strong");commanderName.append(commanderLink(c.name));desc.append(commanderName);
   desc.append(el("span","games-muted","Commander"));
   const controls=el("div","games-move-buttons");
   for(const [label,direction] of [["↑",-1],["↓",1]]){
