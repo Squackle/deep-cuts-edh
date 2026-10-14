@@ -371,3 +371,29 @@
  .site-header .site-desktop-trigger,.site-header .site-desktop-chevron,
  .site-header .site-desktop-navigation>.site-desktop-arcade{transition:none}
 }
+
+/* The portrait itself opens /profile. A small optional desktop chevron exposes shortcuts. */
+.site-header .header-inner.header-profile-enabled{position:relative}
+.site-header .header-profile-menu{display:none}
+@media(min-width:1181px){
+ .site-header .header-profile-menu{display:block;position:absolute;right:-6px;top:50px;z-index:85}
+ .site-header .header-profile-menu-trigger{
+  display:grid;place-items:center;width:28px;height:28px;list-style:none;
+  cursor:pointer;border:1px solid #b69a65;border-radius:50%;
+  background:#284837;color:#ffe3a7;font:900 17px/1 Georgia,serif;
+  box-shadow:0 1px 9px #101c14aa;
+ }
+ .site-header .header-profile-menu-trigger::-webkit-details-marker{display:none}
+ .site-header .header-profile-menu-trigger:hover,.site-header .header-profile-menu[open] .header-profile-menu-trigger{background:#46634c;border-color:#e6cc9a}
+ .site-header .header-profile-menu-panel{
+  position:absolute;right:0;top:calc(100% + 8px);display:grid;gap:5px;
+  width:230px;padding:10px;border:1px solid #769578;border-radius:10px;
+  background:#1c3528;box-shadow:0 15px 32px #07170d99;
+ }
+ .site-header .header-profile-menu-panel a{
+  display:block;padding:11px;border-radius:6px;color:#ebf0e3;
+  font:800 11px/1.4 ui-sans-serif,system-ui;text-decoration:none;
+ }
+ .site-header .header-profile-menu-panel a:hover{background:#355943;color:#f9dda4}
+ .site-header .header-profile-menu :is(summary,a):focus-visible{outline:3px solid #f4d08b;outline-offset:3px}
+}
