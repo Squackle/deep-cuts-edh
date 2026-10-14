@@ -40,7 +40,8 @@ check(read('games.html').includes('HIVE RUN')||read('games.html').includes('Hive
 check(read('games.html').includes('<h1>THE <em>ARCADE.</em></h1>'),'Arcade hub heading incorrect');
 check(read('index.html').includes('<strong>Arcade</strong>'),'Homepage Arcade tile missing');
 check(read('index.html').includes('ENTER THE ARCADE'),'Homepage Arcade CTA missing');
-for(const tab of ['cases','decks','account'])check(read('community.html').includes('data-tab="'+tab+'"'),'Community onboarding lacks '+tab);
+for(const tab of ['cases','decks'])check(read('community.html').includes('data-tab="'+tab+'"'),'Community onboarding lacks '+tab);
+check(read('community.html').includes('href="/profile"'),'Community must link to My Profile');
 check(read('community.html').includes('Choose your first assignment.'),'Community onboarding absent');
 check(read('profile.html').includes('data-community-page="profile"'),'Missing separate personal profile dashboard');
 check(!read('community.html').includes('id="registerForm"'),'Public Community still embeds sign-in and recovery forms');
