@@ -382,3 +382,74 @@ body.game-only .arcade-frame>.mutation-guide{display:none!important}
  .lab-header[data-profile-header]{grid-template-columns:minmax(0,1fr) 44px;gap:8px}
  .lab-header[data-profile-header]>.header-profile-button{width:44px;height:44px}
 }
+
+
+/* HIVE HIGH SCORES: a ten-entry cabinet table with a separate personal record.
+   Earthy phosphor, muted brass and pixel-edged cells match the painted caverns. */
+.leaderboard-panel{
+ background:radial-gradient(ellipse at 50% -15%,#1f3c2a 0%,#091b15 67%);
+ border:2px solid #a38b54;border-radius:3px;
+ padding:clamp(12px,2vw,19px);box-shadow:inset 0 0 0 2px #203a2a,0 0 20px #040b09;
+}
+.leaderboard-panel h3{
+ font:900 clamp(19px,3.3vw,27px)/1.25 ui-monospace,SFMono-Regular,Consolas,monospace;
+ letter-spacing:.07em;color:#f0e0b8;text-shadow:2px 2px #32432b;
+ text-align:center;margin:15px 0 5px;
+}
+.leaderboard-panel h3 em{font-style:normal;color:#e5bb70}
+.board-caption{text-align:center;font:800 10px/1.5 ui-monospace,Consolas,monospace;
+ letter-spacing:.06em;color:#b2c9ab;margin:6px 0 12px}
+.personal-record{
+ border:1px solid #ba9d61;box-shadow:inset 4px 0 #bc9b61;
+ background:linear-gradient(120deg,#2c4030,#142a20 80%);
+ padding:13px 15px;margin:14px 0 18px;
+}
+.personal-record.is-ranked{box-shadow:inset 4px 0 #f0d590,0 0 12px #ad916632}
+.personal-record-label{display:block;font:900 10px/1.3 ui-monospace,Consolas,monospace;
+ letter-spacing:.13em;color:#dfc68f}
+.personal-record-line{display:flex;align-items:baseline;justify-content:space-between;
+ gap:12px;margin:9px 0 4px}
+.personal-record-line strong{font:900 clamp(24px,4vw,34px)/1 ui-monospace,Consolas,monospace;
+ font-variant-numeric:tabular-nums;letter-spacing:.02em;color:#ffe1a0;text-shadow:2px 2px #263b2b}
+.personal-record-line span{font:900 clamp(10px,1.6vw,12px)/1.45 ui-monospace,Consolas,monospace;
+ letter-spacing:.05em;color:#cedec6;text-align:right}
+.personal-record-identity{font:650 11px/1.5 ui-sans-serif,system-ui,sans-serif;color:#c4d2ba}
+.personal-record-identity a{color:#f5d89d;text-decoration:underline}
+.board-table{border-top:1px solid #57704f;border-bottom:1px solid #57704f;
+ margin:7px 0 3px;padding:8px 0 12px}
+.board-column-headings,.board-row{
+ display:grid;grid-template-columns:minmax(42px,.7fr) minmax(70px,1fr) minmax(76px,1.4fr);
+ column-gap:clamp(5px,1.8vw,12px);align-items:center
+}
+.board-column-headings{padding:6px 6px 10px;
+ color:#bcd4b2;font:900 clamp(9px,1.5vw,11px)/1.25 ui-monospace,Consolas,monospace;letter-spacing:.08em}
+.board-column-headings>:last-child{text-align:right}
+.board-entries{display:flex;flex-direction:column;max-height:none;overflow:visible;gap:0;margin:0}
+.board-row{
+ min-height:37px;padding:5px 6px;border:0;background:transparent;
+ font:900 clamp(14px,2.15vw,19px)/1.25 ui-monospace,Consolas,monospace;
+ letter-spacing:.035em;color:#e0eadb;font-variant-numeric:tabular-nums;text-shadow:1px 1px #101d15
+}
+.board-row:nth-child(even){background:#29412c6b}
+.board-row:nth-child(-n+3){color:#f1d18c}
+.board-row.is-you{background:#74683d55;outline:1px solid #b29a63;outline-offset:-1px;color:#ffe49b}
+.board-row .rank{font:inherit;color:inherit;white-space:nowrap}
+.board-player{min-width:0;display:flex;flex-direction:row;align-items:center;gap:5px}
+.board-player strong{font:inherit;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board-profile{display:inline-grid;place-items:center;flex:none;min-height:22px;min-width:20px;
+ font:900 12px/1 ui-monospace,Consolas,monospace;color:#acd4a7;text-decoration:none}
+.board-profile:hover,.board-profile:focus-visible{color:#ffe0a3;text-decoration:underline}
+.board-stat{min-width:0;display:block;text-align:right}
+.board-stat strong{font:inherit;font-size:clamp(12px,2vw,18px);color:inherit;white-space:nowrap;font-variant-numeric:tabular-nums}
+.board-empty{padding:14px 3px;color:#e0ce9c;text-align:center;font:800 11px/1.6 ui-monospace,monospace}
+@media(max-width:420px){
+ .leaderboard-panel{padding:10px}
+ .personal-record{padding:12px;margin:12px 0 16px}
+ .board-column-headings,.board-row{
+  grid-template-columns:minmax(35px,.65fr) minmax(56px,.9fr) minmax(65px,1.25fr);
+  gap:4px;padding-left:3px;padding-right:3px
+ }
+ .board-row{font-size:14px;min-height:35px}
+ .board-stat strong{font-size:13px}
+ .board-column-headings{font-size:9px}
+}
