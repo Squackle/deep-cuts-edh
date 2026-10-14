@@ -5,5 +5,5 @@ export function parseArcadeInitials(value){
  return value.toUpperCase();
 }
 export function editArcadeInitials(value){
- return String(value??"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3);
+ return String(value??"").replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,3);
 }
