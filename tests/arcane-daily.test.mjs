@@ -15,7 +15,7 @@ test('Word bank is curated, correctly sized and non-repeating',()=>{
 test('Repeated letter feedback never creates phantom matches',()=>{
  assert.deepEqual(cipherFeedback('LEVEL','LEVER'),['correct','correct','correct','correct','absent']);
  assert.deepEqual(cipherFeedback('EEEAA','BEAST'),['absent','correct','absent','present','absent']);
- assert.deepEqual(cipherFeedback('AAAAA','BEAST'),['absent','present','absent','absent','absent']);
+ assert.deepEqual(cipherFeedback('AAAAA','BEAST'),['absent','absent','correct','absent','absent']);
 });
 test('Each curated connection belongs to exactly one four-card category',()=>{
  assert.ok(BOARD_CATEGORIES.length>=12);
