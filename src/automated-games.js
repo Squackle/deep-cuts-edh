@@ -21,7 +21,13 @@ const dayNumber=x=>Math.floor(Date.parse(x+"T00:00:00Z")/86400000);
 const sqlSafeJson=(value)=>{try{return JSON.parse(value)}catch{return null}};
 const hasRank=c=>Number.isInteger(c?.rank)&&c.rank>0;
 const isValidName=n=>typeof n==="string"&&n.length>=3&&n.length<=100&&!n.includes(" // ");
-const shortText=(text,max=155)=>String(text||"").replace(/\{[^}]+\}/g,"mana").replace(/\s+/g," ").trim().slice(0,max);
+// Preserve Scryfall's familiar {2}{U} notation; never flatten it into "manamana".
+const shortText=(text,max=155)=>{
+ const clean=String(text||"").replace(/\s+/g," ").trim();
+ if(clean.length<=max)return clean;
+ // Truncation must not leave half of a {mana symbol} in a clue.
+ return clean.slice(0,max).replace(/\{[^}]*$/, "").trimEnd();
+};
 function colorsOf(cs){
  if(!Array.isArray(cs)||!cs.length)return "colorless";
  const names=cs.map(x=>COLOR_NAMES[x]).filter(Boolean);
@@ -32,9 +38,11 @@ function colorsOf(cs){
 function describeMechanic(c){
  const oracle=String(c?.oracle||"").toLowerCase(),type=String(c?.type||"").toLowerCase();
  const tags=[
- [/\bgraveyard\b|\breanimate\b|\breturn.*battlefield\b/,"graveyard recursion"],
+ // Exile-and-return ("blink") is not graveyard recursion.
+ [/\bexile\b.{0,220}\breturn\b.{0,170}\bbattlefield\b/,"blink and flicker strategies"],
+ [/\bgraveyard\b|\breanimate\b/,"graveyard recursion"],
  [/\bsacrifice\b|\bdies\b|\bwhen .* dies\b/,"sacrifice and death triggers"],
- [/\btreasure\b|\badd \{|\bman[a]a\b/,"mana acceleration"],
+ [/\btreasures?\b|\badd \{|\badd (?:one|two|three|any) mana\b/,"mana acceleration"],
  [/\bproliferate\b|\b\+1\/\+1 counter\b|\b-1\/-1 counter\b/,"counter manipulation"],
  [/\bcreate .* token\b|\bcreature tokens?\b/,"creating creature tokens"],
  [/\bartifact\b/,"artifact synergies"],
@@ -144,12 +152,13 @@ function automaticCold(day,cards,recent,catalogAt){
  // Prevent revealing the answer when a card name occurs in its own rules text.
  const excerptRaw=answer.oracle.split(/\n|(?<=\.)\s/)[0]||answer.oracle;
  const excerpt=excerptRaw.split(answer.name).join("this commander");
+ const manaHint=/^(?:\{[^{}]+\})+$/.test(answer.mana||"")?" Mana cost: "+answer.mana+".":answer.mana?"":" Mana cost: not printed.";
  const clues=[
   {label:"EVIDENCE 01 · COLOR IDENTITY",text:"This suspect's color identity is "+answer.colors+"."},
   {label:"EVIDENCE 02 · PAPER TRAIL",text:"A paper printing of this card was released in "+answer.year+"."},
   {label:"EVIDENCE 03 · THE MOTIVE",text:"The card's abilities suggest "+answer.theme+"."},
   {label:"EVIDENCE 04 · THE INTERROGATION",text:"A clue from its rules: "+shortText(excerpt,145)},
-  {label:"EVIDENCE 05 · FINAL IDENTIFICATION",text:"Its type line includes "+subtype+trailing+". Mana cost: "+(answer.mana||"not printed")+"."}
+  {label:"EVIDENCE 05 · FINAL IDENTIFICATION",text:"Its type line includes "+subtype+trailing+"."+manaHint}
  ];
  return {answer,choices:choices.map(x=>x.name),clues,origin:"scryfall",snapshot:new Date(catalogAt*1000).toISOString().slice(0,10)};
 }
