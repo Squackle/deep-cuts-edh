@@ -1,11 +1,12 @@
 import {reply,random,sha,originOK,authorize,json,sync,H} from "../../src/member-auth.js";
+const MAX_MEMBER_DEVICES=3;
 const goodKey=s=>/^dcmember1_[0-9a-f]{32}_[0-9a-f]{64}$/.test(s);
 const simple=s=>String(s||"").trim().slice(0,36).replace(/[<>]/g,"");
 export async function onRequestGet({request,env}){
  const check=await authorize(request,env);
  if(check.error)return check.error;
  const rows=await env.DB.prepare("SELECT id,label,created_at FROM member_devices WHERE member_id=? AND revoked_at IS NULL ORDER BY created_at").bind(check.account.id).all();
- return reply({ok:true,tier:check.account.tier,active:true,deviceId:check.deviceId,devices:rows.results||[],limit:2,canReplaceAt:Number(check.account.last_replacement||0)+2592000,paidUntil:check.account.paid_until,accessSource:check.account.access_source,benefits:["dossier","alternate-builds","early-access","showcase","newsletter","themes","history","probability","collection","watches","question","consultation","editorial","recognition"]});
+ return reply({ok:true,tier:check.account.tier,active:true,deviceId:check.deviceId,devices:rows.results||[],limit:MAX_MEMBER_DEVICES,canReplaceAt:Number(check.account.last_replacement||0)+2592000,paidUntil:check.account.paid_until,accessSource:check.account.access_source,benefits:["dossier","alternate-builds","early-access","showcase","newsletter","themes","history","probability","collection","watches","question","consultation","editorial","recognition"]});
 }
 export async function onRequestPost({request,env}){
  if(!originOK(request))return reply({error:"Origin not allowed."},403);
@@ -21,8 +22,8 @@ export async function onRequestPost({request,env}){
   try{member=await sync(member,env)}catch{return reply({error:"Could not verify membership status."},503)}
   if(member.status!=="active")return reply({error:"This membership is inactive or has expired."},403);
   const deviceId=random(16),token="dcdevice1_"+random(32),label=simple(d.label)||"My device";
-  const r=await env.DB.prepare("INSERT INTO member_devices(id,member_id,token_hash,label) SELECT ?,?,?,? WHERE (SELECT COUNT(*) FROM member_devices WHERE member_id=? AND revoked_at IS NULL)<2").bind(deviceId,id,await sha(token),label,id).run();
-  if((r.meta?.changes||0)!==1)return reply({error:"Both device slots are occupied. Remove a device from an already activated device before adding another."},409);
+  const r=await env.DB.prepare("INSERT INTO member_devices(id,member_id,token_hash,label) SELECT ?,?,?,? WHERE (SELECT COUNT(*) FROM member_devices WHERE member_id=? AND revoked_at IS NULL)<?").bind(deviceId,id,await sha(token),label,id,MAX_MEMBER_DEVICES).run();
+  if((r.meta?.changes||0)!==1)return reply({error:"All three device slots are occupied. Remove a device from an already activated device before adding another."},409);
   // HttpOnly device cookie keeps the 256-bit credential out of browser JavaScript.
   return new Response(JSON.stringify({ok:true,tier:member.tier,deviceId,message:"Device activated. Keep your original member key safe."}),{
    status:201,headers:{...H,"Set-Cookie":"dc_member_device="+token+"; Path=/api; Secure; HttpOnly; SameSite=Strict; Max-Age=31536000"}
