@@ -5,7 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(p,'utf8'),exists=p=>fs.existsSync(p);
 const root='https://deep-cuts-edh.pages.dev';
-const main=['index.html','games.html','community.html','deck.html','library.html','nominations.html','supporters.html','set-watch.html','privacy.html'];
+const main=['index.html','games.html','community.html','deck.html','library.html','nominations.html','supporters.html','set-watch.html','privacy.html','deep-cut-finder.html','binder-to-brew.html'];
 const extra=['members.html','404.html'];
 const children=dir=>fs.readdirSync(dir,{withFileTypes:true}).filter(x=>x.isFile()&&x.name.endsWith('.html')).map(x=>dir+'/'+x.name);
 const publicPages=[...main,...children('games'),...children('reports')];

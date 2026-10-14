@@ -20,6 +20,13 @@ jobs:
         run: node scripts/site-release-check.mjs
       - name: Lean homepage navigation regression tests
         run: node --test tests/home-hub.test.mjs
+      - name: Commander Finder and Binder security / deck regression tests
+        run: node --experimental-default-type=module --test tests/deep-tools.test.mjs
+      - name: Commander tool syntax checks
+        run: |
+          node --check deep-tools.js
+          node --check deep-tools-core.js
+          node --check functions/api/tool-cards.js
       - name: Magic daily game regression suite
         run: node --experimental-default-type=module --test tests/arcane-daily.test.mjs
       - name: JavaScript syntax
