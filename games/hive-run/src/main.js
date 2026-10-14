@@ -16,7 +16,7 @@ import {drawAbilityMeter,drawMiniboss,drawWebs,drawBurrowWarning} from "./boss-a
 import {abilityState,ABILITIES} from "./miniboss.js";
 import {BRIEFINGS,BossBriefingGate} from "./boss-briefing.js";
 import {LeaderboardClient} from "./leaderboard-client.js";
-import {renderLeaderboard,updateSubmission} from "./leaderboard-ui.js";
+import {renderLeaderboard,renderPersonalBest,updateSubmission} from "./leaderboard-ui.js";
 import {editArcadeInitials,parseArcadeInitials} from "./arcade-initials.js";
 import {createGameOnlyMode} from "./game-only.js";
 
@@ -31,10 +31,16 @@ let creatureArt=null;
 let arenaBackground=null;
 let visualBurst=null,lastCapture=null,startingRun=false,lastEncounterSeen=null;
 const leaderboard=new LeaderboardClient();
+let latestLeaderboard=null,leaderboardRefreshVersion=0;
+function updateOwnRecord(){renderPersonalBest($("personalRecord"),latestLeaderboard,state.best)}
 async function refreshLeaderboard(){
+ const requestVersion=++leaderboardRefreshVersion;
  try{
   const data=await leaderboard.load(selectedMode,selectedChallenge);
+  if(requestVersion!==leaderboardRefreshVersion)return;
+  latestLeaderboard=data;
   renderLeaderboard($("leaderboardEntries"),data);
+  updateOwnRecord();
   // The shared top-right avatar is the only account shortcut when signed in.
   // Guests still see a sign-in explanation next to the leaderboard.
   $("gameProfileBridge").hidden=!!data.profile;
@@ -47,10 +53,13 @@ async function refreshLeaderboard(){
    $("profileNotice").textContent="Guest score: initials only, no profile link. Sign in to Field Network before submitting to link your next verified score.";
   }
 
-  $("leaderboardStatus").textContent=MODES[selectedMode].name.toUpperCase()+" · "+(selectedChallenge==="daily"?"DAILY "+data.day:"ARCADE")+" · TOP 25";
+  $("leaderboardStatus").textContent=MODES[selectedMode].name.toUpperCase()+" · "+(selectedChallenge==="daily"?"DAILY "+data.day:"ARCADE")+" · TOP 10";
  }catch{
+  if(requestVersion!==leaderboardRefreshVersion)return;
+  latestLeaderboard=null;
+  updateOwnRecord();
   $("gameProfileBridge").hidden=true;
-  $("leaderboardStatus").textContent="BOARD UNAVAILABLE · PRACTICE STILL WORKS";
+  $("leaderboardStatus").textContent="BOARD UNAVAILABLE · LOCAL RECORD STILL AVAILABLE";
  }
 }
 // Instrumentation nodes are inert and permanently hidden on the public site.
@@ -74,7 +83,7 @@ try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0);
  state.musicOn=localStorage.getItem(MUSIC_STORE)==="on";
 }catch{}
 function bestKey(){return STORE+"|"+boardKey(selectedMode,selectedChallenge,state?.day||chicagoDay())}
-function loadBest(){try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0)}catch{state.best=0}}
+function loadBest(){try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0)}catch{state.best=0}updateOwnRecord()}
 function musicForRun(){
  const r=state.run;soundtrack.setLevel(r.biome);
  return r.encounter?(r.encounter.phases===3?"boss":"miniboss"):r.mode==="classic"?["hatchery","hunt","miniboss","boss"][r.biome-1]:"hunt";
@@ -140,6 +149,7 @@ function saveBest(){
  if(state.run.score<=state.best)return;
  state.best=state.run.score;
  try{localStorage.setItem(bestKey(),String(state.best))}catch{}
+ updateOwnRecord();
 }
 // Restore music preferences without attempting background autoplay.
 // The first genuine click or keyboard gesture unlocks desktop Web Audio.
@@ -294,7 +304,7 @@ async function begin(){
 function reset(){
  if(startingRun)return;
  resetBossBriefing();
- state.run=newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";loadBest();
+ state.run=newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";latestLeaderboard=null;loadBest();
  leaderboard.session=null;leaderboard.events=[];
  state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;
  state.accumulator=0;state.lastFrame=0;state.pointer=null;

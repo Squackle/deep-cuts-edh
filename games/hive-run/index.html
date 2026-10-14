@@ -126,13 +126,21 @@
    <aside class="mission" aria-label="Hive Run leaderboard and field guide">
      <section class="leaderboard-panel" id="leaderboard" aria-labelledby="leaderboardTitle">
      <div class="board-heading"><span>FIELD NETWORK / HIVE RUN</span><button type="button" id="leaderboardRefresh">↻ REFRESH</button></div>
-     <h3 id="leaderboardTitle">HIVE <em>LEADERBOARD.</em></h3>
+     <div class="personal-record" id="personalRecord" aria-label="Your personal best score" aria-live="polite">
+      <span class="personal-record-label" id="personalRecordContext">YOUR PERSONAL BEST</span>
+      <div class="personal-record-line"><strong id="personalRecordScore">000000</strong><span id="personalRecordRank">NOT RANKED</span></div>
+      <div class="personal-record-identity" id="personalRecordIdentity">Your personal best for this expedition will appear here.</div>
+     </div>
+     <h3 id="leaderboardTitle">HIVE <em>HIGH SCORES.</em></h3>
      <div class="field-network-bridge" id="gameProfileBridge" aria-live="polite" hidden>
       <div><strong id="gameProfileTitle">LINK YOUR FIELD NETWORK PROFILE</strong><p id="gameProfileExplanation">To display verified Hive Run records on your profile, sign in and remember this device before starting a ranked run.</p></div>
       <a id="gameSignInLink" href="/community.html#account">SIGN IN / CREATE PROFILE ↗</a>
      </div>
-     <p id="leaderboardStatus" class="board-caption">LOADING RANKED SCORES...</p>
-     <div id="leaderboardEntries" class="board-entries" aria-live="polite"></div>
+     <p id="leaderboardStatus" class="board-caption">LOADING TOP TEN...</p>
+     <div class="board-table" role="group" aria-label="Hive Run top ten high scores">
+      <div class="board-column-headings" aria-hidden="true"><span>RANK</span><span>INITIALS</span><span>SCORE</span></div>
+      <div id="leaderboardEntries" class="board-entries" aria-live="polite"></div>
+     </div>
      <div id="submissionPanel" class="submission-panel" hidden>
       <strong>ENTER THE HIGH-SCORE BOARD</strong>
       <p id="finalRunSummary"></p>
