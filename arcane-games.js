@@ -12,7 +12,7 @@
  const link=(name,url,cls="")=>{const a=node("a",cls,name);a.href=url;a.target="_blank";a.rel="noopener noreferrer";return a};
  const exactCard=name=>"https://scryfall.com/search?q="+encodeURIComponent('!"'+name+'"');
  const centralDay=()=>{const d=new Intl.DateTimeFormat("en-US",{timeZone:"America/Chicago",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const part=k=>d.find(p=>p.type===k)?.value||"";return part("year")+"-"+part("month")+"-"+part("day")};
- const memoryKey=day=>"deepcuts:arcane:"+game+":"+day+(practice?":practice:"+seed:"");
+ const memoryKey=day=>"deepcuts:arcane:"+game+":"+(practice?"practice:"+seed:day);
  const readLocal=day=>{try{const x=JSON.parse(localStorage.getItem(memoryKey(day))||"[]");return Array.isArray(x)?x:[]}catch{return []}};
  const writeLocal=(day,history)=>{try{localStorage.setItem(memoryKey(day),JSON.stringify(history))}catch{}};
  const status=(text,bad=false)=>{const e=$("arcaneMessage");e.textContent=text;e.dataset.kind=bad?"error":"info"};
@@ -31,7 +31,7 @@
   if(!res.ok)throw Error(result.error||"The puzzle could not be reached.");
   return result;
  }
- function buildHistory(){return state?.authenticated?[]:readLocal(state?.day||centralDay())}
+ function buildHistory(){return practice||!state?.authenticated?readLocal(state?.day||centralDay()):[]}
  function iconLegend(){
   const row=node("div","arcane-hint-legend");
   for(const [name,type] of [["Right spot","correct"],["Wrong spot","present"],["Not in word","absent"]]){
@@ -149,8 +149,9 @@
   $("arcaneDay").textContent=(practice?"PRACTICE CASE":"TODAY'S FILE")+" · "+state.day+" CENTRAL";
   $("arcaneProgress").textContent=state.finished?"CASE COMPLETE":game==="cipher"?"GUESS "+(state.attempts+1)+" / 6":"GROUPS "+state.solved.length+" / 4";
   const banner=$("arcaneAccount");
-  if(state.authenticated)banner.textContent="✓ Investigator signed in · daily scores and badges saved to your profile";
-  else {banner.replaceChildren();banner.append(link("Sign in to the Field Network","/community.html#account"),document.createTextNode(" to save daily scores and trophies. Playing without an account is free."));banner.querySelector("a").target="_self";}
+  if(practice)banner.textContent="PRACTICE · No scores, badges, or leaderboard entries are saved.";
+  else if(state.authenticated)banner.textContent="✓ Investigator signed in · daily scores and badges saved to your profile";
+  else {banner.replaceChildren();banner.append(link("Sign in to your profile","/profile#account"),document.createTextNode(" to save daily scores and trophies. Playing without an account is free."));banner.querySelector("a").target="_self";}
   const awards=$("arcaneAwards");awards.replaceChildren();
   if(state.newBadges?.length)for(const b of state.newBadges){const wrap=node("div","arcane-new-badge");wrap.append(node("strong","",b.title),node("span","",b.detail));awards.append(wrap);}
   if(state.finished){const existing=state.badges||[];if(existing.length){const wrap=node("div","arcane-new-badge");wrap.append(node("strong","","Your investigator trophies"));wrap.append(node("span","",existing.map(x=>x.title).join(" · ")));awards.append(wrap)}}
@@ -174,9 +175,9 @@
   if(working||!state||state.finished)return;setBusy(true);
   try{
    const before=buildHistory();
-   const updated=await request("POST",action,{...payload,...(!state.authenticated?{history:before}:{})});
+   const updated=await request("POST",action,{...payload,...((practice||!state.authenticated)?{history:before}:{})});
    state={...state,...updated};
-   if(!state.authenticated)writeLocal(state.day,[...before,game==="cipher"?payload.guess:payload.cards]);
+   if(practice||!state.authenticated)writeLocal(state.day,[...before,game==="cipher"?payload.guess:payload.cards]);
    selected.clear();entry="";render();
    if(state.finished){status(state.won?"Case solved. Outstanding investigation!":"Case closed. Review the revealed answer below.");loadLeaderboard();}
    else if(game==="board")status(state.oneAway?"One away! Three of those cards share an unsolved connection.":state.solved.length?"Correct group filed. Keep investigating.":"Not quite. Review the four cards and try again.",!state.oneAway&&state.remaining<4);
@@ -208,8 +209,8 @@
   setBusy(true);status("");
   const host=$("arcaneGame");host.replaceChildren(node("p","games-loading","Unsealing today's puzzle…"));
   try{
-   const history=readLocal(centralDay());
-   const data=await request("GET","state",{...{history}});
+   const history=(practice||!profileKey())?readLocal(centralDay()):[];
+   const data=await request("GET","state",{history});
    state=data;entry="";selected.clear();displayOrder=[...(data.tiles||[])];render();
    setBusy(false); // The puzzle is playable even if leaderboard retrieval is slow.
    await loadLeaderboard();
@@ -243,7 +244,7 @@
    else if(/^[A-Za-z]$/.test(e.key)){e.preventDefault();inputKey(e.key)}
   });
   document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!practice&&state&&centralDay()!==state.day)load()});
-  window.addEventListener("deepcuts:profile-change",()=>{if(!working)load()});
+  window.addEventListener("deepcuts:profile-change",()=>{if(!practice&&!working)load()});
   load();
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",setup,{once:true});else setup();

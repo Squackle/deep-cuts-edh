@@ -80,8 +80,9 @@ async function request(method,action,params={}){
 }
 function panelStatus(status){
  const banner=$("gamesAccountStatus");if(!banner)return;
- if(status?.authenticated)banner.textContent="✓ Investigator signed in · daily scores and badges save to your profile";
- else banner.innerHTML='<a href="/community.html#account">Sign in to the Field Network</a> to save achievements. You can still play free without an account.';
+ if(practice)banner.textContent="PRACTICE · No profile scores, badges, or leaderboard entries are saved.";
+ else if(status?.authenticated)banner.textContent="✓ Investigator signed in · daily scores and badges save to your profile";
+ else banner.innerHTML='<a href="/profile#account">Sign in to your profile</a> to save achievements. You can still play free without an account.';
 }
 function renderAwards(awards){
  const holder=$("gameAwards");if(!holder)return;
@@ -107,7 +108,7 @@ async function loadGame(){
   if(game==="cold"&&old?.attempts?.length)params.history=old.attempts;
   const data=await request("GET","state",params);
   state=data;
-  if(game==="ladder"&&!data.authenticated&&old?.finished&&old.day===data.day){
+  if(game==="ladder"&&!practice&&!data.authenticated&&old?.finished&&old.day===data.day){
    state={...data,...old,authenticated:false};
   }
   panelStatus(state);renderAwards(state.awards||[]);
@@ -240,7 +241,7 @@ function renderCold(){
    const previous=state.attempts||[];
    const r=await request("POST","guess",{guess:selected,history:previous});
    state={...state,...r};
-   if(!state.authenticated)saveStorage(storageKey("cold",practice?"practice":state.day),{day:state.day,attempts:state.attempts});
+   if(practice||!state.authenticated)saveStorage(storageKey("cold",practice?"practice":state.day),{day:state.day,attempts:state.attempts});
    announce(state.won?"That's our suspect! Case closed.":state.finished?"All leads exhausted. The real suspect is revealed.":"Not quite. Another clue has been unsealed.");
    renderCold();if(state.finished)await loadBoard();
   }catch(e){announce(e.message,true);submit.disabled=false}
@@ -313,7 +314,7 @@ function renderLadder(){
   try{
    const r=await request("POST","submit",{order:list.map(x=>x.name)});
    state={...state,...r};
-   if(!state.authenticated)saveStorage(storageKey("ladder",practice?"practice":state.day),state);
+   if(!practice&&!state.authenticated)saveStorage(storageKey("ladder",state.day),state);
    announce(state.won?"Perfect line-up! You're a true investigator.":"Verdict filed. Check the official popularity order below.");
    renderLadder();await loadBoard();
   }catch(e){announce(e.message,true);submit.disabled=false}
@@ -366,7 +367,7 @@ function setup(){
  document.addEventListener("visibilitychange",()=>{
   if(!document.hidden&&state&&dateChicago()!==state.day&&!practice)loadGame();
  });
- window.addEventListener("deepcuts:profile-change",()=>{if(!working)loadGame()});
+ window.addEventListener("deepcuts:profile-change",()=>{if(!practice&&!working)loadGame()});
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",setup,{once:true});
 else setup();
