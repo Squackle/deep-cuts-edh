@@ -83,7 +83,7 @@ function updateEligibility(){
  const active=!!ch&&now>=ch.opens_at&&now<=ch.closes_at;
  currentEligibility=!!deck&&!!ch&&isEligible(ch,deck)&&active;
  $("enterChallenge").disabled=!currentEligibility;
- if(!state.me)info.textContent="Sign in with your Field Network profile to see your decks and submit an entry.";
+ if(!state.me)info.textContent="Sign in with your Community profile to see your decks and submit an entry.";
  else if(!state.myDecks.length)info.textContent="You have no published community decks yet. Publish one in the Deck Gallery first; private vaults aren't public entries.";
  else if(!deck)info.textContent="All "+state.myDecks.length+" public decks are listed. Choose one to check whether it qualifies for this challenge.";
  else if(!active)info.textContent="This event is closed, but your deck remains in the gallery.";

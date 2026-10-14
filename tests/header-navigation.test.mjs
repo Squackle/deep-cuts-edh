@@ -9,7 +9,7 @@ test("Desktop navigation is a progressive enhancement, not a replacement for fai
  assert.match(js,/root\.insertBefore\(desktop,nav\)/);
 });
 test("Four concise desktop destinations and 3 grouped dropdowns",()=>{
- for(const group of ['section("DISCOVER"','section("BUILD"','section("COMMUNITY"'])
+ for(const group of ['section("DISCOVER"','section("BUILD"','section("CONNECT"'])
   assert.ok(js.includes(group),"Missing grouped destination "+group);
  assert.match(js,/site-desktop-arcade/);
  assert.match(js,/node\("details","site-desktop-group"\)/);
@@ -17,7 +17,7 @@ test("Four concise desktop destinations and 3 grouped dropdowns",()=>{
 });
 test("Core site pages and the two new Commander tools remain reachable",()=>{
  for(const label of ["RESCUE REPORT","COMMANDERS","CARD LIBRARY","SET WATCH","DEEP CUT FINDER",
-   "DECK WORKSHOP","BINDER TO BREW","ARCADE","NOMINATIONS","FIELD NETWORK","FIELD OFFICE"]){
+   "DECK WORKSHOP","BINDER TO BREW","ARCADE","NOMINATIONS","COMMUNITY","MEMBERS' LOUNGE"]){
   assert.ok(js.includes('"'+label+'"'),"Lost navigation link "+label);
  }
  assert.ok(js.includes('"/deep-cut-finder"'));
@@ -51,7 +51,7 @@ test("All public pages retain the same eight fallback links",()=>{
  const pages=["index.html","games.html","community.html","deck.html","library.html","nominations.html",
  "set-watch.html","supporters.html","deep-cut-finder.html","binder-to-brew.html",
  "games/arcane-cipher.html","games/conspiracy-board.html"];
- const expected=["RESCUE REPORT","COMMANDERS","CARD LIBRARY","DECK WORKSHOP","ARCADE","NOMINATIONS","FIELD NETWORK","FIELD OFFICE"];
+ const expected=["RESCUE REPORT","COMMANDERS","CARD LIBRARY","DECK WORKSHOP","ARCADE","NOMINATIONS","COMMUNITY","MEMBERS' LOUNGE"];
  for(const file of pages){
   const html=fs.readFileSync(file,"utf8");
   const match=html.match(/<nav\b[^>]*class="primary-nav"[^>]*>([\s\S]*?)<\/nav>/);
@@ -60,4 +60,23 @@ test("All public pages retain the same eight fallback links",()=>{
     .map(m=>m[1].replace(/<[^>]+>/g,"").trim());
   assert.deepEqual(labels,expected,file+" fallback nav labels differ");
  }
+});
+
+test("Community, Members' Lounge, and Connect labels are clear and consistent",()=>{
+ const pages=["index.html","community.html","members.html","supporters.html","deck.html","games.html","library.html","nominations.html","set-watch.html","privacy.html","deep-cut-finder.html","binder-to-brew.html","404.html",
+ "games/cold-case.html","games/obscurity-ladder.html","games/arcane-cipher.html","games/conspiracy-board.html",
+ "reports/chainer-dementia-master.html","reports/alena-and-gilanra.html","reports/commander-mustard.html","reports/ekthi-contaminator-priest.html"];
+ for(const file of pages){
+  const html=fs.readFileSync(file,"utf8");
+  assert.ok(html.includes(">COMMUNITY</a>"),file+" Community link missing");
+  assert.ok(html.includes(">MEMBERS' LOUNGE</a>"),file+" Members' Lounge link missing");
+  assert.doesNotMatch(html,/>FIELD NETWORK<\/a>|>FIELD OFFICE<\/a>/,file+" legacy menu remains");
+  assert.match(html,/href="\/community(?:\.html)?"/,file+" must preserve community URL");
+  assert.match(html,/href="\/members(?:\.html)?"/,file+" must preserve membership URL");
+ }
+ assert.match(js,/section\("CONNECT",\["NOMINATIONS","COMMUNITY","MEMBERS' LOUNGE"\]\)/);
+ assert.match(js,/\["CONNECT",\["NOMINATIONS","COMMUNITY","MEMBERS' LOUNGE"\]\]/);
+ assert.match(fs.readFileSync("community.html","utf8"),/<h1>THE <em>COMMUNITY\.<\/em><\/h1>/);
+ assert.match(fs.readFileSync("members.html","utf8"),/<h1>Members' <em>Lounge\.<\/em><\/h1>/);
+ assert.match(fs.readFileSync("index.html","utf8"),/<strong>Community<\/strong>/);
 });
