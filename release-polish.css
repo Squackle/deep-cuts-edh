@@ -1,0 +1,23 @@
+/* Deep Cuts EDH — October quality & discoverability release */
+.dc-hero-play{border-color:#cdae76!important;color:#f6e5be!important}
+.dc-hero-quick-links{display:flex;flex-wrap:wrap;gap:11px 21px;margin:8px 0 13px}
+.dc-hero-quick-links a{font:700 11px/1.5 ui-sans-serif,system-ui;color:#c8d7c7;text-decoration:underline;text-underline-offset:3px}
+.dc-hero-game-strip{display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px;max-width:600px;margin:12px 0 16px;font:750 10px/1.5 ui-monospace,monospace}
+.dc-hero-game-strip span{color:#e8c98c;letter-spacing:.09em}
+.dc-hero-game-strip a{color:#eff1e6;padding:6px 8px;background:#2b4c3a;border:1px solid #567c5f;border-radius:3px}
+.dc-hero-game-strip a:hover{background:#436e52}
+.dc-daily-games-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;width:min(100%,490px);flex:1 1 410px}
+.dc-daily-games-grid>a{border:1px solid #899c77;padding:13px 14px;border-radius:5px;background:#192f26;min-width:0;text-decoration:none}
+.dc-daily-games-grid strong{display:block;color:#f6ead7;font:750 14px/1.5 ui-sans-serif,system-ui}
+.dc-daily-games-grid small{display:block;color:#d4ddca;font:600 11px/1.5 ui-sans-serif,system-ui}
+.dc-daily-games-grid>a:hover{background:#335945;border-color:#d1b979}
+.dc-community-start{margin-top:23px;background:linear-gradient(125deg,#2a4638,#1a3027);padding:19px 22px;border:1px solid #64765d}
+.dc-community-start h2{font:700 clamp(23px,3vw,32px)/1.15 Georgia,serif;color:#f2dfb8;margin:8px 0}
+.dc-community-start p{font-size:13px;line-height:1.6;color:#e0e5d6;max-width:650px;margin-bottom:13px}
+.dc-community-actions{display:flex;flex-wrap:wrap;gap:8px}
+.dc-community-actions button{flex:1 1 168px;min-height:46px;background:#e6cf9c;color:#21382c;border:1px solid #e6cf9c;border-radius:3px;padding:10px 12px;font:800 11px/1.4 ui-sans-serif,system-ui;cursor:pointer}
+.dc-community-actions button:hover,.dc-community-actions button[aria-current="page"]{background:#f6dfab;color:#193e2d}
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #d9a956;outline-offset:3px}
+@media(max-width:650px){.dc-daily-games-grid{width:100%}.dc-hero-game-strip{gap:6px}.dc-hero-game-strip a{font-size:10px}.dc-community-start{padding:16px}.dc-community-actions button{flex-basis:100%}}
+@media(max-width:350px){.dc-daily-games-grid{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.dc-hero-game-strip a,.dc-daily-games-grid>a{transition:none}}
