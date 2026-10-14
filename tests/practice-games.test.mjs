@@ -8,13 +8,17 @@ const host="https://deep-cuts-edh.pages.dev";
 const authHeader="Bearer dcprofile1_"+ "a".repeat(32)+"_"+ "b".repeat(64);
 function envFixture(){
  const queries=[];
- const db={prepare(sql){const q={sql,bind(...args){this.args=args;return this},async first(){
-  queries.push({sql,args:this.args||[]});
-  if(sql.includes("FROM community_profiles WHERE id=? AND key_hash=?"))return {id:"testplayer",handle:"Tester",avatar:"Commander Mustard"};
-  if(sql.includes("INSERT INTO community_limits"))return {attempts:1};
-  return null;
- },async all(){queries.push({sql,args:this.args||[]});return {results:[]}},
- async run(){queries.push({sql,args:this.args||[]});return {meta:{changes:1}}}};
+ const db={prepare(sql){return {sql,
+  bind(...args){this.args=args;return this},
+  async first(){
+   queries.push({sql,args:this.args||[]});
+   if(sql.includes("FROM community_profiles WHERE id=? AND key_hash=?"))return {id:"testplayer",handle:"Tester",avatar:"Commander Mustard"};
+   if(sql.includes("INSERT INTO community_limits"))return {attempts:1};
+   return null;
+  },
+  async all(){queries.push({sql,args:this.args||[]});return {results:[]}},
+  async run(){queries.push({sql,args:this.args||[]});return {meta:{changes:1}}}
+ };}};
  return{env:{DB:db,TURNSTILE_SECRET:"fixture"},queries};
 }
 function request(game,action,seed,history=[],signed=false){
