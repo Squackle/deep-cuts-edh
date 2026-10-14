@@ -168,6 +168,36 @@ function revealBadges(host){
  if(!state.authenticated)wrap.append(el("p","games-muted","Save your achievements by signing in."));
  host.append(wrap);
 }
+// Cold Case uses a single, immediately committed guess. A hidden second
+// confirmation below the suspect list made the first click appear broken.
+async function submitColdGuess(name,button){
+ if(working||!state||state.finished||state.attempts?.includes(name))return;
+ working=true;
+ for(const option of document.querySelectorAll("#gameArea .games-suspect"))option.disabled=true;
+ button.textContent="CHECKING…";
+ announce("Checking "+name+" against the evidence…");
+ try{
+  const previous=state.attempts||[];
+  const result=await request("POST","guess",{guess:name,history:previous});
+  state={...state,...result};
+  if(practice||!state.authenticated)saveStorage(storageKey("cold",practice?"practice":state.day),{day:state.day,attempts:state.attempts});
+  renderCold();
+  const counter=$("gamesProgress");
+  if(counter)counter.textContent=state.finished?"CASE CLOSED":"GUESS "+Math.min(5,(state.attempts?.length||0)+1)+" OF 5";
+  announce(state.won?"That's our suspect! Case closed.":state.finished?"All leads exhausted. The suspect has been revealed.":"Incorrect suspect. Evidence "+String((state.attempts?.length||0)+1).padStart(2,"0")+" has been unsealed.");
+  const target=state.finished?document.querySelector("#gameArea .games-reveal"):document.querySelectorAll("#gameArea .games-clue-open")[(state.clues?.length||1)-1];
+  if(target){
+   target.tabIndex=-1;
+   target.focus({preventScroll:true});
+   target.scrollIntoView({behavior:window.matchMedia?.("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});
+  }
+  if(state.finished)await loadBoard();
+ }catch(e){
+  announce(e.message,true);
+  for(const option of document.querySelectorAll("#gameArea .games-suspect"))if(!option.classList.contains("games-suspect-tried"))option.disabled=false;
+  button.textContent="GUESS";
+ }finally{working=false}
+}
 function renderCold(){
  const host=$("gameArea");host.replaceChildren();
  const archive=el("div","games-dossier-head");
@@ -208,46 +238,20 @@ function renderCold(){
  }
  const choose=el("section","games-choose-suspect");
  choose.append(el("h2","","Name your suspect"));
- choose.append(el("p","games-muted","Open a commander name to view its Scryfall card, or use PICK to select your suspect. A wrong guess unseals the next clue."));
- const grid=el("div","games-suspect-grid");selected="";
+ choose.append(el("p","games-muted","Tap GUESS beside a commander to submit that guess immediately. Every incorrect guess reveals the next clue. Open the commander name separately to view its Scryfall card."));
+ const grid=el("div","games-suspect-grid");
  const tried=new Set(state.attempts||[]);
  for(const name of state.choices||[]){
-  // Keep Scryfall navigation separate from the guess selection control.
   const entry=el("div","games-suspect-entry");
-  const option=el("button","games-suspect",tried.has(name)?"USED":"PICK");option.type="button";
-  option.setAttribute("aria-label","Pick "+name+" as your suspect");
+  const option=el("button","games-suspect",tried.has(name)?"USED":"GUESS");
+  option.type="button";
+  option.setAttribute("aria-label",tried.has(name)?"Already guessed "+name:"Guess "+name+" and reveal the next clue");
   if(tried.has(name)){
-   option.disabled=true;option.classList.add("games-suspect-tried");
-   option.title="Already questioned";
-  }else option.addEventListener("click",()=>{
-   selected=name;
-   for(const b of grid.querySelectorAll(".games-suspect")){
-    const active=b===option;
-    b.setAttribute("aria-pressed",String(active));b.textContent=b.disabled?"USED":active?"PICKED":"PICK";
-    b.parentElement.classList.toggle("games-suspect-selected",active);
-   }
-   submit.disabled=false;submit.textContent="SUBMIT "+name.toUpperCase()+" ↗";
-  });
-  option.setAttribute("aria-pressed","false");
+   option.disabled=true;option.classList.add("games-suspect-tried");option.title="Already questioned";
+  }else option.addEventListener("click",()=>submitColdGuess(name,option));
   entry.append(commanderLink(name),option);grid.append(entry);
  }
- choose.append(grid);
- const submit=el("button","games-button games-button-primary","SELECT A SUSPECT TO CONTINUE");
- submit.type="button";submit.disabled=true;
- submit.addEventListener("click",async()=>{
-  if(!selected||working)return;working=true;submit.disabled=true;
-  announce("Checking the evidence…");
-  try{
-   const previous=state.attempts||[];
-   const r=await request("POST","guess",{guess:selected,history:previous});
-   state={...state,...r};
-   if(practice||!state.authenticated)saveStorage(storageKey("cold",practice?"practice":state.day),{day:state.day,attempts:state.attempts});
-   announce(state.won?"That's our suspect! Case closed.":state.finished?"All leads exhausted. The real suspect is revealed.":"Not quite. Another clue has been unsealed.");
-   renderCold();if(state.finished)await loadBoard();
-  }catch(e){announce(e.message,true);submit.disabled=false}
-  finally{working=false}
- });
- choose.append(submit);host.append(choose);
+ choose.append(grid);host.append(choose);
 }
 function move(listIndex,change){
  const other=listIndex+change;

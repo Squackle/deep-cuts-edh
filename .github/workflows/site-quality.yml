@@ -52,6 +52,10 @@ jobs:
           node --check arcane-games.js
           node --check src/automated-games.js
           node --check functions/api/arcane-games.js
+      - name: Install isolated Chromium test driver
+        run: npm install --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
+      - name: Browser interaction tests for all four Arcade practice games
+        run: node --experimental-default-type=module --test tests/practice-browser.test.mjs
       - name: Magic daily game regression suite
         run: node --experimental-default-type=module --test tests/arcane-daily.test.mjs
       - name: JavaScript syntax
