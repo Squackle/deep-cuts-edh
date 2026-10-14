@@ -401,4 +401,13 @@ async function boot(){
   if(p.has("publish"))$("fromWorkshop").click();
  }
 }
+window.addEventListener("hashchange",()=>{
+ const page=document.body.dataset.communityPage;
+ const tab=location.hash.slice(1);
+ if(page==="community"&&["account","collection","dispatches","following"].includes(tab)){
+  location.replace("/profile#"+tab);
+ }else if(page==="profile"&&["overview","account","collection","dispatches","following"].includes(tab)){
+  setTab(tab);
+ }
+});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
