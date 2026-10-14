@@ -69,7 +69,7 @@ let challengeRecord=null;
 let currentEligibility=false;
 function isEligible(ch,deck){
  if(ch.format==="open")return true;
- return deck.commander.toLowerCase().split("&").some(x=>x.trim()===ch.commander.toLowerCase().trim());
+ return deck.commander.trim().toLowerCase()===ch.commander.trim().toLowerCase();
 }
 function isPreviewCommander(name){return /nephilim epochal|ekthi, contaminator priest/i.test(name)}
 function formatDeckName(deck){
@@ -87,7 +87,7 @@ function updateEligibility(){
  else if(!state.myDecks.length)info.textContent="You have no published community decks yet. Publish one in the Deck Gallery first; private vaults aren't public entries.";
  else if(!deck)info.textContent="All "+state.myDecks.length+" public decks are listed. Choose one to check whether it qualifies for this challenge.";
  else if(!active)info.textContent="This event is closed, but your deck remains in the gallery.";
- else if(!isEligible(ch,deck))info.textContent='"'+deck.title+'" is saved to your profile, but this specific challenge requires '+ch.commander+'. Choose the Open Case Showcase above to enter any commander.';
+ else if(!isEligible(ch,deck))info.textContent='"'+deck.title+'" is saved to your profile, but the Featured Case challenge requires exactly '+ch.commander+' as the sole commander. Choose Open Build for other commanders.';
  else if(isPreviewCommander(deck.commander))info.textContent='"'+deck.title+'" is eligible for this experimental Open Case showcase. IMPORTANT: '+deck.commander+' is a pre-release preview, NOT currently Commander-legal; entry is for discussion and future brewing only.';
  else info.textContent='"'+deck.title+'" qualifies. Choose ENTER CHALLENGE to submit it (nothing is entered automatically).';
  info.className="cm-challenge-notice"+(currentEligibility?" cm-eligible":deck?" cm-ineligible":"");
@@ -114,7 +114,7 @@ async function loadChallengeDetail(){
  if(!x.challenge){box.append(el("p","No challenge scheduled."));return}
  const ch=x.challenge,now=new Date().toISOString().slice(0,19).replace("T"," ");
  const open=now>=ch.opens_at&&now<=ch.closes_at;
- box.append(el("h3",ch.title),el("p",ch.format==="open"?"OPEN FORMAT: Every public commander deck may enter, including explicitly labeled pre-release experiments.":"FEATURED COMMANDER: "+ch.commander));
+ box.append(el("h3",ch.title),el("p",ch.format==="open"?"OPEN BUILD: Any published Commander deck may enter, including clearly labeled experimental builds.":"FEATURED CASE: Only decks whose sole commander is "+ch.commander+" may enter. The featured case follows the homepage rescue report."));
  box.append(el("p",(open?"Entries and votes close ":"Challenge closed ")+ch.closes_at+" UTC","cm-note"));
  if(ch.format==="open")box.append(el("p","This is a community creativity showcase, not a tournament or Commander-legality certification.","cm-note"));
  const select=$("challengeDeck"),previous=select.value;clear(select);
