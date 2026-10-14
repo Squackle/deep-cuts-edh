@@ -13,7 +13,17 @@ test("main-site game route and all first-party assets are present",()=>{
  const atlas=new URL("../games/hive-run/assets/backgrounds/hive-run-atlas.webp",import.meta.url);
  assert.ok(existsSync(atlas));
  assert.match(html,/id="gameSignInLink" href="\/community\.html#account"/);
- assert.match(html,/id="gameProfileBridge"/);
+ assert.match(html,/id="gameProfileBridge"[^>]*hidden/);
+ assert.match(html,/<header class="lab-header" data-profile-header>/);
+ assert.match(html,/href="\/header-profile\.css"/);
+ assert.match(html,/src="\/header-profile\.js"/);
+ assert.doesNotMatch(html,/id="gameProfileLink"/);
+ const headerJs=readFileSync(new URL("../header-profile.js",import.meta.url),"utf8");
+ assert.match(headerJs,/\.lab-header\[data-profile-header\]/);
+ assert.match(headerJs,/\/api\/community\?action=me/);
+ const gameJs=readFileSync(new URL("../games/hive-run/src/main.js",import.meta.url),"utf8");
+ assert.match(gameJs,/\$\("gameProfileBridge"\)\.hidden=!!data\.profile/);
+ assert.match(gameJs,/\$\("gameProfileBridge"\)\.hidden=true/);
  assert.match(html,/id="playerAlias"/);
  assert.match(html,/maxlength="3" pattern="\[A-Za-z0-9\]\{3\}"/);
  assert.doesNotMatch(html,/id="playerProfile"/);

@@ -35,14 +35,12 @@ async function refreshLeaderboard(){
  try{
   const data=await leaderboard.load(selectedMode,selectedChallenge);
   renderLeaderboard($("leaderboardEntries"),data);
-  $("gameSignInLink").hidden=!!data.profile;
-  $("gameProfileLink").hidden=!data.profile;
+  // The shared top-right avatar is the only account shortcut when signed in.
+  // Guests still see a sign-in explanation next to the leaderboard.
+  $("gameProfileBridge").hidden=!!data.profile;
   if(data.profile){
    const name=data.profile.handle;
    $("profileNotice").textContent="SIGNED IN · Your initials will automatically link to @"+name+" when the verified replay is submitted.";
-   $("gameProfileTitle").textContent="SIGNED IN · @"+name.toUpperCase();
-   $("gameProfileExplanation").textContent="Your future ranked replays will appear on your Field Network profile after successful server verification.";
-   $("gameProfileLink").href="/community.html?profile="+encodeURIComponent(name);
   }else{
    $("gameProfileTitle").textContent="LINK YOUR FIELD NETWORK PROFILE";
    $("gameProfileExplanation").textContent="Sign in to Field Network on this device to automatically connect new high-score initials to your verified profile.";
@@ -50,7 +48,10 @@ async function refreshLeaderboard(){
   }
 
   $("leaderboardStatus").textContent=MODES[selectedMode].name.toUpperCase()+" · "+(selectedChallenge==="daily"?"DAILY "+data.day:"ARCADE")+" · TOP 25";
- }catch{$("leaderboardStatus").textContent="BOARD UNAVAILABLE · PRACTICE STILL WORKS"}
+ }catch{
+  $("gameProfileBridge").hidden=true;
+  $("leaderboardStatus").textContent="BOARD UNAVAILABLE · PRACTICE STILL WORKS";
+ }
 }
 // Instrumentation nodes are inert and permanently hidden on the public site.
 // Gameplay counters remain readable from the local DOM in developer tools only.

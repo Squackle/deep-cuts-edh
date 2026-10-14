@@ -8,11 +8,13 @@
  <title>HIVE RUN — Free Arcade | Deep Cuts EDH</title>
  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
  <link rel="stylesheet" href="./styles.css">
+ <link rel="stylesheet" href="/header-profile.css">
+ <script defer src="/header-profile.js"></script>
  <script type="module" src="./src/main.js"></script>
 </head>
 <body>
  <a class="skip-link" href="#game">Skip to game</a>
- <header class="lab-header">
+ <header class="lab-header" data-profile-header>
   <a class="brand" href="/games.html" aria-label="Deep Cuts EDH games">
    <span class="brand-mark" aria-hidden="true">◈</span>
    <span>DEEP CUTS <strong>ARCADE</strong><small>TWO PATHS. ONE HIVE.</small></span>
@@ -125,10 +127,9 @@
      <section class="leaderboard-panel" id="leaderboard" aria-labelledby="leaderboardTitle">
      <div class="board-heading"><span>FIELD NETWORK / HIVE RUN</span><button type="button" id="leaderboardRefresh">↻ REFRESH</button></div>
      <h3 id="leaderboardTitle">HIVE <em>LEADERBOARD.</em></h3>
-     <div class="field-network-bridge" id="gameProfileBridge" aria-live="polite">
+     <div class="field-network-bridge" id="gameProfileBridge" aria-live="polite" hidden>
       <div><strong id="gameProfileTitle">LINK YOUR FIELD NETWORK PROFILE</strong><p id="gameProfileExplanation">To display verified Hive Run records on your profile, sign in and remember this device before starting a ranked run.</p></div>
       <a id="gameSignInLink" href="/community.html#account">SIGN IN / CREATE PROFILE ↗</a>
-      <a id="gameProfileLink" href="/community.html#account" hidden>MY PROFILE ↗</a>
      </div>
      <p id="leaderboardStatus" class="board-caption">LOADING RANKED SCORES...</p>
      <div id="leaderboardEntries" class="board-entries" aria-live="polite"></div>

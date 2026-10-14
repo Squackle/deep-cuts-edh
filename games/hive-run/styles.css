@@ -360,3 +360,25 @@ body.game-only .arcade-frame>.mutation-guide{display:none!important}
  background:repeating-linear-gradient(90deg,#0e2920 0 47px,#53674e 47px 49px);
  color:#ffe0a4;border:2px solid #bfa071;border-radius:3px}
 .submission-panel .arcade-initials-input:focus-visible{outline:3px solid #f9dc9f;outline-offset:3px}
+
+/* The main site's exact profile-avatar component occupies the far-right
+   slot on the original Hive Run header, without creating a second menu. */
+.lab-header[data-profile-header]{
+ display:grid;grid-template-columns:minmax(0,1fr) auto 50px;
+ align-items:center;column-gap:clamp(9px,1.5vw,20px);
+}
+.lab-header[data-profile-header]>.brand{min-width:0}
+.lab-header[data-profile-header]>.lab-badge{justify-self:end}
+.lab-header[data-profile-header]>.header-profile-button{
+ grid-column:3;justify-self:end;margin:0;width:50px;height:50px;flex:none;
+}
+.field-network-bridge[hidden]{display:none!important}
+@media(max-width:580px){
+ .lab-header[data-profile-header]{grid-template-columns:minmax(0,1fr) 46px;gap:10px}
+ .lab-header[data-profile-header]>.lab-badge{display:none}
+ .lab-header[data-profile-header]>.header-profile-button{grid-column:2;width:46px;height:46px}
+}
+@media(max-width:420px){
+ .lab-header[data-profile-header]{grid-template-columns:minmax(0,1fr) 44px;gap:8px}
+ .lab-header[data-profile-header]>.header-profile-button{width:44px;height:44px}
+}

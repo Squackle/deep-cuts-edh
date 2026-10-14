@@ -180,7 +180,10 @@
   media.addEventListener?.("change",()=>setOpen(false));
  }
  function setup(){
-  const root=document.querySelector(".site-header .header-inner");
+  // Hive Run uses a slim arcade header but shares our real account avatar,
+  // portrait crop, sign-in link and account-change events.
+  const root=document.querySelector(".site-header .header-inner")||
+             document.querySelector(".lab-header[data-profile-header]");
   if(!root||root.querySelector(".header-profile-button"))return;
   root.classList.add("header-profile-enabled");
   setupNavigation(root);
