@@ -19,3 +19,11 @@ Verification: 75 game/API tests; 320/375/390/768/1280px browser layouts and Game
 - Made the main site Games hub and homepage link to the first-party arcade prominently; profile sign-in lives at /community.html#account.
 - Public investigator dossiers include verified Hive Run records from all historical rules versions, kept separate per ruleset.
 - Past self-declared guest handles are intentionally not promoted to verified identities, even when the same display handle is later used to sign in.
+
+## October 14, 2026 — Classic arcade initials / automatic profile linking
+
+- New public Hive Run high-score entries require **exactly three ASCII letters or digits**; browser entry normalizes to uppercase and the server independently validates the initials.
+- Ranked replay verification, per-mode scoreboards and game-rule version remain unchanged. Historical scores are preserved.
+- A signed-in Field Network profile is linked **exclusively** from server-validated cookie authentication at submission time, independent of the three-character tag. Guests can still submit unlinked initials.
+- Removed the self-reported profile-handle field and prevent legacy unverified guest handles from displaying clickable ownership claims.
+- Regression tests verify valid and invalid initials, server-enforced length, uppercase storage, replay integrity, guest spoofing resistance, and verified account links.

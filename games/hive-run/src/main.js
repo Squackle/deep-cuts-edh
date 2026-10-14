@@ -45,7 +45,7 @@ async function refreshLeaderboard(){
    $("gameProfileLink").href="/community.html?profile="+encodeURIComponent(name);
   }else{
    $("gameProfileTitle").textContent="LINK YOUR FIELD NETWORK PROFILE";
-   $("gameProfileExplanation").textContent="Sign in and remember this device before starting a ranked run. Guest handle links are not proof of ownership.";
+   $("gameProfileExplanation").textContent="Sign in to Field Network on this device to automatically connect new high-score initials to your verified profile.";
    $("profileNotice").textContent="Guest score: initials only, no profile link. Sign in to Field Network before submitting to link your next verified score.";
   }
 

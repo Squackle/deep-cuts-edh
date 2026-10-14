@@ -102,9 +102,9 @@ export async function onRequestPost({request,env,data:contextData={}}){
    return json({token,seed,mode,challenge,day,rulesVersion:RULES_VERSION,sessionExpiresSeconds:7200},201);
   }
   if(data?.action!=="submit")return error("Unknown action.");
+  if(!await throttle(db,key,"submit",30))return error("Submission rate limit reached.",429);
   const initials=parseArcadeInitials(data.alias);
   if(!initials)return error("Enter exactly three letters or numbers for your arcade initials.",400);
-  if(!await throttle(db,key,"submit",30))return error("Submission rate limit reached.",429);
   const {token,events,summary}=data;
   if(typeof token!=="string"||!/^[-a-f0-9]{36}$/.test(token)||!validEvents(events))return error("Invalid game session or replay.");
   const record=await db.prepare("SELECT seed,issued_at,used_at,subject,mode,challenge_day,rules_version FROM hive_sessions_v1 WHERE token=?").bind(token).first();
