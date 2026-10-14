@@ -94,9 +94,14 @@ export function draftFromOwned(commander,owned,lookups,pinned=[]){
  const chosen=[],counts={land:0,interaction:0,draw:0,ramp:0,payoff:0,utility:0};
  function add(item,n){if(n<=0)return;const existing=chosen.find(c=>key(c.name)===key(item.name));if(existing)existing.qty+=n;else chosen.push({name:item.name,qty:n,role:item.role});counts[item.role]+=n;item.qty-=n}
  let remaining=99;
- for(const x of pool)if(pin.has(key(x.name))){const use=Math.min(remaining,x.qty,x.role==="land"?40-counts.land:x.qty);add(x,use);remaining-=use}
+ // Protect a realistic starting land allocation before adding less relevant spells.
+ const landSupply=pool.filter(x=>x.role==="land").reduce((n,x)=>n+x.qty,0);
+ const landGoal=Math.min(36,landSupply);
+ for(const x of pool)if(pin.has(key(x.name))&&remaining>0){const use=Math.max(0,Math.min(remaining,x.qty,x.role==="land"?40-counts.land:x.qty));add(x,use);remaining-=use}
+ const reservedLands=Math.max(0,landGoal-counts.land);
+ for(const x of pool)if(x.role!=="land"&&remaining>reservedLands){const use=Math.min(x.qty,remaining-reservedLands);add(x,use);remaining-=use}
+ for(const x of pool)if(x.role==="land"&&remaining>0){const use=Math.min(x.qty,remaining,Math.max(0,40-counts.land));add(x,use);remaining-=use}
  for(const x of pool)if(x.role!=="land"&&remaining>0){const use=Math.min(x.qty,remaining);add(x,use);remaining-=use}
- for(const x of pool)if(x.role==="land"&&remaining>0){const use=Math.min(x.qty,remaining);add(x,use);remaining-=use}
  const count=100-remaining,complete=remaining===0;
  return {commander:commander.name,commanders:[commander.name],cards:chosen,cardCount:count,missingSlots:remaining,complete,counts,skip,
   warnings:[...(!complete?["Incomplete: "+remaining+" additional legal, owned card copies are needed."]:[]),...(counts.land<32?["Land count is low ("+counts.land+"); review mana consistency."]:[]),...(counts.land>40?["Land count is high ("+counts.land+"); review the mana curve."]:[]),...(skip.unknown.length?["Unchecked names were excluded."]:[])],
