@@ -344,3 +344,6 @@ body.game-only .arcade-frame{grid-template-rows:auto auto minmax(0,1fr) auto}
 .arcade-home-link:hover,.arcade-home-link:focus-visible{background:#45644c;color:#fff6dc}
 body.game-only .arcade-home-link{min-height:31px;padding:5px 6px}
 @media(max-width:430px){.arcade-home-link{font-size:8px;padding:6px 5px}.cabinet-top-right{gap:4px}}
+
+/* Compact return-home affordance must not crowd a narrow phone's Game Only top bar. */
+@media(max-width:440px){body.game-only .arcade-home-link{font-size:0;padding:6px}body.game-only .arcade-home-link::after{content:'← HOME';font-size:9px}}
