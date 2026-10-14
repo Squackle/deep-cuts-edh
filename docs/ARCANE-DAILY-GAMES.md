@@ -3,18 +3,18 @@
 Release: 2026-10-14. Existing Cold Case, Obscurity Ladder and Hive Run remain unchanged, apart from adding new links and displaying additional verified achievements.
 
 ## Routes
-- `/games/arcane-cipher.html` — six-guess Wordle-style five-letter Magic term game, physical and on-screen keyboard, duplicate-letter-aware green/gold/gray feedback.
+- `/games/arcane-cipher.html` — six-guess Wordle-style five-letter Magic creature-type game, physical and on-screen keyboard, duplicate-letter-aware green/gold/gray feedback.
 - `/games/conspiracy-board.html` — sixteen unique Magic cards sorted into four pre-reviewed categories, four total mistakes, "one away" hints, explanations and separate Scryfall links.
 - `/api/arcane-games` — Cloudflare Pages Functions; GET `action=state|board|badges`, POST `action=guess|group`; `game=cipher|board`.
 - `/games.html` — both new games with daily/practice launch controls.
 
 ## Puzzle integrity
-- Curated material in `src/arcane-game-data.js`: 52 five-letter Magic-related answers, explanations and reference cards, and 16 nonoverlapping four-card category sets.
+- Curated material in `src/arcane-game-data.js`: 68 verified official five-letter creature types and explanations (Comprehensive Rules 205.3m, June 2026), and 16 nonoverlapping four-card category sets.
 - Daily date uses America/Chicago. The deterministic source is frozen on first request by `daily_arcane_puzzles(game,day)`, so new code cannot retroactively change an existing day's solution.
 - Practice rounds use independent seeded permutations and never create daily rows, scores, badges or leaderboard entries. Shared daily boards contain one fixed answer for all visitors.
-- Exact Scryfall search links are provided for selected card names or, after solving Cipher, its illustrated example.
+- Scryfall searches for cards of the solved creature type are provided after each newly generated Cipher game. Historical frozen puzzles retain their existing Scryfall reference links.
 - Server does not reveal the five-letter answer or undiscovered categories before completion. Anonymous browser history is local and not counted as verified; all authenticated daily moves are reconstructed and validated server-side.
-- Word scores: 100/85/70/55/40/25 points by winning guess, zero for a failure. Card connections: 100, 85, 70 or 55 on complete boards after 0–3 mistakes; partial failure score reflects correctly grouped categories. Identical group repeats are rejected.
+- Cipher answers are always official five-letter creature types; players may enter any five-letter A–Z guess to keep the game approachable. Word scores: 100/85/70/55/40/25 points by winning guess, zero for a failure. Card connections: 100, 85, 70 or 55 on complete boards after 0–3 mistakes; partial failure score reflects correctly grouped categories. Identical group repeats are rejected.
 - A single signed-in profile can never file a completed daily run twice. A failed concurrent update returns 409 instead of overwriting saved attempts.
 
 ## Storage and profile integration
@@ -35,3 +35,7 @@ Five badges are available: Cipher Breaker, First-Try Cipher, Conspiracy Cracker,
 7. Check that the existing games' API, puzzle generation and scores still operate independently.
 
 This is an independent fan project, not an official Wizards of the Coast daily game. Curated categories intentionally contain unique names to avoid overlapping or subjective solutions.
+
+## Cipher creature-type restriction — October 14, 2026
+
+Starting with newly generated daily and practice puzzles, Cipher solutions come only from a curated list of 68 official five-letter Magic creature subtypes, checked against [Comprehensive Rules 205.3m](https://media.wizards.com/2026/downloads/MagicCompRules%2020260619.pdf). This changes *answers only*, not what five-letter guesses a visitor may try. The answer and explanation reveal remain hidden until completion. The server freezes each daily puzzle on first request in D1, so today's already-played SCOUT edition was retained without modifying past attempts, scores, leaderboards or badges. Conspiracy Board remains unchanged.

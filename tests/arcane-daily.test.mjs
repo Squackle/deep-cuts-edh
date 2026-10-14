@@ -3,6 +3,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {CIPHER_WORDS,BOARD_CATEGORIES,buildArcanePuzzle,cipherFeedback,boardMatch,boardOneAway} from '../src/arcane-game-data.js';
 
+test('Cipher answers are only official five-letter creature types',()=>{
+ // Verified against Magic Comprehensive Rules 205.3m (June 2026).
+ const approved=new Set(('ALIEN ANGEL BEAST BISON CAMEL CHILD CLOWN DALEK DEMON DEVIL DJINN DRAKE DRONE DRUID DRYAD DWARF ELDER GAMER GIANT GNOLL GNOME GOLEM GUEST HARPY HIPPO HORSE HUMAN HYDRA HYENA KIRIN LAMIA LEMUR LICID LLAMA MOUNT MOUSE NINJA NOBLE NOMAD NYMPH OTTER OUPHE PILOT PLANT REBEL RHINO ROBOT ROGUE SABLE SATYR SCION SCOUT SHADE SHARK SHEEP SIREN SKUNK SLITH SLOTH SNAIL SNAKE SPAWN SPIKE SQUID SYNTH TROLL WEIRD WHALE').split(' '));
+ assert.equal(CIPHER_WORDS.length,68);
+ assert.equal(new Set(CIPHER_WORDS.map(x=>x[0])).size,CIPHER_WORDS.length);
+ for(const [type,description] of CIPHER_WORDS){
+  assert.ok(approved.has(type),type+' is not in the approved creature-type list');
+  assert.match(type,/^[A-Z]{5}$/);
+  assert.ok(description.length>=20);
+ }
+ assert.ok(!CIPHER_WORDS.some(x=>['HASTE','MORPH','TOKEN','EXILE'].includes(x[0])));
+});
 test('Word bank is curated, correctly sized and non-repeating',()=>{
  assert.ok(CIPHER_WORDS.length>=40);
  assert.equal(new Set(CIPHER_WORDS.map(c=>c[0])).size,CIPHER_WORDS.length);
@@ -34,7 +46,7 @@ test('Daily puzzle is stable and shifts among many answers',()=>{
   assert.ok(b.groups.every(g=>boardMatch(b,g.cards)?.title===g.title));
   seen.add(w.word);boards.add(b.groups.map(g=>g.title).sort().join(','));
  }
- assert.ok(seen.size>45);
+ assert.equal(seen.size,55); // All first 55 days must have distinct answers.
  assert.ok(boards.size>20);
 });
 test('Connection one-away feedback does not count already-solved groups',()=>{
