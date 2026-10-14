@@ -130,7 +130,7 @@
    section.append(node("h3","",state.answer?.word||"Cipher closed"));
    section.append(node("div","arcane-result-score",state.score+" / 100 POINTS"));
    section.append(node("p","",state.answer?.definition||""));
-   if(state.answer?.scryfall)section.append(link("EXPLORE "+state.answer.example.toUpperCase()+" ON SCRYFALL ↗",state.answer.scryfall));
+   if(state.answer?.scryfall)section.append(link(state.answer.isCreatureType?"BROWSE "+state.answer.word+" CREATURES ON SCRYFALL ↗":"EXPLORE "+state.answer.example.toUpperCase()+" ON SCRYFALL ↗",state.answer.scryfall));
   }else{
    section.append(node("h3","",state.won?"All four connections found!":"The evidence is complete."));
    section.append(node("div","arcane-result-score",state.score+" / 100 POINTS"));
