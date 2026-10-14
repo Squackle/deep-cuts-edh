@@ -48,30 +48,59 @@
  function cipherColorPriority(x){return x==="correct"?3:x==="present"?2:x==="absent"?1:0}
  function renderCipher(root){
   const length=Number(state.wordLength)||5,pattern=state.pattern||"_".repeat(length);
+  const fixed=new Map((state.hintLetters||[]).map(item=>[item.index,item.letter]));
+  const remaining=length-fixed.size;
   root.append(title("THE LETTER ARCHIVE",length+" letters to uncover · six guesses."),progress(state.attempts,6));
   const board=node("div","arcane-word-grid");
   board.style.setProperty("--cipher-columns",String(pattern.length));
   board.setAttribute("aria-label","Six rows of "+length+"-letter guesses; punctuation is prefilled");
   const known=new Map();
+  // Hint letters stay green on the active row and in every subsequent turn.
   for(let i=0;i<6;i++){
-   const row=node("div","arcane-word-row"),guess=state.guesses[i],letters=guess?guess.guess:(i===state.attempts&&!state.finished?entry:"");
-   let letter=0;
+   const row=node("div","arcane-word-row"),guess=state.guesses[i];
+   const locked=new Map((guess?.locked||(!guess?state.hintLetters?.map(h=>h.index):[])||[]).map(index=>
+    [index,fixed.get(index)||state.hintLetters?.find(h=>h.index===index)?.letter]));
+   const isCurrent=i===state.attempts&&!state.finished;
+   let letter=0,typed=0;
+   if(guess?.hint){row.classList.add("arcane-hint-row");row.setAttribute("aria-label","Hint spent one guess and revealed green letters");}
    for(const symbol of pattern){
     if(symbol!=="_"){
      const mark=node("span","arcane-letter arcane-separator",symbol);
      mark.setAttribute("aria-label",symbol===" "?"space":symbol==="-"?"hyphen":"apostrophe");
      row.append(mark);continue;
     }
-    const char=letters[letter]||"",grade=guess?.feedback[letter]||"",tile=node("span","arcane-letter"+(char?" filled":"")+(grade?" "+grade:""),char);
-    tile.setAttribute("aria-label",guess?char+", "+(grade==="correct"?"correct position":grade==="present"?"wrong position":"not in answer"):char||"empty");
+    const held=locked.get(letter);
+    // A hint row shows only its revealed green tiles, not guessed letters.
+    const char=guess?.hint?(held||""):guess?guess.guess[letter]||"":held|| (isCurrent?entry[typed++]||"":"");
+    const grade=held?"correct":guess&&!guess.hint?guess.feedback[letter]||"":"";
+    const tile=node("span","arcane-letter"+(char?" filled":"")+(grade?" "+grade:""),char);
+    tile.setAttribute("aria-label",char?(char+", "+(grade==="correct"?"correct position":grade==="present"?"wrong position":"not in answer")):"empty");
+    if(held)tile.setAttribute("aria-label",char+", revealed by hint; fixed correct position");
     row.append(tile);
-    if(guess){const prior=known.get(char)||"";if(cipherColorPriority(grade)>cipherColorPriority(prior))known.set(char,grade);}
+    if(guess&&!guess.hint){
+     const prior=known.get(char)||"";
+     if(cipherColorPriority(grade)>cipherColorPriority(prior))known.set(char,grade);
+    }
     letter++;
    }
    board.append(row);
   }
+  for(const {letter} of state.hintLetters||[])known.set(letter,"correct");
   root.append(board,iconLegend());
   if(!state.finished){
+   const controls=node("div","arcane-hint-controls");
+   const hint=node("button","arcane-hint-button","✦ REVEAL "+state.hintRevealCount+" GREEN "+(state.hintRevealCount===1?"LETTER":"LETTERS")+" · COSTS 1 GUESS");
+   hint.type="button";
+   hint.disabled=!state.hintAvailable||working||entry.length>0;
+   hint.setAttribute("aria-label",state.hintAvailable?"Reveal "+state.hintRevealCount+" correct letters, spend one guess":"No hints available");
+   hint.addEventListener("click",()=>move("hint",{}));
+   const summary=node("span","arcane-hint-count","HINTS "+state.hintCount+" / "+state.maxHints);
+   controls.append(hint,summary);
+   if(!state.hintAvailable){
+    const reason=state.hintCount>=state.maxHints?"Hint limit reached":state.attemptsLeft<=1?"Last guess must be played":"All positions are already known";
+    controls.append(node("span","arcane-hint-reason",reason));
+   }else if(entry.length)controls.append(node("span","arcane-hint-reason","Clear typed letters to use a hint"));
+   root.append(controls);
    const kb=node("div","arcane-keyboard");kb.setAttribute("aria-label","On-screen letter keyboard");
    for(const line of ["QWERTYUIOP","ASDFGHJKL","↵ZXCVBNM⌫"]){
     const r=node("div","arcane-key-row");
@@ -83,7 +112,8 @@
      key.addEventListener("click",()=>inputKey(action));r.append(key);
     }kb.append(r);
    }root.append(kb);
-   const note=node("p","games-muted","Enter "+length+" letters with the onscreen or physical keyboard. Spaces, hyphens and apostrophes are filled in for you; any letter combination is accepted.");note.style.textAlign="center";root.append(note);
+   const note=node("p","games-muted","Fill "+remaining+" open "+(remaining===1?"letter":"letters")+". Green hint letters are locked in. Spaces and punctuation are automatic.");
+   note.style.textAlign="center";root.append(note);
   }
   if(state.finished)root.append(reveal());
  }
@@ -138,6 +168,7 @@
   section.append(node("span","arcane-seal",state.won?"✓ CASE CLEARED":"CASE FILE CLOSED"));
   if(game==="cipher"){
    section.append(node("h3","",state.answer?.word||"Cipher closed"));
+   if(state.assisted)section.append(node("p","arcane-assisted","ASSISTED · "+state.hintCount+" HINT"+(state.hintCount===1?"":"S")+" USED"));
    section.append(node("div","arcane-result-score",state.score+" / 100 POINTS"));
    section.append(node("p","",state.answer?.definition||""));
    if(state.answer?.scryfall)section.append(link(state.answer.isCreatureType?"BROWSE "+state.answer.word+" CREATURES ON SCRYFALL ↗":"EXPLORE "+state.answer.example.toUpperCase()+" ON SCRYFALL ↗",state.answer.scryfall));
@@ -170,7 +201,7 @@
   if(working||!state||state.finished||game!=="cipher")return;
   if(key==="enter"){submitCipher();return}
   if(key==="backspace")entry=entry.slice(0,-1);
-  else if(/^[A-Za-z]$/.test(key)&&entry.length<(state.wordLength||5))entry+=key.toUpperCase();
+  else if(/^[A-Za-z]$/.test(key)&&entry.length<(state.wordLength||5)-(state.hintLetters?.length||0))entry+=key.toUpperCase();
   else return;
   status("");render();
  }
@@ -187,18 +218,22 @@
    const before=buildHistory();
    const updated=await request("POST",action,{...payload,...((practice||!state.authenticated)?{history:before}:{})});
    state={...state,...updated};
-   if(practice||!state.authenticated)writeLocal(state.day,[...before,game==="cipher"?payload.guess:payload.cards]);
+   if(practice||!state.authenticated)writeLocal(state.day,[...before,game==="cipher"?(action==="hint"?"!HINT":payload.guess):payload.cards]);
    selected.clear();entry="";render();
    if(state.finished){status(state.won?"Case solved. Outstanding investigation!":"Case closed. Review the revealed answer below.");loadLeaderboard();}
    else if(game==="board")status(state.oneAway?"One away! Three of those cards share an unsolved connection.":state.solved.length?"Correct group filed. Keep investigating.":"Not quite. Review the four cards and try again.",!state.oneAway&&state.remaining<4);
-   else status("Guess recorded. The next line is ready.");
+   else status(action==="hint"?"Hint recorded: green letters revealed. One guess spent.":"Guess recorded. The next line is ready.");
   }catch(e){status(e.message,true);if(/another tab|already finished|changed|submitted/i.test(e.message))load();}
   finally{setBusy(false)}
  }
  function submitCipher(){
-  if(entry.length!==(state?.wordLength||5)){status("Enter exactly "+(state?.wordLength||5)+" letters before submitting.",true);return}
-  if(state?.guesses?.some(g=>g.guess===entry)){status("You have already tried that word.",true);return}
-  move("guess",{guess:entry});
+  const locked=new Map((state?.hintLetters||[]).map(item=>[item.index,item.letter]));
+  const length=(state?.wordLength||5),required=length-locked.size;
+  if(entry.length!==required){status("Fill the remaining "+required+" letters before submitting.",true);return}
+  let typed=0,guess="";
+  for(let i=0;i<length;i++)guess+=locked.get(i)||entry[typed++];
+  if(state?.guesses?.some(g=>g.guess===guess)){status("You have already tried that word.",true);return}
+  move("guess",{guess});
  }
  function submitBoard(){
   if(selected.size!==4){status("Select exactly four cards.",true);return}
@@ -211,7 +246,7 @@
    const data=await request("GET","board");host.replaceChildren();
    if(!data.leaders?.length){host.append(node("p","games-muted","Be the first investigator to file a completed case today."));return}
    data.leaders.forEach((r,i)=>{const row=node("div","arcane-leader-row");
-    row.append(node("span","",String(i+1).padStart(2,"0")+" · "+r.handle),node("strong","",r.score+" PTS"));host.append(row)});
+    row.append(node("span","",String(i+1).padStart(2,"0")+" · "+r.handle+(r.assisted?" · Assisted":"")),node("strong","",r.score+" PTS"));host.append(row)});
   }catch{host.replaceChildren(node("p","games-muted","Investigator board is temporarily unavailable."))}
  }
  async function load(){
