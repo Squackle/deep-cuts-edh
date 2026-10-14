@@ -106,42 +106,100 @@
    if(version===requestVersion)showProfile(null);
   }
  }
- // Central navigation shared by every public page and future report.
+ // Central navigation shared by every public page.
+ // Preserve the existing mobile menu; enhance desktop without editing every page.
  function setupNavigation(root){
   const nav=root.querySelector(".primary-nav");
   if(!nav||root.querySelector(".site-menu-toggle"))return;
   nav.id="site-primary-navigation";
-  if(!nav.querySelector('a[href="/set-watch.html"]')){
-   const watch=node("a","set-watch-nav-link","SET WATCH");
-   watch.href="/set-watch.html";
-   const after=nav.querySelector('a[href="/index.html#archive"]');
-   if(after)after.after(watch);else nav.append(watch);
-  }
-  const pagePath=location.pathname.replace(/\.html$/,"").replace(/\/$/,"");
-  if(pagePath==="/set-watch"){
-   nav.querySelector('a[href="/set-watch.html"]')?.setAttribute("aria-current","page");
-  }
-  const links=Array.from(nav.children).filter(a=>a.tagName==="A");
-  const groups=[
-   ["DISCOVER",["/index.html#latest","/index.html#archive","/set-watch.html"]],
-   ["BUILD & PLAY",["/library.html","/deck.html","/games.html"]],
-   ["COMMUNITY",["/nominations.html","/community.html","/members.html"]]
+  nav.setAttribute("aria-label","Mobile site navigation");
+  const pagePath=location.pathname.replace(/\.html$/,"").replace(/\/$/,"")||"/";
+  const original=Array.from(nav.children).filter(a=>a.tagName==="A");
+  const items=new Map(original.map(a=>[a.textContent.trim().toUpperCase(),a]));
+  const addLink=(label,url)=>{
+   if(items.has(label))return;
+   const a=node("a","site-nav-extra",label);
+   a.href=url;
+   if(pagePath===url.replace(/\.html$/,""))a.setAttribute("aria-current","page");
+   items.set(label,a);
+  };
+  addLink("SET WATCH","/set-watch");
+  addLink("DEEP CUT FINDER","/deep-cut-finder");
+  addLink("BINDER TO BREW","/binder-to-brew");
+  const mobileGroups=[
+   ["DISCOVER",["RESCUE REPORT","COMMANDERS","SET WATCH","DEEP CUT FINDER"]],
+   ["BUILD & PLAY",["CARD LIBRARY","DECK WORKSHOP","BINDER TO BREW","ARCADE"]],
+   ["COMMUNITY",["NOMINATIONS","FIELD NETWORK","FIELD OFFICE"]]
   ];
-  for(const [i,[label,urls]] of groups.entries()){
+  for(const [i,[label,names]] of mobileGroups.entries()){
    const group=node("div","site-nav-group");
    const heading=node("span","site-nav-heading",label);
    heading.id="site-nav-heading-"+i;
    group.setAttribute("role","group");
    group.setAttribute("aria-labelledby",heading.id);
    group.append(heading);
-   for(const url of urls){
-    const link=links.find(a=>a.getAttribute("href")===url);
+   for(const name of names){
+    const link=items.get(name);
     if(link)group.append(link);
    }
    nav.append(group);
   }
+  // Unexpected legacy links remain reachable instead of silently vanishing.
   const last=nav.querySelector(".site-nav-group:last-child");
-  for(const link of links)if(link.parentElement===nav)last?.append(link);
+  for(const link of original)if(link.parentElement===nav)last?.append(link);
+
+  const desktop=node("nav","site-desktop-navigation");
+  desktop.setAttribute("aria-label","Main site navigation");
+  const desktopDetails=[];
+  const section=(label,names)=>{
+   const details=node("details","site-desktop-group");
+   const summary=node("summary","site-desktop-trigger");
+   summary.append(node("span",null,label));
+   const chevron=node("span","site-desktop-chevron","⌄");
+   chevron.setAttribute("aria-hidden","true");
+   summary.append(chevron);
+   const panel=node("div","site-desktop-panel");
+   for(const name of names){
+    const source=items.get(name);
+    if(!source)continue;
+    const link=source.cloneNode(true);
+    link.classList.add("site-desktop-item");
+    // Preserve active navigation even when the original page omits it.
+    const current=(name==="DEEP CUT FINDER"&&pagePath==="/deep-cut-finder")||
+      (name==="BINDER TO BREW"&&pagePath==="/binder-to-brew")||
+      (name==="SET WATCH"&&pagePath==="/set-watch")||
+      (name==="RESCUE REPORT"&&pagePath.startsWith("/reports/"));
+    if(current)link.setAttribute("aria-current","page");
+    panel.append(link);
+   }
+   if(panel.querySelector('[aria-current="page"]'))details.classList.add("site-desktop-current");
+   details.append(summary,panel);
+   details.addEventListener("toggle",()=>{
+    if(details.open)for(const other of desktopDetails)if(other!==details)other.open=false;
+   });
+   desktopDetails.push(details);
+   desktop.append(details);
+  };
+  section("DISCOVER",["RESCUE REPORT","COMMANDERS","CARD LIBRARY","SET WATCH","DEEP CUT FINDER"]);
+  section("BUILD",["DECK WORKSHOP","BINDER TO BREW"]);
+  const arcade=items.get("ARCADE")?.cloneNode(true);
+  if(arcade){
+   arcade.classList.add("site-desktop-arcade");
+   if(pagePath==="/games"||pagePath.startsWith("/games/"))arcade.setAttribute("aria-current","page");
+   desktop.append(arcade);
+  }
+  section("COMMUNITY",["NOMINATIONS","FIELD NETWORK","FIELD OFFICE"]);
+  const closeDesktop=()=>{for(const d of desktopDetails)d.open=false};
+  desktop.addEventListener("click",e=>{if(e.target.closest("a"))closeDesktop()});
+  document.addEventListener("pointerdown",e=>{if(!desktop.contains(e.target))closeDesktop()});
+  document.addEventListener("keydown",e=>{
+   if(e.key!=="Escape")return;
+   const opened=desktopDetails.find(d=>d.open);
+   if(opened){closeDesktop();opened.querySelector("summary")?.focus();}
+  });
+  root.insertBefore(desktop,nav);
+  root.classList.add("site-desktop-ready");
+
   const toggle=node("button","site-menu-toggle");
   toggle.type="button";
   toggle.setAttribute("aria-controls",nav.id);
@@ -155,14 +213,14 @@
   const shortcuts=node("div","site-mobile-shortcuts");
   shortcuts.setAttribute("aria-label","Quick links");
   const games=node("a","site-mobile-quick site-mobile-games","ARCADE");
-  games.href="/games.html";
+  games.href="/games";
   const watch=node("a","site-mobile-quick site-mobile-watch","SET WATCH ↗");
-  watch.href="/set-watch.html";
+  watch.href="/set-watch";
   if(pagePath==="/games"||pagePath.startsWith("/games/"))games.setAttribute("aria-current","page");
   if(pagePath==="/set-watch")watch.setAttribute("aria-current","page");
   shortcuts.append(games,watch);
-  root.insertBefore(toggle,nav);
-  root.insertBefore(shortcuts,nav);
+  root.insertBefore(toggle,desktop);
+  root.insertBefore(shortcuts,desktop);
   const setOpen=open=>{
    nav.classList.toggle("site-nav-open",open);
    toggle.setAttribute("aria-expanded",String(open));
@@ -177,7 +235,7 @@
    }
   });
   const media=window.matchMedia("(max-width: 1180px)");
-  media.addEventListener?.("change",()=>setOpen(false));
+  media.addEventListener?.("change",()=>{setOpen(false);closeDesktop()});
  }
  function setup(){
   const root=document.querySelector(".site-header .header-inner");
