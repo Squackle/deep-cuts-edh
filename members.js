@@ -7,7 +7,7 @@ let account=null,overview=null,versions=[];
 async function api(url,body){
  const opts={credentials:"same-origin",cache:"no-store"};
  if(body!==undefined){opts.method="POST";opts.headers={"Content-Type":"application/json"};opts.body=JSON.stringify(body)}
- let res;try{res=await fetch(url,opts)}catch{throw Error("Cannot reach the Field Office service.")}
+ let res;try{res=await fetch(url,opts)}catch{throw Error("Cannot reach the Members' Lounge service.")}
  let data;try{data=await res.json()}catch{throw Error("Could not read the server response.")}
  if(!res.ok)throw Error(data.error||"Member service returned "+res.status);
  return data;
