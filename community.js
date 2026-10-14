@@ -1,3 +1,4 @@
+import {attachHiveRecords} from "./hive-profile.js";
 import {setupFeatures,refreshFeatures} from "./community-features.js";
 import {initializeRecovery,refreshEmailStatus,offerEmail} from "./community-recovery.js";
 import {setupFieldExpansion,refreshFieldExpansion,attachProfileReputation,refreshDispatchBadge} from "./field-expansion.js";
@@ -133,6 +134,7 @@ export function updateIdentity(){
  if(state.me){
   $("ownProfile").replaceChildren(portrait(state.me),el("p","Save your recovery key somewhere private. This profile is public; your credential is not.","cm-note"));
   attachProfileReputation($("ownProfile"),state.me.handle);
+  void attachHiveRecords($("ownProfile"),state.me.handle);
   $("editProfileForm").elements.bio.value=state.me.bio||"";
   $("editProfileForm").elements.bioEmoji.value=state.me.bio_emoji||"";
   $("editProfileForm").elements.avatar.value=state.me.avatar;
@@ -255,6 +257,7 @@ async function showProfile(handle){
  n.append(el("p",x.counts.comments+" findings · "+x.counts.tests+" playtests · "+x.counts.followers+" followers","cm-note"));
  for(const b of x.badges)n.append(badge(b));
  attachProfileReputation(n,x.profile.handle);
+ void attachHiveRecords(n,x.profile.handle);
  if(state.me&&state.me.id!==x.profile.id)n.append(button("FOLLOW / UNFOLLOW INVESTIGATOR",async()=>{const r=await attempt(()=>write({action:"follow",type:"profile",target:x.profile.id}));if(r)msg(r.following?"Following investigator.":"Unfollowed investigator.")}));
  x.decks.forEach(d=>n.append(el("p",null),link(d.title+" ↗","community.html?deck="+d.id)));
 }
