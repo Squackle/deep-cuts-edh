@@ -47,16 +47,26 @@
  }
  function cipherColorPriority(x){return x==="correct"?3:x==="present"?2:x==="absent"?1:0}
  function renderCipher(root){
-  root.append(title("THE LETTER ARCHIVE","Every guess narrows the evidence."),progress(state.attempts,6));
-  const board=node("div","arcane-word-grid");board.setAttribute("aria-label","Six rows of five-letter guesses");
+  const length=Number(state.wordLength)||5,pattern=state.pattern||"_".repeat(length);
+  root.append(title("THE LETTER ARCHIVE",length+" letters to uncover · six guesses."),progress(state.attempts,6));
+  const board=node("div","arcane-word-grid");
+  board.style.setProperty("--cipher-columns",String(pattern.length));
+  board.setAttribute("aria-label","Six rows of "+length+"-letter guesses; punctuation is prefilled");
   const known=new Map();
   for(let i=0;i<6;i++){
    const row=node("div","arcane-word-row"),guess=state.guesses[i],letters=guess?guess.guess:(i===state.attempts&&!state.finished?entry:"");
-   for(let j=0;j<5;j++){
-    const char=letters[j]||"",grade=guess?.feedback[j]||"",tile=node("span","arcane-letter"+(char?" filled":"")+(grade?" "+grade:""),char);
+   let letter=0;
+   for(const symbol of pattern){
+    if(symbol!=="_"){
+     const mark=node("span","arcane-letter arcane-separator",symbol);
+     mark.setAttribute("aria-label",symbol===" "?"space":symbol==="-"?"hyphen":"apostrophe");
+     row.append(mark);continue;
+    }
+    const char=letters[letter]||"",grade=guess?.feedback[letter]||"",tile=node("span","arcane-letter"+(char?" filled":"")+(grade?" "+grade:""),char);
     tile.setAttribute("aria-label",guess?char+", "+(grade==="correct"?"correct position":grade==="present"?"wrong position":"not in answer"):char||"empty");
     row.append(tile);
     if(guess){const prior=known.get(char)||"";if(cipherColorPriority(grade)>cipherColorPriority(prior))known.set(char,grade);}
+    letter++;
    }
    board.append(row);
   }
@@ -73,7 +83,7 @@
      key.addEventListener("click",()=>inputKey(action));r.append(key);
     }kb.append(r);
    }root.append(kb);
-   const note=node("p","games-muted","Tap the keys or use your physical keyboard. Any five-letter guess is accepted.");note.style.textAlign="center";root.append(note);
+   const note=node("p","games-muted","Enter "+length+" letters with the onscreen or physical keyboard. Spaces, hyphens and apostrophes are filled in for you; any letter combination is accepted.");note.style.textAlign="center";root.append(note);
   }
   if(state.finished)root.append(reveal());
  }
@@ -160,7 +170,7 @@
   if(working||!state||state.finished||game!=="cipher")return;
   if(key==="enter"){submitCipher();return}
   if(key==="backspace")entry=entry.slice(0,-1);
-  else if(/^[A-Za-z]$/.test(key)&&entry.length<5)entry+=key.toUpperCase();
+  else if(/^[A-Za-z]$/.test(key)&&entry.length<(state.wordLength||5))entry+=key.toUpperCase();
   else return;
   status("");render();
  }
@@ -186,7 +196,7 @@
   finally{setBusy(false)}
  }
  function submitCipher(){
-  if(entry.length!==5){status("Enter five letters before submitting.",true);return}
+  if(entry.length!==(state?.wordLength||5)){status("Enter exactly "+(state?.wordLength||5)+" letters before submitting.",true);return}
   if(state?.guesses?.some(g=>g.guess===entry)){status("You have already tried that word.",true);return}
   move("guess",{guess:entry});
  }

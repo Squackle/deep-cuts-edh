@@ -1,7 +1,7 @@
 /* Arcane Cipher + Conspiracy Board. The server alone validates and scores
    daily moves, stores authenticated progress, and freezes dated puzzles. */
 import {send,fail,auth,body,originOK,quota,safe} from "../../src/community-core.js";
-import {buildArcanePuzzle,cipherFeedback,boardMatch,boardOneAway,chicagoDate} from "../../src/arcane-game-data.js";
+import {buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,boardMatch,boardOneAway,chicagoDate} from "../../src/arcane-game-data.js";
 const GAMES=new Set(["cipher","board"]);
 export const ARCANE_BADGES={
  cipher_solved:{title:"🔐 Cipher Breaker",detail:"Solve a daily Arcane Cipher."},
@@ -32,18 +32,21 @@ async function puzzleFor(db,params){
  return JSON.parse(frozen.payload);
 }
 function cipherState(puzzle,history){
+ const target=cipherLetters(puzzle.word),wordLength=target.length;
+ const pattern=cipherPattern(puzzle.word);
  const guesses=[],seen=new Set();
- if(!Array.isArray(history)||history.length>6)return null;
+ if(!Array.isArray(history)||history.length>6||wordLength<2||wordLength>24)return null;
  for(const raw of history){
-  if(typeof raw!=="string"||!/^[A-Z]{5}$/.test(raw)||seen.has(raw)||guesses.some(x=>x.guess===puzzle.word))return null;
+  if(typeof raw!=="string"||!/^[A-Z]+$/.test(raw)||raw.length!==wordLength||
+     seen.has(raw)||guesses.some(x=>x.guess===target))return null;
   seen.add(raw);
-  guesses.push({guess:raw,feedback:cipherFeedback(raw,puzzle.word)});
+  guesses.push({guess:raw,feedback:cipherFeedback(raw,target)});
  }
- const won=guesses.some(x=>x.guess===puzzle.word),finished=won||guesses.length===6;
+ const won=guesses.some(x=>x.guess===target),finished=won||guesses.length===6;
  const score=finished&&won?100-(guesses.length-1)*15:0;
- return {game:"cipher",guesses,attempts:guesses.length,attemptsLeft:6-guesses.length,won,finished,score,
+ return {game:"cipher",wordLength,pattern,guesses,attempts:guesses.length,attemptsLeft:6-guesses.length,won,finished,score,
   ...(finished?{answer:{word:puzzle.word,definition:puzzle.definition,
-   ...(puzzle.edition==="creature-types-v2"?{isCreatureType:true,scryfall:"https://scryfall.com/search?q="+encodeURIComponent("t:creature t:"+puzzle.word.toLowerCase())}
+   ...(String(puzzle.edition).startsWith("creature-types-")?{isCreatureType:true,scryfall:"https://scryfall.com/search?q="+encodeURIComponent('t:creature t:"'+puzzle.word+'"')}
     :{example:puzzle.example,scryfall:exactCardUrl(puzzle.example)})}}:{})};
 }
 function boardState(puzzle,history){
@@ -152,7 +155,7 @@ export async function onRequestPost({request,env}){
   const before=stateFor(puzzle,game,prior);
   if(!before||before.finished)return fail("This game is already finished.",409);
   const move=game==="cipher"?String(d.guess||"").trim().toUpperCase():d.cards;
-  if(game==="cipher"&&!/^[A-Z]{5}$/.test(move))return fail("Enter exactly five letters.",400);
+  if(game==="cipher"&&(!/^[A-Z]+$/.test(move)||move.length!==cipherLetters(puzzle.word).length))return fail("Enter exactly "+cipherLetters(puzzle.word).length+" letters.",400);
   if(game==="board"&&(!Array.isArray(move)||move.length!==4||new Set(move).size!==4))return fail("Select exactly four different cards.",400);
   const next=[...prior,move],state=stateFor(puzzle,game,next);
   if(!state)return fail(game==="cipher"?"That guess has already been used.":"That group was already tried or includes solved cards.",400);
