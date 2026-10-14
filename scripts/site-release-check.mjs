@@ -10,7 +10,7 @@ const extra=['members.html','404.html'];
 const children=dir=>fs.readdirSync(dir,{withFileTypes:true}).filter(x=>x.isFile()&&x.name.endsWith('.html')).map(x=>dir+'/'+x.name);
 const publicPages=[...main,...children('games'),...children('reports')];
 const menuPages=[...new Set([...publicPages,...extra])];
-const expected=['RESCUE REPORT','COMMANDERS','CARD LIBRARY','DECK WORKSHOP','ARCADE','NOMINATIONS','FIELD NETWORK','FIELD OFFICE'];
+const expected=['RESCUE REPORT','COMMANDERS','CARD LIBRARY','DECK WORKSHOP','ARCADE','NOMINATIONS','COMMUNITY','MEMBERS' LOUNGE'];
 let checks=0;
 function check(ok,msg){assert.ok(ok,msg);checks++;}
 for(const file of publicPages){
@@ -40,8 +40,8 @@ check(read('games.html').includes('HIVE RUN')||read('games.html').includes('Hive
 check(read('games.html').includes('<h1>THE <em>ARCADE.</em></h1>'),'Arcade hub heading incorrect');
 check(read('index.html').includes('<strong>Arcade</strong>'),'Homepage Arcade tile missing');
 check(read('index.html').includes('ENTER THE ARCADE'),'Homepage Arcade CTA missing');
-for(const tab of ['cases','decks','account'])check(read('community.html').includes('data-tab="'+tab+'"'),'Field Network onboarding lacks '+tab);
-check(read('community.html').includes('Choose your first assignment.'),'Field Network onboarding absent');
+for(const tab of ['cases','decks','account'])check(read('community.html').includes('data-tab="'+tab+'"'),'Community onboarding lacks '+tab);
+check(read('community.html').includes('Choose your first assignment.'),'Community onboarding absent');
 check(read('404.html').includes('<h1>That commander is <em>very</em> obscure.</h1>'),'404 heading not fixed');
 check(read('header-profile.js').includes('"ARCADE"'),'Mobile shortcut label inconsistent');
 check(!read('header-profile.js').includes('"DAILY GAMES"'),'Old mixed game navigation label persists');
