@@ -16,6 +16,8 @@ jobs:
           node-version: '22'
       - name: SEO, accessibility, navigation and existing-feature guards
         run: node scripts/site-release-check.mjs
+      - name: Lean homepage navigation regression tests
+        run: node --test tests/home-hub.test.mjs
       - name: Magic daily game regression suite
         run: node --experimental-default-type=module --test tests/arcane-daily.test.mjs
       - name: JavaScript syntax
