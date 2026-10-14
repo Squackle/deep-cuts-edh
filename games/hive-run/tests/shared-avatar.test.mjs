@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import vm from "node:vm";
-const shared=readFileSync(new URL("../header-profile.js",import.meta.url),"utf8");
-const html=readFileSync(new URL("../games/hive-run/index.html",import.meta.url),"utf8");
-const css=readFileSync(new URL("../games/hive-run/styles.css",import.meta.url),"utf8");
-const game=readFileSync(new URL("../games/hive-run/src/main.js",import.meta.url),"utf8");
+const shared=readFileSync(new URL("../../../header-profile.js",import.meta.url),"utf8");
+const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
+const game=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
 
 function element(tag){
  const attrs=new Map(),classes=new Set(),listeners={};
