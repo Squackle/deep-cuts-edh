@@ -263,6 +263,16 @@
   });
   photo.addEventListener("error",()=>button.classList.remove("has-portrait"));
   frame.append(placeholder,photo);
+  // One consistent supporter destination on every main-site header.
+  // Reuse the homepage's gold button; never hijack a page action or sign-in link.
+  if(root.closest(".site-header")){
+   const support=root.querySelector(".header-action")||node("a","header-action");
+   support.href="/supporters";
+   support.setAttribute("aria-label","Support Deep Cuts EDH");
+   support.textContent="SUPPORT THE SITE ↗";
+   support.classList.add("site-support-action");
+   if(!support.parentElement)root.append(support);
+  }
   const presence=node("span","header-profile-presence");
   presence.setAttribute("aria-hidden","true");
   caption=node("span","header-profile-caption","PROFILE");
@@ -272,9 +282,12 @@
   if(root.querySelector(".site-desktop-navigation")){
    const menu=node("details","header-profile-menu");
    const trigger=node("summary","header-profile-menu-trigger");
-   trigger.setAttribute("aria-label","Open profile quick menu");
+   trigger.setAttribute("aria-label","Open profile shortcuts");
    trigger.title="Profile shortcuts";
-   trigger.textContent="⌄";
+   const glyph=node("span","header-profile-menu-glyph");
+   glyph.setAttribute("aria-hidden","true");
+   for(let i=0;i<3;i++)glyph.append(node("span"));
+   trigger.append(glyph);
    const panel=node("nav","header-profile-menu-panel");
    panel.setAttribute("aria-label","Profile shortcuts");
    for(const [label,url] of [["MY PROFILE","/profile"],["MY COLLECTION","/profile#collection"],["NOTIFICATIONS","/profile#dispatches"],["ACCOUNT SETTINGS","/profile#account"]]){
