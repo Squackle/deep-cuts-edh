@@ -133,20 +133,19 @@
      <p id="leaderboardStatus" class="board-caption">LOADING RANKED SCORES...</p>
      <div id="leaderboardEntries" class="board-entries" aria-live="polite"></div>
      <div id="submissionPanel" class="submission-panel" hidden>
-      <strong>SUBMIT YOUR FINAL RUN</strong>
+      <strong>ENTER THE HIGH-SCORE BOARD</strong>
       <p id="finalRunSummary"></p>
       <p class="submit-explanation"></p>
       <form id="leaderboardForm">
-       <label for="playerAlias">DISPLAY NAME</label>
-       <input id="playerAlias" name="alias" minlength="2" maxlength="23" pattern="[A-Za-z0-9][A-Za-z0-9 _-]{1,22}" placeholder="Anonymous Hunter">
-       <label for="playerProfile">GUEST PROFILE HANDLE (OPTIONAL · UNVERIFIED)</label>
-       <input id="playerProfile" name="profileHandle" maxlength="24" pattern="[A-Za-z][A-Za-z0-9_]{2,23}" placeholder="e.g. Squackle">
-       <small id="profileNotice">Guest handles only create unverified links. To attach your score to your real profile, sign in to <a href="/community.html#account">Field Network</a> and remember this device before playing. Old guest scores cannot be automatically claimed.</small>
-       <button type="submit" id="submitScoreButton">SUBMIT VERIFIED REPLAY ↗</button>
+       <label for="playerAlias">ENTER YOUR INITIALS · 3 CHARACTERS</label>
+       <input id="playerAlias" class="arcade-initials-input" name="alias" type="text" inputmode="text" minlength="3" maxlength="3" pattern="[A-Za-z0-9]{3}" placeholder="AAA" autocapitalize="characters" autocomplete="off" spellcheck="false" required aria-describedby="arcadeInitialsTip profileNotice">
+       <small id="arcadeInitialsTip">Exactly three letters or numbers, like an old-school arcade high-score screen.</small>
+       <small id="profileNotice">Signed-in scores automatically link to your verified Field Network profile. Guests can enter initials without a profile link.</small>
+       <button type="submit" id="submitScoreButton">FILE HIGH SCORE ↗</button>
       </form>
       <p id="scoreSubmitStatus" role="status" aria-live="polite"></p>
      </div>
-     <p class="board-integrity">Scores are replayed by the server against a seeded run. This verifies game rules, not human input. Signed-in main-site profiles receive verified ownership. Guest profile links are self-reported.</p>
+     <p class="board-integrity">Three-character initials identify each arcade entry. Only a signed-in Field Network session can attach a verified profile link; guest entries remain unlinked. The server replays every submitted score.</p>
     </section>
     <details class="mutation-guide" id="fieldGuide"><summary>FIELD GUIDE · HOW TO PLAY &amp; ENCOUNTERS</summary>
 <p><strong>PREDATOR HUNT:</strong> Trap prey with your living body. Your first ordinary-prey collision is forgiven; early enemies move more slowly. Minibosses take two captures and full bosses take three.</p>

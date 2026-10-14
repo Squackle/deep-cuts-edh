@@ -24,11 +24,11 @@ export class LeaderboardClient{
   if(this.events.length>=14000)return;
   this.events.push([tick,kind,value]);
  }
- async submit(run,alias,profileHandle){
+ async submit(run,alias){
   if(!this.session)throw Error("This is a practice run. Only server-seeded runs can be ranked.");
   const session=this.session;
 
-  const result=await this.request({action:"submit",token:session.token,events:this.events,alias,profileHandle,
+  const result=await this.request({action:"submit",token:session.token,events:this.events,alias,
    summary:{score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks}});
   this.session=null;return result;
  }

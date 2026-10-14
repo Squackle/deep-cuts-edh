@@ -5,12 +5,11 @@ import {MODES,chicagoDay,dailySeed} from "../../games/hive-run/src/modes.js";
  * server-side before publishing. No third-party account credentials accepted.
  */
 import {newRun,start,step,turn,chooseMutation,RULES_VERSION} from "../../games/hive-run/src/engine.js";
+import {parseArcadeInitials} from "../../games/hive-run/src/arcade-initials.js";
 const json=(value,status=200)=>new Response(JSON.stringify(value),{
  status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}
 });
 const error=(message,status=400)=>json({error:message},status);
-const profilePattern=/^[A-Za-z][A-Za-z0-9_]{2,23}$/;
-const aliasPattern=/^[A-Za-z0-9][A-Za-z0-9 _-]{1,22}$/;
 const now=()=>Math.floor(Date.now()/1000);
 const MAX_EVENTS=14000,MAX_TICKS=6000;
 async function subject(request){
@@ -103,6 +102,8 @@ export async function onRequestPost({request,env,data:contextData={}}){
    return json({token,seed,mode,challenge,day,rulesVersion:RULES_VERSION,sessionExpiresSeconds:7200},201);
   }
   if(data?.action!=="submit")return error("Unknown action.");
+  const initials=parseArcadeInitials(data.alias);
+  if(!initials)return error("Enter exactly three letters or numbers for your arcade initials.",400);
   if(!await throttle(db,key,"submit",30))return error("Submission rate limit reached.",429);
   const {token,events,summary}=data;
   if(typeof token!=="string"||!/^[-a-f0-9]{36}$/.test(token)||!validEvents(events))return error("Invalid game session or replay.");
@@ -112,8 +113,10 @@ export async function onRequestPost({request,env,data:contextData={}}){
   const result=replayScore(record.seed,events,summary,record.mode);
   if(!result.ok)return error("Score verification failed: "+result.reason,422);
   const identity=contextData.hiveProfile;
-  const alias=typeof data.alias==="string"&&aliasPattern.test(data.alias.trim())?data.alias.trim():"Anonymous Brood";
-  const profileHandle=identity?.handle||(typeof data.profileHandle==="string"&&profilePattern.test(data.profileHandle)?data.profileHandle:null);
+  const alias=initials;
+  // Only authenticated account identity can attach a verified profile.
+  // Ignore all caller-supplied profile handles, including historic clients.
+  const profileHandle=identity?.handle||null;
   const id=crypto.randomUUID(),stamp=now();
   // The conditional INSERT and claim execute in one transaction. A racing second
   // submission cannot publish another row for this one-use token.
@@ -123,6 +126,7 @@ export async function onRequestPost({request,env,data:contextData={}}){
    db.prepare("UPDATE hive_sessions_v1 SET used_at=? WHERE token=? AND used_at IS NULL").bind(stamp,token)
   ]);
   if((results[0].meta?.changes||0)!==1)return error("This run has already been submitted.",409);
-  return json({ok:true,id,score:result.score,kills:result.kills,evolutions:result.evolutions,profileVerified:!!identity},201);
+  return json({ok:true,id,score:result.score,kills:result.kills,evolutions:result.evolutions,initials:alias,
+   profileVerified:!!identity,profileHandle:identity?.handle||null},201);
  }catch{return error("Leaderboard is temporarily unavailable.",503)}
 }

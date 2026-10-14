@@ -352,3 +352,11 @@ body.game-only .arcade-home-link{min-height:31px;padding:5px 6px}
  * The playable arena and navigation are the only fullscreen priorities.
  */
 body.game-only .arcade-frame>.mutation-guide{display:none!important}
+
+/* Three-slot classic arcade high-score input. */
+.submission-panel .arcade-initials-input{box-sizing:border-box;max-width:210px;text-align:center;
+ text-transform:uppercase;letter-spacing:.4em;padding:8px 4px 8px 12px;
+ font:900 25px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;
+ background:repeating-linear-gradient(90deg,#0e2920 0 47px,#53674e 47px 49px);
+ color:#ffe0a4;border:2px solid #bfa071;border-radius:3px}
+.submission-panel .arcade-initials-input:focus-visible{outline:3px solid #f9dc9f;outline-offset:3px}
