@@ -1,5 +1,6 @@
 import {notifyDeckVote} from "./field-dispatches.js";
 import {send,fail,safe,rnd,cleanDeck} from "./community-core.js";
+import {publicChallenge,featuredDeckEligible,isOpenChallenge} from "./featured-case.js";
 export async function gamesWrite(db,a,d){
  const action=d.action;
  if(action==="publish_deck"){
@@ -34,17 +35,19 @@ export async function gamesWrite(db,a,d){
  if(action==="challenge_entry"||action==="vote"){
   const id=safe(d.deck_id,32),challengeId=safe(d.challenge_id,48);
   if(!/^[a-f0-9]{32}$/.test(id)||!/^[a-z0-9-]{3,48}$/.test(challengeId))return fail("Choose a valid published deck and challenge.",400);
-  const ch=await db.prepare("SELECT * FROM community_challenges WHERE id=? AND status='active'").bind(challengeId).first();
+  const rawChallenge=await db.prepare("SELECT * FROM community_challenges WHERE id=? AND status='active'").bind(challengeId).first();
+  const ch=publicChallenge(rawChallenge);
   const now=new Date().toISOString().slice(0,19).replace("T"," ");
   if(!ch||now<ch.opens_at||now>ch.closes_at)return fail("This challenge isn't accepting entries or votes.",409);
   if(action==="challenge_entry"){
-   const deck=await db.prepare("SELECT owner_id,commander FROM community_decks WHERE id=?").bind(id).first();
+   const deck=await db.prepare("SELECT owner_id,commander,content FROM community_decks WHERE id=?").bind(id).first();
    if(!deck||deck.owner_id!==a.id)return fail("Choose one of your own published decks.",400);
-   if(ch.format!=="open"&&!deck.commander.toLowerCase().split("&").some(c=>c.trim()===ch.commander.toLowerCase().trim()))return fail("This challenge requires "+ch.commander+". Select the Open Case showcase for other commanders.",400);
+   if(!isOpenChallenge(ch)&&!featuredDeckEligible(deck))return fail("The featured challenge only accepts decks with "+ch.commander+" as their sole commander. Use Open Build for other commanders.",400);
    await db.prepare("INSERT INTO community_entries(challenge_id,deck_id,member_id) VALUES(?,?,?) ON CONFLICT(challenge_id,member_id) DO UPDATE SET deck_id=excluded.deck_id").bind(ch.id,id,a.id).run();
    return send({ok:true});
   }
-  const entry=await db.prepare("SELECT member_id FROM community_entries WHERE challenge_id=? AND deck_id=?").bind(ch.id,id).first();
+  const entry=await db.prepare("SELECT e.member_id,d.commander,d.content FROM community_entries e JOIN community_decks d ON d.id=e.deck_id WHERE e.challenge_id=? AND e.deck_id=?").bind(ch.id,id).first();
+  if(entry&&!isOpenChallenge(ch)&&!featuredDeckEligible(entry))return fail("This entry no longer matches the current featured commander.",409);
   if(!entry||entry.member_id===a.id)return fail("Cannot vote for your own deck or a missing entry.",400);
   const existing=await db.prepare("SELECT deck_id FROM community_votes WHERE challenge_id=? AND voter_id=?").bind(ch.id,a.id).first();
   await db.prepare("INSERT INTO community_votes(challenge_id,voter_id,deck_id) VALUES(?,?,?) ON CONFLICT(challenge_id,voter_id) DO UPDATE SET deck_id=excluded.deck_id").bind(ch.id,a.id,id).run();
