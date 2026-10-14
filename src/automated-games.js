@@ -126,7 +126,7 @@ async function getCachedCatalog(db){
  // Old cached snapshots flattened each {symbol} to "mana". Such a cache
  // must never be used for newly generated games if a refresh is unavailable.
  const valid=cached.length>=110&&cached.every(c=>
-  (!c.mana||/^(?:\\{[^{}]+\\})+$/.test(c.mana))&&
+  (!c.mana||/^(?:\{[^{}]+\})+$/.test(c.mana))&&
   !/manamana/i.test(c.oracle||"")
  );
  if(valid&&row.updated_at>now-CACHE_SECONDS)return {pool:cached,updatedAt:row.updated_at,source:"scryfall"};
