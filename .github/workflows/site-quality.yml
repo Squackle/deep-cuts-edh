@@ -54,6 +54,14 @@ jobs:
           node --check functions/api/arcane-games.js
       - name: Magic daily game regression suite
         run: node --experimental-default-type=module --test tests/arcane-daily.test.mjs
+      - name: Owner command center controls and security regression checks
+        run: |
+          node --test tests/owner-dashboard.test.mjs
+          node --check owner-dashboard.js
+          node --check member-operations.js
+          node --check owner-console.js
+          node --check owner-evidence.js
+          node --check owner-adfree.js
       - name: JavaScript syntax
         run: |
           node --check arcane-games.js
