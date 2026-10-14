@@ -22,7 +22,7 @@ function normalizeGame(u){
 }
 async function puzzleFor(db,params){
  const {game,mode,seed,day}=params;
- if(mode==="practice")return buildArcanePuzzle(game,day,mode,seed);
+ if(mode==="practice")return buildArcanePuzzle(game,"practice",mode,seed); // Stable for this seed across dates and sessions.
  const existing=await db.prepare("SELECT payload FROM daily_arcane_puzzles WHERE game=? AND day=?").bind(game,day).first();
  if(existing?.payload)return JSON.parse(existing.payload);
  const chosen=buildArcanePuzzle(game,day);
