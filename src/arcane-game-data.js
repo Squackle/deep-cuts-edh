@@ -13,7 +13,7 @@ export function buildArcanePuzzle(game,day,mode="daily",seed=0){
  if(game==="cipher"){
   const ordinal=Math.floor(Date.parse(day+"T00:00:00Z")/86400000);
   const index=mode==="daily"?ordinal%CIPHER_WORDS.length:gameHash(id+":cipher")%CIPHER_WORDS.length;
-  const [word,definition,example]=CIPHER_WORDS[index];
+  const [word,definition]=CIPHER_WORDS[index];
   return {word,definition,edition:"creature-types-v2"};
  }
  const chosen=gameShuffle(BOARD_CATEGORIES,gameHash(id+":board:groups")).slice(0,4);
