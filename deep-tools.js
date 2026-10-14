@@ -118,7 +118,7 @@ function runFinder(){
 }
 function runBinder(){
  let rows=[],unknown=[],validated=[],commander=null,draft=null,busy=false;
- const setBusy=value=>{busy=value;for(const x of ["binderPreview","binderLoad","binderSave","binderBuildForm","binderDeleteCollection"]){const e=$(x);if(e)e.disabled=value||x==="binderSave"&&!rows.length}};
+ const setBusy=value=>{busy=value;for(const x of ["binderPreview","binderValidate","binderLoad","binderSave","binderBuildForm","binderDeleteCollection"]){const e=$(x);if(e)e.disabled=value||x==="binderSave"&&!rows.length}};
  function preview(){
   const container=$("binderPreviewResults");container.replaceChildren();
   const total=rows.reduce((n,c)=>n+Number(c.quantity),0);
@@ -129,6 +129,7 @@ function runBinder(){
   container.append(list);
   if(rows.length>45)container.append(node("small","Previewing first 45 names. All "+rows.length+" entries are retained."));
   $("binderSave").disabled=!rows.length;
+  $("binderValidate").disabled=!rows.length;
   $("binderExportCollection").disabled=!rows.length;
  }
  $("binderPreview").addEventListener("click",async()=>{
@@ -138,6 +139,17 @@ function runBinder(){
    status("binderImportStatus",rows.length+" distinct names parsed. Names will be verified against Scryfall before being used in a deck. Nothing has been saved online.");
    if(unknown.length)status("binderImportStatus",rows.length+" entries parsed with "+unknown.length+" invalid rows. Expand the warning before saving.",true);
   }catch(e){status("binderImportStatus",e.message,true)}
+ });
+ $("binderValidate").addEventListener("click",async()=>{
+  if(busy||!rows.length)return;setBusy(true);
+  try{
+   const problems=[...unknown];
+   const report=await batchCards(rows.map(x=>x.name),(n,total)=>status("binderImportStatus","Verifying "+n+" of "+total+" names…"));
+   validated=report.cards;unknown=[...problems,...report.missing.map(x=>"Not found on Scryfall: "+x)];
+   preview();
+   status("binderImportStatus",report.cards.length+" card names verified; "+report.missing.length+" unmatched. You can inspect unmatched names in the preview. Only verified cards may enter a draft.",report.missing.length>0);
+  }catch(e){status("binderImportStatus","Verification interrupted: "+e.message+". Retry before saving.",true)}
+  finally{setBusy(false)}
  });
  $("binderLoad").addEventListener("click",async()=>{
   if(busy)return;setBusy(true);try{rows=await loadAccountCollection();unknown=[];validated=[];draft=null;preview();
@@ -196,8 +208,7 @@ function runBinder(){
   setBusy(true);const name=$("binderCommander").value.trim();$("binderApply").disabled=true;$("binderExportDeck").disabled=true;
   try{
    commander=await commanderLookup(name);pins.clear();status("binderBuildStatus","Checking legality and color identity against Scryfall…");
-   const report=await batchCards(rows.map(x=>x.name),(n,total)=>status("binderBuildStatus","Verified "+n+" of "+total+" names…"));
-   validated=report.cards;unknown=report.missing;
+   if(!validated.length){const report=await batchCards(rows.map(x=>x.name),(n,total)=>status("binderBuildStatus","Verified "+n+" of "+total+" names…"));validated=report.cards;unknown=[...unknown,...report.missing.map(x=>"Not found on Scryfall: "+x)];}
    draft=draftFromOwned(commander,rows,validated);
    draw();
    status("binderBuildStatus",draft.complete?"100-card owned-card starter assembled. Review roles and strategy in Deck Workshop before playing.":"Draft prepared from "+validated.length+" verified card names. "+draft.missingSlots+" slots still needed; use Deep Cut Finder or Deck Workshop to complete.");
