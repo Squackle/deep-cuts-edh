@@ -54,7 +54,7 @@ test("game top-right avatar reuses the actual site-wide account component",async
  assert.match(image.style.transform,/scale\(3\.10\)/);
  assert.equal(checks,1);
  events["deepcuts:profile-change"]({detail:{profile:null}});
- assert.equal(button.title,"Sign in or create a Field Network profile");
+ assert.equal(button.title,"Sign in or create a Community profile");
  assert.equal(button.classList.contains("is-signed-in"),false);
 });
 test("signed-in leaderboard box is hidden, guests still have a sign-in link",()=>{
