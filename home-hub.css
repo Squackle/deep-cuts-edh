@@ -69,3 +69,27 @@
 @media(max-width:720px){.hub-intro{padding:30px 0}.hub-intro-layout{grid-template-columns:1fr}.hub-intro h1{font-size:clamp(42px,9.2vw,64px);margin:12px 0}.hub-intro-copy>p{margin-bottom:16px}.hub-feature{transform:none;max-width:510px}.hub-feature-main{grid-template-columns:88px minmax(0,1fr);min-height:0;padding:12px}.hub-feature-portrait{height:122px;width:88px}.hub-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hub-card{min-height:143px}.hub-directory{padding:26px 0}.hub-index-note{display:none}.hub-reports{padding:23px 0 32px}}
 @media(max-width:430px){.hub-intro{padding:27px 0}.hub-intro h1{font-size:clamp(38px,10.1vw,45px)}.hub-intro-copy>p{font-size:14px}.hub-actions{gap:7px}.hub-button{padding:11px 12px;font-size:10px;gap:6px;flex:1}.hub-feature-caption{padding:8px 11px;font-size:9px}.hub-feature-text strong{font-size:23px}.hub-grid{gap:8px}.hub-card{padding:12px 12px 13px;min-height:141px}.hub-card-top{font-size:9px}.hub-card strong{font-size:17px}.hub-card-desc{font-size:11px}.hub-quick-games{gap:5px 12px}.hub-quick-games span{flex-basis:100%}.hub-section-heading h2{font-size:29px}.hub-reports-grid{grid-template-columns:1fr}.hub-case-link{padding:10px}.hub-nominate{max-width:105px;text-align:right}}
 @media(prefers-reduced-motion:reduce){.hub-button,.hub-card,.hub-feature{transition:none}.hub-button:hover,.hub-card:hover,.hub-feature:hover{transform:none}}
+
+/* Featured dossier illumination: light lives behind the card, never above its text.
+   Its existing tilt/lift hover animation remains unchanged. */
+.hub-feature-stage{position:relative;isolation:isolate;min-width:0}
+.hub-feature-stage::before{
+ content:"";position:absolute;z-index:-1;pointer-events:none;
+ inset:-32px -35px;border-radius:28px;
+ background:radial-gradient(ellipse at 48% 48%,#f4d18c80 0%,#d4b16e48 38%,#90ab7444 60%,transparent 77%);
+ filter:blur(20px);opacity:.56;transform:scale(.96);
+ transition:opacity .4s ease,transform .5s ease,filter .4s ease;
+}
+.hub-feature-stage::after{
+ content:"";position:absolute;inset:-7px;z-index:-1;pointer-events:none;
+ background:linear-gradient(135deg,#eac17836,#8fb58e21 65%,#d8bb8536);
+ border-radius:14px;filter:blur(10px);opacity:.65;
+ transition:opacity .35s;
+}
+.hub-feature-stage:hover::before,.hub-feature-stage:focus-within::before{
+ opacity:.95;transform:scale(1.075);filter:blur(24px);
+}
+.hub-feature-stage:hover::after,.hub-feature-stage:focus-within::after{opacity:1}
+.hub-feature-stage>.hub-feature{z-index:1}
+@media(max-width:720px){.hub-feature-stage::before{inset:-16px;filter:blur(13px)}}
+@media(prefers-reduced-motion:reduce){.hub-feature-stage::before,.hub-feature-stage::after{transition:none}}
