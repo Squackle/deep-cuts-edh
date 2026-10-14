@@ -56,6 +56,14 @@ jobs:
         run: npm install --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
       - name: Browser interaction tests for all four Arcade practice games
         run: node --experimental-default-type=module --test tests/practice-browser.test.mjs
+      - name: Privacy-first supporter ribbon and commander preview regression tests
+        run: node --experimental-default-type=module --test tests/supporter-ticker-card-preview.test.mjs
+      - name: Supporter API and card-preview syntax
+        run: |
+          node --check functions/api/supporter-ticker.js
+          node --check supporter-ticker-settings.js
+          node --check daily-games.js
+          node --check header-profile.js
       - name: Magic daily game regression suite
         run: node --experimental-default-type=module --test tests/arcane-daily.test.mjs
       - name: JavaScript syntax
