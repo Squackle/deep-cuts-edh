@@ -192,7 +192,8 @@ function curated(game,day,mode,seed){
 }
 export async function getPuzzle(db,game,day,mode="daily",seed=0){
  if(!closedDay(day))throw new Error("Invalid game day");
- if(mode==="practice"||day<AUTOMATION_START)return curated(game,day,mode,seed);
+ if(mode==="practice")return curated(game,"practice",mode,seed); // Seed alone determines a replayable practice puzzle, independent of midnight.
+  if(day<AUTOMATION_START)return curated(game,day,mode,seed);
  const existing=await db.prepare("SELECT payload FROM game_auto_puzzles WHERE game=? AND day=?").bind(game,day).first();
  const frozen=sqlSafeJson(existing?.payload);
  if(frozen&&frozen.answer||frozen&&frozen.entries)return frozen;
