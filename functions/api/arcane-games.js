@@ -42,7 +42,9 @@ function cipherState(puzzle,history){
  const won=guesses.some(x=>x.guess===puzzle.word),finished=won||guesses.length===6;
  const score=finished&&won?100-(guesses.length-1)*15:0;
  return {game:"cipher",guesses,attempts:guesses.length,attemptsLeft:6-guesses.length,won,finished,score,
-  ...(finished?{answer:{word:puzzle.word,definition:puzzle.definition,example:puzzle.example,scryfall:exactCardUrl(puzzle.example)}}:{})};
+  ...(finished?{answer:{word:puzzle.word,definition:puzzle.definition,
+   ...(puzzle.edition==="creature-types-v2"?{isCreatureType:true,scryfall:"https://scryfall.com/search?q="+encodeURIComponent("t:creature t:"+puzzle.word.toLowerCase())}
+    :{example:puzzle.example,scryfall:exactCardUrl(puzzle.example)})}}:{})};
 }
 function boardState(puzzle,history){
  if(!Array.isArray(history)||history.length>8)return null;
