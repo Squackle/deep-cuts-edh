@@ -46,7 +46,7 @@ test("game top-right avatar reuses the actual site-wide account component",async
  await new Promise(done=>setImmediate(done));
  const button=header.children.find(el=>el.className==="header-profile-button");
  assert.ok(button,"shared component renders in arcade header");
- assert.equal(button.href,"/community.html#account");
+ assert.equal(button.href,"/profile");
  assert.equal(button.title,"Open @Squackle's investigator dossier");
  assert.ok(button.classList.contains("is-signed-in"));
  const image=button.children[0].children[1];
