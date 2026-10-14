@@ -4,7 +4,7 @@ import fs from "node:fs";
 const read=x=>fs.readFileSync(x,"utf8");
 const community=read("community.html"),profile=read("profile.html"),
  app=read("community.js"),exp=read("field-expansion.js"),header=read("header-profile.js");
-const panels=html=>[...html.matchAll(/<section class="cm-panel" data-panel="([^"]+)"/g)].map(x=>x[1]);
+const panels=html=>[...html.matchAll(/<section class="cm-panel(?: [^"]+)?" data-panel="([^"]+)"/g)].map(x=>x[1]);
 test("Community has only public social features, with no personal forms or private data panels",()=>{
  assert.deepEqual(panels(community),["cases","decks","challenge","lab","network","evidence","compare","reputation"]);
  for(const bad of ["registerForm","loginForm","recoverStartForm","accountLoggedOut","accountLoggedIn","ownProfile","collectionItems","dispatchList","identitySummary"])
@@ -38,7 +38,7 @@ test("Existing old personal Community bookmarks redirect to new profile sections
   assert.ok(app.includes('"'+tab+'"'),"Missing deep-link route "+tab);
  }
  assert.match(app,/window\.addEventListener\("hashchange"/);
- assert.match(app,/data-community-page/);
+ assert.match(app,/dataset\.communityPage/);
 });
 test("Private and public initializers don't bind forms from the other page",()=>{
  assert.match(app,/if\(isProfile\)\{\s*bindAccount\(\)/);
