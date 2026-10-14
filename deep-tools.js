@@ -118,7 +118,7 @@ function runFinder(){
 }
 function runBinder(){
  let rows=[],unknown=[],validated=[],commander=null,draft=null,busy=false;
- const setBusy=value=>{busy=value;for(const x of ["binderPreview","binderValidate","binderLoad","binderSave","binderBuildForm","binderDeleteCollection"]){const e=$(x);if(e)e.disabled=value||x==="binderSave"&&!rows.length}};
+ const setBusy=value=>{busy=value;for(const x of ["binderPreview","binderValidate","binderLoad","binderSave","binderBuildForm","binderDeleteCollection"]){const e=$(x);if(e)e.disabled=value||["binderSave","binderValidate"].includes(x)&&!rows.length}};
  function preview(){
   const container=$("binderPreviewResults");container.replaceChildren();
   const total=rows.reduce((n,c)=>n+Number(c.quantity),0);
@@ -143,7 +143,7 @@ function runBinder(){
  $("binderValidate").addEventListener("click",async()=>{
   if(busy||!rows.length)return;setBusy(true);
   try{
-   const problems=[...unknown];
+   const problems=unknown.filter(x=>!x.startsWith("Not found on Scryfall: "));
    const report=await batchCards(rows.map(x=>x.name),(n,total)=>status("binderImportStatus","Verifying "+n+" of "+total+" names…"));
    validated=report.cards;unknown=[...problems,...report.missing.map(x=>"Not found on Scryfall: "+x)];
    preview();
@@ -172,7 +172,7 @@ function runBinder(){
   }catch(e){status("binderImportStatus","Save interrupted: "+e.message+". Earlier batches might already be saved. Reload your collection to verify.",true)}
   finally{setBusy(false)}
  });
- $("binderExportCollection").addEventListener("click",()=>download("deep-cuts-collection.csv","Name,Quantity\n"+rows.map(x=>'"'+x.name.replaceAll('"','""')+'",'+x.quantity).join("\n")));
+ $("binderExportCollection").addEventListener("click",()=>download("deep-cuts-collection.csv","Name,Quantity\n"+rows.map(x=>'"'+(/^[=+@-]/.test(x.name)?"\u0027":"")+x.name.replaceAll('"','""')+'",'+x.quantity).join("\n")));
  $("binderDeleteCollection").addEventListener("click",async()=>{
   if(busy)return;
   if(prompt("Delete all cards in your saved Field Network collection? Type ERASE COLLECTION:")!=="ERASE COLLECTION")return;
@@ -210,7 +210,7 @@ function runBinder(){
    commander=await commanderLookup(name);pins.clear();status("binderBuildStatus","Checking legality and color identity against Scryfall…");
    if(!validated.length){const report=await batchCards(rows.map(x=>x.name),(n,total)=>status("binderBuildStatus","Verified "+n+" of "+total+" names…"));validated=report.cards;unknown=[...unknown,...report.missing.map(x=>"Not found on Scryfall: "+x)];}
    draft=draftFromOwned(commander,rows,validated);
-   draw();
+   preview();draw();
    status("binderBuildStatus",draft.complete?"100-card owned-card starter assembled. Review roles and strategy in Deck Workshop before playing.":"Draft prepared from "+validated.length+" verified card names. "+draft.missingSlots+" slots still needed; use Deep Cut Finder or Deck Workshop to complete.");
   }catch(err){status("binderBuildStatus",err.message,true)}
   finally{setBusy(false)}
