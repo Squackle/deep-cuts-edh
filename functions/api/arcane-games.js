@@ -128,7 +128,7 @@ async function loadState(request,env,p,historyOverride=null){
  const run=a&&p.mode==="daily"?await runFor(env.DB,a.id,p.game,p.day):null;
  const history=run?parseHistory(run.progress):(historyOverride??[]);
  const state=stateFor(puzzle,p.game,history);
- if(!state)throw Error("Stored game progress is invalid");
+ if(!state)return null; // Invalid guest/practice history is a bad request, not an outage.
  return {...state,day:p.day,mode:p.mode,seed:p.seed,authenticated:!!a,
   ...(a?{badges:await profileBadges(env.DB,a.id)}:{badges:[]})};
 }
@@ -155,6 +155,7 @@ export async function onRequestGet({request,env}){
   if(!history)return fail("Invalid game history.",400);
   // Anonymous browser history is non-authoritative and never produces awards.
   const data=await loadState(request,env,p,history);
+  if(!data)return fail("Invalid game history.",400);
   // Ignore caller-provided history for signed-in daily play.
   if(!data.authenticated&&history.length){
    const puzzle=await puzzleFor(env.DB,p),state=stateFor(puzzle,p.game,history);
@@ -181,7 +182,9 @@ export async function onRequestPost({request,env}){
    const existing=stateFor(puzzle,game,parseHistory(run.progress));
    return send({...existing,game,day,mode,seed,authenticated:true,alreadySubmitted:true,badges:await profileBadges(env.DB,a.id)});
   }
-  const prior=run?parseHistory(run.progress):parseHistory(d.history||[]);
+  // Signed-in daily play trusts only stored progress, including on the first move.
+  // An unstarted daily run always begins empty; never seed it from client history.
+  const prior=a&&mode==="daily"?(run?parseHistory(run.progress):[]):parseHistory(d.history||[]);
   if(!prior)return fail("Invalid move history.",400);
   const before=stateFor(puzzle,game,prior);
   if(!before||before.finished)return fail("This game is already finished.",409);
