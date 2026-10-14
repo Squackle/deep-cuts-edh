@@ -126,7 +126,7 @@ async function loadState(request,env,p,historyOverride=null){
  const a=await auth(request,env.DB);
  const puzzle=await puzzleFor(env.DB,p);
  const run=a&&p.mode==="daily"?await runFor(env.DB,a.id,p.game,p.day):null;
- const history=run?parseHistory(run.progress):(historyOverride??[]);
+ const history=a&&p.mode==="daily"?(run?parseHistory(run.progress):[]):(historyOverride??[]);
  const state=stateFor(puzzle,p.game,history);
  if(!state)return null; // Invalid guest/practice history is a bad request, not an outage.
  return {...state,day:p.day,mode:p.mode,seed:p.seed,authenticated:!!a,
