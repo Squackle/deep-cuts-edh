@@ -100,6 +100,18 @@ test("Legacy Arcade /games/index.html has a permanent redirect to /games, not a 
  assert.ok(!sitemap.includes("/games/index.html"));
  assert.ok(!sitemap.includes("/games/</loc>"));
 });
+test("Cloudflare global middleware permanently redirects Arcade legacy index before static lookup",async()=>{
+ for(const method of ["GET","HEAD"]){
+  let nextCalled=false;
+  const res=await adFreeMiddleware({
+   request:new Request(origin+"/games/index.html?from=old",{method}),env:{},
+   next:async()=>{nextCalled=true;return new Response("wrong",{"status":200})}
+  });
+  assert.equal(res.status,301);
+  assert.equal(res.headers.get("location"),origin+"/games");
+  assert.equal(nextCalled,false);
+ }
+});
 test("AdSense verified publisher record and exactly six intentional ad-enabled HTML pages",()=>{
  const ads=read("ads.txt").trim();
  assert.equal(ads,"google.com, pub-1885127351876276, DIRECT, f08c47fec0942fa0");
