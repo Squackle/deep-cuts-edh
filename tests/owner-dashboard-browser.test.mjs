@@ -53,6 +53,7 @@ test("owner command center preserves real forms, tabs and local lock on desktop/
      assert.equal(await page.locator("#owner-panel-"+tab).isVisible(),true,tab);
      assert.equal(await page.locator(form).count(),1,form);
     }
+    await page.locator('[data-owner-panel="grants"]').click();
     await page.locator("#owner-panel-grants input[name=label]").fill("QA sample");
     await page.locator('.owner-key-label input[name=operatorKey]').fill("dcissuer1_"+"a".repeat(64));
     await page.evaluate(()=>{
