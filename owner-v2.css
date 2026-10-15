@@ -131,3 +131,31 @@ main.ops.owner-v2{
 .owner-v2-capacity-trend{border:1px solid #d6caaa;border-radius:7px;overflow:hidden}
 .owner-v2-capacity-setup{border-left:4px solid #b18d45}
 @media(max-width:540px){.owner-v2-capacity-day{align-items:flex-start;flex-direction:column;gap:4px}.owner-v2-capacity-day-values{justify-content:flex-start}}
+
+/* Usage over time: static inline SVG fed by existing seven-day Cloudflare metrics. */
+.owner-v2-usage-graph{margin:24px 0 10px;padding:18px 20px 16px;border:1px solid #c7bc94;border-radius:10px;background:#faf9f1;min-width:0}
+.owner-v2-usage-graph h3{margin:0 0 4px!important;color:#24452f}
+.owner-v2-usage-graph .owner-v2-chart-subtitle{margin:0 0 15px;font-size:12px}
+.owner-v2-chart-controls{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.owner-v2 .owner-v2-chart-controls .owner-v2-chart-choice{
+ min-height:38px;margin:0;padding:8px 12px;border-radius:6px;
+ border:1px solid #a6b7a4;background:#e7ece0;color:#284a35;
+ font:600 12px/1.25 system-ui,sans-serif
+}
+.owner-v2 .owner-v2-chart-controls .owner-v2-chart-choice[aria-pressed="true"]{background:#24553a;border-color:#24553a;color:#fffdf2}
+.owner-v2 .owner-v2-chart-controls .owner-v2-chart-choice:hover{border-color:#aa8b4b}
+.owner-v2 .owner-v2-chart-controls .owner-v2-chart-choice:focus-visible{outline:3px solid #ba974c;outline-offset:2px}
+.owner-v2-chart-summary{font-size:13px;color:#2a4f38;font-weight:700;margin:12px 0 8px;font-variant-numeric:tabular-nums}
+.owner-v2-chart-viewport{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.owner-v2-chart-svg{display:block;width:100%;min-width:580px;height:auto;max-height:290px;overflow:visible}
+.owner-v2-chart-gridline{stroke:#d2dcca;stroke-width:1;stroke-dasharray:4 5}
+.owner-v2-chart-axis-label{fill:#5b705b;font-size:12px;font-family:system-ui,sans-serif}
+.owner-v2-chart-date{fill:#405e48;font-size:12px;font-weight:600;font-family:system-ui,sans-serif}
+.owner-v2-chart-area{fill:#b5d5b7;fill-opacity:.40}
+.owner-v2-chart-line{stroke:#286a47;stroke-width:3.5;stroke-linejoin:round;stroke-linecap:round;fill:none}
+.owner-v2-chart-point{fill:#e4c67e;stroke:#286a47;stroke-width:2.5}
+.owner-v2-chart-footnote{font-size:11px;margin:5px 0 0}
+@media(max-width:540px){
+ .owner-v2-usage-graph{padding:14px 10px;margin:16px 0 8px}
+ .owner-v2 .owner-v2-chart-controls .owner-v2-chart-choice{flex:1 1 42%;min-height:44px;text-align:center}
+}
