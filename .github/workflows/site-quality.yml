@@ -116,6 +116,8 @@ jobs:
           node --check owner-v2.js
           node --check functions/api/owner-ops.js
           node --test tests/owner-v2-contract.test.mjs
+      - name: Owner nominations read-and-approval API regression tests
+        run: node --test tests/owner-nominations-api.test.mjs
       - name: Issue 38 targeted DOM XSS browser regressions
         run: node --test tests/security-dom-injection.test.mjs
       - name: Issue 38 synthetic identity and Ko-fi replay checks
