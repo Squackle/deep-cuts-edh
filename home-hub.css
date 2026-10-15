@@ -93,3 +93,20 @@
 .hub-feature-stage>.hub-feature{z-index:1}
 @media(max-width:720px){.hub-feature-stage::before{inset:-16px;filter:blur(13px)}}
 @media(prefers-reduced-motion:reduce){.hub-feature-stage::before,.hub-feature-stage::after{transition:none}}
+
+/* Mobile hotfix: the homepage already has Arcade, Set Watch and Support in its
+   menu/directory, so keep the sticky header to one compact utility row. */
+@media(max-width:720px){
+ .hub-page .site-header .header-inner.header-profile-enabled{
+  grid-template-areas:"brand menu profile" "navigation navigation navigation";
+  padding-block:8px;row-gap:7px;
+ }
+ .hub-page .site-header .header-inner.header-profile-enabled>.site-mobile-shortcuts,
+ .hub-page .site-header .header-inner.header-profile-enabled>.site-support-action{display:none!important}
+ .hub-page .site-header .site-supporter-label{font-size:0;max-width:none;white-space:nowrap}
+ .hub-page .site-header .site-supporter-label::after{
+  content:"SUPPORTERS";font:800 9px ui-sans-serif,system-ui;letter-spacing:.08em
+ }
+ .hub-page .hub-intro{padding:22px 0 27px}
+ .hub-page .hub-intro h1{margin:10px 0}
+}
