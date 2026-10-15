@@ -36,6 +36,8 @@ for(const name of ['cold-case','obscurity-ladder','arcane-cipher','conspiracy-bo
 }
 check(html.includes('href="/games/hive-run/"'),'Homepage drops Hive Run');
 check(exists('games/hive-run/index.html'),'Hive Run missing');
+check(read('games/hive-run/index.html').includes('<link rel="canonical" href="'+root+'/games/hive-run/">'),'Hive Run canonical missing');
+check(exists('_redirects')&&read('_redirects').includes('/games/index.html /games 301'),'Arcade legacy URL must permanently redirect');
 check(read('games.html').includes('HIVE RUN')||read('games.html').includes('Hive Run'),'Arcade entry missing');
 check(read('games.html').includes('<h1>THE <em>ARCADE.</em></h1>'),'Arcade hub heading incorrect');
 check(read('index.html').includes('<strong>Arcade</strong>'),'Homepage Arcade tile missing');
