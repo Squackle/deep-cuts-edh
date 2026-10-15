@@ -108,12 +108,15 @@
    (x.mode==="practice"||x.day===today)&&time-x.updated<14*86400000);
   options.sort((a,b)=>b.updated-a.updated);
   const item=options[0];if(!item)return;
-  const g=GAMES[item.game],label=item.progress>0?"CONTINUE "+g.name.toUpperCase():"RETURN TO "+g.name.toUpperCase();
-  const a=make("a",label+" ↗","arcade-continue");
+  const g=GAMES[item.game],context=item.mode==="practice"?"Practice round":"Today's puzzle";
+  const wrap=make("div",undefined,"arcade-continue-wrap");
+  const a=make("a","Continue last game ↗","arcade-continue arcade-continue-button");
   a.href=pathFor(item.game,item.mode,item.seed);
-  a.setAttribute("aria-label",label+", "+(item.mode==="practice"?"practice round":"today's puzzle"));
-  a.title=(item.mode==="practice"?"Practice":"Today's puzzle")+(item.progress?" · "+item.progress+" recorded actions":"");
-  host.append(a);
+  a.setAttribute("aria-label","Continue last game: "+g.name+", "+context.toLowerCase());
+  a.title="Return to "+g.name+" · "+context+(item.progress?" · "+item.progress+" recorded actions":"");
+  const note=make("span",g.name+" · "+context,"arcade-continue-note");
+  wrap.append(a,note);
+  host.append(wrap);
  }
  function labelFor(game){
   const g=GAMES[game];if(!g)return null;
