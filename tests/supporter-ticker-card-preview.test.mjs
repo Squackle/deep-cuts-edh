@@ -71,7 +71,8 @@ test("Ticker in shared header has distinct gold, silver, bronze and reduced-moti
  assert.match(js,/setupSupporterTicker\(root\)/);
  assert.match(js,/header\.append\(strip\)/);
  assert.match(js,/fetch\("\/api\/supporter-ticker"/);
- assert.match(js,/element\.setAttribute\("aria-hidden","true"\)/);\n assert.match(js,/element\.querySelectorAll\("a"\)\.forEach\(a=>a\.tabIndex=-1\)/);
+ assert.match(js,/element\.setAttribute\("aria-hidden","true"\)/);
+ assert.match(js,/element\.querySelectorAll\("a"\)\.forEach\(a=>a\.tabIndex=-1\)/);
  assert.match(js,/Invite supporters from first paint/);
  assert.match(js,/render\(\);\s*let previousWidth/);
  assert.match(js,/const repeats=Math\.max/);
