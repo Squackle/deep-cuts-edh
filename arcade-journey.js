@@ -37,9 +37,10 @@
    }
    const results=data.results.filter(x=>x&&Object.hasOwn(GAMES,x.game)&&x.game!=="hive"&&["daily","practice"].includes(x.mode)&&
     validDay(x.day)&&typeof x.id==="string"&&x.id===identity(x.game,x.mode,x.day,x.seed)&&
+    (x.mode==="daily"||(Number.isInteger(x.seed)&&x.seed>=1&&x.seed<=999999999))&&
     Number.isFinite(x.completedAt)&&x.completedAt<=Date.now()+86400000&&Date.now()-x.completedAt<180*86400000&&
     Number.isFinite(x.score)&&x.score>=0&&x.score<=100).slice(-80).map(x=>({
-      id:x.id,game:x.game,mode:x.mode,day:x.day,score:inRange(x.score,100),completedAt:x.completedAt
+      id:x.id,game:x.game,mode:x.mode,day:x.day,seed:x.mode==="practice"?x.seed:0,score:inRange(x.score,100),completedAt:x.completedAt
     }));
    return {version:1,entries,results};
   }catch{return EMPTY()}
@@ -91,7 +92,7 @@
   const finished=!!raw.finished,now=Date.now();
   data.entries[id]={game,mode,day:raw.day,seed,finished,progress:Math.max(previous,progress),updated:now};
   if(finished&&!data.results.some(x=>x.id===id)&&Number.isFinite(Number(raw.score))){
-   data.results.push({id,game,mode,day:raw.day,score:inRange(raw.score,100),completedAt:now});
+   data.results.push({id,game,mode,day:raw.day,seed,score:inRange(raw.score,100),completedAt:now});
   }
   data.results=data.results.sort((a,b)=>a.completedAt-b.completedAt).slice(-80);
   const entries=Object.entries(data.entries).sort((a,b)=>b[1].updated-a[1].updated).slice(0,80);
