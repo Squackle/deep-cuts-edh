@@ -6,15 +6,19 @@
 import {checkAdFree} from "../src/kofi-adfree.js";
 const AD_TAG='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1885127351876276" crossorigin="anonymous"></script>';
 const AD_PAGES=new Set([
- "/", "/index.html", "/library.html",
- "/reports/chainer-dementia-master.html",
- "/reports/alena-and-gilanra.html",
- "/reports/commander-mustard.html",
- "/reports/ekthi-contaminator-priest.html"
+ "/", "/index.html", "/library", "/library.html",
+ "/reports/chainer-dementia-master", "/reports/chainer-dementia-master.html",
+ "/reports/alena-and-gilanra", "/reports/alena-and-gilanra.html",
+ "/reports/commander-mustard", "/reports/commander-mustard.html",
+ "/reports/ekthi-contaminator-priest", "/reports/ekthi-contaminator-priest.html"
 ]);
 export async function onRequest(context){
  const request=context.request;
  const url=new URL(request.url);
+ // The root middleware also runs in front of static assets. A Pages _redirects
+ // rule may not execute on Function-served requests, so enforce this here too.
+ if((request.method==="GET"||request.method==="HEAD")&&url.pathname==="/games/index.html")
+  return Response.redirect(new URL("/games",url),301);
  if(request.method!=="GET"||!AD_PAGES.has(url.pathname))return context.next();
  const cookie=request.headers.get("Cookie")||"";
  if(!/(?:^|;\s*)__Host-dc_device=dcdevice1_[0-9a-f]{64}(?:;|$)/.test(cookie))return context.next();
