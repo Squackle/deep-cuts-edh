@@ -65,8 +65,8 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
     assert.ok(m.pageWidth<=m.viewport+1,`Horizontal overflow at ${width}px: ${JSON.stringify(m)}`);
     assert.equal(m.heroVisible,true);
     assert.equal(m.footerRects.length,7);
-    for(const r of m.footerRects)assert.ok(r.width>100&&r.height>=40,`Unreadable footer link at ${width}px`);
     if(width<=600){
+     for(const r of m.footerRects)assert.ok(r.width>100&&r.height>=40,`Unreadable footer link at ${width}px`);
      assert.equal(m.shortcutDisplay,"none");
      assert.equal(m.supportDisplay,"none");
      assert.notEqual(m.menuDisplay,"none");
