@@ -25,7 +25,8 @@ test("immutable Cloudflare deployment alias also enforces Access for owner paths
  assert.equal(homepage.status,200,"Deployment public homepage should remain accessible: "+JSON.stringify(homepage));
  for(const path of ["/member-operations.html","/api/owner-members"]){
   const res=await anonymous(path,alias);
-  assert.ok([301,302,303,307,308,401,403].includes(res.status)&&/cloudflareaccess\\.com|\\/cdn-cgi\\/access\\//i.test(res.location),
+  const redirectedToAccess=res.location.includes("cloudflareaccess.com")||res.location.includes("/cdn-cgi/access/");
+  assert.ok([301,302,303,307,308,401,403].includes(res.status)&&redirectedToAccess,
    "Immutable deployment alias bypasses owner MFA: "+path+" "+JSON.stringify(res));
  }
 });
