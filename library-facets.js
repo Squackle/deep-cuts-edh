@@ -55,7 +55,7 @@ export function facetTerms(){
  if(mv)terms.push("mv"+(mv==="6+"?">=":"=")+(mv==="6+"?"6":mv));
  return terms;
 }
-const EXTRA={minPrice:"Min price",maxPrice:"Max price",maxMana:"Max mana",formatFilter:"Format",printingFilter:"Printings"};
+const EXTRA={artistSelected:"Artist",minPrice:"Min price",maxPrice:"Max price",maxMana:"Max mana",formatFilter:"Format",printingFilter:"Printings"};
 function advancedActive(){
  const result=[];
  for(const [id,title] of Object.entries(EXTRA)){
@@ -72,6 +72,8 @@ export function activeFacetCount(){
 export function isFaceted(){return Object.values(state).some(x=>x.size>0)}
 export function resetFacets(){
  for(const set of Object.values(state))set.clear();
+ if($("artistSelected"))$("artistSelected").value="";
+ if($("artistInput"))$("artistInput").value="";
  if($("identityExact"))$("identityExact").checked=false;
  updateVisuals();
 }
@@ -94,9 +96,21 @@ export function clearFacet(group,value){
  if(group==="exact"&&$("identityExact"))$("identityExact").checked=false;
  else if(group==="advanced"&&EXTRA[value]){
   $(value).value=value==="formatFilter"?"commander":value==="printingFilter"?"cards":"";
+  if(value==="artistSelected"){
+   if($("artistInput"))$("artistInput").value="";
+   document.dispatchEvent?.(new Event("deepcuts:artist-clear"));
+  }
  }else if(state[group]&&code(group,value))state[group].delete(value);
  updateVisuals();signal();
 }
+export function setArtistFilter(name,{preserveInput=false,search=true}={}){
+ const value=String(name||"").trim().slice(0,100);
+ if($("artistSelected"))$("artistSelected").value=value;
+ if(!preserveInput&&$("artistInput"))$("artistInput").value=value;
+ updateVisuals();
+ if(search)signal();
+}
+export function selectedArtist(){return $("artistSelected")?.value?.trim()||""}
 export function clearManaChips(){
  if(state.mana.size){state.mana.clear();updateVisuals()}
 }
@@ -159,12 +173,18 @@ function restore(){
   else if(input.tagName==="INPUT")input.value=v.slice(0,32)};
  select("formatFilter","format");select("sortFilter","sort");select("printingFilter","print");
  select("minPrice","min");select("maxPrice","max");select("maxMana","maxmv");
+ const artist=(u.get("artist")||"").trim();
+ if(artist.length<=100&&!/[\\x00-\\x1f]/.test(artist)&&$("artistSelected")){
+  $("artistSelected").value=artist;
+  if($("artistInput"))$("artistInput").value=artist;
+ }
  if(u.get("q")&&$("cardQuery"))$("cardQuery").value=u.get("q").slice(0,250);
  updateVisuals();
 }
 export function shareURL(){
- const u=new URL("/library.html",location.origin);
+ const u=new URL("/library",location.origin);
  const query=$("cardQuery")?.value.trim();if(query)u.searchParams.set("q",query.slice(0,250));
+ const artist=selectedArtist();if(artist)u.searchParams.set("artist",artist);
  for(const [key,set] of Object.entries(state))if(set.size)u.searchParams.set(key,choices(key).join(","));
  if($("identityExact")?.checked)u.searchParams.set("exact","1");
  for(const [id,k] of [["formatFilter","format"],["sortFilter","sort"],["printingFilter","print"],["minPrice","min"],["maxPrice","max"],["maxMana","maxmv"]]){
