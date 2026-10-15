@@ -96,6 +96,18 @@ export function auditSources(files,read){
  add("info","not-tested","identity & payments","staging environment","Real owner MFA success, second-account IDOR, paid Ko-fi events and credential rotation cannot safely be automated against production.","Use synthetic staging users, payment fixtures and explicit operator approval.");
  return {inventory,findings};
 }
+// Only accept redirects to the real Access authentication domain or a same-origin Access path.
+// A mere substring in a URL is not reliable proof of Cloudflare Access protection.
+export function isAccessRedirect(location,originUrl){
+ if(!location)return false;
+ try{
+  const dest=new URL(location,originUrl),src=new URL(originUrl);
+  if(dest.protocol!=="https:")return false;
+  const accessHost=dest.hostname==="cloudflareaccess.com"||dest.hostname.endsWith(".cloudflareaccess.com");
+  const sameOriginPath=dest.origin===src.origin&&dest.pathname.startsWith("/cdn-cgi/access/");
+  return accessHost||sameOriginPath;
+ }catch{return false}
+}
 async function check(url,{expectAccess=false,publicOk=false}={}){
  try{
   const r=await fetch(url,{method:"GET",redirect:"manual",signal:AbortSignal.timeout(12000),headers:{"User-Agent":"DeepCutsEDH-SafeSecuritySweep/1.0","Accept":"text/html,application/json"}});
@@ -109,7 +121,7 @@ async function check(url,{expectAccess=false,publicOk=false}={}){
     status=follow.status;
    }
   }
-  const passed=expectAccess?([301,302,303,307,308,401,403].includes(r.status)&&((loc.includes("cloudflareaccess.com")||loc.includes("/cdn-cgi/access/"))||r.status===403)):
+  const passed=expectAccess?([301,302,303,307,308].includes(r.status)&&isAccessRedirect(loc,url)):
    publicOk?status===200:status<500;
   return {path:new URL(url).pathname,host:new URL(url).hostname,code:status,pass:passed,check:expectAccess?"Access interception":publicOk?"public GET":"HTTP health"};
  }catch(e){return {path:new URL(url).pathname,host:new URL(url).hostname,code:null,pass:false,check:"network timeout / unavailable"}}
