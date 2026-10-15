@@ -11,7 +11,7 @@ test("production public homepage stays anonymous",async()=>{
  assert.equal(home.status,200,"Public homepage unexpectedly gated: "+JSON.stringify(home));
 });
 test("production owner console and private API requests cannot reach origin anonymously",async()=>{
- for(const path of ["/member-operations.html","/member-operations","/api/owner-members","/api/kofi-member-issue"]){
+ for(const path of ["/member-operations.html","/member-operations","/api/owner-members","/api/kofi-member-issue","/api/owner-ops"]){
   const res=await anonymous(path);
   const hasAccessRedirect=/cloudflareaccess\.com|\/cdn-cgi\/access\//i.test(res.location);
   assert.ok([301,302,303,307,308,401,403].includes(res.status)&&hasAccessRedirect,
@@ -23,7 +23,7 @@ test("immutable Cloudflare deployment alias also enforces Access for owner paths
  const alias="https://532c7468.deep-cuts-edh.pages.dev";
  const homepage=await anonymous("/",alias);
  assert.equal(homepage.status,200,"Deployment public homepage should remain accessible: "+JSON.stringify(homepage));
- for(const path of ["/member-operations.html","/api/owner-members"]){
+ for(const path of ["/member-operations.html","/api/owner-members","/api/owner-ops"]){
   const res=await anonymous(path,alias);
   const redirectedToAccess=res.location.includes("cloudflareaccess.com")||res.location.includes("/cdn-cgi/access/");
   assert.ok([301,302,303,307,308,401,403].includes(res.status)&&redirectedToAccess,
