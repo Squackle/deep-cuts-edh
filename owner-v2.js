@@ -14,7 +14,7 @@ const groups=[
  ["Games",[["games","Game statistics"],["integrity","Score integrity"],["schedule","Scheduled content"]]],
  ["Business",[["members","Paid memberships"],["grants","Free keys"],["adfree","Ad-free"],["revenue","Revenue records"]]],
  ["Site",[["site","Site status"],["analytics","Community activity"],["features","Feature switches"]]],
- ["Security",[["recovery","Backups & recovery"],["audit","Admin activity"],["tools","Tools & diagnostics"]]]
+ ["Security",[["sweep","Security sweep"],["recovery","Backups & recovery"],["audit","Admin activity"],["tools","Tools & diagnostics"]]]
 ];
 const oldPanels={};
 for(const section of [...stage.querySelectorAll(".owner-workspace-panel")])oldPanels[section.id.replace("owner-panel-","")]=section;
@@ -275,6 +275,11 @@ function staticPanel(id,text,linksArr){
  const area=spaces.get(id).querySelector(".owner-v2-data");
  message(area,text);links(area,linksArr);
 }
+staticPanel("sweep","Launch a safe security audit at any time. Choose Run workflow on the GitHub Actions page (select main), then download the sanitized security report artifact when it finishes. Checks include risky code patterns, server authorization guards, workflows, secret-shaped strings and anonymous Cloudflare Access redirects. Identity, payment and data-changing tests need separate staging review.",[
+ ["Run security sweep","https://github.com/Squackle/deep-cuts-edh/actions/workflows/security-sweep.yml"],
+ ["View previous reports","https://github.com/Squackle/deep-cuts-edh/actions/workflows/security-sweep.yml"],
+ ["Full security checklist","https://github.com/Squackle/deep-cuts-edh/blob/main/docs/SECURITY-SWEEP-RUNBOOK.md"]
+]);
 staticPanel("seo","Search Console indexing and AdSense approval depend on Google. The tools below open their authoritative dashboards; this page does not invent search traffic or approval.",[
  ["Search Console","https://search.google.com/search-console"],["Sitemap","https://deep-cuts-edh.pages.dev/sitemap.xml"],["Robots","https://deep-cuts-edh.pages.dev/robots.txt"],["AdSense","https://www.google.com/adsense/"]
 ]);
