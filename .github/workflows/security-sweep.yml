@@ -47,6 +47,8 @@ jobs:
         run: node --test tests/security-sweep.test.mjs
       - name: Exercise authorization-denial and feature-pause behavior with mock database
         run: node --test tests/security-route-authorization.test.mjs
+      - name: Issue 38 account-ownership and payment replay synthetic tests
+        run: node --test tests/security-identity-isolation.test.mjs tests/security-kofi-replay.test.mjs
       - name: Security static, backdoor-pattern, API and safe live checks
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.live_checks }}" = "false" ]; then
