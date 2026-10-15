@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {facetTerms,setFacet,resetFacets,clearManaChips,clearFacet,activeFacetCount,shareURL,initFacets,facetSelections} from "../library-facets.js";
+import {facetTerms,setFacet,resetFacets,clearManaChips,clearFacet,activeFacetCount,shareURL,initFacets,facetSelections,setArtistFilter,selectedArtist} from "../library-facets.js";
 const fields=new Map();
 function element(id,tagName="INPUT"){
  const events={};const el={id,tagName,value:"",checked:false,hidden:false,textContent:"",children:[],dataset:{},options:[],classList:{toggle(){},add(){},remove(){}},setAttribute(){},replaceChildren(...children){this.children=children},append(...children){this.children.push(...children)},addEventListener(type,fn){(events[type]??=[]).push(fn)},fire(type){for(const fn of events[type]||[])fn({target:this})}};
  fields.set(id,el);return el;
 }
-for(const id of ["identityExact","maxMana","minPrice","maxPrice","cardQuery","activeFacetCount","libraryFilterCount","libraryFacetSummary","libraryFilterEmpty","activeFilterChips","libraryFacetPanel","libraryToggleFilters","librarySearch","libraryReset","browseAll","librarySaveSearch","libraryShareFallback","openScryfallSearch"])element(id);
+for(const id of ["identityExact","maxMana","minPrice","maxPrice","cardQuery","artistInput","artistSelected","activeFacetCount","libraryFilterCount","libraryFacetSummary","libraryFilterEmpty","activeFilterChips","libraryFacetPanel","libraryToggleFilters","librarySearch","libraryReset","browseAll","librarySaveSearch","libraryShareFallback","openScryfallSearch"])element(id);
 for(const id of ["formatFilter","sortFilter","printingFilter"]){const e=element(id,"SELECT");e.options=["commander","standard","modern","edhrec-asc","edhrec-desc","usd-asc","usd-desc","cards","prints","art"].map(value=>({value}))}
 fields.get("formatFilter").value="commander";fields.get("sortFilter").value="edhrec-asc";fields.get("printingFilter").value="cards";
 globalThis.document={createElement:tagName=>element("generated-"+fields.size,tagName.toUpperCase()),getElementById:id=>fields.get(id)||null,querySelectorAll:selector=>selector==="[data-facet]"?[facetButton]:selector==="[data-quick-sort]"?[sortButton]:selector==="[data-library-preset]"?[presetButton]:[]};
@@ -50,4 +50,26 @@ test("reset clears facets while advanced controls remain independently editable"
  resetFacets();fields.get("maxMana").value="4";assert.equal(activeFacetCount(),1);
  fields.get("maxMana").value="";fields.get("minPrice").value="";fields.get("maxPrice").value="";
  fields.get("cardQuery").value="";fields.get("sortFilter").value="edhrec-asc";assert.equal(activeFacetCount(),0);
+});
+
+test("artist chip filters combine with facets and persist via a canonical share URL",()=>{
+ resetFacets();
+ setArtistFilter("John Avon",{search:false});
+ assert.equal(selectedArtist(),"John Avon");
+ assert.equal(activeFacetCount(),1);
+ setFacet("type","land");setFacet("colors","G");
+ const url=new URL(shareURL());
+ assert.equal(url.pathname,"/library");
+ assert.equal(url.searchParams.get("artist"),"John Avon");
+ assert.equal(url.searchParams.get("type"),"land");
+ assert.equal(url.searchParams.get("colors"),"G");
+ clearFacet("advanced","artistSelected");
+ assert.equal(selectedArtist(),"");
+ assert.equal(fields.get("artistInput").value,"");
+});
+test("reset also removes a previously selected illustrator",()=>{
+ setArtistFilter("Rebecca Guay",{search:false});
+ resetFacets();
+ assert.equal(selectedArtist(),"");
+ assert.equal(fields.get("artistInput").value,"");
 });
