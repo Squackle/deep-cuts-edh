@@ -15,6 +15,10 @@ const AD_PAGES=new Set([
 export async function onRequest(context){
  const request=context.request;
  const url=new URL(request.url);
+ // The root middleware also runs in front of static assets. A Pages _redirects
+ // rule may not execute on Function-served requests, so enforce this here too.
+ if((request.method==="GET"||request.method==="HEAD")&&url.pathname==="/games/index.html")
+  return Response.redirect(new URL("/games",url),301);
  if(request.method!=="GET"||!AD_PAGES.has(url.pathname))return context.next();
  const cookie=request.headers.get("Cookie")||"";
  if(!/(?:^|;\s*)__Host-dc_device=dcdevice1_[0-9a-f]{64}(?:;|$)/.test(cookie))return context.next();
