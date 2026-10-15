@@ -11,7 +11,14 @@
   const shell=document.createElement("div");shell.className="workbench-shell";
   shell.id="workbench";intro.after(shell);
   const welcome=document.createElement("div");welcome.className="workbench-welcome";
-  welcome.innerHTML='<div><span class="retro-eyebrow">YOUR WORKBENCH</span><p>Choose what you want to do. The rest stays out of your way.</p></div><div class="workbench-live"><span aria-hidden="true">●</span> Autosaves in your browser</div>';
+  const welcomeIntro=document.createElement("div");
+  const eyebrow=document.createElement("span");eyebrow.className="retro-eyebrow";eyebrow.textContent="YOUR WORKBENCH";
+  const welcomeText=document.createElement("p");welcomeText.textContent="Choose what you want to do. The rest stays out of your way.";
+  welcomeIntro.append(eyebrow,welcomeText);
+  const liveNotice=document.createElement("div");liveNotice.className="workbench-live";
+  const liveDot=document.createElement("span");liveDot.setAttribute("aria-hidden","true");liveDot.textContent="●";
+  liveNotice.append(liveDot,document.createTextNode(" Autosaves in your browser"));
+  welcome.append(welcomeIntro,liveNotice);
   shell.append(welcome);
 
   const specs=[
@@ -30,7 +37,11 @@
     button.type="button";button.className="workbench-tab";button.id="tab-"+x.key;
     button.setAttribute("role","tab");button.setAttribute("aria-controls","view-"+x.key);
     button.setAttribute("aria-selected","false");button.setAttribute("tabindex","-1");
-    button.innerHTML='<span class="workbench-tab-icon" aria-hidden="true">'+x.icon+'</span><span class="workbench-tab-label"><strong>'+x.label+'</strong><small>'+x.description+'</small></span>';
+    const icon=document.createElement("span");icon.className="workbench-tab-icon";icon.setAttribute("aria-hidden","true");icon.textContent=x.icon;
+    const label=document.createElement("span");label.className="workbench-tab-label";
+    const bold=document.createElement("strong");bold.textContent=x.label;
+    const detail=document.createElement("small");detail.textContent=x.description;
+    label.append(bold,detail);button.append(icon,label);
     nav.append(button);buttons.set(x.key,button);
     const view=document.createElement("section");view.className="workbench-view";view.id="view-"+x.key;
     view.setAttribute("role","tabpanel");view.setAttribute("aria-labelledby",button.id);view.hidden=true;
@@ -66,7 +77,10 @@
     if(!element)return null;
     const details=document.createElement("details");details.className="workbench-fold";details.open=open;
     const summary=document.createElement("summary");
-    summary.innerHTML='<span>'+label+'</span><small>Expand <span aria-hidden="true">⌄</span></small>';
+    const summaryName=document.createElement("span");summaryName.textContent=label;
+    const summaryHint=document.createElement("small");summaryHint.append(document.createTextNode("Expand "));
+    const arrow=document.createElement("span");arrow.setAttribute("aria-hidden","true");arrow.textContent="⌄";
+    summaryHint.append(arrow);summary.append(summaryName,summaryHint);
     element.before(details);details.append(summary,element);return details;
   }
   // Build
