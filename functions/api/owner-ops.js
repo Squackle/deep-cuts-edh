@@ -13,6 +13,17 @@ const select={
     (SELECT COUNT(*) FROM site_feedback WHERE status='new') AS feedback,
     (SELECT COUNT(*) FROM owner_editorial_queue WHERE stage!='published') AS drafts,
     (SELECT COUNT(*) FROM member_complimentary_grants WHERE revoked_at IS NULL AND expires_at>unixepoch()) AS active_grants`)}),
+ nominations:async(db)=>({
+  pending:await query(db,`SELECT n.id,n.name,n.rationale,n.strategy,n.cards,n.budget,n.created_at,n.status,
+      (SELECT COUNT(*) FROM nomination_votes v WHERE v.nomination_id=n.id) AS votes
+      FROM nominations n WHERE n.status='pending' ORDER BY n.created_at ASC,n.id ASC LIMIT 100`),
+  reviewed:await query(db,`SELECT n.id,n.name,n.status,n.created_at,
+      (SELECT COUNT(*) FROM nomination_votes v WHERE v.nomination_id=n.id) AS votes
+      FROM nominations n WHERE n.status IN ('approved','rejected','featured','retired')
+      ORDER BY n.created_at DESC,n.id DESC LIMIT 100`),
+  counts:await query(db,`SELECT status,COUNT(*) AS nominations FROM nominations GROUP BY status ORDER BY status`),
+  note:"Community nominations submitted through the public nomination form. Approving makes a candidate appear on the public nominations board without changing existing votes."
+ }),
  moderation:async(db)=>({
   nominations:await query(db,`SELECT n.id,n.name,n.rationale,n.strategy,n.budget,n.created_at,n.status,
        (SELECT COUNT(*) FROM nomination_votes v WHERE v.nomination_id=n.id) AS votes
