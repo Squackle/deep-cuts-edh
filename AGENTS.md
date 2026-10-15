@@ -22,3 +22,6 @@ See [docs/DEVELOPMENT-LANES.md](docs/DEVELOPMENT-LANES.md) for paths, promotion 
 **Critical:** The standalone Game Lab must not write public leaderboard scores or claim authority over production identities. Preserve old versioned verified scores. Do not re-enable retired Daily Ritual competition or lab score submission.
 
 GitHub CODEOWNERS currently points to the owner account only. It is not proof of independent developer identities or an enforced review. Repo admins must configure branch protection; automation cannot substitute for it.
+
+## Independent game prototype agents
+Stackbreaker and Mana Heist each have their **own unmerged branch** and **exclusive prototype directory**. Their detailed lane agreements and start instructions are in [docs/INDEPENDENT-GAME-INCUBATORS.md](docs/INDEPENDENT-GAME-INCUBATORS.md). Prototype branches do not merge directly into `main`; Website Dev handles any later separately authorized production integration. Existing Website, Hive Run and Project Assistant responsibilities stay unchanged.

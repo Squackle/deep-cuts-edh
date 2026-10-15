@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {validatePR,findOverlaps} from "../scripts/release-coordination.mjs";
+import {validatePR,validateIncubatorPR,findOverlaps} from "../scripts/release-coordination.mjs";
 const main="Squackle/deep-cuts-edh",lab="Squackle/deep-cuts-game-lab-";
 const fields=["Owner authorization: Explicit owner approval October 15","Files/Scope: Docs and workflow only","Concurrent work: no open PRs checked","Test plan: node --test","Rollback: revert release commit"].join("\n");
 test("Coordination touches documentation and CI only; runtime edits blocked",()=>{
@@ -34,4 +34,25 @@ test("Newer overlapping open PR waits; unrelated files never block",()=>{
  assert.deepEqual(findOverlaps(["library.js","styles.css"],theirs,12),[
   {number:11,title:"old",shared:["library.js"]}]);
  assert.deepEqual(findOverlaps(["styles.css"],theirs,12),[]);
+});
+
+test("Stackbreaker agent cannot touch Mana Heist, shared code or main",()=>{
+ const ok=validateIncubatorPR({repo:main,branch:"game/stackbreaker-incubator-20261015",base:"experimental-review",lane:"Stackbreaker Prototype",files:["incubators/stackbreaker/AGENT_STARTER.md","incubators/stackbreaker/src/engine.js"]});
+ assert.deepEqual(ok,[]);
+ const bad=validateIncubatorPR({repo:main,branch:"game/stackbreaker-incubator-20261015",base:"main",lane:"Website",files:["incubators/stackbreaker/src/engine.js","incubators/mana-heist/src/engine.js","games.html"]});
+ assert.ok(bad.some(x=>x.includes("Workstream")));
+ assert.ok(bad.some(x=>x.includes("only change")));
+ assert.ok(bad.some(x=>x.includes("cannot be merged")));
+});
+test("Mana Heist agent is symmetric; unrelated Website PR stays unblocked",()=>{
+ assert.deepEqual(validateIncubatorPR({repo:main,branch:"game/mana-heist-incubator-20261015",base:"topic",lane:"Mana Heist Prototype",files:["incubators/mana-heist/src/solver.js"]}),[]);
+ const bad=validateIncubatorPR({repo:main,branch:"game/mana-heist-incubator-20261015",base:"main",lane:"Mana Heist Prototype",files:["incubators/stackbreaker/README.md"]});
+ assert.ok(bad.some(x=>x.includes("only change")));
+ assert.ok(bad.some(x=>x.includes("cannot be merged")));
+ assert.deepEqual(validateIncubatorPR({repo:main,branch:"site/library-20261015",base:"main",lane:"Website",files:["library.js"]}),[]);
+ assert.ok(validateIncubatorPR({repo:main,branch:"site/lane-breaking",base:"main",lane:"Website",files:["incubators/stackbreaker/README.md"]}).length);
+ assert.ok(validateIncubatorPR({repo:main,branch:"site/lane-breaking",base:"main",lane:"Mana Heist Prototype",files:["library.js"]}).length);
+});
+test("Hive Run game lab protection stays independent",()=>{
+ assert.deepEqual(validateIncubatorPR({repo:lab,branch:"game/stackbreaker-test",base:"main",lane:"Game Lab",files:["src/engine.js"]}),[]);
 });
