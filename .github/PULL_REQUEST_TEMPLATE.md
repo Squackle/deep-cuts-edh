@@ -17,3 +17,7 @@ Score/replay validation: [links to deterministic, identity and legacy-score chec
 - [ ] All relevant tests, mobile and production security checks passed
 - [ ] Human owner authorized this production change
 - [ ] Post-merge exact Cloudflare production commit, deployment ID, and smoke test to be recorded
+
+### Game incubation isolation (if applicable)
+- New game prototypes use `game/stackbreaker-*` or `game/mana-heist-*` branches and `Workstream: Stackbreaker Prototype` or `Workstream: Mana Heist Prototype` respectively.
+- Prototype PRs **must not target production `main`**. Keep code only inside the designated `incubators/<game>/**` path and use GitHub issues to report progress. A new Website Dev integration PR is required for any production release.
