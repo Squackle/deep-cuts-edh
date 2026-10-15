@@ -30,7 +30,7 @@ function database(){
     async all(){
      if(sql.includes("FROM nominations n WHERE n.status='pending'"))return {results:nominations.filter(n=>n.status==="pending")};
      if(sql.includes("FROM nominations n WHERE n.status IN"))return {results:nominations.filter(n=>["approved","rejected","featured"].includes(n.status))};
-     if(sql.includes("SELECT status,COUNT(*) AS nominations FROM nominations GROUP BY status")){
+     if(sql.includes("SELECT status,COUNT(*) AS nominations FROM nominations WHERE status!=\'retired\' GROUP BY status")){
       return {results:["pending","approved","rejected","featured"].map(status=>({status,nominations:nominations.filter(n=>n.status===status).length})).filter(x=>x.nominations)};
      }
      throw Error("Unexpected query: "+sql);
