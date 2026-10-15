@@ -32,6 +32,9 @@ concurrency:
 jobs:
   security-sweep:
     name: Safe code and access security sweep
+    permissions:
+      contents: read
+      checks: read
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -41,6 +44,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Triage prior CodeQL alert metadata (no source snippets or secrets)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "/repos/${{ github.repository }}/check-runs/116570340893/annotations" --jq '.[] | [.path, (.start_line|tostring), .title] | join(":")'
       - name: Verify sweep rule behavior, redaction and negative cases
         run: node --test tests/security-sweep.test.mjs
       - name: Exercise authorization-denial and feature-pause behavior with mock database
