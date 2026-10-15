@@ -38,7 +38,7 @@ test("artist-specific searches quote names and bypass the default legendary-only
  assert.equal(compileLibraryQuery({search:"t:land",artist:"Rebecca Guay",format:"",maxPrice:"2.75"}),'t:land a:"Rebecca Guay" usd<=2.75');
  assert.equal(compileLibraryQuery({artist:"rk post",facetTerms:["id<=ug"]}),'f:commander a:"rk post" id<=ug');
  assert.equal(artistSearchTerm('Test "Quoted"'),'a:"Test \\"Quoted\\""');
- assert.throws(()=>compileLibraryQuery({artist:"\ninvalid"}),/valid artist/);
+ assert.throws(()=>compileLibraryQuery({artist:"invalid\nname"}),/valid artist/);
 });
 test("Scryfall artwork and printing modes do not collapse different paintings",()=>{
  const first={id:"one",oracle_id:"shared"},second={id:"two",oracle_id:"shared"};
