@@ -71,6 +71,14 @@ jobs:
           node --check reports/guide.js
       - name: Rescue Board real-browser mobile and desktop regression
         run: node --test tests/rescue-board-browser.test.mjs
+      - name: Arcade journey contracts and syntax checks
+        run: |
+          node --test tests/arcade-journey.test.mjs
+          node --check arcade-journey.js
+          node --check daily-games.js
+          node --check arcane-games.js
+      - name: Arcade journey mobile and desktop real-browser regression
+        run: node --test tests/arcade-journey-browser.test.mjs
       - name: Mobile homepage header and footer browser regression tests
         run: node --experimental-default-type=module --test tests/mobile-home-browser.test.mjs
       - name: Mobile and desktop Library artist autocomplete browser tests
