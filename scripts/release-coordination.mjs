@@ -17,7 +17,7 @@ function declared(value){
 }
 export function validatePR({repo,body,files}){
  const problems=[],lane=field(body,"Workstream");
- const allowed=repo===MAIN?["Website","Game Lab Promotion","Coordination"]:
+ const allowed=repo===MAIN?["Website","Game Lab Promotion","Coordination","Stackbreaker Prototype","Mana Heist Prototype"]:
   repo===LAB?["Game Lab","Coordination"]:[];
  if(!allowed.includes(lane))problems.push("Set Workstream to "+allowed.join(" / ")+".");
  for(const key of ["Owner authorization","Files/Scope","Concurrent work","Test plan","Rollback"]){
@@ -39,6 +39,30 @@ export function validatePR({repo,body,files}){
  if(repo===LAB&&lane==="Game Lab"){
   if(!declared(field(body,"Rules version")))problems.push("Document Rules version, or explicitly 'unchanged'.");
   if(!declared(field(body,"Main-site impact")))problems.push("Document Main-site impact.");
+ }
+ return problems;
+}
+// Explicit branch-lane guard: prototypes stay entirely outside live site paths.
+const PROTOTYPE_LANES={
+ "stackbreaker":{workstream:"Stackbreaker Prototype",prefix:"incubators/stackbreaker/"},
+ "mana-heist":{workstream:"Mana Heist Prototype",prefix:"incubators/mana-heist/"}
+};
+export function validateIncubatorPR({repo,branch,base,files,lane}){
+ if(repo!==MAIN)return [];
+ const problems=[];
+ const laneSlug=Object.keys(PROTOTYPE_LANES).find(k=>
+  branch==="game/"+k||branch.startsWith("game/"+k+"-")||branch.startsWith("game/"+k+"/"));
+ const selected=laneSlug?PROTOTYPE_LANES[laneSlug]:null;
+ if(selected){
+  if(lane!==selected.workstream)problems.push("Use Workstream: "+selected.workstream+" for this game branch.");
+  const outside=files.filter(p=>!p.startsWith(selected.prefix));
+  if(outside.length)problems.push("Prototype branch may only change "+selected.prefix+"; blocked: "+outside.join(", "));
+  if(base==="main")problems.push("Prototype branches cannot be merged into production main. Keep this source branch isolated; Website Dev must create a separate, owner-authorized integration PR.");
+ }else{
+  const touched=files.filter(p=>p.startsWith("incubators/stackbreaker/")||p.startsWith("incubators/mana-heist/"));
+  if(touched.length)problems.push("Prototype paths are exclusive to their game/<name>-* branches: "+touched.join(", "));
+  if(Object.values(PROTOTYPE_LANES).some(x=>x.workstream===lane))
+   problems.push("Prototype workstream requires its corresponding game/<name>-* branch.");
  }
  return problems;
 }
@@ -77,6 +101,7 @@ export async function checkCurrentPullRequest(env=process.env){
  if(repo!==MAIN&&repo!==LAB)throw new Error("Unknown repository");
  const ours=(await pages(repo,"/pulls/"+pr.number+"/files",token)).map(x=>x.filename);
  const failures=validatePR({repo,body:pr.body,files:ours});
+ failures.push(...validateIncubatorPR({repo,branch:pr.head.ref,base:pr.base.ref,files:ours,lane:field(pr.body,"Workstream")}));
  const open=await pages(repo,"/pulls?state=open",token);
  const older=open.filter(p=>p.number<pr.number);
  const peers=await Promise.all(older.map(async p=>({
