@@ -1,7 +1,8 @@
 
 import {addCard,cardImage,scryfall} from "./shared.js";
-import {facetTerms,isFaceted,resetFacets,initFacets,shareURL,clearManaChips} from "./library-facets.js";
-import {compileLibraryQuery,libraryResultSummary} from "./library-query.js";
+import {facetTerms,isFaceted,resetFacets,initFacets,shareURL,clearManaChips,selectedArtist} from "./library-facets.js";
+import {compileLibraryQuery,libraryResultSummary,libraryCardIdentity} from "./library-query.js";
+import {initArtistAutocomplete} from "./artist-autocomplete.js";
 const $=id=>document.getElementById(id);
 const form=$("librarySearch"),gallery=$("cardGallery"),status=$("libraryStatus"),
   more=$("loadMore"),pageStats=$("pageStats"),detail=$("cardDetail");
@@ -50,7 +51,7 @@ const sortOptions={
 };
 function buildQuery(){
  const v=id=>$(id).value.trim();
- return compileLibraryQuery({search:v("cardQuery"),format:v("formatFilter"),
+ return compileLibraryQuery({search:v("cardQuery"),format:v("formatFilter"),artist:selectedArtist(),
   facetTerms:facetTerms(),faceted:isFaceted(),maxMana:v("maxMana"),
   minPrice:v("minPrice"),maxPrice:v("maxPrice")});
 }
@@ -148,7 +149,7 @@ async function load(clear=false){
   let data=cache.get(url.toString());
   if(!data){data=await scryfall(url.toString(),{signal:controller.signal});cache.set(url.toString(),data);if(cache.size>8)cache.delete(cache.keys().next().value)}
   if(current!==searchToken)return;
-  for(const c of data.data||[]){const id=currentUnique()==="prints"?c.id:(c.oracle_id||c.id);if(!cards.has(id)){cards.set(id,c);const tile=entry(c);gallery.append(tile);if(shown<6)checkInclusion(c,tile);shown++}}
+  for(const c of data.data||[]){const id=libraryCardIdentity(c,currentUnique());if(!cards.has(id)){cards.set(id,c);const tile=entry(c);gallery.append(tile);if(shown<6)checkInclusion(c,tile);shown++}}
   nextPage=data.has_more?data.next_page:null;
   more.hidden=!nextPage;status.textContent=libraryResultSummary(shown,data.total_cards);
   pageStats.textContent=nextPage?"Load more results for this search.":"End of search results.";
@@ -164,6 +165,7 @@ function scheduleSearch(){
  updateScryfallLink();
 }
 initFacets(scheduleSearch);
+initArtistAutocomplete();
 form.addEventListener("submit",e=>{e.preventDefault();clearTimeout(facetTimer);load(true)});
 $("libraryReset").addEventListener("click",()=>{clearTimeout(facetTimer);form.reset();resetFacets();load(true)});
 more.addEventListener("click",()=>load(false));
