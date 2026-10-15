@@ -13,10 +13,10 @@ const redact=s=>String(s??"").replace(/(Bearer\s+)[\w-]{20,}/gi,"$1[REDACTED]").
 export function walk(root,dir=root,list=[]){
  if(list.length>CRAWL_LIMIT)return list;
  for(const item of fs.readdirSync(dir,{withFileTypes:true})){
-  if(EXCLUDE.has(item.name)||item.name.startsWith(".env"))continue;
+  if(EXCLUDE.has(item.name))continue;
   const full=path.join(dir,item.name);
   if(item.isDirectory())walk(root,full,list);
-  else if(item.isFile()&&SOURCE.test(item.name)&&fs.statSync(full).size<=FILE_LIMIT)list.push(path.relative(root,full).replaceAll("\\","/"));
+  else if(item.isFile()&&(SOURCE.test(item.name)||item.name===".env"||item.name.startsWith(".env."))&&fs.statSync(full).size<=FILE_LIMIT)list.push(path.relative(root,full).replaceAll("\\","/"));
  }
  return list;
 }
@@ -63,7 +63,6 @@ export function auditSources(files,read){
   [/\bsk_live_[0-9A-Za-z]{20,}\b/,"payment secret-shaped value"]
  ];
  for(const p of files){
-  if(!isApplication(p)&&!p.startsWith(".github/workflows/"))continue;
   const s=get(p);
   if(!s)continue;
   for(const [re,what] of secretPatterns){
