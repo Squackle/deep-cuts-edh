@@ -1,3 +1,4 @@
+import {findExistingNomination,nominationKey,editDistance} from "../../src/nomination-names.js";
 const JSON_HEADERS = {"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:JSON_HEADERS});
 const normalized=s=>s.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]/gu,"");
@@ -6,6 +7,26 @@ const digest=async s=>{
   const arr=new Uint8Array(await crypto.subtle.digest("SHA-256",data));
   return Array.from(arr,x=>x.toString(16).padStart(2,"0")).join("");
 };
+// Scryfall is a best-effort spelling reference for brand-new commander nominations.
+// Never treat an external fuzzy match as authoritative without a strong name match.
+async function correctedCardName(input){
+ try{
+  const response=await fetch("https://api.scryfall.com/cards/named?fuzzy="+encodeURIComponent(input),{
+   headers:{"Accept":"application/json"},signal:AbortSignal.timeout(2500)
+  });
+  if(!response.ok)return input;
+  const card=await response.json();
+  const official=typeof card?.name==="string"?card.name.trim():"";
+  if(!official||official.length>100)return input;
+  const original=nominationKey(input),candidate=nominationKey(official);
+  const limit=original.length<8?1:original.length<15?2:3;
+  if(original===candidate||(
+   editDistance(original,candidate,limit)<=limit&&
+   editDistance(original,candidate,limit)/Math.max(original.length,5)<=0.18
+  ))return official;
+ }catch{/* Continue accepting community input if the external reference is unavailable. */}
+ return input;
+}
 async function verifyHuman(token,secret,expectedHost,ip){
   if(!secret||!token)return false;
   const r=await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify",{
@@ -75,18 +96,33 @@ export async function onRequestPost({request,env}){
       WHERE attempts < 12 RETURNING attempts
     `).bind(ipHash,day).first();
     if(!limit)return json({error:"Daily nomination limit reached. Try again tomorrow."},429);
-    await env.DB.prepare(`
-      INSERT OR IGNORE INTO nominations(slug,name,rationale,strategy,cards,budget,status)
-      VALUES(?,?,?,?,?,?,'pending')
-    `).bind(slug,name,reason,strategy,cards,budget).run();
-    const target=await env.DB.prepare("SELECT id,name,status FROM nominations WHERE slug=?").bind(slug).first();
+    // Resolve accepted commander aliases BEFORE insertion. This prevents a separate
+    // pending row from stealing votes from an approved community nominee.
+    const active=await env.DB.prepare("SELECT id,slug,name,status FROM nominations WHERE status IN ('pending','approved') LIMIT 250").all();
+    let match=findExistingNomination(name,active.results||[]);
+    let canonicalName=name;
+    if(!match){
+      canonicalName=await correctedCardName(name);
+      match=findExistingNomination(canonicalName,active.results||[]);
+    }
+    let target=match?.record||null;
+    if(!target){
+      const canonicalSlug=normalized(canonicalName);
+      await env.DB.prepare(`
+        INSERT OR IGNORE INTO nominations(slug,name,rationale,strategy,cards,budget,status)
+        VALUES(?,?,?,?,?,?,'pending')
+      `).bind(canonicalSlug,canonicalName,reason,strategy,cards,budget).run();
+      target=await env.DB.prepare("SELECT id,name,status FROM nominations WHERE slug=?").bind(canonicalSlug).first();
+    }
     if(!target||["rejected","retired","featured"].includes(target.status))return json({error:"This commander already has a Rescue Report or is not accepting votes."},409);
     const vote=await env.DB.prepare("INSERT OR IGNORE INTO nomination_votes(nomination_id,visitor_hash) VALUES(?,?)").bind(target.id,visitorHash).run();
     const count=await env.DB.prepare("SELECT COUNT(*) AS votes FROM nomination_votes WHERE nomination_id=?").bind(target.id).first();
     const recorded=!!vote.meta?.changes;
-    return json({ok:true,name:target.name,status:target.status,votes:Number(count.votes),recorded,
-      message:!recorded?"You already nominated this commander.":target.status==="pending"?
-      "Nomination saved! A new commander needs approval before appearing on the public board.":
-      "Nomination counted! The leaderboard has been updated."},recorded?201:200);
+    const corrected=nominationKey(name)!==nominationKey(target.name);
+    const credited=corrected?" Your vote was credited to "+target.name+".":"";
+    return json({ok:true,name:target.name,status:target.status,votes:Number(count.votes),recorded,corrected,
+      message:!recorded?"You already supported "+target.name+"; this vote was not counted twice.":target.status==="pending"?
+      "Nomination saved! A new commander needs approval before appearing on the public board."+credited:
+      "Nomination counted! The leaderboard has been updated."+credited},recorded?201:200);
   }catch(e){console.error("Nominations POST failed",e);return json({error:"Unable to save nomination. Please try again."},503)}
 }
