@@ -23,6 +23,29 @@ main.ops.owner-v2{
 .owner-v2-home,.owner-v2-group{border:1px solid #c8c09f;background:#fffdf6;border-radius:9px;padding:clamp(17px,3vw,30px)}
 .owner-v2-home h2,.owner-v2-group h2{font:700 clamp(24px,3vw,34px) Georgia,serif;margin:0 0 7px}
 .owner-v2-muted{font-size:14px;color:#526354;line-height:1.55}
+/* Prominent, accessible security sweep launcher; no secrets or runner privilege in the browser. */
+.owner-v2-security-quick{
+ display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+ margin:18px 0 4px;padding:14px;
+ border:1px solid #c4b071;border-left:4px solid #ac8a45;border-radius:8px;
+ background:#f1eedf;
+}
+.owner-v2 .owner-v2-security-cta,
+.owner-v2 .owner-v2-links a[href$="/security-sweep.yml"]{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:44px;padding:11px 16px;border-radius:7px;
+ background:#24553a;color:#fffdf0;border:1px solid #8c7640;
+ font:700 14px/1.25 system-ui,sans-serif;text-decoration:none;
+}
+.owner-v2 .owner-v2-security-cta:hover,
+.owner-v2 .owner-v2-links a[href$="/security-sweep.yml"]:hover{
+ background:#316747;color:#fff;text-decoration:underline;
+}
+.owner-v2 .owner-v2-security-cta:focus-visible,
+.owner-v2 .owner-v2-links a[href$="/security-sweep.yml"]:focus-visible{
+ outline:3px solid #b78e32;outline-offset:3px;
+}
+.owner-v2 .owner-v2-security-help{margin:0;flex:1 1 230px;font-size:13px}
 .owner-v2-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:21px}
 .owner-v2 .owner-v2-home-tile{
  margin:0;min-height:111px;text-align:left;display:flex;flex-direction:column;gap:10px;

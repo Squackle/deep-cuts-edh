@@ -49,6 +49,13 @@ test("Command Center 2.0 home, sections, real-form preservation, owner API actio
     await page.goto(url+"/member-operations.html",{waitUntil:"networkidle"});
     assert.equal(await page.locator(".owner-v2-home h2").textContent(),"Welcome back.");
     assert.equal(await page.locator(".owner-v2-home-tile").count(),6);
+    const sweepLink=page.locator(".owner-v2-home .owner-v2-security-cta");
+    assert.equal(await sweepLink.count(),1);
+    assert.equal(await sweepLink.isVisible(),true);
+    assert.equal(await sweepLink.getAttribute("href"),"https://github.com/Squackle/deep-cuts-edh/actions/workflows/security-sweep.yml");
+    assert.equal(await sweepLink.getAttribute("target"),"_blank");
+    assert.match(await sweepLink.getAttribute("rel"),/noopener/);
+    assert.match(await page.locator(".owner-v2-security-help").textContent(),/select Run workflow on main/i);
     assert.equal(await page.locator(".owner-v2-menu-button").count(),7);
     assert.equal(await page.locator(".owner-key-label input[name=operatorKey]").count(),1);
     const overflow=await page.evaluate(()=>({body:document.body.scrollWidth,viewport:innerWidth}));
@@ -75,6 +82,11 @@ test("Command Center 2.0 home, sections, real-form preservation, owner API actio
     await page.getByRole("button",{name:"Save editorial record"}).click();
     await page.waitForTimeout(100);
     assert.ok(requests.some(r=>r.payload.kind==="editorial"));
+    await page.locator('[data-owner-v2-group="Security"]').click();
+    await page.getByRole("button",{name:"Security sweep",exact:true}).click();
+    const securitySweep=page.getByRole("link",{name:"Run security sweep ↗",exact:true});
+    assert.equal(await securitySweep.isVisible(),true);
+    assert.equal(await page.locator(".owner-v2-home .owner-v2-security-cta").isVisible(),false);
     for(const [group,section] of [["Games","Game statistics"],["Business","Free keys"],["Site","Feature switches"],["Security","Admin activity"]]){
       await page.locator('[data-owner-v2-group="'+group+'"]').click();
       await page.getByRole("button",{name:section,exact:true}).click();
