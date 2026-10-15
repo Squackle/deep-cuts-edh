@@ -71,9 +71,14 @@ test("Ticker in shared header has distinct gold, silver, bronze and reduced-moti
  assert.match(js,/setupSupporterTicker\(root\)/);
  assert.match(js,/header\.append\(strip\)/);
  assert.match(js,/fetch\("\/api\/supporter-ticker"/);
- assert.match(js,/copy\.setAttribute\("aria-hidden","true"\)/);
- assert.match(js,/!values\.length\)return/);
- for(const x of ["site-supporter-chief","site-supporter-detective","site-supporter-informant","site-supporter-roll","prefers-reduced-motion"]){
+ assert.match(js,/element\.setAttribute\("aria-hidden","true"\)/);
+ assert.match(js,/element\.querySelectorAll\("a"\)\.forEach\(a=>a\.tabIndex=-1\)/);
+ assert.match(js,/Invite supporters from first paint/);
+ assert.match(js,/render\(\);\s*let previousWidth/);
+ assert.match(js,/const repeats=Math\.max/);
+ assert.match(js,/decorative\(group\.cloneNode\(true\)\)/);
+ assert.match(js,/No unverified or imaginary names|no invented supporter names/i);
+ for(const x of ["site-supporter-chief","site-supporter-detective","site-supporter-informant","site-supporter-roll","site-supporter-unit","--site-supporter-duration","prefers-reduced-motion"]){
   assert.ok(css.includes(x),x+" missing");
  }
 });
