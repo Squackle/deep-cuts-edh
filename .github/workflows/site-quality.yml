@@ -91,6 +91,8 @@ jobs:
           node --check owner-adfree.js
       - name: Owner command center real-browser interaction checks
         run: node --test tests/owner-dashboard-browser.test.mjs
+      - name: Complete owner command center action flow browser regression tests
+        run: node --test tests/owner-actions-browser.test.mjs
       - name: Public-site and protected-owner HTTP smoke checks
         run: node --test tests/owner-access-smoke.test.mjs
       - name: JavaScript syntax
