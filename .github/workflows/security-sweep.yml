@@ -43,7 +43,7 @@ jobs:
           node-version: '22'
       - name: Verify sweep rule behavior, redaction and negative cases
         run: node --test tests/security-sweep.test.mjs
-      - name: Security static, backdoor-pattern, API and safe live checks
+      - name: Exercise authorization-denial and feature-pause behavior with mock database\n        run: node --test tests/security-route-authorization.test.mjs\n      - name: Security static, backdoor-pattern, API and safe live checks
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.live_checks }}" = "false" ]; then
             node scripts/security-sweep.mjs
