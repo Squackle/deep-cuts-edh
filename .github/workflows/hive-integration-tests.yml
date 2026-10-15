@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: {node-version: "24"}
       - name: Verify all game rules, UI integrations and replay validation
         run: node --test games/hive-run/tests/*.test.mjs tests/hive-main-integration.test.mjs tests/hive-audit-fixes.test.mjs
