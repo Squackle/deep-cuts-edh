@@ -18,6 +18,8 @@ jobs:
           node-version: '22'
       - name: SEO, accessibility, navigation and existing-feature guards
         run: node scripts/site-release-check.mjs
+      - name: Strict sitemap, crawlability and AdSense readiness checks
+        run: node --experimental-default-type=module --test tests/seo-readiness.test.mjs
       - name: Lean homepage navigation regression tests
         run: node --test tests/home-hub.test.mjs
       - name: Commander Finder and Binder security / deck regression tests
