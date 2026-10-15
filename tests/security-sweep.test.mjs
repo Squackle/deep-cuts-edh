@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {auditSources,markdownReport} from "../scripts/security-sweep.mjs";
+import {auditSources,markdownReport,isAccessRedirect} from "../scripts/security-sweep.mjs";
 const guarded={
  "functions/api/owner-ops.js":"import {ownerAuth} from '../src/owner-access.js'; export async function onRequestPost() { await ownerAuth(); }",
  "functions/api/owner-members.js":"await ownerAuth(request,env)",
@@ -45,4 +45,15 @@ test("owner key browser persistence gets elevated for inspection",()=>{
  const x={...guarded,"owner-v2.js":'sessionStorage.setItem("ownerKey", key)'};
  const r=audit(x);
  assert.ok(r.findings.some(f=>f.category==="credential handling"&&f.severity==="high"));
+});
+
+test("Cloudflare Access redirects require a trusted host boundary, not a URL substring",()=>{
+ const origin="https://deep-cuts-edh.pages.dev/api/owner-ops";
+ assert.equal(isAccessRedirect("https://muddy-field-8281.cloudflareaccess.com/cdn-cgi/access/login/",origin),true);
+ assert.equal(isAccessRedirect("/cdn-cgi/access/login",origin),true);
+ assert.equal(isAccessRedirect("https://muddy-field-8281.cloudflareaccess.com.attacker.example/",origin),false);
+ assert.equal(isAccessRedirect("https://untrusted.example/path/cloudflareaccess.com",origin),false);
+ assert.equal(isAccessRedirect("/login?dest=cloudflareaccess.com",origin),false);
+ assert.equal(isAccessRedirect("http://muddy-field-8281.cloudflareaccess.com/",origin),false);
+ assert.equal(isAccessRedirect("javascript:alert(1)",origin),false);
 });
