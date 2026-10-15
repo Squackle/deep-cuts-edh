@@ -174,7 +174,7 @@ function restore(){
  select("formatFilter","format");select("sortFilter","sort");select("printingFilter","print");
  select("minPrice","min");select("maxPrice","max");select("maxMana","maxmv");
  const artist=(u.get("artist")||"").trim();
- if(artist.length<=100&&!/[\\x00-\\x1f]/.test(artist)&&$("artistSelected")){
+ if(artist.length<=100&&!/[\x00-\x1f]/.test(artist)&&$("artistSelected")){
   $("artistSelected").value=artist;
   if($("artistInput"))$("artistInput").value=artist;
  }
