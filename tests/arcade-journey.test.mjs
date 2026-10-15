@@ -63,3 +63,21 @@ test("Device-only progress engine handles repeat completions, separate seeds and
  record("cipher",{mode:"practice",seed:0,day:"2026-10-15",finished:true,score:100});
  assert.equal(Object.keys(JSON.parse(store.get("deepcuts:arcade-journey:v1")).entries).length,1);
 });
+
+test("Arcade hero copy and CTA keep the hierarchy clean and motion optional",()=>{
+ const html=read("games.html"),css=read("games.css"),js=read("arcade-journey.js"),hub=read("daily-games.js");
+ assert.match(html,/class="games-masthead arcade-hub-masthead"/);
+ assert.match(html,/Daily puzzles\. Endless adventures/);
+ assert.match(html,/Pick your next case/);
+ assert.match(html,/Fresh puzzles daily/);
+ assert.match(html,/class="arcade-hero-how"/);
+ assert.match(hub,/Fresh puzzles daily/,"Client init should never restore old all-caps copy");
+ assert.doesNotMatch(hub,/NEW PUZZLES EVERY DAY/);
+ assert.match(js,/Continue last game ↗/);
+ assert.match(js,/arcade-continue-note/);
+ assert.match(js,/g\.name\+" · "\+context/);
+ assert.match(css,/@keyframes arcade-continue-halo/);
+ assert.match(css, /prefers-reduced-motion:reduce/);
+ assert.match(css, /arcade-continue-button:focus-visible/);
+ assert.doesNotMatch(read("index.html"),/arcade-hub-masthead/);
+});
