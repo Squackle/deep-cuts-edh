@@ -110,7 +110,8 @@
   const directoryStatus = $("ownerConsoleStatus");
   if (directoryStatus) {
     directoryStatus.classList.add("owner-global-status");
-    stage.before(directoryStatus);
+    directoryStatus.setAttribute("aria-live", "polite");
+    panels.directory.prepend(directoryStatus);
   }
   const directoryTitle = element("h2", "", "Member directory & audit");
   panels.directory.append(directoryTitle, consoleArea);
@@ -123,13 +124,18 @@
     if (h) h.textContent = title;
   };
   moveFormSection("complimentaryForm", "grants", "Complimentary access");
+  const grantStatus = element("output", "owner-grant-status");
+  grantStatus.id = "ownerGrantStatus";
+  grantStatus.setAttribute("role", "status");
+  grantStatus.setAttribute("aria-live", "polite");
+  panels.grants.append(grantStatus);
   moveFormSection("ownerEvidenceForm", "evidence", "Evidence board moderation");
   moveFormSection("ownerAdFreeForm", "adfree", "Ad-free reconciliation");
   const footer = Array.from(main.children).find(n => n.tagName === "P" && n.querySelector('a[href="diagnostics.html"]'));
   const toolsTitle = element("h2", "", "Tools and security");
   panels.tools.append(toolsTitle);
   if (footer) panels.tools.append(footer);
-  const toolsText = element("p", "owner-muted", "This page does not store your operator key. The key authenticates server requests. Cloudflare Access can add an identity sign-in gate once it is configured and tested separately; it is not currently enabled by this interface.");
+  const toolsText = element("p", "owner-muted", "Cloudflare Access guards the owner page and dedicated private APIs. Every protected operation also requires your separate owner key, which is never saved in browser storage. Lock & clear removes displayed private data.");
   panels.tools.append(toolsText);
 
   function show(id) {
@@ -150,7 +156,7 @@
     if ($("issuedKey")) $("issuedKey").textContent = "";
     if ($("ownerStats")) $("ownerStats").replaceChildren();
     if ($("ownerTable")) $("ownerTable").replaceChildren(element("p", "", "Locked — reload private records after entering your key."));
-    for (const id of ["operatorStatus", "ownerConsoleStatus", "ownerEvidenceStatus", "ownerAdFreeStatus"]) {
+    for (const id of ["operatorStatus", "ownerConsoleStatus", "ownerGrantStatus", "ownerEvidenceStatus", "ownerAdFreeStatus"]) {
       if ($(id)) $(id).textContent = "";
     }
     lockStatus.textContent = reason;

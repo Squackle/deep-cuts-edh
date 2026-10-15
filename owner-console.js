@@ -5,6 +5,11 @@
  let view="profiles",page=0,loading=false;
  const node=(tag,value)=>{const n=document.createElement(tag);if(value!==undefined&&value!==null)n.textContent=String(value);return n};
  const message=s=>{status.textContent=s};
+ const grantMessage=s=>{
+  const output=$("ownerGrantStatus");
+  if(output){output.textContent=s;}
+  else message(s);
+ };
  const key=()=>document.getElementById("opsForm").elements.operatorKey.value.trim();
  const pretty=s=>String(s||"").replace(/_/g," ");
  const date=(v,unix=false)=>{
@@ -19,7 +24,16 @@
   let opts={headers,cache:"no-store",credentials:"same-origin"};
   if(body!==undefined){opts.method="POST";headers["Content-Type"]="application/json";opts.body=JSON.stringify(body)}
   else{url.searchParams.set("view",view);Object.entries(query).forEach(([k,v])=>url.searchParams.set(k,String(v)))}
-  const r=await fetch(url,opts),data=await r.json();if(!r.ok)throw Error(data.error||"Owner request failed.");
+  let r;
+  try{r=await fetch(url,opts)}catch{
+   throw Error("Cannot reach the owner API. Your Cloudflare login may have expired. Refresh this page, complete sign-in, and try again.");
+  }
+  if(!(r.headers.get("content-type")||"").includes("application/json")){
+   throw Error("Owner API returned a login page or unexpected response. Refresh this page, complete Cloudflare authentication, and try again.");
+  }
+  let data;
+  try{data=await r.json()}catch{throw Error("Owner API returned an unreadable response. Try again, and check the private directory before retrying a key issuance.");}
+  if(!r.ok)throw Error(data?.error||"Owner request failed (HTTP "+r.status+").");
   return data;
  }
  function table(columns,rows,decorate){
@@ -37,10 +51,17 @@
   btn.addEventListener("click",async()=>{btn.disabled=true;try{await handler()}catch(e){message(e.message)}finally{btn.disabled=false}});
   container.append(btn);
  }
- function showIssued(data){
-  $("issuedKey").textContent=data.key;$("issuedKeySection").hidden=false;
-  $("issuedKeySection").scrollIntoView({behavior:"smooth",block:"start"});
-  message("New "+data.tier+" complimentary credential created. Its plaintext appears exactly once; save it, then clear it from the screen.");
+ function showIssued(data,where="directory"){
+  if(typeof data?.key!=="string"||!/^dcmember1_[a-f0-9]{32}_[a-f0-9]{64}$/.test(data.key)){
+   throw Error("The server did not return a valid one-time key. Check the private directory or audit before retrying; do not issue a duplicate.");
+  }
+  const section=$("issuedKeySection");
+  $("issuedKey").textContent=data.key;
+  section.hidden=false;
+  const notice="One-time "+data.tier+" key issued. Copy it from the highlighted credential box above the workspace tabs before leaving this page.";
+  if(where==="grants")grantMessage(notice);
+  else message(notice);
+  section.scrollIntoView({behavior:"smooth",block:"center"});
  }
  async function changeGrant(action,row,days){
   if(!["complimentary"].includes(row.source))throw Error("Only complimentary grants can be edited here.");
@@ -111,7 +132,7 @@
   button.disabled=true;
   try{
    const data=await call(null,{action:"grant",label:form.elements.label.value.trim(),tier:form.elements.tier.value,days:Number(form.elements.days.value)});
-   showIssued(data);form.reset();await load();
-  }catch(e){message(e.message)}finally{button.disabled=false}
+   showIssued(data,"grants");form.reset();await load();
+  }catch(e){grantMessage(e.message)}finally{button.disabled=false}
  });
 })();

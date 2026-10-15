@@ -60,3 +60,21 @@ main.ops:has(.owner-main-nav) {
   .ops .owner-workspace-panel {padding:13px}
   .ops #ownerTable {font-size:12px}
 }
+
+/* Inline task feedback: no hidden errors on a different workspace tab. */
+.ops .owner-grant-status:not(:empty),
+.ops .owner-global-status:not(:empty) {
+  display: block;
+  padding: 12px 14px;
+  margin: 14px 0;
+  background: #fff5d9;
+  color: #493819;
+  border: 1px solid #b79a54;
+  border-left: 4px solid #99743a;
+  border-radius: 7px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ops .owner-grant-status:empty,
+.ops .owner-global-status:empty { display:none; }
