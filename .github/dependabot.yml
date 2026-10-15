@@ -1,0 +1,12 @@
+# GitHub Actions version updates complement Dependabot vulnerability alerts.
+# Repository owner must ALSO enable "Dependabot alerts" in GitHub Advanced Security.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
