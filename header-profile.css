@@ -492,3 +492,21 @@
 @media(prefers-reduced-motion:reduce){
  .site-header .site-supporter-track.is-scrolling{animation:none;max-width:100%;overflow-x:auto}
 }
+
+/* Mobile hotfix: sitewide footer links need independent touch targets.
+   The legacy 600px rule sets .footer-links to block, joining inline anchors. */
+@media(max-width:600px){
+ .site-footer .footer-content{display:grid;gap:17px;align-items:start}
+ .site-footer .footer-content strong{font-size:18px}
+ .site-footer .footer-content p{margin:6px 0 0}
+ .site-footer .footer-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .site-footer .footer-links a{
+  display:flex;align-items:center;min-width:0;min-height:44px;
+  border:1px solid #385344;border-radius:6px;padding:9px 10px;
+  background:#21372d;color:#dce8dd;text-decoration:none;
+  font:750 10px/1.35 ui-sans-serif,system-ui;letter-spacing:.035em
+ }
+ .site-footer .footer-links a:focus-visible{outline:2px solid #edc887;outline-offset:2px}
+ .site-footer .fine-print{margin-top:18px;padding-top:15px;font-size:10px;line-height:1.55}
+}
+@media(max-width:350px){.site-footer .footer-links{grid-template-columns:1fr}}
