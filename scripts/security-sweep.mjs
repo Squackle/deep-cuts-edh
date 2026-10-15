@@ -82,7 +82,7 @@ export function auditSources(files,read){
  const apiPaths=files.filter(p=>p.startsWith("functions/api/")&&p.endsWith(".js"));
  for(const p of apiPaths){
   const endpoint=get(p);
-  if(/export\\s+(?:async\\s+)?function\\s+onRequestPost\\s*\\(/.test(endpoint)){
+  if(endpoint.includes("onRequestPost(")){
    const authMarkers=["ownerAuth","auth(","TURNSTILE_SECRET","member_issuer_credentials","verifyHuman","signature","tokenOK","originOK","goodOrigin","verification_token","stripe.webhooks"];
    const protectedBy=authMarkers.some(m=>endpoint.includes(m));
    const retired=(p.endsWith("/account.js")&&endpoint.includes("return retired();"))||(p.endsWith("/stripe-webhook.js")&&endpoint.includes("status:410"));
@@ -110,7 +110,7 @@ async function check(url,{expectAccess=false,publicOk=false}={}){
     status=follow.status;
    }
   }
-  const passed=expectAccess?([301,302,303,307,308,401,403].includes(r.status)&&(/cloudflareaccess\\.com|\\/cdn-cgi\\/access\\//i.test(loc)||r.status===403)):
+  const passed=expectAccess?([301,302,303,307,308,401,403].includes(r.status)&&((loc.includes("cloudflareaccess.com")||loc.includes("/cdn-cgi/access/"))||r.status===403)):
    publicOk?status===200:status<500;
   return {path:new URL(url).pathname,host:new URL(url).hostname,code:status,pass:passed,check:expectAccess?"Access interception":publicOk?"public GET":"HTTP health"};
  }catch(e){return {path:new URL(url).pathname,host:new URL(url).hostname,code:null,pass:false,check:"network timeout / unavailable"}}
