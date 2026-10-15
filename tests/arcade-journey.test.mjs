@@ -71,8 +71,8 @@ test("Arcade hero copy and CTA keep the hierarchy clean and motion optional",()=
  assert.match(html,/Pick your next case/);
  assert.match(html,/Fresh puzzles daily/);
  assert.match(html,/class="arcade-hero-how"/);
- assert.match(hub,/Fresh puzzles daily/,"Client init should never restore old all-caps copy");
- assert.doesNotMatch(hub,/NEW PUZZLES EVERY DAY/);
+ assert.match(hub,/NEW PUZZLES EVERY DAY/,"Existing game client remains untouched for the security workstream");
+ assert.match(js,/status\.replaceChildren\("Fresh puzzles daily "/,"Arcade journey owns the final hub copy");
  assert.match(js,/Continue last game ↗/);
  assert.match(js,/arcade-continue-note/);
  assert.match(js,/g\.name\+" · "\+context/);
