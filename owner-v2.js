@@ -179,7 +179,7 @@ function usageGraph(container,workers,d1){
  function draw(metric){
   for(const [id,control] of controls)control.setAttribute("aria-pressed",String(id===metric.id));
   viewport.replaceChildren();
-  const records=(Array.isArray(metric.rows)?metric.rows:[]).filter(row=>row&&/^\\d{4}-\\d{2}-\\d{2}$/.test(String(row.date||""))).slice(-7);
+  const records=(Array.isArray(metric.rows)?metric.rows:[]).filter(row=>row&&/^\d{4}-\d{2}-\d{2}$/.test(String(row.date||""))).slice(-7);
   if(!records.length){
    summary.textContent="No usage history available for "+metric.label+".";
    viewport.append(el("p","No chart data is available.","owner-v2-muted"));return;
