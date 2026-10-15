@@ -62,7 +62,7 @@ test("Artist combobox selects fuzzy suggestion, filters distinct prints, restore
    await page.route("**/api/supporter-ticker*",route=>route.fulfill({status:200,contentType:"application/json",body:'{"supporters":[]}'}));
    try{
     await page.goto(url+"/library",{waitUntil:"domcontentloaded"});
-    if(width<780)await page.getByRole("button",{name:/FILTERS/}).click();
+    if(width<780)await page.locator("#libraryToggleFilters").click();
     const field=page.locator("#artistInput");
     await field.fill("jon avon");
     await page.getByRole("option",{name:"John Avon"}).waitFor();
@@ -82,7 +82,7 @@ test("Artist combobox selects fuzzy suggestion, filters distinct prints, restore
     assert.ok(new URL(share).searchParams.get("artist")==="John Avon");
     assert.ok(new URL(share).searchParams.get("print")==="art");
     await page.reload({waitUntil:"domcontentloaded"});
-    if(width<780)await page.getByRole("button",{name:/FILTERS/}).click();
+    if(width<780)await page.locator("#libraryToggleFilters").click();
     assert.equal(await page.locator("#artistSelected").inputValue(),"John Avon");
     await page.locator("#activeFilterChips button").filter({hasText:"Artist: John Avon"}).click();
     assert.equal(await page.locator("#artistSelected").inputValue(),"");
