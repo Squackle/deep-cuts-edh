@@ -140,7 +140,8 @@ export async function run({root=DEFAULT_ROOT,live=false}={}){
  const dir=path.join(root,"security-report-output");fs.mkdirSync(dir,{recursive:true});
  fs.writeFileSync(path.join(dir,"report.json"),JSON.stringify(report,null,2)+"\n");
  fs.writeFileSync(path.join(dir,"report.md"),markdownReport(report)+"\n");
- if(checks.some(x=>!x.pass))console.log("Safe live checks requiring follow-up:",checks.filter(x=>!x.pass).map(x=>x.host+x.path+" HTTP "+(x.code??"unavailable")).join("; "));\n console.log(`Security sweep complete. ${audit.inventory.sources} files; ${audit.findings.length} findings/review items; ${checks.filter(x=>x.pass).length}/${checks.length} safe live checks. Reports: security-report-output/report.md and report.json`);
+ if(checks.some(x=>!x.pass))console.log("Safe live checks requiring follow-up:",checks.filter(x=>!x.pass).map(x=>x.host+x.path+" HTTP "+(x.code??"unavailable")).join("; "));
+ console.log(`Security sweep complete. ${audit.inventory.sources} files; ${audit.findings.length} findings/review items; ${checks.filter(x=>x.pass).length}/${checks.length} safe live checks. Reports: security-report-output/report.md and report.json`);
  // Only halt automated release on high-confidence owner-auth guard regressions.
  if(audit.findings.some(x=>x.status==="confirmed"&&x.severity==="critical")||checks.some(x=>!x.pass&&x.check==="Access interception"))process.exitCode=1;
  return report;
