@@ -54,6 +54,8 @@ jobs:
           node --check functions/api/arcane-games.js
       - name: Install isolated Chromium test driver
         run: npm install --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
+      - name: Mobile homepage header and footer browser regression tests
+        run: node --experimental-default-type=module --test tests/mobile-home-browser.test.mjs
       - name: Browser interaction tests for all four Arcade practice games
         run: node --experimental-default-type=module --test tests/practice-browser.test.mjs
       - name: Privacy-first supporter ribbon and commander preview regression tests
