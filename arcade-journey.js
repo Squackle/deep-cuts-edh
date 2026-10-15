@@ -143,7 +143,14 @@
    document.querySelector(".games-masthead .games-page-links").append(facts);
   }
  }
- function init(){showLabels();if(document.body.dataset.dailyGame==="hub")showContinue()}
+ function init(){
+  showLabels();
+  if(document.body.dataset.dailyGame==="hub"){
+   const status=document.getElementById("hubDay");
+   if(status)status.replaceChildren("Fresh puzzles daily ",make("span","·","arcade-meta-dot")," Midnight Central");
+   showContinue();
+  }
+ }
  window.DeepCutsArcade=Object.freeze({record});
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();
