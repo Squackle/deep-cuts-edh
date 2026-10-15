@@ -68,7 +68,16 @@ test("Arcade keeps compact resume navigation and truthful device-only progress o
     await page.goto(origin+"/games",{waitUntil:"domcontentloaded"});
     const back=page.locator(".arcade-continue");
     await back.waitFor();
-    assert.match(await back.innerText(),/RETURN TO COLD CASE/);
+    assert.equal((await back.innerText()).trim(),"Continue last game ↗");
+    assert.equal(await page.locator(".arcade-continue-note").innerText(),"Cold Case · Practice round");
+    assert.match(await back.getAttribute("aria-label"),/Cold Case, practice round/);
+    assert.equal(await back.evaluate(el=>getComputedStyle(el).animationName),"arcade-continue-halo");
+    assert.ok((await back.evaluate(el=>parseFloat(getComputedStyle(el).minHeight)))>=44,"Glow CTA preserves a full touch target");
+    const util=page.locator(".arcade-hero-utility");
+    assert.match(await util.innerText(),/Fresh puzzles daily/);
+    assert.match(await util.innerText(),/How it works/);
+    assert.match(await page.locator(".arcade-hero-deck").innerText(),/Pick your next case/);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),"Hero overflow at "+width);
     assert.equal(await back.getAttribute("href"),"/games/cold-case?practice="+seed);
     await back.click();
     await page.locator(".games-suspect").first().waitFor();
@@ -82,7 +91,8 @@ test("Arcade keeps compact resume navigation and truthful device-only progress o
     await page.locator(".games-clue-open").nth(1).waitFor();
     await page.goto(origin+"/games",{waitUntil:"domcontentloaded"});
     await page.locator(".arcade-continue").waitFor();
-    assert.match(await page.locator(".arcade-continue").innerText(),/CONTINUE COLD CASE/);
+    assert.equal((await page.locator(".arcade-continue").innerText()).trim(),"Continue last game ↗");
+    assert.equal(await page.locator(".arcade-continue-note").innerText(),"Cold Case · Practice round");
     await page.locator(".arcade-continue").click();
     await page.locator(".games-guess-chip").first().waitFor();
     assert.equal(await page.locator(".games-guess-chip").count(),1);
