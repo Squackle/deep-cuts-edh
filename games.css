@@ -230,3 +230,45 @@
  .games-commander-name .games-card-peek{flex-basis:28px;width:28px;height:28px}
 }
 @media(prefers-reduced-motion:reduce){.games-card-tooltip{scroll-behavior:auto}}
+
+/* Arcade journey: quiet, responsive interface for local-only continuation and results. */
+.games-masthead .games-page-links .arcade-continue{
+ display:inline-flex;align-items:center;min-height:38px;border:1px solid #dbc48a;
+ padding:8px 12px;border-radius:4px;color:#263a2c!important;background:#eddcae;
+ font:800 11px/1.3 ui-sans-serif,system-ui,sans-serif;letter-spacing:.025em;text-decoration:none;
+}
+.games-masthead .games-page-links .arcade-continue:hover,
+.games-masthead .games-page-links .arcade-continue:focus-visible{
+ background:#fff0be;outline:2px solid #d5b16e;outline-offset:2px;
+}
+.games-feature .arcade-session-facts{
+ display:inline-flex;align-items:center;align-self:flex-start;flex:0 0 auto;
+ font:750 11px/1.35 ui-sans-serif,system-ui,sans-serif;color:#45614c;
+ background:#edf3e8;border:1px solid #cbd9c8;padding:6px 9px;border-radius:4px;
+}
+.games-game-meta .arcade-session-facts{
+ font:750 10px/1.35 ui-sans-serif,system-ui,sans-serif;white-space:normal;
+ color:#395842;background:#edf3e8;border:1px solid #cbd9c8;padding:6px 9px;border-radius:4px;
+}
+.games-masthead .games-page-links .arcade-session-detail{
+ display:inline-flex;align-items:center;color:#f3e5c4;border:1px solid #687e65;
+ padding:8px 10px;border-radius:4px;font:750 11px/1.35 ui-sans-serif,system-ui,sans-serif;
+}
+.arcade-personal-recap{
+ margin:17px 0 5px;border:1px solid #bacfb8;border-radius:8px;padding:14px 16px;
+ background:#f1f7ed;color:#294634;text-align:left;
+}
+.arcade-personal-title{font:850 11px/1.4 ui-sans-serif,system-ui,sans-serif;
+ letter-spacing:.095em;color:#41674b;margin:0 0 11px}
+.arcade-personal-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.arcade-personal-metric{display:flex;flex-direction:column;gap:4px;min-width:0}
+.arcade-personal-metric strong{font:750 clamp(19px,3vw,25px)/1.1 Georgia,serif;color:#2c5c3f}
+.arcade-personal-metric span{font:700 11px/1.4 ui-sans-serif,system-ui,sans-serif;color:#607863}
+.arcade-personal-comparison{font:650 12px/1.6 ui-sans-serif,system-ui,sans-serif;
+ color:#335942;margin:12px 0 5px!important}
+.arcade-personal-note{display:block;color:#6a7e6a;font:500 10px/1.5 ui-sans-serif,system-ui,sans-serif}
+@media(max-width:480px){
+ .arcade-personal-recap{padding:12px}
+ .arcade-personal-metrics{gap:8px}
+ .games-masthead .games-page-links .arcade-continue{width:100%;justify-content:center}
+}
