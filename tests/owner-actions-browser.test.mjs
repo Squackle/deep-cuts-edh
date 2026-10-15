@@ -101,9 +101,41 @@ test("owner command center: each workspace operates, grant success and errors vi
    await page.locator('#opsForm input[name="email"]').fill("fixture@example.com");
    await page.locator('#opsForm [data-action="lookup"]').click();
    await page.getByText(/No currently qualifying payment appears/).waitFor();
+   // Paid Ko-fi issuance, replacement and revocation use the separate owner key.
+   await page.locator('#opsForm input[name="verifiedPayment"]').check();
+   await page.locator('#opsForm input[name="verifiedOwnership"]').check();
+   await page.locator('#opsForm [data-action="issue"]').click();
+   await page.getByText(/key issued · paid-through/).waitFor();
+   assert.equal(await page.locator("#issuedKey").textContent(),KEY);
+   page.on("dialog",dialog=>dialog.type()==="prompt"?dialog.accept("30"):dialog.accept());
+   await page.locator('#opsForm [data-action="replace"]').click();
+   await page.waitForFunction(()=>document.querySelector('#operatorStatus').textContent.includes("key issued"));
+   await page.locator('#opsForm [data-action="revoke"]').click();
+   await page.getByText(/Access revoked. Billing must be handled separately/).waitFor();
+   // Existing complimentary membership lifecycle controls.
+   await page.locator('[data-owner-panel="directory"]').click();
+   await page.locator('[data-owner-view="members"]').click();
+   await page.getByText("QA fixture",{exact:true}).waitFor();
+   const ownerMutation=async (label,action)=>{
+    const response=page.waitForResponse(r=>r.url().endsWith("/api/owner-members")&&r.request().method()==="POST"&&r.request().postDataJSON()?.action===action);
+    await page.getByRole("button",{name:label,exact:true}).click();
+    await response;
+    await page.locator("#ownerRefresh:enabled").waitFor();
+   };
+   await ownerMutation("EXTEND","extend");
+   await ownerMutation("ROTATE KEY","rotate");
+   assert.equal(await page.locator("#issuedKey").textContent(),KEY);
+   await ownerMutation("REVOKE","revoke");
+   assert.ok(["extend","rotate","revoke"].every(action=>calls.some(c=>c.action===action)));
    // Evidence moderation request.
    await page.locator('[data-owner-panel="evidence"]').click();
    await page.locator('#ownerEvidenceForm input[name="evidenceId"]').fill("e".repeat(32));
+   await page.locator('#ownerEvidenceForm button[type="submit"]').click();
+   await page.getByText(/Finding updated/).waitFor();
+   await page.locator('#ownerEvidenceForm select[name="status"]').selectOption("active");
+   await page.locator('#ownerEvidenceForm button[type="submit"]').click();
+   await page.getByText(/Finding updated/).waitFor();
+   await page.locator('#ownerEvidenceForm select[name="status"]').selectOption("hidden");
    await page.locator('#ownerEvidenceForm button[type="submit"]').click();
    await page.getByText(/Finding updated/).waitFor();
    // Ad-free reconciliation request.
@@ -112,6 +144,13 @@ test("owner command center: each workspace operates, grant success and errors vi
    await page.locator('#ownerAdFreeForm input[name="confirmedPayment"]').check();
    await page.locator('#ownerAdFreeForm button[type="submit"]').click();
    await page.getByText("Manual ad-free entitlement saved.").waitFor();
+   await page.locator('#ownerAdFreeForm select[name="action"]').selectOption("revoke");
+   await page.locator('#ownerAdFreeForm button[type="submit"]').click();
+   await page.getByText("Manual ad-free entitlement saved.").waitFor();
+   for(const action of ["lookup","issue","replace","revoke"]){
+    assert.ok(calls.some(c=>c.pathname==="/api/kofi-member-issue"&&c.action===action),"Missing Ko-fi "+action);
+   }
+
    await page.locator('[data-owner-panel="tools"]').click();
    assert.equal(await page.locator('#owner-panel-tools a[href="diagnostics.html"]').count(),1);
    await page.locator("#ownerLock").click();
