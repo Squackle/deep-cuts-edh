@@ -26,6 +26,12 @@ Cloudflare source documentation:
 - https://developers.cloudflare.com/d1/observability/metrics-analytics/
 - https://developers.cloudflare.com/analytics/graphql-api/getting-started/authentication/api-token-auth/
 
+## Usage over time graph
+
+Under **Today · Cloudflare account**, a compact green-and-gold **Usage over time** SVG shows the last seven UTC daily buckets. Switch between Worker requests, Worker errors, D1 rows read, and D1 rows written without an additional request: the chart reuses the same `workers.daily` and `d1.daily` arrays already returned to the owner dashboard. The original Today values, quota comparisons, database storage and seven-day detailed rows remain unchanged.
+
+The chart uses built-in browser SVG (no charting library, CDN, new script, API endpoint, analytics integration, database table or background process). Screen readers receive the complete date/value series in an accessible chart label, and the existing detailed table provides a text alternative. On narrow phones, only the graphic scrolls horizontally, not the whole page. An unavailable/disconnected Cloudflare dataset continues to show the existing setup message rather than false zero usage. These are daily account-wide counts, not unique visitors or an hourly live chart.
+
 ## Security and operations
 
 Queries run **only** after authenticated owner navigates to this section or clicks Refresh. Cloudflare Access and existing Owner bearer checks run before any API data read. The token never reaches client JavaScript or JSON; errors are generic. Backend fetches are bounded to 6.5 seconds and are read-only, with graceful unavailable status. No user identities, IPs, email addresses, or tracked unique visitor IDs are stored. Lock & clear removes rendered metrics and prevents late responses from restoring private data.
