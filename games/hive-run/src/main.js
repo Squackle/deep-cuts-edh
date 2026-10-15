@@ -8,6 +8,7 @@ import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
 import {drawPlayerLocator,drawQueuedTurn} from "./player-visibility.js";
 import {drawTrapHints} from "./trap-assist.js";
+import {captureFlash,drawCaptureFlash} from "./beacon-feedback.js";
 import {KEY_DIRECTIONS,keyboardDirection,mutationSelectionIndex,isTouchMutationSelection,resumeHeading,swipeHeading,SWIPE_RESUME_KEYS} from "./input-controls.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
@@ -34,6 +35,7 @@ let creatureArt=null;
 let arenaBackground=null;
 let visualBurst=null,lastCapture=null,startingRun=false,lastEncounterSeen=null;
 let lairBurst=null,selectedLairBoss="stalker";
+let beaconCapture=null;
 const lairActive=()=>isLairChallenge(selectedMode,selectedChallenge);
 function showLairPicker(){
  const active=lairActive();
@@ -524,6 +526,7 @@ function draw(){
  renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
  drawLairEffects(context,run,CELLS,performance.now(),lairBurst,prefersReducedMotion());
  if(lastCapture)drawCapture(context,lastCapture.pos,CELLS,performance.now(),lastCapture.until,prefersReducedMotion());
+ drawCaptureFlash(context,beaconCapture,CELLS,performance.now(),prefersReducedMotion());
  if(run.status==="over"){
   context.fillStyle="#dcb78b";
   const head=run.body[0];context.fillRect(head.x*CELLS+5,head.y*CELLS+5,10,10);
@@ -561,7 +564,7 @@ function loop(time){
   let catchUps=0;
   while(state.accumulator>=effectiveTickMs(state.run)&&catchUps<3&&state.run.status==="running"){
    const currentTick=effectiveTickMs(state.run);
-   const prevBrood=state.run.brood,prevEvent=state.run.eventSerial,prevKills=state.run.kills;
+   const prevBrood=state.run.brood,prevEvent=state.run.eventSerial,prevKills=state.run.kills,prevScore=state.run.score;
    const enemyBefore=state.run.enemies.map(e=>({id:e.id,pos:{...e.pos}}));
    step(state.run);
    if(lairActive())completeLairRun(state.run);
@@ -592,7 +595,8 @@ function loop(time){
    }
    if(state.run.kills>prevKills){
     const removed=enemyBefore.find(e=>!state.run.enemies.some(now=>now.id===e.id));
-    if(removed)lastCapture={pos:removed.pos,until:performance.now()+620};
+    if(removed){lastCapture={pos:removed.pos,until:performance.now()+620};
+      beaconCapture=captureFlash(removed.pos,state.run.score-prevScore,performance.now());}
     playTone(740,.13,.04);saveBest();
     if(!encounterMoment||encounterMoment.type!=="defeat"||encounterMoment.tick!==state.run.runTicks)
      announce("Enemy captured! +3 evolution energy. Total captures "+state.run.kills+".");
