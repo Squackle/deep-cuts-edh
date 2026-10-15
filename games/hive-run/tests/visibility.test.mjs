@@ -19,13 +19,15 @@ test("grid cells have legible 1px edges and stronger every-five landmarks",()=>{
  assert.ok(rects.some(r=>r.args.join(",")==="0,99,160,1"));
  assert.ok(rects.some(r=>r.args.join(",")==="1,1,19,19"));
 });
-test("player head locator overlays a readable directional indicator",()=>{
+test("player head locator preserves Sliver artwork with a tiny 8px backplate and 3px pip",()=>{
  const {ctx,rects,strokes}=mock(),head={x:5,y:6};
  drawPlayerLocator(ctx,head,"right",20,"below");
- assert.deepEqual(rects[0].args,[101,121,18,18]);
- assert.equal(strokes[0].color,"#d7b66a");
+ assert.deepEqual(rects[0].args,[106,126,8,8]);
+ assert.equal(strokes[0].color,"#bda267");
+ assert.equal(strokes[0].width,1);
  drawPlayerLocator(ctx,head,"right",20,"above");
- assert.ok(rects.some(r=>r.args.join(",")==="116,128,4,4"));
+ assert.deepEqual(rects[1].args,[117,128,3,3]);
+ assert.equal(rects.length,2);
  const before=rects.length;
  drawPlayerLocator(ctx,null,"right");
  assert.equal(rects.length,before);
