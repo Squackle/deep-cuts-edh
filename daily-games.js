@@ -143,7 +143,11 @@ function panelStatus(status){
  const banner=$("gamesAccountStatus");if(!banner)return;
  if(practice)banner.textContent="PRACTICE · No profile scores, badges, or leaderboard entries are saved.";
  else if(status?.authenticated)banner.textContent="✓ Investigator signed in · daily scores and badges save to your profile";
- else banner.innerHTML='<a href="/profile#account">Sign in to your profile</a> to save achievements. You can still play free without an account.';
+ else{
+  const signIn=el("a","games-signin-link","Sign in to your profile");
+  signIn.href="/profile#account";
+  banner.replaceChildren(signIn,document.createTextNode(" to save achievements. You can still play free without an account."));
+ }
 }
 function renderAwards(awards){
  const holder=$("gameAwards");if(!holder)return;
