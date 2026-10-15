@@ -84,7 +84,7 @@ test("Command Center 2.0 home, sections, real-form preservation, owner API actio
     assert.ok(requests.some(r=>r.payload.kind==="editorial"));
     await page.locator('[data-owner-v2-group="Security"]').click();
     await page.getByRole("button",{name:"Security sweep",exact:true}).click();
-    const securitySweep=page.locator(".owner-v2-workspace a[href='https://github.com/Squackle/deep-cuts-edh/actions/workflows/security-sweep.yml']");
+    const securitySweep=page.getByRole("link",{name:"Run security sweep ↗",exact:true});
     assert.equal(await securitySweep.isVisible(),true);
     assert.equal(await page.locator(".owner-v2-home .owner-v2-security-cta").isVisible(),false);
     for(const [group,section] of [["Games","Game statistics"],["Business","Free keys"],["Site","Feature switches"],["Security","Admin activity"]]){
