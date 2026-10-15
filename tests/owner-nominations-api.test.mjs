@@ -1,3 +1,4 @@
+import "./nomination-names.test.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
@@ -11,7 +12,8 @@ function database(){
  const nominations=[
   {id:42,name:"Gorbag of Minas Morgul",rationale:"Underrated sacrifice effects",strategy:"Tokens",cards:"Sol Ring",budget:"$100",status:"pending",created_at:"2026-10-15",votes:2},
   {id:43,name:"Reveka",rationale:"Unusual tap ability",strategy:"Untap synergy",cards:"Twiddle",budget:"$50",status:"pending",created_at:"2026-10-15",votes:1},
-  {id:9,name:"Approved Candidate",rationale:"Deck",strategy:"Deck",cards:"",budget:"Any",status:"approved",created_at:"2026-10-01",votes:7}
+  {id:9,name:"Approved Candidate",rationale:"Deck",strategy:"Deck",cards:"",budget:"Any",status:"approved",created_at:"2026-10-01",votes:7},
+  {id:30,name:"Retired Seed Candidate",rationale:"Old seed",strategy:"Old",cards:"",budget:"$100",status:"retired",created_at:"2026-10-01",votes:1}
  ];
  const writes=[];
  const db={
@@ -27,9 +29,9 @@ function database(){
     },
     async all(){
      if(sql.includes("FROM nominations n WHERE n.status='pending'"))return {results:nominations.filter(n=>n.status==="pending")};
-     if(sql.includes("FROM nominations n WHERE n.status IN"))return {results:nominations.filter(n=>n.status!=="pending")};
-     if(sql.includes("SELECT status,COUNT(*) AS nominations FROM nominations GROUP BY status")){
-      return {results:["pending","approved","rejected"].map(status=>({status,nominations:nominations.filter(n=>n.status===status).length})).filter(x=>x.nominations)};
+     if(sql.includes("FROM nominations n WHERE n.status IN"))return {results:nominations.filter(n=>["approved","rejected","featured"].includes(n.status))};
+     if(sql.includes("SELECT status,COUNT(*) AS nominations FROM nominations WHERE status!=\'retired\' GROUP BY status")){
+      return {results:["pending","approved","rejected","featured"].map(status=>({status,nominations:nominations.filter(n=>n.status===status).length})).filter(x=>x.nominations)};
      }
      throw Error("Unexpected query: "+sql);
     }
@@ -66,6 +68,8 @@ test("Protected nominations view returns real pending, reviewed, votes, rational
  assert.equal(data.pending[0].votes,2);
  assert.equal(data.pending[0].rationale,"Underrated sacrifice effects");
  assert.equal(data.reviewed[0].status,"approved");
+ assert.equal(data.reviewed.some(x=>x.status==="retired"),false,"Retired nominees must not appear in the owner review list");
+ assert.equal(data.counts.some(x=>x.status==="retired"),false,"Retired nominees must not appear in owner counters");
  assert.equal(data.counts.find(x=>x.status==="pending").nominations,2);
  assert.equal(db.writes.length,0,"Read-only view must not change records");
 });

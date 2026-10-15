@@ -19,9 +19,9 @@ const select={
       FROM nominations n WHERE n.status='pending' ORDER BY n.created_at ASC,n.id ASC LIMIT 100`),
   reviewed:await query(db,`SELECT n.id,n.name,n.status,n.created_at,
       (SELECT COUNT(*) FROM nomination_votes v WHERE v.nomination_id=n.id) AS votes
-      FROM nominations n WHERE n.status IN ('approved','rejected','featured','retired')
+      FROM nominations n WHERE n.status IN ('approved','rejected','featured')
       ORDER BY n.created_at DESC,n.id DESC LIMIT 100`),
-  counts:await query(db,`SELECT status,COUNT(*) AS nominations FROM nominations GROUP BY status ORDER BY status`),
+  counts:await query(db,`SELECT status,COUNT(*) AS nominations FROM nominations WHERE status!='retired' GROUP BY status ORDER BY status`),
   note:"Community nominations submitted through the public nomination form. Approving makes a candidate appear on the public nominations board without changing existing votes."
  }),
  moderation:async(db)=>({
