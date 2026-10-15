@@ -50,7 +50,7 @@ test("Command Center 2.0 home, sections, real-form preservation, owner API actio
     assert.equal(await page.locator(".owner-v2-home h2").textContent(),"Welcome back.");
     assert.equal(await page.locator(".owner-v2-home-tile").count(),6);
     assert.equal(await page.locator(".owner-v2-menu-button").count(),7);
-    assert.equal(await page.locator("#opsForm input[name=operatorKey]").count(),1);
+    assert.equal(await page.locator(".owner-key-label input[name=operatorKey]").count(),1);
     const overflow=await page.evaluate(()=>({body:document.body.scrollWidth,viewport:innerWidth}));
     assert.ok(overflow.body<=width+2,"Mobile horizontal overflow "+JSON.stringify(overflow));
     await page.locator('[data-owner-v2-group="Community"]').click();
@@ -62,7 +62,9 @@ test("Command Center 2.0 home, sections, real-form preservation, owner API actio
     await page.getByRole("button",{name:"Moderation",exact:true}).click();
     await page.getByText("QA Commander").waitFor();
     assert.ok(requests.some(r=>r.view==="moderation"&&r.auth));
-    await page.getByRole("button",{name:"Approve",exact:true}).click({force:true});
+    page.on("dialog",dialog=>dialog.accept());
+    await page.getByRole("button",{name:"Approve",exact:true}).click();
+    await page.waitForFunction(()=>document.querySelector(".owner-v2-message")?.textContent!==undefined);
     // Confirm dialog is supplied in advance for state-changing actions.
     await page.getByRole("button",{name:"Home",exact:true}).first().click();
     await page.locator('[data-owner-v2-group="Content"]').click();
