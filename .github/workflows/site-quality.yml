@@ -72,6 +72,16 @@ jobs:
         run: |
           node --experimental-default-type=module --test tests/arcane-daily.test.mjs
           node --experimental-default-type=module --test tests/arcane-hints.test.mjs
+      - name: Owner console controls and security contract regression tests
+        run: |
+          node --test tests/owner-dashboard.test.mjs
+          node --check owner-dashboard.js
+          node --check member-operations.js
+          node --check owner-console.js
+          node --check owner-evidence.js
+          node --check owner-adfree.js
+      - name: Owner command center real-browser interaction checks
+        run: node --test tests/owner-dashboard-browser.test.mjs
       - name: JavaScript syntax
         run: |
           node --check arcane-games.js
