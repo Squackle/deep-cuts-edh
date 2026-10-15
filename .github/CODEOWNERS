@@ -1,0 +1,10 @@
+# Accountable GitHub owner; developer-agent roles live in docs/DEVELOPMENT-LANES.md.
+# No separate GitHub identities exist for the three assistant chats.
+* @Squackle
+/games/hive-run/ @Squackle
+/src/hive-server/ @Squackle
+/functions/games/hive-run/ @Squackle
+/functions/api/hive-profile.js @Squackle
+/hive-profile.js @Squackle
+/db/ @Squackle
+/.github/ @Squackle
