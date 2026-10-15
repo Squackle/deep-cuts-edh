@@ -68,7 +68,7 @@ export async function readOwnerCapacity(env,{now=Date.now()}={}){
   message:configured?"Using a private server-side read-only Cloudflare token.":"Add the two secret production bindings to enable account usage; no traffic tracking is injected into visitors' browsers."}};
  if(!configured)return {...base,state:"not_configured",workers:null,d1:null};
  const account=env.CLOUDFLARE_ACCOUNT_ID,token=env.CLOUDFLARE_ANALYTICS_TOKEN;
- const t=new Date(now),from=new Date(now-6*86400000);
+ const t=new Date(now),from=new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate()-6));
  const vars={account,start:from.toISOString(),end:new Date(now+60000).toISOString(),dateStart:asDate(from),dateEnd:asDate(t)};
  try{
   const payload=await cfRequest(API+"/graphql",{method:"POST",headers:{"Authorization":"Bearer "+token,"Accept":"application/json","Content-Type":"application/json"},body:JSON.stringify({query:analyticsQuery,variables:vars})});
