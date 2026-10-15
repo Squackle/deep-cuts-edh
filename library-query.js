@@ -18,10 +18,24 @@ export function manaLimit(input){
   throw new Error("Maximum mana value must be a whole number from 0 to 99.");
  return Number(raw);
 }
-export function compileLibraryQuery({search="",format="commander",facetTerms=[],faceted=false,maxMana="",minPrice="",maxPrice=""}={}){
+export function artistSearchTerm(artist){
+ const name=String(artist||"").trim();
+ if(!name)return "";
+ if(name.length>100||!/[\p{L}]/u.test(name)||/[\x00-\x1f]/.test(name))
+  throw new Error("Enter a valid artist from the suggestions.");
+ return 'a:"'+name.replaceAll("\\","\\\\").replaceAll('"','\\"')+'"';
+}
+export function libraryCardIdentity(card,uniqueness="cards"){
+ // Scryfall has already de-duplicated its search response by the requested mode.
+ // Do NOT collapse alternate illustrations to their shared oracle_id.
+ return uniqueness==="cards"?(card.oracle_id||card.id):card.id;
+}
+export function compileLibraryQuery({search="",format="commander",artist="",facetTerms=[],faceted=false,maxMana="",minPrice="",maxPrice=""}={}){
  const terms=[],raw=String(search).trim();
  if(raw)terms.push(raw);
  if(format)terms.push("f:"+format);
+ const artistTerm=artistSearchTerm(artist);
+ if(artistTerm)terms.push(artistTerm);
  terms.push(...facetTerms);
  const mv=manaLimit(maxMana);
  if(mv!==null)terms.push("mv<="+mv);
@@ -30,7 +44,7 @@ export function compileLibraryQuery({search="",format="commander",facetTerms=[],
   throw new Error("The minimum price cannot exceed the maximum price.");
  if(min!==null)terms.push("usd>="+(min/100).toFixed(2));
  if(max!==null)terms.push("usd<="+(max/100).toFixed(2));
- if(!raw&&!faceted&&mv===null&&min===null&&max===null)terms.push("t:legendary");
+ if(!raw&&!artistTerm&&!faceted&&mv===null&&min===null&&max===null)terms.push("t:legendary");
  return terms.join(" ");
 }
 
