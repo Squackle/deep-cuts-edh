@@ -6,3 +6,10 @@
   Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; object-src 'none'
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
   Strict-Transport-Security: max-age=31536000
+
+# Owner-only static entry: no caching, indexing or outgoing referrer.
+/member-operations.html
+  Cache-Control: no-store, private
+  Referrer-Policy: no-referrer
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cross-Origin-Opener-Policy: same-origin
