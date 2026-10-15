@@ -28,3 +28,10 @@ export function resumeHeading(run,key,queueTurn){
  if(heading===run.direction)return true;
  return queueTurn(heading);
 }
+
+/** Swipes share the keyboard's safe mutation-resume direction checks. */
+export const SWIPE_RESUME_KEYS=Object.freeze({up:"ArrowUp",right:"ArrowRight",down:"ArrowDown",left:"ArrowLeft"});
+export function swipeHeading(dx,dy,threshold=12){
+ if(!Number.isFinite(dx)||!Number.isFinite(dy)||Math.max(Math.abs(dx),Math.abs(dy))<threshold)return null;
+ return Math.abs(dx)>Math.abs(dy)?(dx>0?"right":"left"):(dy>0?"down":"up");
+}
