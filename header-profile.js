@@ -248,36 +248,64 @@
   const label=node("span","site-supporter-label","BROUGHT TO YOU BY OUR SUPPORTERS:");
   const view=node("div","site-supporter-window");
   const track=node("div","site-supporter-track");
-  const empty=node("span","site-supporter-empty");
-  empty.append("Your name could be here · ");
-  const join=node("a",null,"SUPPORT THE ARCHIVE ↗");join.href="/supporters";empty.append(join);
-  track.append(empty);view.append(track);inner.append(label,view);strip.append(inner);
-  header.append(strip);
+  view.append(track);inner.append(label,view);strip.append(inner);header.append(strip);
+  let supporters=[];
+  const unit=()=>{
+   const tile=node("span","site-supporter-unit");
+   if(!supporters.length){
+    const empty=node("span","site-supporter-empty");
+    empty.append("Your name could be here · ");
+    const join=node("a",null,"SUPPORT THE ARCHIVE ↗");
+    join.href="/supporters";empty.append(join);tile.append(empty);
+   }else{
+    for(const entry of supporters){
+     const link=node("a","site-supporter-name site-supporter-"+entry.tier,entry.name);
+     link.href="/supporters";
+     const tier={chief:"Chief Investigator",detective:"Detective",informant:"Informant"}[entry.tier];
+     link.setAttribute("aria-label",entry.name+" · "+tier+" supporter");
+     link.title=tier+" supporter";
+     tile.append(link);
+    }
+   }
+   return tile;
+  };
+  const decorative=element=>{
+   element.setAttribute("aria-hidden","true");
+   element.querySelectorAll("a").forEach(a=>a.tabIndex=-1);
+   return element;
+  };
+  function render(){
+   const group=node("span","site-supporter-group");
+   const original=unit();
+   group.append(original);track.replaceChildren(group);
+   // A single short credit or empty invitation cannot fill the ribbon.
+   // Repeat enough identical tiles to cover its viewport before cloning the
+   // whole cycle; half-width translation then loops without a blank stretch.
+   const tileWidth=Math.max(120,original.getBoundingClientRect().width+23);
+   const repeats=Math.max(2,Math.min(16,Math.ceil((view.clientWidth+32)/tileWidth)+1));
+   for(let i=1;i<repeats;i++)group.append(decorative(original.cloneNode(true)));
+   const copy=decorative(group.cloneNode(true));
+   track.append(copy);
+   const pixels=group.getBoundingClientRect().width;
+   track.style.setProperty("--site-supporter-duration",Math.max(24,Math.round(pixels/45))+"s");
+   track.classList.add("is-scrolling");
+   strip.classList.toggle("has-supporters",supporters.length>0);
+  }
+  // Invite supporters from first paint, even with zero opt-ins or an offline API.
+  render();
+  let previousWidth=view.clientWidth;
+  window.addEventListener("resize",()=>{
+   const width=view.clientWidth;
+   if(Math.abs(width-previousWidth)>=24){previousWidth=width;render()}
+  },{passive:true});
   fetch("/api/supporter-ticker",{credentials:"omit",cache:"no-store"})
    .then(async response=>{if(!response.ok)throw Error("Supporter roll unavailable");return response.json()})
    .then(data=>{
-    const values=Array.isArray(data?.supporters)?data.supporters.filter(x=>
+    supporters=Array.isArray(data?.supporters)?data.supporters.filter(x=>
      x&&typeof x.name==="string"&&x.name.length>=2&&x.name.length<=36&&
      ["chief","detective","informant"].includes(x.tier)).slice(0,50):[];
-    if(!values.length)return; // No unverified or imaginary names.
-    const group=()=>{const row=node("span","site-supporter-group");
-     for(const entry of values){
-      const link=node("a","site-supporter-name site-supporter-"+entry.tier,entry.name);
-      link.href="/supporters";
-      const tier={chief:"Chief Investigator",detective:"Detective",informant:"Informant"}[entry.tier];
-      link.setAttribute("aria-label",entry.name+" · "+tier+" supporter");
-      link.title=tier+" supporter";
-      row.append(link);
-     }return row;
-    };
-    track.replaceChildren(group());
-    // Duplicate only for the seamless animation, never twice for screen readers.
-    const copy=group();copy.setAttribute("aria-hidden","true");
-    copy.querySelectorAll("a").forEach(a=>a.tabIndex=-1);
-    track.append(copy);
-    track.classList.add("is-scrolling");
-    strip.classList.add("has-supporters");
-   }).catch(()=>{}); // A network failure never affects the header or games.
+    render(); // Empty lists scroll the invitation; no invented supporter names.
+   }).catch(()=>{}); // Keep the moving invitation when the API is unavailable.
  }
  function setup(){
   // Hive Run uses a slim arcade header but shares our real account avatar,
