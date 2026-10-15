@@ -13,7 +13,7 @@ const groups=[
  ["Community",[["moderation","Moderation"],["feedback","Feedback"],["directory","Member directory"],["evidence","Evidence"]]],
  ["Games",[["games","Game statistics"],["integrity","Score integrity"],["schedule","Scheduled content"]]],
  ["Business",[["members","Paid memberships"],["grants","Free keys"],["adfree","Ad-free"],["revenue","Revenue records"]]],
- ["Site",[["site","Site status"],["analytics","Community activity"],["features","Feature switches"]]],
+ ["Site",[["site","Site status"],["capacity","Capacity & usage"],["analytics","Community activity"],["features","Feature switches"]]],
  ["Security",[["sweep","Security sweep"],["recovery","Backups & recovery"],["audit","Admin activity"],["tools","Tools & diagnostics"]]]
 ];
 const oldPanels={};
@@ -132,6 +132,33 @@ function readableDate(input){
 }
 function line(container,labelText,value){
  const r=el("div",null,"owner-v2-stat");r.append(el("span",labelText),el("strong",label(value)));container.append(r);
+}
+const usageNumber=v=>Number.isFinite(Number(v))?Number(v).toLocaleString("en-US"):"Unavailable";
+const usageBytes=v=>v==null?"Unavailable":(Number(v)/1024/1024).toFixed(2)+" MiB";
+function quota(container,title,value,limit){
+ const section=el("div",null,"owner-v2-capacity-meter");
+ const top=el("div",null,"owner-v2-capacity-meter-label");
+ const n=Number(value),percent=Number.isFinite(n)?100*n/limit:null;
+ top.append(el("strong",title),el("span",percent==null?"Unavailable":usageNumber(n)+" / "+usageNumber(limit)+" ("+percent.toFixed(1)+"%)"));
+ const track=el("div",null,"owner-v2-capacity-track"),fill=el("div",null,"owner-v2-capacity-fill");
+ track.setAttribute("role","progressbar");track.setAttribute("aria-label",title+" compared with Free-plan reference");
+ track.setAttribute("aria-valuemin","0");track.setAttribute("aria-valuemax",String(limit));
+ if(percent!=null){track.setAttribute("aria-valuenow",String(Math.min(limit,Math.max(0,n))));fill.style.width=Math.min(100,Math.max(0,percent))+"%";}
+ else track.setAttribute("aria-valuetext","Unavailable");
+ if(percent>=80)fill.classList.add("owner-v2-capacity-elevated");
+ track.append(fill);section.append(top,track);container.append(section);
+}
+function dailyUsage(container,title,days,fields){
+ titled(container,title);
+ const holder=el("div",null,"owner-v2-capacity-trend");
+ for(const row of days||[]){
+  const c=el("div",null,"owner-v2-capacity-day");
+  c.append(el("span",String(row.date).slice(5)));
+  const items=el("div",null,"owner-v2-capacity-day-values");
+  for(const [caption,key] of fields)items.append(el("span",caption+": "+usageNumber(row[key])));
+  c.append(items);holder.append(c);
+ }
+ container.append(holder);
 }
 function stats(container,values){
  const grid=el("div",null,"owner-v2-stat-grid");
@@ -276,6 +303,45 @@ const renderers={
   message(node,"AdSense approval and earnings are not currently available via a verified server integration.");
   links(node,[["Ko-fi","https://ko-fi.com/deepcutsedh"],["Google AdSense","https://www.google.com/adsense/"],["Ad-free guide","https://github.com/Squackle/deep-cuts-edh/blob/main/docs/KOFI-ADFREE.md"]]);
  },
+ capacity:(node,d)=>{
+  message(node,"Read-on-demand usage. No visitor tracking script, per-request database logging or new public API. All reported usage is account-wide, not unique visitors.");
+  const ref=d.freeReference||{};
+  const reference=el("div",null,"owner-v2-capacity-reference");
+  reference.append(el("strong","Free-tier comparison · not your verified plan"));
+  reference.append(el("p","Workers "+usageNumber(ref.workersRequestsDay)+" requests/day · D1 "+usageNumber(ref.d1RowsReadDay)+" rows read/day and "+usageNumber(ref.d1RowsWrittenDay)+" rows written/day · "+usageBytes(ref.d1DatabaseBytes)+" per database. Cloudflare billing/limits remain authoritative."));
+  node.append(reference);
+  if(d.state!=="connected"){
+   const status=el("article",null,"owner-v2-record owner-v2-capacity-setup");
+   status.append(el("strong",d.state==="not_configured"?"Connect Cloudflare metrics":"Metrics temporarily unavailable"));
+   status.append(el("p",d.configuration?.message||"The read-only integration has not been configured."));
+   status.append(el("p","Set production secret CLOUDFLARE_ANALYTICS_TOKEN (Account Analytics Read; optionally D1 Read) and text variable CLOUDFLARE_ACCOUNT_ID. Refresh this page after deploying the configuration. Never paste the token here."));
+   node.append(status);
+  }else{
+   const w=d.workers,db=d.d1;
+   message(node,"Showing UTC day-to-date and the previous six UTC days. Cloudflare analytics can be sampled or delayed; figures are not guaranteed billing totals.");
+   titled(node,"Today · Cloudflare account");
+   stats(node,{"Worker requests":usageNumber(w?.today?.requests),"Worker errors":usageNumber(w?.today?.errors),
+    "D1 rows read":usageNumber(db?.today?.rowsRead),"D1 rows written":usageNumber(db?.today?.rowsWritten)});
+   titled(node,"Free-plan usage comparison");
+   quota(node,"Worker requests today",w?.mayBeIncomplete?null:w?.today?.requests,ref.workersRequestsDay||100000);
+   quota(node,"D1 rows read today",db?.mayBeIncomplete?null:db?.today?.rowsRead,ref.d1RowsReadDay||5000000);
+   quota(node,"D1 rows written today",db?.mayBeIncomplete?null:db?.today?.rowsWritten,ref.d1RowsWrittenDay||100000);
+   if(w?.mayBeIncomplete||db?.mayBeIncomplete)message(node,"Cloudflare returned a full result page; usage may be incomplete. Bars were withheld rather than showing misleading percentages.");
+   titled(node,"Database storage · current");
+   for(const database of Object.values(db?.databases||{})){
+    const n=el("article",null,"owner-v2-record");
+    n.append(el("strong",database.label));
+    n.append(el("p","Storage: "+usageBytes(database.sizeBytes)+" · 7-day rows read: "+usageNumber(database.rowsRead)+" · rows written: "+usageNumber(database.rowsWritten)));
+    if(database.sizeBytes!=null)quota(n,"Free-plan per-database reference",database.sizeBytes,ref.d1DatabaseBytes||500000000);
+    else n.append(el("small","Requires optional Cloudflare D1 Read permission for current file size."));
+    node.append(n);
+   }
+   dailyUsage(node,"7-day Workers requests and errors (account-wide)",w?.daily,[["Requests","requests"],["Errors","errors"]]);
+   dailyUsage(node,"7-day D1 rows (account-wide)",db?.daily,[["Read","rowsRead"],["Written","rowsWritten"]]);
+  }
+  action(node,"Refresh metrics",()=>load("capacity"));
+  links(node,[["Cloudflare Workers Analytics","https://dash.cloudflare.com/"],["Cloudflare D1 Metrics","https://dash.cloudflare.com/"],["Capacity setup guide","https://github.com/Squackle/deep-cuts-edh/blob/main/docs/OWNER-CAPACITY-USAGE.md"]]);
+ },
  analytics:(node,d)=>{
   message(node,d.note);stats(node,d.activity);
   titled(node,"Evidence contributions by case");table(node,d.content,[["Case","case_slug"],["Research items","research_items"],["Featured","featured"]]);
@@ -298,7 +364,7 @@ const renderers={
  },
  audit:(node,d)=>{titled(node,"Recent owner actions");table(node,d.audit||d.latest,[["Category","category"],["Action","action"],["Target","target"],["Time",r=>readableDate(r.occurred_at)]])}
 };
-const readers={nominations:"nominations",moderation:"moderation",feedback:"feedback",publishing:"publishing",games:"games",integrity:"integrity",schedule:"schedule",site:"site",revenue:"revenue",analytics:"analytics",features:"features",recovery:"recovery",audit:"site"};
+const readers={capacity:"capacity",nominations:"nominations",moderation:"moderation",feedback:"feedback",publishing:"publishing",games:"games",integrity:"integrity",schedule:"schedule",site:"site",revenue:"revenue",analytics:"analytics",features:"features",recovery:"recovery",audit:"site"};
 async function load(id){
  const code=readers[id];if(!code)return;
  const panel=spaces.get(id),area=panel?.querySelector(".owner-v2-data");
