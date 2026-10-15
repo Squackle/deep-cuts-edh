@@ -31,6 +31,7 @@ test("Untrusted local-history rows cannot smuggle navigation URLs or fabricated 
  assert.doesNotMatch(code,/innerHTML|insertAdjacentHTML|localStorage\.clear|sendBeacon/);
 });
 test("Device-only progress engine handles repeat completions, separate seeds and corrupt storage",()=>{
+ const code=read("arcade-journey.js");
  const store=new Map(), elements=[];
  const localStorage={getItem:key=>store.get(key)||null,setItem:(key,v)=>store.set(key,v)};
  const window={};
