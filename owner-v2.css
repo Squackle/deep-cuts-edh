@@ -104,3 +104,13 @@ main.ops.owner-v2{
  .owner-v2 .owner-v2-menu .owner-v2-menu-button{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){.owner-v2 *{scroll-behavior:auto!important}}
+
+/* Community nominations: readable decisions with distinct, accessible controls. */
+.owner-v2-nomination-record {border-left:4px solid #a88b45;background:#fffdf7;}
+.owner-v2-nomination-record > strong {font-size:17px;}
+.owner-v2-nomination-record .owner-v2-nomination-meta {color:#556a57;font-size:12px;}
+.owner-v2-nomination-record p strong {font-size:13px;}
+.owner-v2-nomination-actions {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;}
+.owner-v2 .owner-v2-nomination-actions button {margin:0;min-height:40px;padding:9px 16px;}
+.owner-v2 .owner-v2-nomination-actions button:first-child {background:#24553a;color:#fff9e8;}
+.owner-v2 .owner-v2-nomination-actions button:focus-visible {outline:3px solid #d0a74e;outline-offset:2px;}
