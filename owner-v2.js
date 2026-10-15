@@ -36,7 +36,17 @@ const home=el("section",null,"owner-v2-home");
 const welcome=el("h2","Welcome back.");
 const sub=el("p","Choose a section to manage your site. Changes requiring approval will ask for confirmation.","owner-v2-muted");
 const homeTiles=el("div",null,"owner-v2-tiles");
-home.append(welcome,sub,homeTiles);
+// The audit itself runs in GitHub Actions with least-privilege CI credentials.
+// This link does not impersonate the owner or expose a GitHub token in the browser.
+const sweepQuick=el("div",null,"owner-v2-security-quick");
+const sweepLink=el("a","Run Security Sweep ↗","owner-v2-security-cta");
+sweepLink.href="https://github.com/Squackle/deep-cuts-edh/actions/workflows/security-sweep.yml";
+sweepLink.target="_blank";
+sweepLink.rel="noopener noreferrer";
+sweepLink.setAttribute("aria-label","Open GitHub Actions to run a security sweep");
+const sweepHelp=el("p","Opens GitHub Actions. Select Run workflow on main to start a safe, non-disruptive sweep.","owner-v2-muted owner-v2-security-help");
+sweepQuick.append(sweepLink,sweepHelp);
+home.append(welcome,sub,sweepQuick,homeTiles);
 spaces.set("home",home);
 for(const [name,sections] of groups){
  const navItem=button(name,()=>showGroup(name),"owner-v2-menu-button");
