@@ -168,6 +168,35 @@ async function mutate(payload,id){
 function titled(container,title){container.append(el("h3",title))}
 const renderers={
  overview:(node,d)=>stats(node,d.stats),
+ nominations:(node,d)=>{
+  message(node,d.note||"Review nominations submitted by the community. These are separate from published Rescue Reports.");
+  const totals=Object.fromEntries((d.counts||[]).map(item=>[item.status,Number(item.nominations)||0]));
+  stats(node,{pending:totals.pending||0,approved:totals.approved||0,featured:totals.featured||0,rejected:totals.rejected||0});
+  titled(node,"Awaiting approval");
+  if(!d.pending?.length)message(node,"No community nominations are awaiting review.");
+  for(const n of d.pending||[]){
+   const c=el("article",null,"owner-v2-record owner-v2-nomination-record");
+   c.dataset.nominationId=String(n.id);
+   c.append(el("strong",n.name));
+   const details=el("p",null,"owner-v2-nomination-meta");
+   details.textContent=(Number(n.votes)||0)+" recorded "+(Number(n.votes)===1?"vote":"votes")+" · Submitted "+String(n.created_at||"unknown");
+   c.append(details);
+   for(const [title,value] of [["Why nominated",n.rationale],["Strategy",n.strategy],["Suggested cards",n.cards],["Budget",n.budget]]){
+    if(!value)continue;
+    const field=el("p");
+    const heading=el("strong",title+": ");
+    field.append(heading,document.createTextNode(String(value)));
+    c.append(field);
+   }
+   const actions=el("div",null,"owner-v2-nomination-actions");
+   action(actions,"Approve",()=>mutate({kind:"nomination",action:"approved",id:String(n.id)},"nominations"),true);
+   action(actions,"Reject",()=>mutate({kind:"nomination",action:"rejected",id:String(n.id)},"nominations"),true);
+   c.append(actions);node.append(c);
+  }
+  titled(node,"Reviewed nominations");
+  table(node,d.reviewed,[["Commander","name"],["Status","status"],["Votes","votes"],["Submitted","created_at"]]);
+  links(node,[["Public nominations board","https://deep-cuts-edh.pages.dev/nominations.html"]]);
+ },
  moderation:(node,d)=>{
   titled(node,"Pending nominations");message(node,"Check card legality and duplicates before approving. Rejection preserves recorded votes.");
   for(const n of d.nominations||[]){
@@ -269,7 +298,7 @@ const renderers={
  },
  audit:(node,d)=>{titled(node,"Recent owner actions");table(node,d.audit||d.latest,[["Category","category"],["Action","action"],["Target","target"],["Time",r=>readableDate(r.occurred_at)]])}
 };
-const readers={moderation:"moderation",feedback:"feedback",publishing:"publishing",games:"games",integrity:"integrity",schedule:"schedule",site:"site",revenue:"revenue",analytics:"analytics",features:"features",recovery:"recovery",audit:"site"};
+const readers={nominations:"nominations",moderation:"moderation",feedback:"feedback",publishing:"publishing",games:"games",integrity:"integrity",schedule:"schedule",site:"site",revenue:"revenue",analytics:"analytics",features:"features",recovery:"recovery",audit:"site"};
 async function load(id){
  const code=readers[id];if(!code)return;
  const panel=spaces.get(id),area=panel?.querySelector(".owner-v2-data");

@@ -25,7 +25,7 @@ async function host(){
  return {srv,url:"http://127.0.0.1:"+srv.address().port};
 }
 const result=(view)=>{
- const empty={overview:{stats:{nominations:1,reports:0,feedback:1,drafts:0,active_grants:0}},moderation:{nominations:[{id:42,name:"QA Commander",rationale:"Interesting synergy",strategy:"Test deck",votes:3}],reports:[],evidence:[]},feedback:{feedback:[{id:1,category:"bug",message:"A test report",page:"/games",status:"new",created_at:"2026-10-15"}]},publishing:{drafts:[],candidates:[]},games:{daily:[{game:"cold",plays:3,wins:1,average_score:170}],arcane:[],hive:[{mode:"brood",rules_version:"hive-1.3",runs:4,average_score:120,best_score:230,average_evolutions:1}],note:"Mock scores"},integrity:{sessions:[],scores:[],note:"No fraud assumptions"},schedule:{cold:[],arcane:[],challenge:[]},site:{records:{profiles:2,decks:3},webhook:[],audit:[{category:"feedback",action:"reviewed",target:"1",occurred_at:1781000000}]},revenue:{summary:{active_renewals:0,recorded_cents_30d:0},note:"Only webhook data"},analytics:{activity:{new_profiles_30d:0},content:[],note:"No web visitors"},features:{flags:[{flag:"public_nominations",enabled:1},{flag:"public_feedback",enabled:1}]},recovery:{tables:[{name:"nominations"}],latest:[],note:"Restores handled in Cloudflare"}};
+ const empty={overview:{stats:{nominations:1,reports:0,feedback:1,drafts:0,active_grants:0}},nominations:{pending:[{id:42,name:"Community Nominee QA",rationale:"A unique strategy <img src=x onerror=alert(1)>",strategy:"Artifact recursion",cards:"Sol Ring",budget:"$100",created_at:"2026-10-15 12:00:00",status:"pending",votes:3}],reviewed:[{id:5,name:"Approved QA Nominee",status:"approved",created_at:"2026-10-14 12:00:00",votes:7}],counts:[{status:"pending",nominations:1},{status:"approved",nominations:1}],note:"Community submissions"},moderation:{nominations:[{id:42,name:"QA Commander",rationale:"Interesting synergy",strategy:"Test deck",votes:3}],reports:[],evidence:[]},feedback:{feedback:[{id:1,category:"bug",message:"A test report",page:"/games",status:"new",created_at:"2026-10-15"}]},publishing:{drafts:[],candidates:[]},games:{daily:[{game:"cold",plays:3,wins:1,average_score:170}],arcane:[],hive:[{mode:"brood",rules_version:"hive-1.3",runs:4,average_score:120,best_score:230,average_evolutions:1}],note:"Mock scores"},integrity:{sessions:[],scores:[],note:"No fraud assumptions"},schedule:{cold:[],arcane:[],challenge:[]},site:{records:{profiles:2,decks:3},webhook:[],audit:[{category:"feedback",action:"reviewed",target:"1",occurred_at:1781000000}]},revenue:{summary:{active_renewals:0,recorded_cents_30d:0},note:"Only webhook data"},analytics:{activity:{new_profiles_30d:0},content:[],note:"No web visitors"},features:{flags:[{flag:"public_nominations",enabled:1},{flag:"public_feedback",enabled:1}]},recovery:{tables:[{name:"nominations"}],latest:[],note:"Restores handled in Cloudflare"}};
  return {ok:true,view,...(empty[view]||{})};
 };
 test("Command Center 2.0 home, sections, real-form preservation, owner API actions, lock, mobile layout",{timeout:75000},async()=>{
@@ -73,6 +73,18 @@ test("Command Center 2.0 home, sections, real-form preservation, owner API actio
     await page.getByRole("button",{name:"Approve",exact:true}).click();
     await page.waitForFunction(()=>document.querySelector(".owner-v2-message")?.textContent!==undefined);
     // Confirm dialog is supplied in advance for state-changing actions.
+    // The dedicated Content > Nominations section must show real records, not a blank panel.
+    await page.locator('[data-owner-v2-group="Content"]').click();
+    await page.getByRole("button",{name:"Nominations",exact:true}).click();
+    await page.getByText("Community Nominee QA",{exact:true}).waitFor();
+    assert.ok(requests.some(r=>r.view==="nominations"&&r.auth));
+    assert.equal(await page.getByText("Approved QA Nominee",{exact:true}).isVisible(),true);
+    assert.equal(await page.locator('.owner-v2-nomination-record img').count(),0,"Do not parse nomination rationale as HTML");
+    assert.match(await page.locator('.owner-v2-nomination-record').textContent(),/3 recorded votes/);
+    const nomination=page.locator('[data-nomination-id="42"]');
+    await nomination.getByRole("button",{name:"Approve",exact:true}).click();
+    assert.ok(requests.some(r=>r.payload.kind==="nomination"&&r.payload.action==="approved"&&r.payload.id==="42"));
+    assert.ok(requests.some(r=>r.method==="GET"&&r.view==="nominations"),"Refresh community nomination data after approval");
     await page.getByRole("button",{name:"Home",exact:true}).first().click();
     await page.locator('[data-owner-v2-group="Content"]').click();
     await page.getByRole("button",{name:"Publishing",exact:true}).click();
