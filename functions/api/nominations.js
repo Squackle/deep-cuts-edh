@@ -38,6 +38,8 @@ export async function onRequestGet({env}){
 }
 export async function onRequestPost({request,env}){
   if(!env.DB||!env.TURNSTILE_SECRET)return json({error:"Nominations are not enabled on this deployment yet."},503);
+  const currentFlag=await env.DB.prepare("SELECT enabled FROM owner_feature_flags WHERE flag=?").bind("public_nominations").first();
+  if(currentFlag?.enabled===0)return json({error:"New nominations and votes are temporarily paused. Please try later."},503);
   const origin=request.headers.get("Origin");
   const host=new URL(request.url).hostname;
   if(origin&&new URL(origin).host!==new URL(request.url).host)return json({error:"Origin rejected"},403);

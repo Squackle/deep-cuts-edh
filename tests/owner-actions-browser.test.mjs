@@ -66,7 +66,8 @@ test("owner command center: each workspace operates, grant success and errors vi
   });
   try{
    await page.goto(url+"/member-operations.html",{waitUntil:"networkidle"});
-   await page.locator('[data-owner-panel="grants"]').click();
+   const choose=async(group,label)=>{await page.locator('[data-owner-v2-group="'+group+'"]').click();await page.getByRole("button",{name:label,exact:true}).click();};
+   await choose("Business","Free keys");
    await page.locator('.owner-key-label input[name="operatorKey"]').fill(OWNER);
    await page.locator('#owner-panel-grants input[name="label"]').fill("Self QA");
    await page.locator('#complimentaryForm button[type="submit"]').click();
@@ -87,7 +88,7 @@ test("owner command center: each workspace operates, grant success and errors vi
    const granted=calls.findLast(c=>c.action==="grant");
    assert.equal(granted.authorization,"bearer-present","Server request must have a separate bearer owner credential");
    // Directory overview, list view, membership record and audit.
-   await page.locator('[data-owner-panel="directory"]').click();
+   await choose("Community","Member directory");
    await page.locator("#ownerRefresh").click();
    await page.getByText("Private records loaded.",{exact:false}).waitFor();
    assert.ok((await page.locator("#ownerStats").textContent()).includes("Profiles"));
@@ -97,7 +98,7 @@ test("owner command center: each workspace operates, grant success and errors vi
    await page.locator('[data-owner-view="audit"]').click();
    await page.getByText("issued",{exact:true}).waitFor();
    // Membership ledger lookup: no auto-issuance without recorded real Ko-fi payment.
-   await page.locator('[data-owner-panel="members"]').click();
+   await choose("Business","Paid memberships");
    await page.locator('#opsForm input[name="email"]').fill("fixture@example.com");
    await page.locator('#opsForm [data-action="lookup"]').click();
    await page.getByText(/No currently qualifying payment appears/).waitFor();
@@ -113,7 +114,7 @@ test("owner command center: each workspace operates, grant success and errors vi
    await page.locator('#opsForm [data-action="revoke"]').click();
    await page.getByText(/Access revoked. Billing must be handled separately/).waitFor();
    // Existing complimentary membership lifecycle controls.
-   await page.locator('[data-owner-panel="directory"]').click();
+   await choose("Community","Member directory");
    await page.locator('[data-owner-view="members"]').click();
    await page.getByText("QA fixture",{exact:true}).waitFor();
    const ownerMutation=async (label,action)=>{
@@ -128,7 +129,7 @@ test("owner command center: each workspace operates, grant success and errors vi
    await ownerMutation("REVOKE","revoke");
    assert.ok(["extend","rotate","revoke"].every(action=>calls.some(c=>c.action===action)));
    // Evidence moderation request.
-   await page.locator('[data-owner-panel="evidence"]').click();
+   await choose("Community","Evidence");
    await page.locator('#ownerEvidenceForm input[name="evidenceId"]').fill("e".repeat(32));
    await page.locator('#ownerEvidenceForm button[type="submit"]').click();
    await page.getByText(/Finding updated/).waitFor();
@@ -139,7 +140,7 @@ test("owner command center: each workspace operates, grant success and errors vi
    await page.locator('#ownerEvidenceForm button[type="submit"]').click();
    await page.getByText(/Finding updated/).waitFor();
    // Ad-free reconciliation request.
-   await page.locator('[data-owner-panel="adfree"]').click();
+   await choose("Business","Ad-free");
    await page.locator('#ownerAdFreeForm input[name="email"]').fill("fixture@example.com");
    await page.locator('#ownerAdFreeForm input[name="confirmedPayment"]').check();
    await page.locator('#ownerAdFreeForm button[type="submit"]').click();
@@ -151,7 +152,7 @@ test("owner command center: each workspace operates, grant success and errors vi
     assert.ok(calls.some(c=>c.pathname==="/api/kofi-member-issue"&&c.action===action),"Missing Ko-fi "+action);
    }
 
-   await page.locator('[data-owner-panel="tools"]').click();
+   await choose("Security","Tools & diagnostics");
    assert.equal(await page.locator('#owner-panel-tools a[href="diagnostics.html"]').count(),1);
    await page.locator("#ownerLock").click();
    assert.equal(await page.locator('.owner-key-label input[name="operatorKey"]').inputValue(),"");

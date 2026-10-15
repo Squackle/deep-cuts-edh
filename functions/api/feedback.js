@@ -6,6 +6,8 @@ function goodOrigin(req){const origin=req.headers.get("Origin");if(!origin)retur
 export async function onRequestPost({request,env}){
  if(!goodOrigin(request))return reply({error:"Invalid submission origin."},403);
  if(!env.DB||!env.TURNSTILE_SECRET)return reply({error:"Feedback service unavailable."},503);
+ const currentFlag=await env.DB.prepare("SELECT enabled FROM owner_feature_flags WHERE flag=?").bind("public_feedback").first();
+ if(currentFlag?.enabled===0)return reply({error:"Feedback submissions are temporarily paused. Please try later."},503);
  if(Number(request.headers.get("content-length")||0)>7000)return reply({error:"Submission too large."},413);
  let x;try{x=await request.json()}catch{return reply({error:"Invalid form submission."},400)}
  if(!x||JSON.stringify(x).length>7000)return reply({error:"Submission too large."},413);

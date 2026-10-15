@@ -37,8 +37,8 @@ test("owner command center preserves real forms, tabs and local lock on desktop/
    try{
     await page.goto(url+"/member-operations.html",{waitUntil:"networkidle"});
     assert.equal(await page.title(),"Owner Command Center | Deep Cuts EDH");
-    assert.equal(await page.locator(".owner-main-nav button").count(),7);
-    assert.equal(await page.locator("#owner-panel-overview").isVisible(),true);
+    assert.equal(await page.locator(".owner-v2-menu-button").count(),7);
+    assert.equal(await page.locator(".owner-v2-home").isVisible(),true);
     assert.equal(await page.locator("#owner-panel-members").isVisible(),false);
     const bound=await page.evaluate(()=>{
      const form=document.querySelector("#opsForm");
@@ -47,13 +47,15 @@ test("owner command center preserves real forms, tabs and local lock on desktop/
     });
     assert.ok(bound.bound&&bound.connected&&bound.type==="password"&&!bound.inForm,"Owner key must remain form-associated after moving to toolbar: "+JSON.stringify(bound));
     assert.ok(bound.mainWidth<=(width+2), "Owner panel horizontal overflow: "+JSON.stringify(bound));
-    const cases=[["members","#opsForm"],["directory","#ownerTable"],["grants","#complimentaryForm"],["evidence","#ownerEvidenceForm"],["adfree","#ownerAdFreeForm"]];
-    for(const [tab,form] of cases){
-     await page.locator('[data-owner-panel="'+tab+'"]').click();
+    const cases=[["Business","Paid memberships","members","#opsForm"],["Community","Member directory","directory","#ownerTable"],["Business","Free keys","grants","#complimentaryForm"],["Community","Evidence","evidence","#ownerEvidenceForm"],["Business","Ad-free","adfree","#ownerAdFreeForm"]];
+    for(const [group,label,tab,form] of cases){
+     await page.locator('[data-owner-v2-group="'+group+'"]').click();
+     await page.getByRole("button",{name:label,exact:true}).click();
      assert.equal(await page.locator("#owner-panel-"+tab).isVisible(),true,tab);
      assert.equal(await page.locator(form).count(),1,form);
     }
-    await page.locator('[data-owner-panel="grants"]').click();
+    await page.locator('[data-owner-v2-group="Business"]').click();
+    await page.getByRole("button",{name:"Free keys",exact:true}).click();
     await page.locator("#owner-panel-grants input[name=label]").fill("QA sample");
     await page.locator('.owner-key-label input[name=operatorKey]').fill("dcissuer1_"+"a".repeat(64));
     await page.evaluate(()=>{

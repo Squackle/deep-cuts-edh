@@ -1,0 +1,83 @@
+/* Owner Command Center 2.0 — clean typography, deep green, brass and parchment. */
+body:has(.owner-v2){background:#0f221a;}
+main.ops.owner-v2{
+ max-width:1380px;margin:22px auto 70px;padding:clamp(16px,2vw,28px);
+ background:#f3f0e4;color:#19372b;border:1px solid #af9b60;border-radius:13px;
+ box-shadow:0 16px 55px #07180f88;
+}
+.owner-v2 h1{letter-spacing:-.025em}
+.owner-v2 .owner-subtitle{color:#536454;font-size:14px}
+.owner-v2 .owner-access-bar{background:#dce8dc;border-color:#a9c0a7}
+.owner-v2-layout{display:grid;grid-template-columns:185px minmax(0,1fr);gap:17px;align-items:start}
+.owner-v2-menu{position:sticky;top:16px;display:flex;flex-direction:column;gap:5px;padding:10px;
+ background:#183b2b;border:1px solid #a88c44;border-radius:10px;}
+.owner-v2 .owner-v2-menu .owner-v2-menu-button{
+ display:block;width:100%;margin:0;background:transparent;text-align:left;color:#eee9d8;
+ border-radius:6px;padding:12px 13px;font-size:14px;font-weight:700;line-height:1.2
+}
+.owner-v2 .owner-v2-menu-button:hover{background:#315842}
+.owner-v2 .owner-v2-menu-button[aria-current="page"]{background:#ad8b47;color:#102f21}
+.owner-v2-content{min-width:0}
+.owner-v2-crumb{min-height:34px;margin:0 0 9px;font-size:13px;color:#546a58;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.owner-v2 .owner-v2-crumb button{margin:0;background:transparent;color:#234b36;padding:3px;font-size:13px;text-decoration:underline}
+.owner-v2-home,.owner-v2-group{border:1px solid #c8c09f;background:#fffdf6;border-radius:9px;padding:clamp(17px,3vw,30px)}
+.owner-v2-home h2,.owner-v2-group h2{font:700 clamp(24px,3vw,34px) Georgia,serif;margin:0 0 7px}
+.owner-v2-muted{font-size:14px;color:#526354;line-height:1.55}
+.owner-v2-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:21px}
+.owner-v2 .owner-v2-home-tile{
+ margin:0;min-height:111px;text-align:left;display:flex;flex-direction:column;gap:10px;
+ padding:17px;border-radius:8px;background:#214a32;color:#fff9e8;border:1px solid #9b7e3b;
+ font:700 20px Georgia,serif
+}
+.owner-v2 .owner-v2-home-tile:hover{background:#316344}
+.owner-v2-home-tile small{font:400 12px/1.5 system-ui,sans-serif;color:#e6ddc5}
+.owner-v2-tool-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:16px 0 0}
+.owner-v2 .owner-v2-tool-card{
+ background:#e8eddc;color:#214c35;border:1px solid #aebc9d;border-left:4px solid #9c813f;
+ border-radius:7px;margin:0;min-height:92px;text-align:left;font:700 15px/1.3 system-ui,sans-serif;padding:14px
+}
+.owner-v2 .owner-v2-tool-card:hover{background:#d6e6ce;border-color:#5c765e}
+.owner-v2 .owner-v2-tool-panel{padding:clamp(15px,2.5vw,24px);background:#fffdf6;min-height:150px}
+.owner-v2 .owner-v2-tool-panel h2{margin:0 0 14px;font:700 28px Georgia,serif}
+.owner-v2 .owner-v2-tool-panel h3{font:700 20px Georgia,serif;margin:24px 0 8px}
+.owner-v2 .owner-v2-tool-panel h3:first-child{margin-top:5px}
+.owner-v2-message:not(:empty){display:block;margin:0 0 15px;padding:10px 14px;border:1px solid #b2a069;border-left:4px solid #92743a;background:#fff6d9;border-radius:6px;color:#463719;font-size:13px}
+.owner-v2-record{background:#faf8f0;border:1px solid #d6cbaa;padding:13px 15px;margin:9px 0;border-radius:7px;overflow-wrap:anywhere}
+.owner-v2-record strong{font-size:15px;color:#1f4730}
+.owner-v2-record p{margin:7px 0;line-height:1.5}
+.owner-v2-record small{display:block;color:#576653;font-size:12px}
+.owner-v2 .owner-v2-record button{font-size:12px;padding:8px 11px;min-height:37px}
+.owner-v2 .owner-v2-record .owner-v2-danger{background:#773d35}
+.owner-v2-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.owner-v2-stat{border:1px solid #d0bf97;background:#f5f0df;padding:12px;border-radius:6px;display:flex;flex-direction:column-reverse;gap:5px}
+.owner-v2-stat span{font-size:12px;color:#566b57;text-transform:capitalize}
+.owner-v2-stat strong{font-size:22px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.owner-v2-scroll{width:100%;overflow-x:auto;background:#fff}
+.owner-v2-scroll table{width:100%;border-collapse:collapse;font-size:13px;min-width:420px}
+.owner-v2-scroll th{background:#dde6d6;font-weight:700;white-space:nowrap;color:#234634}
+.owner-v2-scroll th,.owner-v2-scroll td{border:1px solid #d6d6c7;text-align:left;padding:11px;vertical-align:top;overflow-wrap:anywhere}
+.owner-v2-links{display:flex;gap:9px;flex-wrap:wrap;margin:15px 0}
+.owner-v2-links a{background:#e5eddf;color:#234c35;border:1px solid #a8b7a2;border-radius:6px;padding:10px 13px;font-weight:700;font-size:13px;text-decoration:none}
+.owner-v2-links a:hover{text-decoration:underline;background:#d9e8d5}
+.owner-v2-editor{max-width:780px;background:#f0efdf;padding:14px;border:1px solid #d1c6a6;border-radius:8px}
+.owner-v2-editor label{display:block;margin:8px 0 12px;color:#294735;font-size:13px}
+.owner-v2-editor input,.owner-v2-editor textarea,.owner-v2-editor select{display:block;width:100%;padding:11px;border-radius:5px;background:#fff;border:1px solid #9d9d82;color:#203c2e;margin-top:5px;font:inherit}
+.owner-v2-editor textarea{min-height:100px}
+.owner-v2 .owner-v2-primary{background:#24553a;color:#fff}
+.owner-v2-workspace [hidden]{display:none!important}
+@media(max-width:960px){.owner-v2-tool-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){
+ main.ops.owner-v2{margin:0 auto;border-radius:0}
+ .owner-v2-layout{display:block}
+ .owner-v2-menu{position:static;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:13px;gap:5px;padding:6px}
+ .owner-v2 .owner-v2-menu .owner-v2-menu-button{padding:10px 4px;font-size:11px;text-align:center;min-height:38px}
+ .owner-v2-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .owner-v2-crumb{margin-top:5px}
+}
+@media(max-width:390px){
+ .owner-v2-tiles,.owner-v2-tool-grid{grid-template-columns:1fr}
+ .owner-v2 .owner-v2-home-tile{min-height:84px}
+ .owner-v2-menu{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .owner-v2 .owner-v2-menu .owner-v2-menu-button{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){.owner-v2 *{scroll-behavior:auto!important}}
