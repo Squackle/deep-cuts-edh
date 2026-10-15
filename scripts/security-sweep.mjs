@@ -6,7 +6,7 @@ import path from "node:path";
 import {fileURLToPath} from "node:url";
 const here=path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT=path.resolve(here,"..");
-const EXCLUDE=new Set([".git","node_modules",".security-sweep","dist","build","coverage",".wrangler"]);
+const EXCLUDE=new Set([".git","node_modules","security-report-output","dist","build","coverage",".wrangler"]);
 const SOURCE=/\.(?:js|mjs|cjs|ts|jsx|tsx|html|yml|yaml|json|env|sh)$/i;
 const CRAWL_LIMIT=3000, FILE_LIMIT=1_000_000;
 const redact=s=>String(s??"").replace(/(Bearer\s+)[\w-]{20,}/gi,"$1[REDACTED]").slice(0,400);
@@ -137,10 +137,10 @@ export async function run({root=DEFAULT_ROOT,live=false}={}){
  const checks=live?await auditLive():[];
  for(const x of checks)if(!x.pass)audit.findings.push({severity:x.check==="Access interception"?"critical":"medium",status:"potential",category:"live access",where:x.host+x.path,summary:"Unexpected status for "+x.check+" ("+(x.code??"unavailable")+").",remediation:"Review Access route matching and origin response using authorized read-only tools."});
  const report={version:1,createdAt:new Date().toISOString(),revision:process.env.GITHUB_SHA||"local",inventory:audit.inventory,live:checks,findings:audit.findings};
- const dir=path.join(root,".security-sweep");fs.mkdirSync(dir,{recursive:true});
+ const dir=path.join(root,"security-report-output");fs.mkdirSync(dir,{recursive:true});
  fs.writeFileSync(path.join(dir,"report.json"),JSON.stringify(report,null,2)+"\n");
  fs.writeFileSync(path.join(dir,"report.md"),markdownReport(report)+"\n");
- console.log(`Security sweep complete. ${audit.inventory.sources} files; ${audit.findings.length} findings/review items; ${checks.filter(x=>x.pass).length}/${checks.length} safe live checks. Reports: .security-sweep/report.md and report.json`);
+ if(checks.some(x=>!x.pass))console.log("Safe live checks requiring follow-up:",checks.filter(x=>!x.pass).map(x=>x.host+x.path+" HTTP "+(x.code??"unavailable")).join("; "));\n console.log(`Security sweep complete. ${audit.inventory.sources} files; ${audit.findings.length} findings/review items; ${checks.filter(x=>x.pass).length}/${checks.length} safe live checks. Reports: security-report-output/report.md and report.json`);
  // Only halt automated release on high-confidence owner-auth guard regressions.
  if(audit.findings.some(x=>x.status==="confirmed"&&x.severity==="critical")||checks.some(x=>!x.pass&&x.check==="Access interception"))process.exitCode=1;
  return report;
