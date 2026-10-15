@@ -357,7 +357,7 @@ async function begin(){
     state.run=newRun({cols:COLS,rows:ROWS,seed:session.seed,mode:selectedMode});
     $("rankedNotice").textContent=session.ranked?"RANKED · REPLAY VERIFIED AFTER GAME OVER":"PRACTICE · RANKED SERVICE UNAVAILABLE";
    }
-   lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;
+   lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;beaconCapture=null;
   }finally{startingRun=false;$("gameMode").disabled=false;$("gameChallenge").disabled=false;$("primaryButton").disabled=false}
  }
  start(state.run);
@@ -374,7 +374,7 @@ function reset(){
  resetBossBriefing();clearMutationResume();
  state.run=lairActive()?createLairRun(selectedLairBoss,COLS,ROWS):newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";latestLeaderboard=null;loadBest();
  leaderboard.session=null;leaderboard.events=[];
- state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;
+ state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;beaconCapture=null;
  state.accumulator=0;state.lastFrame=0;state.pointer=null;
  hideMutationDraft($("mutationOverlay"));
  showOverlay(lairActive()?lairTitle():MODES[selectedMode].name.toUpperCase(),
