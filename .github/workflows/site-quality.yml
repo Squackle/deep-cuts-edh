@@ -63,6 +63,14 @@ jobs:
           node --check functions/api/arcane-games.js
       - name: Install isolated Chromium test driver
         run: npm install --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
+      - name: Rescue Board static integration and script syntax
+        run: |
+          node --test tests/rescue-board.test.mjs
+          node --check rescue-board.js
+          node --check nomination.js
+          node --check reports/guide.js
+      - name: Rescue Board real-browser mobile and desktop regression
+        run: node --test tests/rescue-board-browser.test.mjs
       - name: Mobile homepage header and footer browser regression tests
         run: node --experimental-default-type=module --test tests/mobile-home-browser.test.mjs
       - name: Mobile and desktop Library artist autocomplete browser tests

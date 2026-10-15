@@ -92,3 +92,22 @@
 @media(prefers-reduced-motion:reduce){.report-hero-media:before,.report-side:has(>img):before{animation:none;opacity:.62}}
 @media(min-width:651px){.report-hero:has(.report-hero-partners){grid-template-columns:minmax(0,1fr) 320px}}
 @media(max-width:650px){.report-hero-partners{min-height:260px;width:100%;max-width:340px;margin:0 auto;padding:0 10px}.report-hero-partners .partner-card-frame{width:48%}.report-hero:has(.report-hero-partners){grid-template-columns:1fr}}
+
+/* Rescue Board links existing published articles to existing public case evidence. */
+.report-community-fold{margin:26px 0 18px;border:1px solid #cbdccc;background:#f6faf3;border-radius:10px;overflow:hidden}
+.report-community-fold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;padding:15px 17px;color:#315a40;font:800 12px/1.45 ui-sans-serif,system-ui,sans-serif;letter-spacing:.035em}
+.report-community-fold>summary::-webkit-details-marker{display:none}
+.report-community-fold>summary:after{content:"⌄";font-size:19px;line-height:1;color:#568363}
+.report-community-fold[open]>summary:after{content:"⌃"}
+.report-community-fold>summary:focus-visible{outline:2px solid #b19355;outline-offset:-3px}
+.report-community-content{padding:0 17px 17px}
+.report-community-content>p{font-size:13px;line-height:1.6;margin:0 0 14px;color:#5a6f5c}
+.report-community-item{border-top:1px solid #d4e1d2;padding:13px 0}
+.report-community-item strong{display:block;font-size:14px;color:#315a40}
+.report-community-item p{font-size:13px;line-height:1.6;margin:6px 0 7px;color:#4a5e4d}
+.report-community-item span{font-size:11px;color:#667c69}
+.report-community-item a{display:inline-block;margin-left:11px;font-size:11px;font-weight:800;color:#326b46}
+.report-community-actions{display:flex;flex-wrap:wrap;gap:8px}
+.report-community-actions a{display:inline-flex;align-items:center;min-height:42px;border:1px solid #b6ceb7;border-radius:7px;padding:9px 12px;color:#316443;font-size:11px;font-weight:800;text-decoration:none;background:#fffefa}
+.report-community-actions a:hover,.report-community-actions a:focus-visible{background:#e3f0e0}
+@media(max-width:620px){.report-community-fold>summary{font-size:11px;padding:13px}.report-community-content{padding:0 13px 13px}.report-community-actions a{flex:1;justify-content:center;text-align:center}}

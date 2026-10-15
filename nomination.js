@@ -25,13 +25,15 @@
       window.DeepCutsGuide?.registerCardNames(candidates.map(x=>x.name));
       board.replaceChildren();
       for(const [index,entry] of candidates.slice(0,25).entries()){
-        const row=document.createElement("div");row.className="leader-entry";
-        const rank=document.createElement("span");rank.className="leader-entry-rank";rank.textContent=String(index+1).padStart(2,"0");
-        const name=document.createElement("span");name.className="leader-entry-name";name.textContent=entry.name;
-        const score=document.createElement("span");score.className="leader-entry-votes";
-        const number=document.createElement("strong");number.className="leader-vote-number";number.textContent=String(entry.votes);
-        const word=document.createElement("small");word.className="leader-vote-label";word.textContent=entry.votes===1?"vote":"votes";
-        score.append(number,word);row.append(rank,name,score);board.append(row);
+        if(window.DeepCutsRescueBoard?.createNominationEntry){
+          board.append(window.DeepCutsRescueBoard.createNominationEntry(entry,index));
+        }else{
+          const row=document.createElement("div");row.className="leader-entry";
+          const rank=document.createElement("span");rank.className="leader-entry-rank";rank.textContent=String(index+1).padStart(2,"0");
+          const name=document.createElement("span");name.className="leader-entry-name";name.textContent=entry.name;
+          const score=document.createElement("span");score.className="leader-entry-votes";score.textContent=entry.votes+" "+(entry.votes===1?"vote":"votes");
+          row.append(rank,name,score);board.append(row);
+        }
       }
       if(!candidates.length){const p=document.createElement("p");p.className="nomination-loading";p.textContent="No approved nominations yet.";board.append(p)}
       spotlightName.textContent=leader?leader.name:"The next rescue is undecided";
@@ -66,6 +68,7 @@
       box.append(title,detail,button);list.append(box);
     }
   }
+  window.DeepCutsRescueBoard?.renderPublished(document.getElementById("rescuePublishedList"));
   document.getElementById("refreshNominations")?.addEventListener("click",load);
   form.addEventListener("submit",async event=>{
     event.preventDefault();if(!form.reportValidity())return;
