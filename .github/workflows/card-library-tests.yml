@@ -3,6 +3,9 @@ on:
   push:
     paths:
       - "library.js"
+      - "artist-autocomplete.js"
+      - "functions/api/artist-suggest.js"
+      - "src/artist-search.js"
       - "library-query.js"
       - "library-facets.js"
       - "library.html"
@@ -26,5 +29,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Install isolated Chromium test driver
+        run: npm install --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
       - name: Run Card Library regression suite
         run: node --experimental-default-type=module --test tests/library-*.test.mjs

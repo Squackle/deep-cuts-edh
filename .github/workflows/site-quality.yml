@@ -22,6 +22,13 @@ jobs:
         run: node --experimental-default-type=module --test tests/seo-readiness.test.mjs
       - name: Lean homepage navigation regression tests
         run: node --test tests/home-hub.test.mjs
+      - name: Artist catalog matching, Scryfall API caching, and library facet contract tests
+        run: |
+          node --experimental-default-type=module --test tests/artist-suggestions.test.mjs
+          node --experimental-default-type=module --test tests/library-query.test.mjs
+          node --experimental-default-type=module --test tests/library-facets.test.mjs
+          node --check artist-autocomplete.js
+          node --check functions/api/artist-suggest.js
       - name: Commander Finder and Binder security / deck regression tests
         run: node --experimental-default-type=module --test tests/deep-tools.test.mjs
       - name: Commander tool syntax checks
@@ -58,6 +65,8 @@ jobs:
         run: npm install --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
       - name: Mobile homepage header and footer browser regression tests
         run: node --experimental-default-type=module --test tests/mobile-home-browser.test.mjs
+      - name: Mobile and desktop Library artist autocomplete browser tests
+        run: node --experimental-default-type=module --test tests/library-artist-browser.test.mjs
       - name: Browser interaction tests for all four Arcade practice games
         run: node --experimental-default-type=module --test tests/practice-browser.test.mjs
       - name: Privacy-first supporter ribbon and commander preview regression tests

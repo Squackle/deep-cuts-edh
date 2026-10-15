@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {dollarCents,manaLimit,compileLibraryQuery,libraryResultSummary} from "../library-query.js";
+import {dollarCents,manaLimit,compileLibraryQuery,libraryResultSummary,artistSearchTerm,libraryCardIdentity} from "../library-query.js";
 test("decimal prices including cents shorthand",()=>{
  for(const [input,expected] of [[".50",50],["0.50",50],["2.5",250],["$1.25",125],["0.01",1],["0",0],["100000",10000000],["$100000.00",10000000],[" 1.75 ",175]])assert.equal(dollarCents(input),expected,input);
  assert.equal(dollarCents(""),null);
@@ -31,4 +31,18 @@ test("singular, plural and zero card result messages",()=>{
  assert.equal(libraryResultSummary(0,0),"0 cards loaded · 0 total matches");
  assert.equal(libraryResultSummary(175,4142),"175 cards loaded · 4142 total matches");
  assert.equal(libraryResultSummary(3,undefined),"3 cards loaded");
+});
+
+test("artist-specific searches quote names and bypass the default legendary-only search",()=>{
+ assert.equal(compileLibraryQuery({artist:"John Avon"}),'f:commander a:"John Avon"');
+ assert.equal(compileLibraryQuery({search:"t:land",artist:"Rebecca Guay",format:"",maxPrice:"2.75"}),'t:land a:"Rebecca Guay" usd<=2.75');
+ assert.equal(compileLibraryQuery({artist:"rk post",facetTerms:["id<=ug"]}),'f:commander a:"rk post" id<=ug');
+ assert.equal(artistSearchTerm('Test "Quoted"'),'a:"Test \\"Quoted\\""');
+ assert.throws(()=>compileLibraryQuery({artist:"invalid\nname"}),/valid artist/);
+});
+test("Scryfall artwork and printing modes do not collapse different paintings",()=>{
+ const first={id:"one",oracle_id:"shared"},second={id:"two",oracle_id:"shared"};
+ assert.equal(libraryCardIdentity(first,"cards"),libraryCardIdentity(second,"cards"));
+ assert.notEqual(libraryCardIdentity(first,"art"),libraryCardIdentity(second,"art"));
+ assert.notEqual(libraryCardIdentity(first,"prints"),libraryCardIdentity(second,"prints"));
 });
