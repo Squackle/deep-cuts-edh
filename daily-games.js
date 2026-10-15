@@ -154,6 +154,14 @@ function renderAwards(awards){
   const badge=el("span","games-achievement",award.title);badge.title=award.detail||"";holder.append(badge);
  }
 }
+function updateArcadeJourney(){
+ if(!state||!["cold","ladder"].includes(game))return;
+ // Only the server response supplies completion and scores; never calculate ranking client-side.
+ window.DeepCutsArcade?.record(game,{
+  mode:practice?"practice":"daily",seed,day:state.day,finished:!!state.finished,
+  score:state.score,progress:game==="cold"?(state.attempts?.length||0):state.finished?1:0
+ });
+}
 async function loadGame(){
  working=true;const host=$("gameArea");
  if(host)host.replaceChildren(el("p","games-loading","Opening today's case files…"));
@@ -179,6 +187,7 @@ async function loadGame(){
     state.finished?"VERDICT FILED":"SORT 5 COMMANDERS";
   }
   if(game==="cold")renderCold();else if(game==="ladder")renderLadder();
+  updateArcadeJourney();
   await loadBoard();
  }catch(e){
   announce(e.message,true);
@@ -242,7 +251,7 @@ async function submitColdGuess(name,button){
   const result=await request("POST","guess",{guess:name,history:previous});
   state={...state,...result};
   if(practice||!state.authenticated)saveStorage(storageKey("cold",practice?"practice":state.day),{day:state.day,attempts:state.attempts});
-  renderCold();
+  renderCold();updateArcadeJourney();
   const counter=$("gamesProgress");
   if(counter)counter.textContent=state.finished?"CASE CLOSED":"GUESS "+Math.min(5,(state.attempts?.length||0)+1)+" OF 5";
   announce(state.won?"That's our suspect! Case closed.":state.finished?"All leads exhausted. The suspect has been revealed.":"Incorrect suspect. Evidence "+String((state.attempts?.length||0)+1).padStart(2,"0")+" has been unsealed.");
@@ -381,7 +390,7 @@ function renderLadder(){
    state={...state,...r};
    if(!practice&&!state.authenticated)saveStorage(storageKey("ladder",state.day),state);
    announce(state.won?"Perfect line-up! You're a true investigator.":"Verdict filed. Check the official popularity order below.");
-   renderLadder();await loadBoard();
+   renderLadder();updateArcadeJourney();await loadBoard();
   }catch(e){announce(e.message,true);submit.disabled=false}
   finally{working=false}
  });host.append(submit);
