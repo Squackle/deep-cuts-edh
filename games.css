@@ -272,3 +272,98 @@
  .arcade-personal-metrics{gap:8px}
  .games-masthead .games-page-links .arcade-continue{width:100%;justify-content:center}
 }
+
+
+/* Arcade masthead refinement — quiet editorial hierarchy, not a new content panel. */
+.games-masthead.arcade-hub-masthead{
+ background:radial-gradient(ellipse at 102% -16%,#395342 0%,transparent 43%),#213a30;
+ padding-top:clamp(30px,4.5vw,46px);
+ padding-bottom:clamp(30px,4vw,42px);
+}
+.arcade-hub-masthead .games-kicker{
+ color:#e4c998;font-size:10px;letter-spacing:.2em;margin-bottom:15px;
+}
+.arcade-hub-masthead h1{
+ margin-bottom:14px;letter-spacing:-.035em;line-height:1.02;
+}
+.arcade-hub-masthead .arcade-hero-deck{
+ color:#e7eee5;font-size:clamp(14px,1.5vw,16px);
+ line-height:1.6;letter-spacing:.005em;max-width:740px;margin:0;
+}
+.arcade-hub-masthead .arcade-hero-deck span{color:#e4c993;font-weight:600}
+.arcade-hub-masthead .games-page-links.arcade-hero-actions{
+ display:flex;align-items:center;justify-content:space-between;
+ flex-wrap:wrap;gap:20px 30px;margin-top:22px;position:relative;z-index:1;
+}
+.arcade-hub-masthead .arcade-hero-utility{
+ display:flex;align-items:center;flex-wrap:wrap;gap:10px 25px;min-width:0;
+}
+.arcade-hub-masthead .arcade-hero-meta{
+ font:600 12px/1.6 ui-sans-serif,system-ui,sans-serif;
+ color:#e4eadc;letter-spacing:.025em;
+}
+.arcade-hub-masthead .arcade-meta-dot{
+ color:#d5ba85;padding:0 3px;
+}
+.arcade-hub-masthead .arcade-hero-how{
+ color:#e0bf80;font:750 12px/1.5 ui-sans-serif,system-ui,sans-serif;
+ text-decoration:none;border-bottom:1px solid #d4b27280;
+ padding-bottom:2px;white-space:nowrap;transition:color .18s,border-color .18s;
+}
+.arcade-hub-masthead .arcade-hero-how span{
+ display:inline-block;margin-left:4px;transition:transform .18s ease;
+}
+.arcade-hub-masthead .arcade-hero-how:hover{color:#f9d99b;border-bottom-color:#f9d99b}
+.arcade-hub-masthead .arcade-hero-how:hover span{transform:translateY(2px)}
+.arcade-hub-masthead .arcade-hero-how:focus-visible{
+ outline:2px solid #e8cc93;outline-offset:5px;border-bottom-color:transparent;
+}
+.arcade-hub-masthead .arcade-continue-wrap{
+ display:flex;flex-direction:column;align-items:center;gap:7px;
+ min-width:0;margin-left:auto;
+}
+.games-masthead.arcade-hub-masthead .games-page-links .arcade-continue-button{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:46px;min-width:195px;padding:11px 20px;
+ border:1px solid #f3dfa8;border-radius:6px;
+ background:linear-gradient(160deg,#f6e3b3,#e4c27b);
+ color:#24392e!important;box-shadow:inset 0 1px #fff9e6c7,0 5px 20px #dab77738,0 0 16px #e1ba6955;
+ font:800 12px/1.35 ui-sans-serif,system-ui,sans-serif;
+ letter-spacing:.025em;text-decoration:none;
+ transition:transform .2s ease,filter .2s ease,box-shadow .2s ease;
+ animation:arcade-continue-halo 4.6s ease-in-out infinite;
+}
+.games-masthead.arcade-hub-masthead .games-page-links .arcade-continue-button:hover{
+ transform:translateY(-2px);filter:brightness(1.055);
+ box-shadow:inset 0 1px #fff9e6e0,0 7px 28px #e1bd745e,0 0 26px #e4c78380;
+}
+.games-masthead.arcade-hub-masthead .games-page-links .arcade-continue-button:focus-visible{
+ outline:3px solid #fff3ce;outline-offset:4px;
+}
+.arcade-hub-masthead .arcade-continue-note{
+ color:#d1ddcc;font:600 11px/1.4 ui-sans-serif,system-ui,sans-serif;
+ letter-spacing:.015em;text-align:center;
+}
+@keyframes arcade-continue-halo{
+ 0%,100%{box-shadow:inset 0 1px #fff9e6c7,0 5px 20px #dab77738,0 0 12px #e1ba6945}
+ 50%{box-shadow:inset 0 1px #fff9e6c7,0 6px 24px #dab77755,0 0 21px #e1ba696a}
+}
+@media(max-width:760px){
+ .arcade-hub-masthead .games-page-links.arcade-hero-actions{align-items:stretch;gap:18px}
+ .arcade-hub-masthead .arcade-hero-utility{width:100%;gap:10px 20px}
+ .arcade-hub-masthead .arcade-continue-wrap{margin-left:0;align-items:flex-start}
+}
+@media(max-width:480px){
+ .arcade-hub-masthead .arcade-hero-meta{font-size:11px}
+ .arcade-hub-masthead .arcade-hero-utility{gap:9px 16px}
+ .arcade-hub-masthead .arcade-hero-deck{font-size:14px}
+ .games-masthead.arcade-hub-masthead .games-page-links .arcade-continue-button{
+  width:auto;min-width:195px;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .games-masthead.arcade-hub-masthead .games-page-links .arcade-continue-button{
+  animation:none;transition:none;
+ }
+ .arcade-hub-masthead .arcade-hero-how span{transition:none}
+}
