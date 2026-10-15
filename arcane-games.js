@@ -197,6 +197,13 @@
   if(state.newBadges?.length)for(const b of state.newBadges){const wrap=node("div","arcane-new-badge");wrap.append(node("strong","",b.title),node("span","",b.detail));awards.append(wrap);}
   if(state.finished){const existing=state.badges||[];if(existing.length){const wrap=node("div","arcane-new-badge");wrap.append(node("strong","","Your investigator trophies"));wrap.append(node("span","",existing.map(x=>x.title).join(" · ")));awards.append(wrap)}}
  }
+ function updateArcadeJourney(){
+  if(!state)return;
+  window.DeepCutsArcade?.record(game,{
+   mode:practice?"practice":"daily",seed,day:state.day,finished:!!state.finished,
+   score:state.score,progress:Number(state.attempts)||0
+  });
+ }
  function inputKey(key){
   if(working||!state||state.finished||game!=="cipher")return;
   if(key==="enter"){submitCipher();return}
@@ -219,7 +226,7 @@
    const updated=await request("POST",action,{...payload,...((practice||!state.authenticated)?{history:before}:{})});
    state={...state,...updated};
    if(practice||!state.authenticated)writeLocal(state.day,[...before,game==="cipher"?(action==="hint"?"!HINT":payload.guess):payload.cards]);
-   selected.clear();entry="";render();
+   selected.clear();entry="";render();updateArcadeJourney();
    if(state.finished){status(state.won?"Case solved. Outstanding investigation!":"Case closed. Review the revealed answer below.");loadLeaderboard();}
    else if(game==="board")status(state.oneAway?"One away! Three of those cards share an unsolved connection.":state.solved.length?"Correct group filed. Keep investigating.":"Not quite. Review the four cards and try again.",!state.oneAway&&state.remaining<4);
    else status(action==="hint"?"Hint recorded: green letters revealed. One guess spent.":"Guess recorded. The next line is ready.");
@@ -256,7 +263,7 @@
   try{
    const history=(practice||!profileKey())?readLocal(centralDay()):[];
    const data=await request("GET","state",{history});
-   state=data;entry="";selected.clear();displayOrder=[...(data.tiles||[])];render();
+   state=data;entry="";selected.clear();displayOrder=[...(data.tiles||[])];render();updateArcadeJourney();
    setBusy(false); // The puzzle is playable even if leaderboard retrieval is slow.
    await loadLeaderboard();
   }catch(e){status(e.message,true);host.replaceChildren(node("p","games-muted","The case cannot be opened yet. Please try again shortly."))}
