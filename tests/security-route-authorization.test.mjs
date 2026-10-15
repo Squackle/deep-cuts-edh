@@ -34,7 +34,7 @@ test("owner-only v2 and member endpoints reject missing bearer key before privat
   const {db,seen}=denialDb();
   const res=await endpoint.handler({request:request(endpoint.path,endpoint.method,{Origin:URL,...(endpoint.method==="POST"?{"Content-Type":"application/json"}:{})},endpoint.method==="POST"?{kind:"feature",action:"approved",id:"public_feedback"}:undefined),env:{DB:db,TURNSTILE_SECRET:"fixture-not-real"}});
   assert.ok([401,403,429].includes(res.status),endpoint.label+" returned unexpected "+res.status);
-  assert.equal(seen.some(x=>/UPDATE |DELETE |INSERT INTO (?:owner_|member_|nominations|community_reports)/i.test(x)),false,endpoint.label+" attempted state change");
+  assert.equal(seen.some(sql=>/FROM (?:member_accounts|community_profiles|field_evidence|owner_action_audit)/i.test(sql)),false,endpoint.label+" attempted private data read");
  }
 });
 test("nominations and feedback feature switches reject paused submissions before Turnstile or writes",async()=>{
