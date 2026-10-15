@@ -63,7 +63,7 @@ test("Missing owner-key rejects access to capacity metrics before any D1 read or
  const db={prepare(sql){if(sql.includes("community_limits")||sql.includes("member_issuer_credentials"))return{bind(){return this},async first(){return sql.includes("community_limits")?{attempts:1}:{key_hash:"f".repeat(64)}}};throw Error("Denied identity accessed private D1")}};
  try{
   const request=new Request("https://deep-cuts-edh.pages.dev/api/owner-ops?view=capacity",{headers:{"CF-Connecting-IP":"192.0.2.9",Origin:"https://deep-cuts-edh.pages.dev"}});
-  const res=await onRequestGet({request,env:{DB:db,...credential}});
+  const res=await onRequestGet({request,env:{DB:db,TURNSTILE_SECRET:"synthetic-test-secret",...credential}});
   assert.ok([401,403,429].includes(res.status));
  }finally{globalThis.fetch=old}
 });
