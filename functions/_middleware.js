@@ -6,11 +6,11 @@
 import {checkAdFree} from "../src/kofi-adfree.js";
 const AD_TAG='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1885127351876276" crossorigin="anonymous"></script>';
 const AD_PAGES=new Set([
- "/", "/index.html", "/library.html",
- "/reports/chainer-dementia-master.html",
- "/reports/alena-and-gilanra.html",
- "/reports/commander-mustard.html",
- "/reports/ekthi-contaminator-priest.html"
+ "/", "/index.html", "/library", "/library.html",
+ "/reports/chainer-dementia-master", "/reports/chainer-dementia-master.html",
+ "/reports/alena-and-gilanra", "/reports/alena-and-gilanra.html",
+ "/reports/commander-mustard", "/reports/commander-mustard.html",
+ "/reports/ekthi-contaminator-priest", "/reports/ekthi-contaminator-priest.html"
 ]);
 export async function onRequest(context){
  const request=context.request;
