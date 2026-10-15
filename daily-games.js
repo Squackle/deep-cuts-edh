@@ -418,7 +418,7 @@ function startPractice(){
 }
 function setupHub(){
  const status=$("hubDay");
- if(status){status.replaceChildren("Fresh puzzles daily ",el("span","arcade-meta-dot","·")," Midnight Central");}
+ if(status)status.textContent="NEW PUZZLES EVERY DAY · MIDNIGHT CENTRAL";
  const buttons=document.querySelectorAll("[data-random-practice]");
  for(const button of buttons){
   button.addEventListener("click",()=>{
