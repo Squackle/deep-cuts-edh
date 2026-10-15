@@ -148,6 +148,78 @@ function quota(container,title,value,limit){
  if(percent>=80)fill.classList.add("owner-v2-capacity-elevated");
  track.append(fill);section.append(top,track);container.append(section);
 }
+// Read-only client-side graph of the SAME seven daily buckets already fetched by the owner view.
+// The selector only redraws SVG nodes; it never fetches another metric or stores visitor data.
+function usageGraph(container,workers,d1){
+ const chart=el("section",null,"owner-v2-usage-graph");
+ chart.setAttribute("aria-label","Usage over time");
+ const heading=el("h3","Usage over time");
+ const subtitle=el("p","Last 7 days · UTC · Entire Cloudflare account","owner-v2-muted owner-v2-chart-subtitle");
+ const options=el("div",null,"owner-v2-chart-controls");
+ options.setAttribute("role","group");options.setAttribute("aria-label","Usage chart metric");
+ const summary=el("p",null,"owner-v2-chart-summary");
+ summary.setAttribute("aria-live","polite");
+ const viewport=el("div",null,"owner-v2-chart-viewport");
+ const footnote=el("p","Daily totals from Cloudflare analytics; the current UTC day can be incomplete or delayed. This is not a visitor count.","owner-v2-muted owner-v2-chart-footnote");
+ const metrics=[
+  {id:"requests",label:"Worker requests",rows:workers?.daily,key:"requests",incomplete:workers?.mayBeIncomplete},
+  {id:"errors",label:"Worker errors",rows:workers?.daily,key:"errors",incomplete:workers?.mayBeIncomplete},
+  {id:"reads",label:"D1 rows read",rows:d1?.daily,key:"rowsRead",incomplete:d1?.mayBeIncomplete},
+  {id:"writes",label:"D1 rows written",rows:d1?.daily,key:"rowsWritten",incomplete:d1?.mayBeIncomplete}
+ ];
+ const controls=new Map();
+ const svgNS="http://www.w3.org/2000/svg";
+ const svgEl=(tag,attributes={},value)=>{
+  const x=document.createElementNS(svgNS,tag);
+  for(const [k,v] of Object.entries(attributes))x.setAttribute(k,String(v));
+  if(value!==undefined)x.textContent=String(value);
+  return x;
+ };
+ const format=v=>Math.round(v).toLocaleString("en-US");
+ function draw(metric){
+  for(const [id,control] of controls)control.setAttribute("aria-pressed",String(id===metric.id));
+  viewport.replaceChildren();
+  const records=(Array.isArray(metric.rows)?metric.rows:[]).filter(row=>row&&/^\d{4}-\d{2}-\d{2}$/.test(String(row.date||""))).slice(-7);
+  if(!records.length){
+   summary.textContent="No usage history available for "+metric.label+".";
+   viewport.append(el("p","No chart data is available.","owner-v2-muted"));return;
+  }
+  const numbers=records.map(row=>Number.isFinite(Number(row[metric.key]))?Math.max(0,Number(row[metric.key])):0);
+  const total=numbers.reduce((a,b)=>a+b,0);
+  summary.textContent=metric.label+" · "+format(total)+" over "+records.length+" recorded UTC "+(records.length===1?"day":"days")+(metric.incomplete?" · Partial dataset":"");
+  const svg=svgEl("svg",{viewBox:"0 0 760 256",preserveAspectRatio:"xMidYMid meet",role:"img","aria-label":metric.label+": "+records.map((row,i)=>row.date+" "+format(numbers[i])).join("; ")});
+  svg.classList.add("owner-v2-chart-svg");
+  const left=55,right=736,top=22,bottom=208,plotHeight=bottom-top;
+  const topValue=Math.max(1,...numbers);
+  const xAt=i=>left+(right-left)*(records.length===1?0.5:i/(records.length-1));
+  const yAt=value=>bottom-(value/topValue)*plotHeight;
+  for(const ratio of [0,0.5,1]){
+   const y=yAt(topValue*ratio);
+   svg.append(svgEl("line",{x1:left,y1:y,x2:right,y2:y,class:"owner-v2-chart-gridline"}));
+   svg.append(svgEl("text",{x:left-10,y:y+4,"text-anchor":"end",class:"owner-v2-chart-axis-label"},format(topValue*ratio)));
+  }
+  const points=records.map((row,i)=>({x:xAt(i),y:yAt(numbers[i]),date:row.date,value:numbers[i]}));
+  const coords=points.map(p=>p.x.toFixed(1)+","+p.y.toFixed(1)).join(" ");
+  const area="M "+left+" "+bottom+" L "+points.map(p=>p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" L ")+" L "+points.at(-1).x.toFixed(1)+" "+bottom+" Z";
+  const fill=svgEl("path",{d:area,class:"owner-v2-chart-area"});svg.append(fill);
+  svg.append(svgEl("polyline",{points:coords,class:"owner-v2-chart-line"}));
+  for(const p of points){
+   const dot=svgEl("circle",{cx:p.x,cy:p.y,r:5,class:"owner-v2-chart-point"});
+   dot.append(svgEl("title",{},p.date+": "+format(p.value)+" "+metric.label.toLowerCase()));
+   svg.append(dot);
+   svg.append(svgEl("text",{x:p.x,y:237,"text-anchor":"middle",class:"owner-v2-chart-date"},p.date.slice(5)));
+  }
+  viewport.append(svg);
+ }
+ for(const metric of metrics){
+  const control=button(metric.label,()=>draw(metric),"owner-v2-chart-choice");
+  control.setAttribute("aria-pressed","false");
+  options.append(control);controls.set(metric.id,control);
+ }
+ chart.append(heading,subtitle,options,summary,viewport,footnote);
+ container.append(chart);
+ draw(metrics[0]);
+}
 function dailyUsage(container,title,days,fields){
  titled(container,title);
  const holder=el("div",null,"owner-v2-capacity-trend");
@@ -322,6 +394,7 @@ const renderers={
    titled(node,"Today · Cloudflare account");
    stats(node,{"Worker requests":usageNumber(w?.today?.requests),"Worker errors":usageNumber(w?.today?.errors),
     "D1 rows read":usageNumber(db?.today?.rowsRead),"D1 rows written":usageNumber(db?.today?.rowsWritten)});
+   usageGraph(node,w,db);
    titled(node,"Free-plan usage comparison");
    quota(node,"Worker requests today",w?.mayBeIncomplete?null:w?.today?.requests,ref.workersRequestsDay||100000);
    quota(node,"D1 rows read today",db?.mayBeIncomplete?null:db?.today?.rowsRead,ref.d1RowsReadDay||5000000);
