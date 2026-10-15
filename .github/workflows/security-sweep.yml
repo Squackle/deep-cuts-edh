@@ -1,0 +1,60 @@
+name: Security sweep (on demand)
+on:
+  workflow_dispatch:
+    inputs:
+      live_checks:
+        description: "Run safe anonymous GET checks against public site and owner-access routes"
+        required: false
+        default: true
+        type: boolean
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/security-sweep.mjs"
+      - "tests/security-sweep.test.mjs"
+      - ".github/workflows/security-sweep.yml"
+      - "src/**"
+      - "functions/**"
+      - "owner*.js"
+      - "_headers"
+      - ".github/workflows/**"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/security-sweep.mjs"
+      - "tests/security-sweep.test.mjs"
+      - ".github/workflows/security-sweep.yml"
+permissions:
+  contents: read
+concurrency:
+  group: deepcuts-security-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  security-sweep:
+    name: Safe code and access security sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify sweep rule behavior, redaction and negative cases
+        run: node --test tests/security-sweep.test.mjs
+      - name: Security static, backdoor-pattern, API and safe live checks
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.live_checks }}" = "false" ]; then
+            node scripts/security-sweep.mjs
+          else
+            node scripts/security-sweep.mjs --live
+          fi
+      - name: Store sanitized report (no secrets or private records)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepcuts-security-report
+          path: .security-sweep/report.*
+          if-no-files-found: warn
+          retention-days: 30
