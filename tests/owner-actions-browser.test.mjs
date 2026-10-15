@@ -58,7 +58,7 @@ test("owner command center: each workspace operates, grant success and errors vi
     else if(body.action==="revoke")result={ok:true,status:"revoked"};
    }else if(pathname==="/api/kofi-member-issue"){
     if(body.action==="lookup")result={ok:true,verifiedPaymentRecorded:false};
-    else if(body.action==="issue")result={ok:true,key:KEY,tier:"detective",paidUntil:1893456000};
+    else if(body.action==="issue"||body.action==="replace")result={ok:true,key:KEY,tier:"detective",paidUntil:1893456000};
     else result={ok:true};
    }else if(pathname==="/api/field-expansion")result={ok:true,changed:true};
    else if(pathname==="/api/ad-entitlement")result={ok:true,notice:"Manual ad-free entitlement saved."};
