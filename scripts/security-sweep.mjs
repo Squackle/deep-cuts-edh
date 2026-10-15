@@ -43,7 +43,9 @@ export function auditSources(files,read){
   if(/(?:localStorage|sessionStorage)\s*\.\s*setItem\s*\(/.test(s))add("high","potential","credential handling",p,"Storage write detected in owner UI; verify sensitive keys or records are not persisted.","Remove private key persistence or document the exact non-sensitive field.");
  }
  const html=get("member-operations.html");
- if(html&&!html.includes("ownerLock"))add("high","potential","session hygiene","member-operations.html","Owner lock control missing from static markup.","Verify that client-side owner data clears after locking.");
+ const dashboard=get("owner-dashboard.js");
+ if(html&&!html.includes("ownerLock")&&!dashboard.includes('lockButton.id = "ownerLock"')&&!dashboard.includes('lockButton.id="ownerLock"'))
+  add("high","potential","session hygiene","member-operations.html","Owner lock control absent from markup and dynamic dashboard creation.","Restore Lock & clear and regression-test private data panels.");
  const headers=get("_headers");
  if(headers&&!/\/member-operations\.html[\s\S]*?Cache-Control:\s*no-store/i.test(headers))add("medium","potential","headers","_headers","Owner page no-store response rule missing.","Add private no-store headers and verify on production.");
  for(const p of ["functions/api/nominations.js","functions/api/feedback.js"]){
@@ -79,10 +81,14 @@ export function auditSources(files,read){
  }
  const apiPaths=files.filter(p=>p.startsWith("functions/api/")&&p.endsWith(".js"));
  for(const p of apiPaths){
-  const s=get(p);
-  if(/export\s+(?:async\s+)?function\s+onRequestPost\s*\(/.test(s)){
-   const protectedBy=/ownerAuth|\bauth\(|TURNSTILE_SECRET|member_issuer_credentials|verifyHuman|signature|tokenOK|originOK|goodOrigin|verification_token|stripe\.webhooks/.test(s);
-   if(!protectedBy)add("medium","manual-review","API authorization",p,"POST endpoint has no easily recognized authentication or verification marker.","Confirm actual mutation authorization with handler-level negative tests; pattern match alone is not proof.");
+  const endpoint=get(p);
+  if(/export\\s+(?:async\\s+)?function\\s+onRequestPost\\s*\\(/.test(endpoint)){
+   const authMarkers=["ownerAuth","auth(","TURNSTILE_SECRET","member_issuer_credentials","verifyHuman","signature","tokenOK","originOK","goodOrigin","verification_token","stripe.webhooks"];
+   const protectedBy=authMarkers.some(m=>endpoint.includes(m));
+   const retired=(p.endsWith("/account.js")&&endpoint.includes("return retired();"))||(p.endsWith("/stripe-webhook.js")&&endpoint.includes("status:410"));
+   const diagnostic=p.endsWith("/kofi-diagnostics.js")&&endpoint.includes("KOFI_ADMIN_DIAGNOSTICS_HASH")&&endpoint.includes("Authorization")&&endpoint.includes("Access denied.");
+   if(!protectedBy&&!retired&&!diagnostic)add("medium","manual-review","API authorization",p,"POST handler needs authorization review. Pattern check alone cannot prove vulnerability.","Confirm handler authorization with safe negative tests.");
+   if(diagnostic)add("info","manual-review","separate diagnostics credential",p,"Diagnostics relies on a separately hashed bearer secret; no public GET.","Review deliberately isolated diagnostics access and secret rotation; consider Access defense in depth.");
   }
  }
  if(!get(".github/workflows/release-coordination.yml"))add("medium","potential","release controls","GitHub Actions","Release coordination workflow missing.","Restore workstream and PR collision safeguards.");
@@ -95,9 +101,18 @@ async function check(url,{expectAccess=false,publicOk=false}={}){
  try{
   const r=await fetch(url,{method:"GET",redirect:"manual",signal:AbortSignal.timeout(12000),headers:{"User-Agent":"DeepCutsEDH-SafeSecuritySweep/1.0","Accept":"text/html,application/json"}});
   const loc=r.headers.get("location")||"";
-  const passed=expectAccess?([301,302,303,307,308,401,403].includes(r.status)&&(/cloudflareaccess\.com|\/cdn-cgi\/access\//i.test(loc)||r.status===403)):
-   publicOk?r.status===200:r.status<500;
-  return {path:new URL(url).pathname,host:new URL(url).hostname,code:r.status,pass:passed,check:expectAccess?"Access interception":publicOk?"public GET":"HTTP health"};
+  let status=r.status;
+  // Confirm a same-host canonical redirect reaches an accessible public resource.
+  if(publicOk&&[301,302,307,308].includes(status)&&loc){
+   const destination=new URL(loc,url);
+   if(destination.origin===new URL(url).origin){
+    const follow=await fetch(destination.href,{method:"GET",redirect:"manual",signal:AbortSignal.timeout(12000),headers:{"User-Agent":"DeepCutsEDH-SafeSecuritySweep/1.0"}});
+    status=follow.status;
+   }
+  }
+  const passed=expectAccess?([301,302,303,307,308,401,403].includes(r.status)&&(/cloudflareaccess\\.com|\\/cdn-cgi\\/access\\//i.test(loc)||r.status===403)):
+   publicOk?status===200:status<500;
+  return {path:new URL(url).pathname,host:new URL(url).hostname,code:status,pass:passed,check:expectAccess?"Access interception":publicOk?"public GET":"HTTP health"};
  }catch(e){return {path:new URL(url).pathname,host:new URL(url).hostname,code:null,pass:false,check:"network timeout / unavailable"}}
 }
 export async function auditLive(){
