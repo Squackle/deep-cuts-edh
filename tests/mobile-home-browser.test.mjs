@@ -35,11 +35,22 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
    const ctx=await browser.newContext({viewport:{width,height:844}});
    const page=await ctx.newPage();
    const errors=[];page.on("pageerror",e=>errors.push(String(e)));
+   await page.route("**/api/supporter-ticker",route=>route.fulfill({status:200,contentType:"application/json",body:'{"supporters":[]}'}));
    await page.route(/^https:\/\//,route=>route.abort());
    try{
     await page.goto(url+"/",{waitUntil:"domcontentloaded"});
     await page.locator(".header-profile-enabled .header-profile-button").waitFor();
     await page.locator(".site-supporter-strip").waitFor();
+    await page.locator(".site-supporter-track.is-scrolling").waitFor();
+    assert.ok(await page.locator(".site-supporter-unit").count()>=4,"Empty invitation must repeat and animate seamlessly");
+    assert.equal(await page.locator(".site-supporter-name").count(),0,"Empty state must not fabricate a donor");
+    assert.equal(await page.locator(".site-supporter-track").evaluate(el=>getComputedStyle(el).animationName),"site-supporter-roll");
+    const before=await page.locator(".site-supporter-track").evaluate(el=>el.getBoundingClientRect().left);
+    await page.waitForTimeout(180);
+    const after=await page.locator(".site-supporter-track").evaluate(el=>el.getBoundingClientRect().left);
+    assert.ok(after<before-1,"Empty supporter invitation must visibly move at "+width+"px");
+    assert.equal(await page.locator(".site-supporter-track a:not([tabindex])").count(),1,"Only the real invitation link should be keyboard-focusable");
+
     const m=await page.evaluate(()=>{
      const one=s=>document.querySelector(s);
      const style=s=>getComputedStyle(one(s));
@@ -84,6 +95,30 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
      assert.notEqual(m.desktopNav,"none","Desktop navigation was unintentionally hidden");
     }
     assert.deepEqual(errors,[],"Uncaught browser errors at "+width);
+   }finally{await ctx.close()}
+  }
+ }finally{await browser?.close();await new Promise(resolve=>httpServer.close(resolve))}
+});
+
+test("Opted-in supporter tiers still animate; reduced-motion visitors see a stationary accessible link",{timeout:30000},async()=>{
+ const {httpServer,url}=await server();let browser;
+ try{
+  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  for(const reduce of [false,true]){
+   const ctx=await browser.newContext({viewport:{width:390,height:780},reducedMotion:reduce?"reduce":"no-preference"});
+   const page=await ctx.newPage();
+   await page.route("**/api/supporter-ticker",route=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({supporters:[{name:"Sample Chief",tier:"chief"},{name:"Sample Detective",tier:"detective"}]})}));
+   await page.route(/^https:\/\//,route=>route.abort());
+   try{
+    await page.goto(url+"/",{waitUntil:"domcontentloaded"});
+    await page.locator(".site-supporter-strip.has-supporters").waitFor();
+    const names=await page.locator(".site-supporter-unit").first().locator(".site-supporter-name").allTextContents();
+    assert.deepEqual(names,["Sample Chief","Sample Detective"]);
+    const track=page.locator(".site-supporter-track");
+    assert.equal(await track.evaluate(el=>getComputedStyle(el).animationName),reduce?"none":"site-supporter-roll");
+    const hidden=await page.locator(".site-supporter-track [aria-hidden='true'] a").count();
+    assert.ok(hidden>=2,"Repeated copies must remain inaccessible to keyboard and screen readers");
+    if(reduce)assert.equal(await page.locator(".site-supporter-track .site-supporter-unit").first().locator("a").first().getAttribute("tabindex"),null);
    }finally{await ctx.close()}
   }
  }finally{await browser?.close();await new Promise(resolve=>httpServer.close(resolve))}
