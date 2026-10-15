@@ -22,7 +22,8 @@ async function serve(){
   if(!file.startsWith(root+path.sep))return res.writeHead(403).end();
   try{
    const mime=file.endsWith(".html")?"text/html":file.endsWith(".css")?"text/css":file.endsWith(".js")?"text/javascript":"image/svg+xml";
-   res.writeHead(200,{"Content-Type":mime}).end(fs.readFileSync(file));
+   const bytes=fs.readFileSync(file);
+   res.writeHead(200,{"Content-Type":mime}).end(bytes);
   }catch{res.writeHead(404).end("Not found")}
  });
  await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
