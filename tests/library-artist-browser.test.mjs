@@ -36,9 +36,9 @@ test("Artist combobox selects fuzzy suggestion, filters distinct prints, restore
    const page=await context.newPage(),errors=[],searches=[],suggestRequests=[];
    page.on("pageerror",e=>errors.push(String(e)));
    await page.route(/^https:\/\//,route=>{
-    const path=new URL(route.request().url).pathname;
+    const path=new URL(route.request().url()).pathname;
     if(path==="/cards/search"){
-     const requestUrl=new URL(route.request().url),q=requestUrl.searchParams.get("q")||"";
+     const requestUrl=new URL(route.request().url()),q=requestUrl.searchParams.get("q")||"";
      searches.push({q,unique:requestUrl.searchParams.get("unique")});
      if(q.includes('a:"John Avon"')){
       const card={name:"Forest",oracle_id:"shared",type_line:"Basic Land — Forest",
@@ -51,7 +51,7 @@ test("Artist combobox selects fuzzy suggestion, filters distinct prints, restore
     }else route.abort();
    });
    await page.route("**/api/artist-suggest?*",route=>{
-    const q=new URL(route.request().url).searchParams.get("q");
+    const q=new URL(route.request().url()).searchParams.get("q");
     suggestRequests.push(q);
     route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
      suggestions:["John Avon","Jane Avon"].filter(x=>x.toLowerCase().includes("avon")||q.toLowerCase().includes("jon"))
