@@ -80,6 +80,24 @@ function showTool(id,group){
  if(readers[id])load(id);
 }
 showHome();
+function clearPrivateViews(){
+ ++requestSeq; // discard asynchronous requests from any previous owner-key session
+ for(const [id,panel] of spaces){
+  if(["home"].includes(id)||id.startsWith("group:")||oldPanels[id])continue;
+  const body=panel.querySelector(".owner-v2-data");
+  if(body)body.replaceChildren();
+  const status=panel.querySelector(".owner-v2-message");
+  if(status)status.textContent="";
+ }
+ showHome();
+}
+const lock=$("ownerLock");
+if(lock)lock.addEventListener("click",clearPrivateViews);
+const lockStatus=$("ownerLockStatus");
+if(lockStatus)new MutationObserver(()=>{
+ const status=lockStatus.textContent||"";
+ if(status.includes("Auto-locked")||status.includes("Owner key cleared"))clearPrivateViews();
+}).observe(lockStatus,{childList:true,subtree:true,characterData:true});
 function ownerKey(){return $("opsForm").elements.operatorKey.value.trim();}
 function panelStatus(id,message){const node=spaces.get(id)?.querySelector(".owner-v2-message");if(node)node.textContent=message||"";}
 async function api(view,payload){
@@ -228,7 +246,7 @@ const renderers={
   message(node,"These two switches directly control NEW public submission requests. They do not hide existing pages, delete existing records, or disable browsing.");
   for(const flag of d.flags||[]){
    const c=el("article",null,"owner-v2-record");
-   const display=flag.flag==="public_nominations"?"New nominations":"New feedback submissions";
+   const display=flag.flag==="public_nominations"?"Nominations and voting":"New feedback submissions";
    c.append(el("strong",display),el("p",flag.enabled?"Accepting new submissions":"Paused — new submissions receive a clear response"));
    action(c,flag.enabled?"Pause submissions":"Resume submissions",()=>mutate({kind:"feature",id:flag.flag,enabled:!flag.enabled},"features"),true);node.append(c)
   }
