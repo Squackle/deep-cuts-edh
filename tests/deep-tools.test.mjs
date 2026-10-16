@@ -67,9 +67,24 @@ test("Card-lookup server rejects requests from another origin and impossible bat
  const noOrigin=await onRequestPost({request:request({names:["Sol Ring"]}),env});assert.equal(noOrigin.status,403);
  const huge=await onRequestPost({request:request({names:Array(76).fill("Sol Ring")},"https://deep-cuts-edh.pages.dev"),env});assert.equal(huge.status,400);
 });
-test("Finder, Binder, sitemap and Workshop integration routes are present",()=>{
- for(const p of ["deep-cut-finder.html","binder-to-brew.html","deep-tools.js","deep-tools.css","functions/api/tool-cards.js","deep-tools-core.js"])assert.ok(fs.existsSync(p),p+" missing");
- for(const [p,id] of [["deep-cut-finder.html","finderForm"],["binder-to-brew.html","binderBuildForm"]])assert.ok(fs.readFileSync(p,"utf8").includes('id="'+id+'"'));
- const sitemap=fs.readFileSync("sitemap.xml","utf8");for(const p of ["deep-cut-finder","binder-to-brew"])assert.ok(sitemap.includes("/"+p+"</loc>"));
- for(const p of ["index.html","library.html","deck.html","community.html"])assert.ok(fs.readFileSync(p,"utf8").includes("/binder-to-brew")||fs.readFileSync(p,"utf8").includes("/deep-cut-finder"),p+" missing discoverability link");
+test("Retired Binder links to specialists, while Finder and combo checker stay functional",()=>{
+ for(const p of ["deep-cut-finder.html","binder-to-brew.html","deck.html","combos.html","combo-checker.js","deep-tools.js","deep-tools.css","functions/api/tool-cards.js","deep-tools-core.js","functions/api/external.js"])assert.ok(fs.existsSync(p),p+" missing");
+ const finder=fs.readFileSync("deep-cut-finder.html","utf8"),binder=fs.readFileSync("binder-to-brew.html","utf8");
+ assert.match(finder,/id="finderForm"/);
+ assert.match(finder,/id="finderImport"/);
+ assert.match(finder,/id="finderOwnedList"/);
+ assert.match(binder,/deckstats.net\/collection\/deck-tutor/);
+ assert.doesNotMatch(binder,/binderBuildForm/);
+ const js=fs.readFileSync("deep-tools.js","utf8");
+ assert.doesNotMatch(js,/runBinder\(/);
+ assert.doesNotMatch(js,/\/api\/field-expansion/);
+ assert.match(js,/FILTER_KEY/);
+ assert.match(js,/COPY CARD NAME/);
+ const combo=fs.readFileSync("combo-checker.js","utf8");
+ assert.match(combo,/included\?\?c.combos/);
+ assert.match(combo,/almostIncluded/);
+ assert.match(combo,/\/api\/external/);
+ const sitemap=fs.readFileSync("sitemap.xml","utf8");
+ for(const p of ["deep-cut-finder","combos","deck"])assert.ok(sitemap.includes("/"+p+"</loc>"));
+ for(const p of ["index.html","library.html","deck.html","community.html"])assert.ok(fs.readFileSync(p,"utf8").includes("/deck"),p+" missing resources route");
 });
