@@ -1,4 +1,5 @@
 import test from "node:test";
+import "./community-debloat-transition.test.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 const read=x=>fs.readFileSync(x,"utf8");
