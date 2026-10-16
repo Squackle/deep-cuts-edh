@@ -25,3 +25,9 @@ GitHub CODEOWNERS currently points to the owner account only. It is not proof of
 
 ## Independent game prototype agents
 Stackbreaker and Mana Heist each have their **own unmerged branch** and **exclusive prototype directory**. Their detailed lane agreements and start instructions are in [docs/INDEPENDENT-GAME-INCUBATORS.md](docs/INDEPENDENT-GAME-INCUBATORS.md). Prototype branches do not merge directly into `main`; Website Dev handles any later separately authorized production integration. Existing Website, Hive Run and Project Assistant responsibilities stay unchanged.
+
+## MTG rules verification — all agents
+
+Before making or changing a rules-dependent statement, puzzle, deck analysis, or game interaction, check Wizards' **current Comprehensive Rules** and **official Oracle text / rulings in Gatherer**, plus official release notes or format restrictions when relevant. Cite specific rule numbers and card text. For difficult or disputed interactions, **also cross-check [Card-Forge/forge](https://github.com/Card-Forge/forge) when practical**; label whether Forge was inspected, actually run, or unavailable. Forge is unofficial: when it disagrees, official Wizards rules take precedence. Never import Forge's GPL-3.0 engine/source as a dependency without separate review and approval. Preserve regression tests and server/client replay parity for gameplay rules changes.
+
+Canonical workflow and evidence checklist: [docs/MTG-RULES-VERIFICATION.md](docs/MTG-RULES-VERIFICATION.md).
