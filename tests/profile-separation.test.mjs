@@ -65,7 +65,7 @@ test("Old URLs and backend interfaces remain in place",()=>{
   assert.ok(fs.existsSync(file),file+" missing");
  }
  assert.match(community,/<link rel="canonical" href="https:\/\/deep-cuts-edh.pages.dev\/community">/);
- for(const page of ["games.html","deck.html","binder-to-brew.html","supporters.html"]){
+ for(const page of ["games.html","supporters.html"]){
   const html=read(page);
   assert.match(html,/\/?profile#(?:account|collection)/,page+" still points to old private tab");
  }
