@@ -5,12 +5,12 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(p,'utf8'),exists=p=>fs.existsSync(p);
 const root='https://deep-cuts-edh.pages.dev';
-const main=['index.html','games.html','community.html','deck.html','library.html','nominations.html','supporters.html','set-watch.html','privacy.html','deep-cut-finder.html','binder-to-brew.html','profile.html'];
+const main=['index.html','games.html','community.html','deck.html','library.html','nominations.html','supporters.html','set-watch.html','privacy.html','deep-cut-finder.html','binder-to-brew.html','combos.html','profile.html'];
 const extra=['members.html','404.html'];
 const children=dir=>fs.readdirSync(dir,{withFileTypes:true}).filter(x=>x.isFile()&&x.name.endsWith('.html')).map(x=>dir+'/'+x.name);
 const publicPages=[...main,...children('games'),...children('reports')];
 const menuPages=[...new Set([...publicPages,...extra])];
-const expected=['RESCUE REPORT','COMMANDERS','CARD LIBRARY','DECK WORKSHOP','ARCADE','NOMINATIONS','COMMUNITY',"MEMBERS' LOUNGE"];
+const expected=['RESCUE REPORT','COMMANDERS','CARD LIBRARY','TOOLS & RESOURCES','ARCADE','NOMINATIONS','COMMUNITY',"MEMBERS' LOUNGE"];
 let checks=0;
 function check(ok,msg){assert.ok(ok,msg);checks++;}
 for(const file of publicPages){

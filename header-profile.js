@@ -125,10 +125,10 @@
   };
   addLink("SET WATCH","/set-watch");
   addLink("DEEP CUT FINDER","/deep-cut-finder");
-  addLink("BINDER TO BREW","/binder-to-brew");
+  addLink("COMBO FINDER","/combos");
   const mobileGroups=[
    ["DISCOVER",["RESCUE REPORT","COMMANDERS","SET WATCH","DEEP CUT FINDER"]],
-   ["BUILD & PLAY",["CARD LIBRARY","DECK WORKSHOP","BINDER TO BREW","ARCADE"]],
+   ["BUILD & PLAY",["CARD LIBRARY","TOOLS & RESOURCES","COMBO FINDER","ARCADE"]],
    ["CONNECT",["NOMINATIONS","COMMUNITY","MEMBERS' LOUNGE"]]
   ];
   for(const [i,[label,names]] of mobileGroups.entries()){
@@ -166,7 +166,7 @@
     link.classList.add("site-desktop-item");
     // Preserve active navigation even when the original page omits it.
     const current=(name==="DEEP CUT FINDER"&&pagePath==="/deep-cut-finder")||
-      (name==="BINDER TO BREW"&&pagePath==="/binder-to-brew")||
+      (name==="COMBO FINDER"&&pagePath==="/binder-to-brew")||
       (name==="SET WATCH"&&pagePath==="/set-watch")||
       (name==="RESCUE REPORT"&&pagePath.startsWith("/reports/"));
     if(current)link.setAttribute("aria-current","page");
@@ -181,7 +181,7 @@
    desktop.append(details);
   };
   section("DISCOVER",["RESCUE REPORT","COMMANDERS","CARD LIBRARY","SET WATCH","DEEP CUT FINDER"]);
-  section("BUILD",["DECK WORKSHOP","BINDER TO BREW"]);
+  section("RESOURCES",["TOOLS & RESOURCES","COMBO FINDER"]);
   const arcade=items.get("ARCADE")?.cloneNode(true);
   if(arcade){
    arcade.classList.add("site-desktop-arcade");

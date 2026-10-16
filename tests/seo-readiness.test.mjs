@@ -12,7 +12,7 @@ const robot=read("robots.txt");
 const PUB="ca-pub-1885127351876276";
 const SCRIPT='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+PUB+'" crossorigin="anonymous"></script>';
 const expectedPaths=["/","/games/hive-run/","/games","/games/cold-case","/games/obscurity-ladder",
- "/games/arcane-cipher","/games/conspiracy-board","/deep-cut-finder","/binder-to-brew","/library",
+ "/games/arcane-cipher","/games/conspiracy-board","/deep-cut-finder","/combos","/library",
  "/set-watch","/deck","/community","/nominations","/supporters",
  "/reports/chainer-dementia-master","/reports/alena-and-gilanra",
  "/reports/commander-mustard","/reports/ekthi-contaminator-priest","/privacy"];
@@ -117,7 +117,7 @@ test("AdSense verified publisher record and exactly six intentional ad-enabled H
  assert.equal(ads,"google.com, pub-1885127351876276, DIRECT, f08c47fec0942fa0");
  const files=["index.html","library.html","games.html","privacy.html","community.html",
   "deck.html","profile.html","members.html","member-operations.html","diagnostics.html",
-  "nominations.html","supporters.html","set-watch.html","deep-cut-finder.html","binder-to-brew.html",
+  "nominations.html","supporters.html","set-watch.html","deep-cut-finder.html","binder-to-brew.html","combos.html",
   "games/hive-run/index.html",...fs.readdirSync("games").filter(p=>p.endsWith(".html")).map(p=>"games/"+p),
   ...fs.readdirSync("reports").filter(p=>p.endsWith(".html")).map(p=>"reports/"+p)];
  for(const file of files){
