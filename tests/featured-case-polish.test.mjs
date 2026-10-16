@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {CURRENT_CASE,featuredDeckEligible,publicChallenge} from "../src/featured-case.js";
 import {gamesWrite} from "../src/community-games.js";
+import "./challenge-submit.test.mjs";
 import {communityRead} from "../src/community-read.js";
 const own="a".repeat(32),profile="my-player";
 const featured={id:"rescue-001",title:"Chainer Resurrection Challenge",commander:"Chainer, Dementia Master",format:"commander",status:"active",opens_at:"2000-01-01 00:00:00",closes_at:"2099-01-01 00:00:00"};

@@ -1,4 +1,5 @@
 import {$,state,el,clear,msg,badge,button,link,card,empty,api,write,attempt,showComments,setTab,appendProfileMentions} from "./community.js";
+import {normalizeDeckSourceUrl} from "./src/challenge-source-url.js";
 function cardsFromInput(text){
  const rows=text.trim().split(/\r?\n/).filter(Boolean).map(line=>{const m=/^(\d+)\s+(.+)$/.exec(line.trim());return m?{qty:Number(m[1]),name:m[2].trim()}:null});
  if(!rows.length||rows.some(x=>!x||!x.name))throw Error("Use one quantity and card name per line (e.g. 1 Sol Ring).");
@@ -11,6 +12,16 @@ function fillForm(deck,title){
  const f=$("deckForm");f.elements.title.value=title||"Untitled field build";
  f.elements.commanders.value=deck.commanders.join("\n");
  f.elements.cards.value=deck.cards.map(c=>c.qty+" "+c.name).join("\n");
+}
+function exportDeckSnapshot(deck){
+ const raw=deck.content;
+ const lines=["COMMANDER",...raw.commanders.map(name=>"1 "+name),"","MAINBOARD",...raw.cards.map(c=>c.qty+" "+c.name)];
+ const url=normalizeDeckSourceUrl(raw.sourceUrl);if(url)lines.push("","SOURCE "+url);
+ const blob=new Blob([lines.join("\n")+"\n"],{type:"text/plain;charset=utf-8"});
+ const objectUrl=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=objectUrl;a.download=(deck.title||"deep-cuts-deck").replace(/[^a-z0-9_-]+/gi,"-").slice(0,70)+".txt";
+ document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
 }
 function importWorkshop(){
  try{
@@ -35,6 +46,9 @@ export async function openDeck(id){
  const n=$("deckInfo");clear(n);
  n.append(el("h3",r.deck.title),appendProfileMentions(el("p"),r.deck.commander+" · @"+r.deck.handle+" · version "+r.deck.version));
  const raw=r.deck.content,pre=el("pre","COMMANDER\n"+raw.commanders.map(s=>"1 "+s).join("\n")+"\n\nMAINBOARD\n"+raw.cards.map(c=>c.qty+" "+c.name).join("\n"),"cm-decklist");n.append(pre);
+ const source=normalizeDeckSourceUrl(raw.sourceUrl);
+ if(source){const a=link("VIEW ORIGINAL DECK SOURCE ↗",source);a.target="_blank";a.rel="noopener noreferrer";n.append(a)}
+ n.append(button("EXPORT DECK SNAPSHOT ↧",()=>exportDeckSnapshot(r.deck),true));
  if(state.me?.id===r.deck.owner_id){
   n.append(button("EDIT NEW VERSION",()=>{state.editing=r.deck.id;fillForm(raw,r.deck.title);$("saveDeck").textContent="SAVE NEW VERSION ↗";$("deckForm").elements.title.disabled=true;$("deckForm").scrollIntoView({block:"start",behavior:"smooth"})}));
   n.append(button("DELETE PUBLIC DECK",async()=>{if(!confirm("Permanently delete this public deck, its history and discussion?"))return;const x=await attempt(()=>write({action:"delete_deck",id:r.deck.id}));if(x){section.hidden=true;state.deck=null;loadGallery()}},true));
@@ -200,6 +214,16 @@ export function setupFeatures(){
  $("deckCommentForm").addEventListener("submit",async e=>{e.preventDefault();if(!state.deck)return;const f=e.currentTarget;
   const r=await attempt(()=>write({action:"comment",topic:"deck:"+state.deck.id,kind:"doctor",body:f.elements.body.value}),"Deck Doctor recommendation submitted.");
   if(r){f.reset();showComments($("deckComments"),"deck:"+state.deck.id)}
+ });
+ $("challengeSubmitForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!state.me)return msg("Sign in at My Profile before entering a challenge.",true);
+  if(!challengeRecord)return msg("Choose an active Rescue Challenge first.",true);
+  const f=e.currentTarget;let deck;
+  try{deck=collectDeck(f)}catch(err){return msg(err.message,true)}
+  const req={action:"challenge_submit",challenge_id:selectedChallenge,title:f.elements.title.value.trim(),deck,sourceUrl:f.elements.sourceUrl.value.trim()};
+  const res=await attempt(()=>write(req),"Public deck snapshot saved and entered into the Rescue Challenge.");
+  if(res){f.reset();await loadChallengeDetail();$("challengeDeck").value=res.id;updateEligibility()}
  });
  $("challengeSelect").addEventListener("change",e=>{selectedChallenge=e.target.value;loadChallengeDetail()});
  $("challengeDeck").addEventListener("change",updateEligibility);

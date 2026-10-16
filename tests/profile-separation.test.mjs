@@ -79,6 +79,6 @@ test("Responsive profile layout, privacy notice and account navigation exist",()
 
 test("Community sections use clear names without gaps from removed private tabs",()=>{
  const nav=community.match(/<nav class="cm-tabs"[\s\S]*?<\/nav>/)?.[0]||"";
- for(const name of ["DISCUSSIONS","DECK GALLERY","CHALLENGES","PLAYTESTING","FIND PLAYERS","RESEARCH BOARDS","COMPARE DECKS","RANKINGS"])assert.ok(nav.includes(name),name+" missing");
+ for(const name of ["DISCUSSIONS","DECK ARCHIVE","CHALLENGES","FIELD REPORTS","FIND PLAYERS","RESEARCH BOARDS","LEGACY COMPARE","RANKINGS"])assert.ok(nav.includes(name),name+" missing");
  assert.doesNotMatch(nav,/>\d{2} \/ /);
 });

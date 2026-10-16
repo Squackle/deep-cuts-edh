@@ -10,7 +10,9 @@ test("Legacy Community deck publishing stays accessible while Rescue Challenges 
     assert.ok(community.includes('id="'+id+'"'),"Required challenge or legacy deck control removed: "+id);
   for(const tab of ["decks","challenge","cases","network","evidence","reputation"])
     assert.ok(community.includes('data-panel="'+tab+'"'),"Required Community panel removed: "+tab);
-  assert.match(community,/Rescue Challenge entries still rely on published Deep Cuts decks/);
+  assert.match(community,/Rescue Challenges now also accept a pasted decklist directly/);
+  for(const id of ["challengeSubmitForm","submitChallengeDeck"])assert.ok(community.includes('id="'+id+'"'));
+  assert.match(community,/The Legacy Deck Archive/);
   assert.match(community,/IMPORT LEGACY LOCAL DECK/);
   assert.doesNotMatch(community,/Publish a deck from your Workshop/);
 });
