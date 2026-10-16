@@ -1,5 +1,5 @@
 
-import {addCard,cardImage,scryfall} from "./shared.js";
+import {cardImage,scryfall} from "./shared.js";
 import {facetTerms,isFaceted,resetFacets,initFacets,shareURL,clearManaChips,selectedArtist} from "./library-facets.js";
 import {compileLibraryQuery,libraryResultSummary,libraryCardIdentity} from "./library-query.js";
 import {initArtistAutocomplete} from "./artist-autocomplete.js";
@@ -80,7 +80,7 @@ function entry(card){
  const meta=create("p","meta",(card.type_line||"")+" · "+(card.prices?.usd?"$"+card.prices.usd:"Price N/A") );
  const buttons=create("div","card-controls");
  const info=create("button","","DETAILS");info.type="button";info.addEventListener("click",()=>showDetail(card));
- const add=create("button","primary","+ ADD TO DECK");add.type="button";add.addEventListener("click",()=>{if(addCard(card)){try{localStorage.setItem("deepcuts-workbench-tab","deck")}catch{}add.textContent="✓ ADDED";setTimeout(()=>{add.textContent="+ ADD TO DECK"},1400)}});
+ const add=create("button","primary","COPY CARD NAME");add.type="button";add.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(card.name);add.textContent="✓ COPIED";setTimeout(()=>{add.textContent="COPY CARD NAME"},1400)}catch{add.textContent="SELECT CARD NAME TO COPY"}});
  const shop=create("a","shop-card-link","TCGplayer ↗");shop.href="https://www.tcgplayer.com/search/magic/product?productLineName=magic&q="+encodeURIComponent(card.name)+"&view=grid";shop.target="_blank";shop.rel="noopener noreferrer";shop.setAttribute("aria-label","Find "+card.name+" on TCGplayer");buttons.append(info,add);box.append(img,title,meta,buttons,shop);
  if(card.set&&card.collector_number){
   const tagger=create("a","shop-card-link library-tagger-card-link","Tagger ↗");
@@ -102,7 +102,7 @@ function showDetail(c){
  const oracle=create("p","",(c.oracle_text||c.card_faces?.map(x=>x.oracle_text||"").join("\n//\n")||"").replaceAll("{","[").replaceAll("}","]"));oracle.style.whiteSpace="pre-line";
  const legal=create("p","","Legality: "+Object.entries(c.legalities||{}).filter(([k,v])=>v==="legal").slice(0,12).map(([k])=>label(k)).join(", "));
  const price=create("p","","USD price: "+(c.prices?.usd?"$"+c.prices.usd:"Unavailable"));
- const add=create("button","retro-button","+ ADD TO DECK");add.addEventListener("click",()=>{if(addCard(c))add.textContent="✓ ADDED"});
+ const add=create("button","retro-button","COPY CARD NAME");add.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(c.name);add.textContent="✓ COPIED"}catch{add.textContent="SELECT CARD NAME ABOVE"}});
  const outbound=create("a","text-link","VIEW ON SCRYFALL ↗");outbound.href=c.scryfall_uri||"https://scryfall.com";outbound.target="_blank";outbound.rel="noopener noreferrer";outbound.style.marginLeft="15px";
  const shop=create("a","text-link","TCGplayer ↗");shop.href="https://www.tcgplayer.com/search/magic/product?productLineName=magic&q="+encodeURIComponent(c.name)+"&view=grid";shop.target="_blank";shop.rel="noopener noreferrer";shop.style.marginLeft="12px";root.append(h,img,p,oracle,legal,price,add,outbound,shop);
  if(c.set&&c.collector_number){
