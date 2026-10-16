@@ -1,6 +1,7 @@
 import {notifyDeckVote} from "./field-dispatches.js";
 import {send,fail,safe,rnd,cleanDeck} from "./community-core.js";
 import {publicChallenge,featuredDeckEligible,isOpenChallenge} from "./featured-case.js";
+import {normalizeDeckSourceUrl} from "./challenge-source-url.js";
 export async function gamesWrite(db,a,d){
  const action=d.action;
  if(action==="publish_deck"){
@@ -31,6 +32,30 @@ export async function gamesWrite(db,a,d){
   if(id&&!(await db.prepare("SELECT id FROM community_decks WHERE id=?").bind(id).first()))return fail("Deck not found.",404);
   await db.prepare("INSERT INTO community_playtests(id,author_id,deck_id,commander,opponent,result,turns,note) VALUES(?,?,?,?,?,?,?,?)").bind(rnd(),a.id,id||null,commander,opponent,result,turns,note).run();
   return send({ok:true},201);
+ }
+ if(action==="challenge_submit"){
+  // Create a public deck snapshot and its entry atomically so no orphaned
+  // publication is left behind if the challenge closes or writes fail.
+  const challengeId=safe(d.challenge_id,48),title=safe(d.title,90);
+  const deck=cleanDeck(d.deck),sourceUrl=normalizeDeckSourceUrl(d.sourceUrl);
+  if(!/^[a-z0-9-]{3,48}$/.test(challengeId))return fail("Choose a valid challenge.",400);
+  if(!deck||!deck.cards.length||title.length<3)return fail("Add a title, commander and pasted mainboard before entering.",400);
+  if(sourceUrl===null)return fail("Use a public HTTPS deck URL from Moxfield, Archidekt, Deckstats or MTGGoldfish, or leave the link blank.",400);
+  const raw=await db.prepare("SELECT * FROM community_challenges WHERE id=? AND status='active'").bind(challengeId).first();
+  const ch=publicChallenge(raw);
+  const now=new Date().toISOString().slice(0,19).replace("T"," ");
+  if(!ch||now<ch.opens_at||now>ch.closes_at)return fail("This challenge isn't accepting entries.",409);
+  const commander=deck.commanders.join(" & ");
+  if(!isOpenChallenge(ch)&&!featuredDeckEligible({commander,content:deck}))return fail("The featured challenge only accepts "+ch.commander+" as the sole commander. Use Open Build for other commanders.",400);
+  if(sourceUrl)deck.sourceUrl=sourceUrl;
+  const id=rnd(),content=JSON.stringify(deck);
+  // D1 batch is transactional; preserve the existing deck/entry schema and vote contract.
+  await db.batch([
+   db.prepare("INSERT INTO community_decks(id,owner_id,title,commander,content) VALUES(?,?,?,?,?)").bind(id,a.id,title,commander,content),
+   db.prepare("INSERT INTO community_deck_versions(deck_id,version,content,note) VALUES(?,?,?,?)").bind(id,1,content,"Rescue Challenge snapshot"),
+   db.prepare("INSERT INTO community_entries(challenge_id,deck_id,member_id) VALUES(?,?,?) ON CONFLICT(challenge_id,member_id) DO UPDATE SET deck_id=excluded.deck_id").bind(ch.id,id,a.id)
+  ]);
+  return send({ok:true,id},201);
  }
  if(action==="challenge_entry"||action==="vote"){
   const id=safe(d.deck_id,32),challengeId=safe(d.challenge_id,48);
