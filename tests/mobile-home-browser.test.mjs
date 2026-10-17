@@ -94,6 +94,28 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
     }else{
      assert.notEqual(m.desktopNav,"none","Desktop navigation was unintentionally hidden");
     }
+    // The public HTMLRewriter injects the presence asset in production; the
+    // static fixture adds it directly to test its actual mobile layout.
+    await page.locator(".dc-feedback-launch").waitFor();
+    await page.addStyleTag({url:url+"/site-presence.css"});
+    await page.evaluate(()=>{
+     const pill=document.createElement("div");
+     pill.className="dc-online-pill";
+     pill.textContent="● 12 ONLINE";
+     document.body.append(pill);
+    });
+    const floating=await page.evaluate(()=>{
+     const feedback=document.querySelector(".dc-feedback-launch");
+     const pill=document.querySelector(".dc-online-pill");
+     const a=feedback.getBoundingClientRect(),b=pill.getBoundingClientRect();
+     return {feedback:a.toJSON(),pill:b.toJSON(),screenWidth:innerWidth,
+      pointerEvents:getComputedStyle(pill).pointerEvents};
+    });
+    assert.ok(floating.pill.bottom<=floating.feedback.top-8,
+      "Counter must clear floating Feedback button at "+width+"px: "+JSON.stringify(floating));
+    assert.ok(floating.pill.right<=width+1&&floating.pill.left>=0,
+      "Counter must stay within viewport at "+width+"px: "+JSON.stringify(floating));
+    assert.equal(floating.pointerEvents,"none","Counter must not intercept Feedback taps");
     assert.deepEqual(errors,[],"Uncaught browser errors at "+width);
    }finally{await ctx.close()}
   }
