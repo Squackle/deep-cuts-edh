@@ -33,6 +33,11 @@ test("owner command center preserves real forms, tabs and local lock on desktop/
    const ctx=await browser.newContext({viewport:{width,height:860}});
    const page=await ctx.newPage(),errors=[];
    page.on("pageerror",e=>errors.push(String(e)));
+   // The private owner endpoint is not served by this static fixture. Mock
+   // authorization denial instead of letting an unexpected local 404 crash it.
+   await page.route("**/api/owner-ops?view=presence",route=>route.fulfill({
+    status:403,contentType:"application/json",body:JSON.stringify({error:"Owner authorization required."})
+   }));
    await page.route(/^https:\/\//,route=>route.abort());
    try{
     await page.goto(url+"/member-operations.html",{waitUntil:"networkidle"});
@@ -40,6 +45,7 @@ test("owner command center preserves real forms, tabs and local lock on desktop/
     assert.equal(await page.locator(".owner-v2-menu-button").count(),7);
     assert.equal(await page.locator(".owner-v2-home").isVisible(),true);
     assert.equal(await page.locator("#owner-panel-members").isVisible(),false);
+    assert.equal(await page.locator(".owner-presence-stat").count(),3,"Three private metrics are visible in the header");
     const bound=await page.evaluate(()=>{
      const form=document.querySelector("#opsForm");
      const k=form.elements.operatorKey;
@@ -69,6 +75,7 @@ test("owner command center preserves real forms, tabs and local lock on desktop/
     assert.equal(await page.locator("#issuedKey").textContent(),"");
     assert.equal(await page.locator("#issuedKeySection").isVisible(),false);
     assert.equal(await page.locator("#ownerStats").textContent(),"");
+    assert.equal(await page.locator(".owner-presence-stat strong").first().textContent(),"—","Lock wipes visitor metrics");
     assert.equal(await page.locator("#owner-panel-grants input[name=label]").inputValue(),"");
     assert.deepEqual(errors,[], "Unexpected browser errors at "+width);
    }finally{await ctx.close()}

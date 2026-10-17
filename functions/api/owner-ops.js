@@ -3,11 +3,20 @@
 import {ownerAuth} from "../../src/owner-access.js";
 import {reply,random} from "../../src/member-auth.js";
 import {readOwnerCapacity} from "../../src/owner-capacity.js";
+import {countPresence} from "./site-presence.js";
 
 const error=(message,status=400)=>reply({error:message},status);
 const query=async(db,sql,...params)=>(await db.prepare(sql).bind(...params).all()).results||[];
 const first=async(db,sql,...params)=>await db.prepare(sql).bind(...params).first();
 const select={
+ presence:async(db,env)=>{
+  const [connected,profiles]=await Promise.all([
+   countPresence(env.SITE_PRESENCE),
+   first(db,"SELECT COUNT(*) AS total FROM community_profiles")
+  ]);
+  return {presence:connected,registeredMembers:Number(profiles?.total??0)};
+ },
+
  capacity:async(_db,env)=>readOwnerCapacity(env),
  overview:async(db)=>({stats:await first(db,`SELECT
     (SELECT COUNT(*) FROM nominations WHERE status='pending') AS nominations,
