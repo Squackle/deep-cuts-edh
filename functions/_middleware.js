@@ -22,6 +22,8 @@ function isPublicHTMLPath(path){
 }
 function decorate(response,path,method){
  if(method!=="GET"||!isPublicHTMLPath(path)||!response.ok||!/text\/html/i.test(response.headers.get("Content-Type")||""))return response;
+ // Cloudflare provides HTMLRewriter globally; Node test harnesses may not.
+ if(typeof HTMLRewriter==="undefined")return response;
  return new HTMLRewriter().on("head",{element(element){element.append(PUBLIC_BADGE,{html:true})}}).transform(response);
 }
 export async function onRequest(context){
