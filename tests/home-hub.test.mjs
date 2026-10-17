@@ -12,7 +12,7 @@ test('Homepage is a navigational landing page, not full feature documentation',(
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
  assert.equal((html.match(/class="hub-card /g)||[]).length,8);
  assert.ok(Buffer.byteLength(html)<11500, 'Hub homepage should stay intentionally concise');
- assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22000, 'Combined hub HTML and CSS budget');
+ assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22500, 'Combined hub HTML and CSS budget (expanded accessible feature + overview)');
  for(const old of ['process-section','method-grid','home-set-watch','archiveGrid','caseDialog','searchInput','colorFilter','featured-premise','supporter-strip','closing-cta'])
   assert.ok(!html.includes(old),'Removed full-page feature should not render on hub: '+old);
 });
@@ -54,4 +54,16 @@ test('Branding, indexing, and accessible structure remain',()=>{
  for(const id of ['main','directory','latest','archive']) assert.ok(html.includes('id="'+id+'"'));
  assert.match(css,/@media\(max-width:430px\)/);
  assert.match(css,/prefers-reduced-motion/);
+});
+
+test('The homepage explains the full site and enlarges the featured card without losing its hover tilt',()=>{
+ const selected='Discover the less-played side of Commander with detailed commander breakdowns, a searchable Magic card library, deck and combo research tools, community discussions, Rescue Challenges, and a growing collection of daily MTG games.';
+ assert.ok(html.includes('<p>'+selected+'</p>'),'Exact owner-selected overview must appear');
+ assert.match(css,/\.hub-feature\{[^\n]*transform:rotate\(1deg\)/);
+ assert.match(css,/\.hub-feature:hover\{transform:rotate\(0\) translateY\(-3px\)/);
+ assert.match(css,/\.hub-feature\{[^\n]*transition:transform \.2s,box-shadow \.2s/);
+ assert.match(css,/\.hub-feature-main\{[^\n]*grid-template-columns:154px minmax\(0,1fr\)/);
+ assert.match(css,/\.hub-feature-portrait\{[^\n]*width:154px;height:215px/);
+ assert.match(css,/@media\(max-width:430px\)\{\.hub-feature-main\{grid-template-columns:110px/);
+ assert.match(html,/href="\/reports\/commander-mustard" aria-label="Read the featured Commander Mustard rescue report"/);
 });
