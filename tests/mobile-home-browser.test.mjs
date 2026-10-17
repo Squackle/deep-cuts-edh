@@ -101,8 +101,10 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
     await page.evaluate(()=>{
      const pill=document.createElement("div");
      pill.className="dc-online-pill";
-     pill.textContent="● 12 ONLINE";
-     document.body.append(pill);
+     const dot=document.createElement("span");dot.className="dc-online-dot";
+     const count=document.createElement("span");count.className="dc-online-number";count.textContent="12";
+     const label=document.createElement("span");label.className="dc-online-label";label.textContent="online";
+     pill.append(dot,count,label);document.body.append(pill);
     });
     const floating=await page.evaluate(()=>{
      const feedback=document.querySelector(".dc-feedback-launch");
@@ -111,8 +113,10 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
      return {feedback:a.toJSON(),pill:b.toJSON(),screenWidth:innerWidth,
       pointerEvents:getComputedStyle(pill).pointerEvents};
     });
-    assert.ok(floating.pill.bottom<=floating.feedback.top-8,
-      "Counter must clear floating Feedback button at "+width+"px: "+JSON.stringify(floating));
+    assert.ok(floating.pill.bottom<=floating.feedback.top-4,
+      "Compact count must clear Feedback by at least 4px at "+width+"px: "+JSON.stringify(floating));
+    assert.ok(floating.pill.height<=25&&floating.pill.width<=95,
+      "Moxgate-inspired count must stay small at "+width+"px: "+JSON.stringify(floating));
     assert.ok(floating.pill.right<=width+1&&floating.pill.left>=0,
       "Counter must stay within viewport at "+width+"px: "+JSON.stringify(floating));
     assert.equal(floating.pointerEvents,"none","Counter must not intercept Feedback taps");

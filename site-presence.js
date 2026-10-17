@@ -40,8 +40,11 @@
  };
  const pill=document.createElement("div");
  pill.className="dc-online-pill";pill.setAttribute("role","status");
- pill.setAttribute("aria-label","Browsers currently online across Deep Cuts EDH");
- pill.textContent="● — ONLINE";document.body.append(pill);
+ pill.setAttribute("aria-label","Online browsers across Deep Cuts EDH");
+ const dot=document.createElement("span");dot.className="dc-online-dot";dot.setAttribute("aria-hidden","true");
+ const count=document.createElement("span");count.className="dc-online-number";count.textContent="—";
+ const label=document.createElement("span");label.className="dc-online-label";label.textContent="online";
+ pill.append(dot,count,label);document.body.append(pill);
  const heartbeat=async()=>{
   try{await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,page:activePage()}),cache:"no-store",keepalive:true})}catch{}
  };
@@ -50,9 +53,14 @@
    const r=await fetch(ENDPOINT,{cache:"no-store"});
    if(!r.ok)throw Error("Unavailable");
    const data=await r.json();if(!Number.isSafeInteger(data.online)||data.online<0)throw Error("Invalid count");
-   pill.textContent="● "+data.online.toLocaleString()+" ONLINE";
+   count.textContent=data.online.toLocaleString();
+   pill.setAttribute("aria-label",data.online.toLocaleString()+" browsers online across Deep Cuts EDH");
    pill.title="Browsers connected to Deep Cuts EDH";
-  }catch{pill.textContent="● — ONLINE";pill.title="Online count temporarily unavailable"}
+  }catch{
+   count.textContent="—";
+   pill.setAttribute("aria-label","Online browser count temporarily unavailable");
+   pill.title="Online count temporarily unavailable";
+  }
  };
  const pulse=async()=>{await heartbeat();await refresh()};
  window.addEventListener("focus",()=>{savePage();pulse()});

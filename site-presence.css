@@ -1,6 +1,31 @@
-/* Keep the live counter above the fixed Feedback launcher on phones and desktops.
-   The feedback button sits 12–18px above the viewport and is at least 44px high.
-   Reserve its height plus a 12px separation; do not hide or disable it. */
-.dc-online-pill{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(max(18px,env(safe-area-inset-bottom)) + 56px);z-index:60;pointer-events:none;user-select:none;max-width:calc(100vw - 24px);padding:8px 12px;border:1px solid #b79d68;border-radius:999px;background:#20392ced;color:#f2e5cb;box-shadow:0 5px 20px #07180f82;font:800 10px/1.35 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.045em}
-@media(max-width:580px){.dc-online-pill{font-size:9px;padding:6px 9px;right:max(8px,env(safe-area-inset-right));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px)}}
+/* Compact Moxgate-inspired status readout: a dot, count and muted label.
+   Deliberately smaller than a button; sits just above Feedback, without
+   blocking touches or changing counting logic. */
+.dc-online-pill{
+ position:fixed;z-index:60;
+ right:max(19px,env(safe-area-inset-right));
+ bottom:calc(max(18px,env(safe-area-inset-bottom)) + 49px);
+ display:inline-flex;align-items:center;gap:5px;
+ max-width:calc(100vw - 24px);
+ padding:3px 7px 3px 6px;
+ border:1px solid #8caa8c44;border-radius:999px;
+ background:#142a21d9;color:#e9dfc4;
+ box-shadow:none;
+ font:600 10px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;
+ letter-spacing:0;
+ pointer-events:none;user-select:none;
+}
+.dc-online-dot{
+ width:5px;height:5px;flex:0 0 5px;
+ border-radius:50%;background:#8ed09c;
+}
+.dc-online-number{font-weight:700;color:#f1e5c9;font-variant-numeric:tabular-nums}
+.dc-online-label{font-size:9px;font-weight:500;color:#bfcdbd}
+@media(max-width:580px){
+ .dc-online-pill{
+  right:max(13px,env(safe-area-inset-right));
+  bottom:calc(max(12px,env(safe-area-inset-bottom)) + 49px);
+  padding:3px 6px 3px 5px;
+ }
+}
 @media(prefers-reduced-motion:reduce){.dc-online-pill{transition:none}}
