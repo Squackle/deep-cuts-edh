@@ -44,7 +44,30 @@
  const dot=document.createElement("span");dot.className="dc-online-dot";dot.setAttribute("aria-hidden","true");
  const count=document.createElement("span");count.className="dc-online-number";count.textContent="—";
  const label=document.createElement("span");label.className="dc-online-label";label.textContent="online";
- pill.append(dot,count,label);document.body.append(pill);
+ pill.append(dot,count,label);
+ // Put the microstatus between the shared profile/menu header and the
+ // supporter ticker, instead of floating over page content or Feedback.
+ const rail=document.createElement("div");rail.className="dc-online-rail";
+ rail.setAttribute("aria-label","Live visitors");
+ const inner=document.createElement("div");inner.className="dc-online-rail-inner";
+ inner.append(pill);rail.append(inner);
+ function mount(){
+  const header=document.querySelector(".site-header");
+  const gameHeader=document.querySelector(".lab-header[data-profile-header]");
+  if(header){
+   const supporter=header.querySelector(".site-supporter-strip");
+   const controls=header.querySelector(".header-inner");
+   if(supporter)header.insertBefore(rail,supporter);
+   else if(controls)controls.after(rail);
+   else header.append(rail);
+  }else if(gameHeader){
+   // Hive Run has a different shared account header but no supporter ticker.
+   gameHeader.after(rail);
+  }else document.body.prepend(rail);
+ }
+ if(document.readyState==="loading")
+  document.addEventListener("DOMContentLoaded",mount,{once:true});
+ else mount();
  const heartbeat=async()=>{
   try{await fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,page:activePage()}),cache:"no-store",keepalive:true})}catch{}
  };
