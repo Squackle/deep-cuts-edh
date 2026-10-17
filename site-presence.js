@@ -45,25 +45,34 @@
  const count=document.createElement("span");count.className="dc-online-number";count.textContent="—";
  const label=document.createElement("span");label.className="dc-online-label";label.textContent="online";
  pill.append(dot,count,label);
- // Put the microstatus between the shared profile/menu header and the
- // supporter ticker, instead of floating over page content or Feedback.
- const rail=document.createElement("div");rail.className="dc-online-rail";
- rail.setAttribute("aria-label","Live visitors");
- const inner=document.createElement("div");inner.className="dc-online-rail-inner";
- inner.append(pill);rail.append(inner);
+ // Share the existing 28px supporter ribbon: scrolling acknowledgments
+ // take the flexible left slot while the count stays fixed at its right edge.
+ // The separate Hive Run header has no supporter ticker and retains a slim
+ // standalone rail instead. Never add a second row to the regular site header.
  function mount(){
   const header=document.querySelector(".site-header");
   const gameHeader=document.querySelector(".lab-header[data-profile-header]");
   if(header){
-   const supporter=header.querySelector(".site-supporter-strip");
-   const controls=header.querySelector(".header-inner");
-   if(supporter)header.insertBefore(rail,supporter);
-   else if(controls)controls.after(rail);
-   else header.append(rail);
-  }else if(gameHeader){
-   // Hive Run has a different shared account header but no supporter ticker.
-   gameHeader.after(rail);
-  }else document.body.prepend(rail);
+   const placeWithSupporters=()=>{
+    const inner=header.querySelector(".site-supporter-strip .site-supporter-inner");
+    if(!inner)return false;
+    inner.append(pill); // After the scrolling window, outside its animation.
+    return true;
+   };
+   if(!placeWithSupporters()){
+    // Header and presence scripts can initialize in either order.
+    const observer=new MutationObserver(()=>{
+     if(placeWithSupporters())observer.disconnect();
+    });
+    observer.observe(header,{childList:true,subtree:true});
+   }
+  }else{
+   const rail=document.createElement("div");rail.className="dc-online-rail";
+   const inner=document.createElement("div");inner.className="dc-online-rail-inner";
+   inner.append(pill);rail.append(inner);
+   if(gameHeader)gameHeader.after(rail);
+   else document.body.prepend(rail);
+  }
  }
  if(document.readyState==="loading")
   document.addEventListener("DOMContentLoaded",mount,{once:true});
