@@ -94,32 +94,46 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
     }else{
      assert.notEqual(m.desktopNav,"none","Desktop navigation was unintentionally hidden");
     }
-    // The public HTMLRewriter injects the presence asset in production; the
-    // static fixture adds it directly to test its actual mobile layout.
+    // Production HTMLRewriter injects the real presence assets. Load them
+    // into the static browser fixture so placement is tested in the live DOM.
     await page.locator(".dc-feedback-launch").waitFor();
+    await page.route("**/api/site-presence",route=>{
+     const response=route.request().method()==="GET"?{online:12,approximate:true}:{ok:true};
+     return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(response)});
+    });
     await page.addStyleTag({url:url+"/site-presence.css"});
-    await page.evaluate(()=>{
-     const pill=document.createElement("div");
-     pill.className="dc-online-pill";
-     const dot=document.createElement("span");dot.className="dc-online-dot";
-     const count=document.createElement("span");count.className="dc-online-number";count.textContent="12";
-     const label=document.createElement("span");label.className="dc-online-label";label.textContent="online";
-     pill.append(dot,count,label);document.body.append(pill);
-    });
-    const floating=await page.evaluate(()=>{
+    await page.addScriptTag({url:url+"/site-presence.js"});
+    await page.locator(".site-header .dc-online-rail .dc-online-pill").waitFor();
+    await page.waitForFunction(()=>document.querySelector(".dc-online-number")?.textContent==="12");
+    const placement=await page.evaluate(()=>{
+     const header=document.querySelector(".site-header");
+     const controls=header.querySelector(".header-inner");
+     const supporter=header.querySelector(".site-supporter-strip");
+     const rail=header.querySelector(".dc-online-rail");
+     const pill=rail.querySelector(".dc-online-pill");
+     const profile=header.querySelector(".header-profile-button");
      const feedback=document.querySelector(".dc-feedback-launch");
-     const pill=document.querySelector(".dc-online-pill");
-     const a=feedback.getBoundingClientRect(),b=pill.getBoundingClientRect();
-     return {feedback:a.toJSON(),pill:b.toJSON(),screenWidth:innerWidth,
-      pointerEvents:getComputedStyle(pill).pointerEvents};
+     const rect=el=>el.getBoundingClientRect().toJSON();
+     return {header:rect(header),controls:rect(controls),supporter:rect(supporter),
+      rail:rect(rail),pill:rect(pill),profile:rect(profile),feedback:rect(feedback),
+      correctOrder:rail.parentElement===header&&rail.nextElementSibling===supporter,
+      fixed:getComputedStyle(pill).position==="fixed",
+      pointerEvents:getComputedStyle(pill).pointerEvents,screenWidth:innerWidth};
     });
-    assert.ok(floating.pill.bottom<=floating.feedback.top-4,
-      "Compact count must clear Feedback by at least 4px at "+width+"px: "+JSON.stringify(floating));
-    assert.ok(floating.pill.height<=25&&floating.pill.width<=95,
-      "Moxgate-inspired count must stay small at "+width+"px: "+JSON.stringify(floating));
-    assert.ok(floating.pill.right<=width+1&&floating.pill.left>=0,
-      "Counter must stay within viewport at "+width+"px: "+JSON.stringify(floating));
-    assert.equal(floating.pointerEvents,"none","Counter must not intercept Feedback taps");
+    assert.equal(placement.correctOrder,true,"Online strip must sit just before supporter ticker at "+width+"px");
+    assert.ok(placement.rail.top>=placement.controls.bottom-1 &&
+      placement.rail.bottom<=placement.supporter.top+1,
+      "Online strip must fit between profile header and supporter ticker at "+width+"px: "+JSON.stringify(placement));
+    assert.ok(placement.pill.width<=90&&placement.pill.height<=18,
+      "Online label must remain a tiny strip at "+width+"px: "+JSON.stringify(placement));
+    assert.ok(Math.abs(placement.pill.right-placement.profile.right)<=4,
+      "Online strip should align with profile button right edge at "+width+"px: "+JSON.stringify(placement));
+    assert.ok(placement.pill.left>=0&&placement.pill.right<=width+1,
+      "Online strip must fit inside viewport at "+width+"px: "+JSON.stringify(placement));
+    assert.equal(placement.fixed,false,"Online strip should never float over page content");
+    assert.equal(placement.pointerEvents,"none","Online count should not block clicks");
+    assert.ok(placement.header.height<=m.headerHeight+20,
+      "Inline microstrip must not significantly enlarge mobile sticky header");
     assert.deepEqual(errors,[],"Uncaught browser errors at "+width);
    }finally{await ctx.close()}
   }
