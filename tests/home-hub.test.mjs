@@ -61,6 +61,7 @@ test('The homepage explains the full site and enlarges the featured card without
  assert.ok(html.includes('<p>'+selected+'</p>'),'Exact owner-selected overview must appear');
  assert.match(css,/\.hub-feature\{[^\n]*transform:rotate\(1deg\)/);
  assert.match(css,/\.hub-feature:hover\{transform:rotate\(0\) translateY\(-3px\)/);
+ assert.match(css,/\.hub-feature\{[^\n]*transition:transform \.2s,box-shadow \.2s/);
  assert.match(css,/\.hub-feature-main\{[^\n]*grid-template-columns:154px minmax\(0,1fr\)/);
  assert.match(css,/\.hub-feature-portrait\{[^\n]*width:154px;height:215px/);
  assert.match(css,/@media\(max-width:430px\)\{\.hub-feature-main\{grid-template-columns:110px/);
