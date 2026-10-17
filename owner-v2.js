@@ -29,8 +29,8 @@ const makeStat=(labelText)=>{const card=el("section",null,"owner-presence-stat")
 const presenceOnline=makeStat("● ONLINE NOW");
 const presenceMembers=makeStat("REGISTERED MEMBERS");
 const presenceTop=makeStat("TOP PAGE");
-presenceRow.append(heading,presenceCards);
 heading.before(presenceRow);
+presenceRow.append(heading,presenceCards);
 const presenceDetails=el("details",null,"owner-presence-details");
 presenceDetails.append(el("summary","LIVE BROWSERS BY PAGE"));
 const presenceList=el("div","Unlock the dashboard to view page counts.","owner-presence-page-list");
