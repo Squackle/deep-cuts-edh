@@ -67,3 +67,11 @@ test('The homepage explains the full site and enlarges the featured card without
  assert.match(css,/@media\(max-width:430px\)\{\.hub-feature-main\{grid-template-columns:110px/);
  assert.match(html,/href="\/reports\/commander-mustard" aria-label="Read the featured Commander Mustard rescue report"/);
 });
+
+test('Desktop feature expands only into the right gutter without shifting its grid origin',()=>{
+ assert.match(css,/@media\(min-width:1229px\)\{\.hub-page \.hub-feature-stage\{width:calc\(100% \+ clamp\(0px, calc\(50vw - 614px\), 240px\)\)\}/);
+ assert.match(css,/\.hub-feature-stage\{position:relative;isolation:isolate;min-width:0\}/);
+ assert.match(css,/\.hub-feature\{[^\n]*transform:rotate\(1deg\);transition:transform \.2s/);
+ assert.match(css,/\.hub-feature:hover\{transform:rotate\(0\) translateY\(-3px\)/);
+ assert.match(css,/@media\(max-width:980px\)/);
+});
