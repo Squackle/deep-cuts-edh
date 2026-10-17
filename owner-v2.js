@@ -22,6 +22,20 @@ const oldNav=document.querySelector(".owner-main-nav");oldNav.remove();
 stage.replaceChildren();main.classList.add("owner-v2");
 const heading=main.querySelector("h1");heading.textContent="Owner Command Center";document.title="Owner Command Center | Deep Cuts EDH";
 const existingDescription=main.querySelector(".owner-subtitle");if(existingDescription)existingDescription.textContent="Manage the website, community, games, and memberships.";
+const presenceRow=el("div",null,"owner-presence-head");
+const presenceCards=el("div",null,"owner-presence-stats");
+presenceCards.setAttribute("aria-label","Live site statistics");
+const makeStat=(labelText)=>{const card=el("section",null,"owner-presence-stat");card.append(el("span",labelText));const num=el("strong","—");card.append(num);const small=el("small","Awaiting owner key");card.append(small);presenceCards.append(card);return {card,num,small};};
+const presenceOnline=makeStat("● ONLINE NOW");
+const presenceMembers=makeStat("REGISTERED MEMBERS");
+const presenceTop=makeStat("TOP PAGE");
+presenceRow.append(heading,presenceCards);
+heading.before(presenceRow);
+const presenceDetails=el("details",null,"owner-presence-details");
+presenceDetails.append(el("summary","LIVE BROWSERS BY PAGE"));
+const presenceList=el("div","Unlock the dashboard to view page counts.","owner-presence-page-list");
+presenceDetails.append(presenceList);presenceCards.append(presenceDetails);
+
 const layout=el("div",null,"owner-v2-layout");
 const menu=el("nav",null,"owner-v2-menu");menu.setAttribute("aria-label","Admin navigation");
 const content=el("div",null,"owner-v2-content");
@@ -102,13 +116,49 @@ function clearPrivateViews(){
  showHome();
 }
 const lock=$("ownerLock");
-if(lock)lock.addEventListener("click",clearPrivateViews);
+if(lock)lock.addEventListener("click",()=>{clearPrivateViews();resetPresence()});
 const lockStatus=$("ownerLockStatus");
 if(lockStatus)new MutationObserver(()=>{
  const status=lockStatus.textContent||"";
- if(status.includes("Auto-locked")||status.includes("Owner key cleared"))clearPrivateViews();
+ if(status.includes("Auto-locked")||status.includes("Owner key cleared")){clearPrivateViews();resetPresence();}
 }).observe(lockStatus,{childList:true,subtree:true,characterData:true});
 function ownerKey(){return $("opsForm").elements.operatorKey.value.trim();}
+let presenceRequest=0;
+function resetPresence(){
+ ++presenceRequest;
+ presenceOnline.num.textContent=presenceMembers.num.textContent=presenceTop.num.textContent="—";
+ for(const stat of [presenceOnline,presenceMembers,presenceTop])stat.small.textContent="Owner key required";
+ presenceList.textContent="Unlock the dashboard to view page counts.";
+ presenceDetails.open=false;
+}
+async function refreshPresence(){
+ const key=ownerKey();
+ if(!/^dcissuer1_[a-f0-9]{64}$/.test(key)){resetPresence();return}
+ const seq=++presenceRequest;
+ try{
+  const result=await api("presence");
+  if(seq!==presenceRequest||ownerKey()!==key)return;
+  const {presence,registeredMembers}=result;
+  if(!Number.isSafeInteger(presence?.online)||!Number.isSafeInteger(registeredMembers))throw Error("Incomplete presence data");
+  presenceOnline.num.textContent=presence.online.toLocaleString();
+  presenceOnline.small.textContent="Open browsers · site-wide";
+  presenceMembers.num.textContent=registeredMembers.toLocaleString();
+  presenceMembers.small.textContent="Registered Community profiles";
+  const rows=Object.entries(presence.pages||{}).filter(([name,count])=>typeof name==="string"&&Number.isSafeInteger(count)&&count>=0).sort((a,b)=>b[1]-a[1]);
+  presenceTop.num.textContent=(rows[0]?.[1]??0).toLocaleString();
+  presenceTop.small.textContent=rows[0]?.[0]??"No browsers connected";
+  presenceList.replaceChildren();
+  if(!rows.length)presenceList.append(el("p","No active browsers reported."));
+  else for(const [name,count] of rows){
+   const line=el("div",null,"owner-presence-page");
+   line.append(el("span",name),el("strong",count.toLocaleString()));presenceList.append(line);
+  }
+ }catch(e){
+  if(seq!==presenceRequest)return;
+  for(const stat of [presenceOnline,presenceMembers,presenceTop]){stat.num.textContent="—";stat.small.textContent="Data temporarily unavailable";}
+  presenceList.textContent="Could not load live browser counts.";
+ }
+}
 function panelStatus(id,message){const node=spaces.get(id)?.querySelector(".owner-v2-message");if(node)node.textContent=message||"";}
 async function api(view,payload){
  const key=ownerKey();if(!/^dcissuer1_[a-f0-9]{64}$/.test(key))throw Error("Enter your private owner key above to load this section.");
@@ -461,6 +511,13 @@ staticPanel("sweep","Launch a safe security audit at any time. Choose Run workfl
 staticPanel("seo","Search Console indexing and AdSense approval depend on Google. The tools below open their authoritative dashboards; this page does not invent search traffic or approval.",[
  ["Search Console","https://search.google.com/search-console"],["Sitemap","https://deep-cuts-edh.pages.dev/sitemap.xml"],["Robots","https://deep-cuts-edh.pages.dev/robots.txt"],["AdSense","https://www.google.com/adsense/"]
 ]);
+const operatorInput=$("opsForm").elements.operatorKey;
+operatorInput.addEventListener("change",refreshPresence);
+operatorInput.addEventListener("input",()=>{if(!/^dcissuer1_[a-f0-9]{64}$/.test(ownerKey()))resetPresence();});
+window.addEventListener("focus",refreshPresence);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshPresence()});
+window.setInterval(()=>{if(/^dcissuer1_[a-f0-9]{64}$/.test(ownerKey()))refreshPresence();},30000);
+refreshPresence();
 const route=decodeURIComponent(location.hash.slice(1));
 const found=groups.flatMap(([g,x])=>x.map(([id])=>({group:g,id}))).find(x=>x.id===route);
 if(found)showTool(found.id,found.group);
