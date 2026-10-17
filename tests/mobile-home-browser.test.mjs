@@ -94,48 +94,53 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
     }else{
      assert.notEqual(m.desktopNav,"none","Desktop navigation was unintentionally hidden");
     }
-    // Production HTMLRewriter injects the real presence assets. Load them
-    // into the static browser fixture so placement is tested in the live DOM.
+    // Load the real presence code into the static browser fixture. It should
+    // join the existing supporter ticker, not create a second header strip.
     await page.locator(".dc-feedback-launch").waitFor();
     await page.route("**/api/site-presence",route=>{
      const response=route.request().method()==="GET"?{online:12,approximate:true}:{ok:true};
      return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(response)});
     });
-    const headerBeforeStrip=await page.locator(".site-header").evaluate(el=>el.getBoundingClientRect().height);
+    const headerBeforePresence=await page.locator(".site-header").evaluate(el=>el.getBoundingClientRect().height);
     await page.addStyleTag({url:url+"/site-presence.css"});
     await page.addScriptTag({url:url+"/site-presence.js"});
-    await page.locator(".site-header .dc-online-rail .dc-online-pill").waitFor();
+    await page.locator(".site-header .site-supporter-inner > .dc-online-pill").waitFor();
     await page.waitForFunction(()=>document.querySelector(".dc-online-number")?.textContent==="12");
     const placement=await page.evaluate(()=>{
      const header=document.querySelector(".site-header");
-     const controls=header.querySelector(".header-inner");
-     const supporter=header.querySelector(".site-supporter-strip");
-     const rail=header.querySelector(".dc-online-rail");
-     const pill=rail.querySelector(".dc-online-pill");
-     const profile=header.querySelector(".header-profile-button");
+     const strip=header.querySelector(".site-supporter-strip");
+     const inner=strip.querySelector(".site-supporter-inner");
+     const window=inner.querySelector(".site-supporter-window");
+     const pill=inner.querySelector(".dc-online-pill");
      const feedback=document.querySelector(".dc-feedback-launch");
-     const rect=el=>el.getBoundingClientRect().toJSON();
-     return {header:rect(header),controls:rect(controls),supporter:rect(supporter),
-      rail:rect(rail),pill:rect(pill),profile:rect(profile),feedback:rect(feedback),
-      correctOrder:rail.parentElement===header&&rail.nextElementSibling===supporter,
-      fixed:getComputedStyle(pill).position==="fixed",
-      pointerEvents:getComputedStyle(pill).pointerEvents,screenWidth:innerWidth};
+     const r=el=>el.getBoundingClientRect().toJSON();
+     return {
+      header:r(header),strip:r(strip),inner:r(inner),window:r(window),pill:r(pill),
+      feedback:r(feedback),pillIsLast:inner.lastElementChild===pill,
+      singleSharedStrip:!header.querySelector(".dc-online-rail"),
+      independent:!window.contains(pill),
+      scrolling:getComputedStyle(strip.querySelector(".site-supporter-track")).animationName,
+      position:getComputedStyle(pill).position,
+      pointerEvents:getComputedStyle(pill).pointerEvents
+     };
     });
-    assert.equal(placement.correctOrder,true,"Online strip must sit just before supporter ticker at "+width+"px");
-    assert.ok(placement.rail.top>=placement.controls.bottom-1 &&
-      placement.rail.bottom<=placement.supporter.top+1,
-      "Online strip must fit between profile header and supporter ticker at "+width+"px: "+JSON.stringify(placement));
+    assert.ok(placement.singleSharedStrip&&placement.pillIsLast&&placement.independent,
+      "Supporters and online count must share ONE strip while keeping scroll independent: "+JSON.stringify(placement));
+    assert.ok(Math.abs(placement.header.height-headerBeforePresence)<=1,
+      "No extra header height when combining counts and supporters at "+width+"px: "+JSON.stringify(placement));
+    assert.ok(placement.strip.height>=27&&placement.strip.height<=30,
+      "Existing 28px supporter ribbon must retain height at "+width+"px");
+    assert.ok(placement.pill.top>=placement.strip.top-1&&placement.pill.bottom<=placement.strip.bottom+1,
+      "Online count must remain inside the supporter ribbon at "+width+"px: "+JSON.stringify(placement));
     assert.ok(placement.pill.width<=90&&placement.pill.height<=18,
-      "Online label must remain a tiny strip at "+width+"px: "+JSON.stringify(placement));
-    const alignedRight=width<=1180?placement.profile.right:placement.controls.right;
-    assert.ok(Math.abs(placement.pill.right-alignedRight)<=4,
-      "Online strip should align with avatar on mobile and header edge on desktop at "+width+"px: "+JSON.stringify(placement));
-    assert.ok(placement.pill.left>=0&&placement.pill.right<=width+1,
-      "Online strip must fit inside viewport at "+width+"px: "+JSON.stringify(placement));
-    assert.equal(placement.fixed,false,"Online strip should never float over page content");
-    assert.equal(placement.pointerEvents,"none","Online count should not block clicks");
-    assert.ok(placement.header.height<=headerBeforeStrip+20,
-      "Inline microstrip must not significantly enlarge mobile sticky header");
+      "Online count must stay tiny at "+width+"px: "+JSON.stringify(placement));
+    assert.ok(Math.abs(placement.pill.right-placement.inner.right)<=3,
+      "Online count must stay pinned to the right edge at "+width+"px: "+JSON.stringify(placement));
+    assert.ok(placement.window.width>=30,
+      "Supporter ticker needs visible scrolling room at "+width+"px: "+JSON.stringify(placement));
+    assert.equal(placement.scrolling,"site-supporter-roll","Supporters must continue scrolling independently");
+    assert.notEqual(placement.position,"fixed");
+    assert.equal(placement.pointerEvents,"none","Online count must not intercept links or feedback");
     assert.deepEqual(errors,[],"Uncaught browser errors at "+width);
    }finally{await ctx.close()}
   }
