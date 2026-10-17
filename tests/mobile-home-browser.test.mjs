@@ -101,6 +101,7 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
      const response=route.request().method()==="GET"?{online:12,approximate:true}:{ok:true};
      return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(response)});
     });
+    const headerBeforeStrip=await page.locator(".site-header").evaluate(el=>el.getBoundingClientRect().height);
     await page.addStyleTag({url:url+"/site-presence.css"});
     await page.addScriptTag({url:url+"/site-presence.js"});
     await page.locator(".site-header .dc-online-rail .dc-online-pill").waitFor();
@@ -132,7 +133,7 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
       "Online strip must fit inside viewport at "+width+"px: "+JSON.stringify(placement));
     assert.equal(placement.fixed,false,"Online strip should never float over page content");
     assert.equal(placement.pointerEvents,"none","Online count should not block clicks");
-    assert.ok(placement.header.height<=m.headerHeight+20,
+    assert.ok(placement.header.height<=headerBeforeStrip+20,
       "Inline microstrip must not significantly enlarge mobile sticky header");
     assert.deepEqual(errors,[],"Uncaught browser errors at "+width);
    }finally{await ctx.close()}
