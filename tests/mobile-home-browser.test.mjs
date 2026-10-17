@@ -127,8 +127,9 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
       "Online strip must fit between profile header and supporter ticker at "+width+"px: "+JSON.stringify(placement));
     assert.ok(placement.pill.width<=90&&placement.pill.height<=18,
       "Online label must remain a tiny strip at "+width+"px: "+JSON.stringify(placement));
-    assert.ok(Math.abs(placement.pill.right-placement.profile.right)<=4,
-      "Online strip should align with profile button right edge at "+width+"px: "+JSON.stringify(placement));
+    const alignedRight=width<=1180?placement.profile.right:placement.controls.right;
+    assert.ok(Math.abs(placement.pill.right-alignedRight)<=4,
+      "Online strip should align with avatar on mobile and header edge on desktop at "+width+"px: "+JSON.stringify(placement));
     assert.ok(placement.pill.left>=0&&placement.pill.right<=width+1,
       "Online strip must fit inside viewport at "+width+"px: "+JSON.stringify(placement));
     assert.equal(placement.fixed,false,"Online strip should never float over page content");
