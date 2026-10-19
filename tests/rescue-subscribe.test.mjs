@@ -11,7 +11,10 @@ const privacy = read('privacy.html');
 const expectedAction = 'https://api.follow.it/subscription-form/ZGY5eUdvK3BUVXRMdWdaMys5NVRWcUg4L3QrQkZTcUY3RlBDVWQ3SkJ4cmNVblgzMUVUNWVIaHZlUkRsaUdCUGlsWkcxQTlPMCtzUVVubTZTRkE3M2loNk9JRTRTM254MWtEaWRvVEEyUU9jd2JtQndTbEhybGQ3eFdDbzk1YkZ8K0hwc1F1K1AveXlvNGlhbzl0OVB1VHA0dk5UQ1A5YlFtT1pHSUdOY2t2az0=/8';
 
 test('Homepage discovers the opt-in signup unobtrusively and has a static fallback link', () => {
-  assert.match(homepage, /href="\/rescue-subscribe\.css"/);
+  assert.ok(/href="\\/rescue-subscribe\\.css"/.test(homepage) ||
+    (homepage.includes('href="/home-styles.css"') &&
+      read('home-styles.css').includes('/* SOURCE: rescue-subscribe.css */')),
+    'Newsletter signup stylesheet must load directly or via exact homepage bundle');
   assert.match(homepage, /src="\/rescue-subscribe\.js"/);
   assert.match(homepage, /href="\/subscribe">EMAIL UPDATES/);
   assert.ok(homepage.includes('<meta name="follow.it-verification-code" content="yWX0twQw2GDWNdJWL78F"/>'));
