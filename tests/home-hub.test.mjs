@@ -80,7 +80,9 @@ test('Desktop feature expands only into the right gutter without shifting its gr
 test("PageSpeed changes stabilize homepage layout without touching AdSense or authentication",()=>{
  const stability=readFileSync('home-stability.css','utf8');
  assert.match(html,/<script>document\.documentElement\.classList\.add\("dc-js"\)<\/script>/);
- assert.match(html, /href="\/home-stability\.css"/);
+ assert.ok(html.includes('href="/home-styles.css"') &&
+  readFileSync('home-styles.css','utf8').includes('/* SOURCE: home-stability.css */'),
+  'Homepage stability CSS is present in the critical stylesheet bundle');
  assert.match(stability,/site-header:not\(:has\(>\.site-supporter-strip\)\)::after/);
  assert.match(stability,/header-inner:not\(\.header-profile-enabled\)/);
  assert.match(stability,/hub-card-top\{color:#435b47\}/);
@@ -121,7 +123,7 @@ test('Home CSS bundle preserves every source exactly in cascade order',()=>{
   'Homepage should issue one render-blocking author CSS request');
  let previous=-1;
  for(let i=0;i<assets.length;i++){
-  const name=assets[i],marker='/* SOURCE: '+name+' */\\n';
+  const name=assets[i],marker='/* SOURCE: '+name+' */';
   const start=bundle.indexOf(marker);
   assert.ok(start>previous,'CSS cascade order changed at '+name);
   const from=start+marker.length;
