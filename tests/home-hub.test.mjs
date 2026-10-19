@@ -43,7 +43,7 @@ test('Homepage loads only the shared lightweight UI scripts',()=>{
   assert.ok(html.includes('src="'+kept+'"'),kept+' retained');
  }
  assert.ok(html.includes('src="https://pagead2.googlesyndication.com/'),'AdSense retained');
- assert.ok(html.includes('href="/home-hub.css"'));
+ assert.ok(html.includes('href="/home-styles.css"'));
 });
 test('Branding, indexing, and accessible structure remain',()=>{
  assert.match(html,/<link rel="canonical" href="https:\/\/deep-cuts-edh\.pages\.dev\/"/);
@@ -109,4 +109,34 @@ test('Residual homepage navigation and report badges meet WCAG AA contrast',()=>
   ['3f5d43','e7ede1'],['455a43','eee9d8'],
   ['455d45','eee9d8'],['455d45','f9f6eb']
  ])assert.ok(ratio(fg,bg)>=4.5,`Contrast below WCAG AA: #${fg} on #${bg}`);
+});
+
+test('Home CSS bundle preserves every source exactly in cascade order',()=>{
+ const assets=['styles.css','retro.css','theme-v2.css','header-profile.css',
+  'release-polish.css','home-hub.css','rescue-subscribe.css',
+  'feedback.css','home-stability.css'];
+ const bundle=readFileSync('home-styles.css','utf8');
+ assert.equal((html.match(/<link rel="stylesheet"/g)||[]).length,1,
+  'Homepage should issue one render-blocking author CSS request');
+ let previous=-1;
+ for(let i=0;i<assets.length;i++){
+  const name=assets[i],marker='/* SOURCE: '+name+' */\\n';
+  const start=bundle.indexOf(marker);
+  assert.ok(start>previous,'CSS cascade order changed at '+name);
+  const from=start+marker.length;
+  const end=i===assets.length-1?bundle.length:bundle.indexOf('/* SOURCE: '+assets[i+1]+' */');
+  assert.ok(end>from,'Missing following CSS boundary '+name);
+  assert.equal(bundle.slice(from,end).trim(),readFileSync(name,'utf8').trim(),
+   'Bundled CSS has drifted from '+name);
+  previous=start;
+ }
+ for(const name of assets)assert.equal(html.includes('href="/'+name+'"'),false,'Redundant CSS request '+name);
+ assert.ok(html.includes('src="https://pagead2.googlesyndication.com/'),
+  'Preserve owner-approved AdSense script');
+});
+
+test('Supporter ticker measures its duplicated strip without a second forced reflow',()=>{
+ const ticker=readFileSync('header-profile.js','utf8');
+ assert.match(ticker,/const pixels=repeats\*tileWidth;/);
+ assert.doesNotMatch(ticker,/group\.getBoundingClientRect\(\)\.width/);
 });
