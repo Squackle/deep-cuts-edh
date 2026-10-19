@@ -1,0 +1,44 @@
+name: Daily safe security sweep
+on:
+  schedule:
+    # GitHub schedules use UTC. ~8:25 a.m. Central daylight / 7:25 a.m. standard.
+    - cron: "25 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deepcuts-daily-security
+  cancel-in-progress: false
+
+jobs:
+  daily-security:
+    name: Scheduled code and access checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out current default-branch source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Use supported Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate scanner rules and redaction
+        run: node --test tests/security-sweep.test.mjs
+      - name: Test negative owner / feature authorization paths
+        run: node --test tests/security-route-authorization.test.mjs tests/owner-nominations-api.test.mjs
+      - name: Test account isolation, Ko-fi replay and identity checks
+        run: node --test tests/security-identity-isolation.test.mjs tests/security-kofi-replay.test.mjs
+      - name: Run non-destructive source scan and anonymous public/Access-denial GET checks
+        run: node scripts/security-sweep.mjs --live
+      - name: Save sanitized report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepcuts-daily-security-report
+          path: security-report-output/report.*
+          if-no-files-found: warn
+          retention-days: 30

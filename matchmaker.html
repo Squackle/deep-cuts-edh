@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#172522"><meta name="robots" content="index,follow">
+<title>Commander Matchmaker — Find a Commander Idea | Deep Cuts EDH</title>
+<meta name="description" content="Discover an interesting Magic: The Gathering Commander idea. Pick a playstyle, colors and commander-card budget, or surprise yourself with overlooked legends.">
+<link rel="canonical" href="https://deep-cuts-edh.pages.dev/matchmaker">
+<meta property="og:type" content="website"><meta property="og:title" content="Find Your Next Commander | Deep Cuts EDH">
+<meta property="og:description" content="Not sure what Commander deck to build? Explore offbeat legends with explanations, verified card details and quick research links.">
+<meta property="og:url" content="https://deep-cuts-edh.pages.dev/matchmaker">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/retro.css">
+<link rel="stylesheet" href="/theme-v2.css"><link rel="stylesheet" href="/release-polish.css">
+<link rel="stylesheet" href="/header-profile.css"><link rel="stylesheet" href="/matchmaker.css">
+<script defer src="/header-profile.js"></script>
+<script type="module" src="/matchmaker.js"></script>
+</head><body class="matchmaker-page">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap header-inner">
+<a class="wordmark" href="/" aria-label="Deep Cuts home"><span class="wordmark-symbol" aria-hidden="true"><img src="/assets/deep-cuts-mark.svg" width="46" height="56" alt=""></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>YOUR NEXT COMMANDER IS OUT THERE</small></span></a>
+<nav class="primary-nav" aria-label="Main navigation"><a href="/#latest">RESCUE REPORT</a><a href="/#archive">COMMANDERS</a><a href="/library">CARD LIBRARY</a><a href="/deck">TOOLS &amp; RESOURCES</a><a class="daily-games-nav-link" href="/games">ARCADE</a><a href="/nominations">NOMINATIONS</a><a href="/community">COMMUNITY</a><a class="member-nav-link" href="/members">MEMBERS' LOUNGE</a></nav>
+<a class="header-action" href="/deep-cut-finder">RESEARCH DESK ↗</a>
+</div></header>
+<main id="main" class="mm-page">
+<div class="wrap">
+<section class="mm-intro"><div class="mm-eyebrow">DEEP CUTS / THE COMMANDER MATCHMAKER</div>
+<h1>Find a commander <em>idea.</em></h1>
+<p>Don't know what to build next? Discover unusual legends and take one from an idea to a real deck. Start with no preferences—or give the archive a little direction.</p>
+<div class="mm-start"><button id="mmSurprise" class="mm-button mm-button-accent" type="button">SURPRISE ME ↗</button><a href="#preferences" class="mm-button mm-button-outline">MATCH MY PLAYSTYLE ↓</a></div>
+</section>
+<section class="mm-workbench" id="preferences" aria-labelledby="mmFormHeading">
+<div class="mm-section-head"><span class="mm-eyebrow">01 / YOUR INVESTIGATION</span><h2 id="mmFormHeading">Give us a <em>clue.</em></h2><p>Everything here is optional. Want a completely fresh idea? Leave all three on “Any.”</p></div>
+<form id="mmForm">
+<div class="mm-filters">
+<label for="mmTheme">PLAYSTYLE <select id="mmTheme" name="theme"><option value="any">Surprise me with any strategy</option><option value="spells">Spellslinger</option><option value="copy">Copies and tricks</option><option value="artifacts">Artifacts</option><option value="enchantments">Enchantments</option><option value="graveyard">Graveyards</option><option value="politics">Politics and table talk</option><option value="ramp">Ramp and big mana</option><option value="tokens">Creature tokens</option><option value="sacrifice">Sacrifice</option><option value="control">Control</option><option value="combat">Combat</option></select></label>
+<label for="mmColor">COLORS I'M OPEN TO <select id="mmColor" name="color"><option value="any">Any color identity</option><option value="W">Contains white</option><option value="U">Contains blue</option><option value="B">Contains black</option><option value="R">Contains red</option><option value="G">Contains green</option><option value="mono">Mono-color only</option><option value="multi">Multicolor only</option></select></label>
+<label for="mmBudget">COMMANDER CARD PRICE <select id="mmBudget" name="max"><option value="any">Any price</option><option value="5">Up to $5</option><option value="15">Up to $15</option></select></label>
+</div>
+<p class="mm-small-note">Price is for the Commander card itself, <strong>not an entire deck</strong>. Color choices match cards containing that color, not just single-color commanders.</p>
+<div class="mm-form-actions"><button class="mm-button mm-button-accent" type="submit" id="mmMatch">FIND MY COMMANDER IDEA ↗</button><button class="mm-button mm-button-outline" type="button" id="mmReset">CLEAR FILTERS</button></div>
+</form>
+</section>
+<section class="mm-output" aria-labelledby="mmResultsHeading">
+<div class="mm-section-head"><span class="mm-eyebrow">02 / POSSIBLE SUSPECTS</span><h2 id="mmResultsHeading">Your next <em>legend.</em></h2></div>
+<div id="mmStatus" class="mm-status" role="status" aria-live="polite">Choose Surprise Me or match your playstyle to begin.</div>
+<div class="mm-result-actions" id="mmResultActions" hidden><button id="mmShuffle" type="button" class="mm-button mm-button-outline">DEAL FIVE MORE ↻</button><button id="mmCopy" type="button" class="mm-button mm-button-outline">COPY THIS DISCOVERY ↗</button></div>
+<div id="mmResults" class="mm-results" aria-live="polite"></div>
+<p class="mm-disclaimer">This is an editorial discovery tool, not a live popularity ranking, full rules engine, or deck power assessment. Card names, Commander legality, color identity, and listed single-card prices are checked against Scryfall when you search. Always check the current <a href="https://magic.wizards.com/en/formats/commander" target="_blank" rel="noopener noreferrer">official Commander format rules</a> and card rulings before building.</p>
+</section>
+</div>
+</main>
+<footer class="site-footer"><div class="wrap footer-content"><div><strong>DEEP CUTS <span>EDH</span></strong><p>Bad commanders. Good decks. No excuses.</p></div><div class="footer-links"><a href="/privacy">PRIVACY &amp; ADS</a><a href="/library">CARD LIBRARY ↗</a><a href="/deck">TOOLS &amp; RESOURCES ↗</a><a href="/games">ARCADE ↗</a><a href="/supporters">SUPPORT</a><a href="/community">COMMUNITY</a><a href="/">HOME ↗</a></div></div></footer>
+</body></html>
