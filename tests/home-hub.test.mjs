@@ -89,3 +89,24 @@ test("PageSpeed changes stabilize homepage layout without touching AdSense or au
  assert.match(html,/name="google-site-verification"/);
  assert.match(html,/name="follow.it-verification-code"/);
 });
+
+test('Residual homepage navigation and report badges meet WCAG AA contrast',()=>{
+ const stability=readFileSync('home-stability.css','utf8');
+ for(const rule of [
+  /\.hub-page \.hub-case-number\{color:#3f5d43\}/,
+  /\.hub-page \.hub-index-note\{color:#455a43\}/,
+  /\.hub-page :is\(\.hub-directory,\.hub-reports\) \.hub-eyebrow\{color:#455d45\}/,
+  /dc-home-nav-handoff 1ms 1\.25s backwards/,
+  /prefers-reduced-motion:reduce/
+ ])assert.match(stability,rule);
+ const l=hex=>{
+  const v=hex.match(/[a-f0-9]{2}/gi).map(c=>parseInt(c,16)/255)
+   .map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4);
+  return v[0]*.2126+v[1]*.7152+v[2]*.0722;
+ };
+ const ratio=(a,b)=>(Math.max(l(a),l(b))+.05)/(Math.min(l(a),l(b))+.05);
+ for(const [fg,bg] of [
+  ['3f5d43','e7ede1'],['455a43','eee9d8'],
+  ['455d45','eee9d8'],['455d45','f9f6eb']
+ ])assert.ok(ratio(fg,bg)>=4.5,`Contrast below WCAG AA: #${fg} on #${bg}`);
+});
