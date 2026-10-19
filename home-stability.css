@@ -55,7 +55,8 @@ html.dc-js .hub-page .site-header:not(:has(>.site-supporter-strip))::after{
 /* Lighthouse's remaining shift can include the temporary wide-screen nav
    being replaced with grouped navigation. During the short JS handoff keep
    the legacy nav in layout but visually quiet; if the shared script fails,
-   it becomes visible after 1.25 seconds. On no-JS pages it never hides. */
+   it becomes visible after 1.25 seconds. On no-JS pages it never hides.
+   The browser regression explicitly tests the failed-script fallback. */
 @media(min-width:1181px){
  @keyframes dc-home-nav-handoff{from{visibility:hidden}to{visibility:hidden}}
  html.dc-js .hub-page .site-header .header-inner:not(.site-desktop-ready)>.primary-nav{
