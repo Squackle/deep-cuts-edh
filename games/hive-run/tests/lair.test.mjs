@@ -93,7 +93,7 @@ test("Lair flash draws pixel telegraphs and honors reduced motion",()=>{
  drawLairEffects(ctx,run,20,4000,burst,false);
  assert.ok(count>8);
 });
-test("both page variants offer four accessible boss buttons and clear unranked status",()=>{
+test("Dominion public page offers five accessible boss buttons and clear unranked status",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const js=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
  const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
@@ -106,5 +106,5 @@ test("both page variants offer four accessible boss buttons and clear unranked s
  assert.match(js,/showBossBriefing\(\)/);
  assert.match(js,/RETRY BOSS/);
  assert.match(css,/\.lair-choices/);
- assert.match(html,/1\.4 · BEACON/);
+ assert.match(html,/2\.0 · DOMINION/);
 });
