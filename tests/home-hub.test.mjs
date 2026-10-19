@@ -1,4 +1,5 @@
 import test from 'node:test';
+import "./guest-session.test.mjs";
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 const html=readFileSync('index.html','utf8');
@@ -139,4 +140,15 @@ test('Supporter ticker measures its duplicated strip without a second forced ref
  const ticker=readFileSync('header-profile.js','utf8');
  assert.match(ticker,/const pixels=repeats\*tileWidth;/);
  assert.doesNotMatch(ticker,/group\.getBoundingClientRect\(\)\.width/);
+});
+
+test("Homepage public-presence badge ships CSS only once and preserves security headers",()=>{
+ const mw=readFileSync("functions/_middleware.js","utf8");
+ const headers=readFileSync("_headers","utf8");
+ assert.match(mw,/const HOME_BADGE=/);
+ assert.match(mw,/path==="\/"\|\|path==="\/index\.html"\?HOME_BADGE:PUBLIC_BADGE/);
+ assert.match(mw,/const PUBLIC_BADGE=.*site-presence\.css/);
+ assert.match(headers,/\/\n  Cross-Origin-Opener-Policy: same-origin-allow-popups/);
+ assert.match(headers,/Strict-Transport-Security: max-age=31536000/);
+ assert.match(headers,/Content-Security-Policy: frame-ancestors/);
 });
