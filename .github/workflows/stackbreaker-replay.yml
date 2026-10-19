@@ -7,6 +7,10 @@ on:
       - 'db/stackbreaker-verified-v1.sql'
       - 'profile-stackbreaker.js'
       - 'tests/stackbreaker-server-replay.test.mjs'
+      - 'tests/stackbreaker-api-integration.test.mjs'
+      - 'games/stackbreaker.*'
+      - 'games.html'
+      - 'profile.html'
       - '.github/workflows/stackbreaker-replay.yml'
   workflow_dispatch:
 permissions:
@@ -21,9 +25,10 @@ jobs:
         with:
           node-version: '24'
       - name: Pin 250-game Classic scenario source, replay, UTC and endpoint gating
-        run: node --test tests/stackbreaker-server-replay.test.mjs
+        run: node --test tests/stackbreaker-server-replay.test.mjs tests/stackbreaker-api-integration.test.mjs
       - name: Syntax-check website-only replay and guarded API
         run: |
           node --check src/stackbreaker-verify/server-replay.js
           node --check functions/api/stackbreaker.js
           node --check profile-stackbreaker.js
+          node --check games/stackbreaker.js
