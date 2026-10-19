@@ -114,7 +114,3 @@
  .hub-page .hub-intro h1{margin:10px 0}
 }
 
-/* Small Matchmaker entry point, outside the frozen Card Library. */
-.hub-matchmaker-teaser{margin:16px 0 0;color:#c2cdb7;font:800 10px/1.55 ui-sans-serif,system-ui;letter-spacing:.045em}
-.hub-matchmaker-teaser a{color:#f2d496;text-decoration:underline;text-underline-offset:3px}
-.hub-matchmaker-teaser a:focus-visible{outline:2px solid #f2d496;outline-offset:4px}
