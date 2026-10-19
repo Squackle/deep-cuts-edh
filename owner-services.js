@@ -11,6 +11,7 @@ if(!home||!area)return;
 const groups=[
  {title:"Search & Google",items:[
   ["Search Console","Indexing, search terms and inspections","https://search.google.com/search-console","search.google.com"],
+  ["Search Console Insights","Search performance and trending content","https://search.google.com/search-console/insights","search.google.com"],
   ["PageSpeed Insights","Mobile speed and Core Web Vitals","https://pagespeed.web.dev/","pagespeed.web.dev"],
   ["Google AdSense","Ad approval and earnings","https://adsense.google.com/","adsense.google.com"],
   ["Google Analytics","Analytics dashboard, if configured","https://analytics.google.com/","analytics.google.com"],
