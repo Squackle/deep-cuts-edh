@@ -21,7 +21,7 @@ test("the original four bosses retain their period; Broodmother uses its own tun
   after.phase=after.phases;
   after.introMs=0;
   // Final-phase speed must never accelerate relative to the other bosses.
-  assert.equal(PREY[spec.id].period,4);
+  assert.equal(PREY[spec.id].period,spec.id==="broodmother"?7:4);
  }
 });
 test("Weaver web freezes the swarm but continues enemy movement, web expiry and casting",()=>{
