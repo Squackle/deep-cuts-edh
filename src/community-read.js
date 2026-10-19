@@ -3,6 +3,27 @@ import {publicChallenge,featuredDeckEligible,isOpenChallenge} from "./featured-c
 export async function communityRead(req,db){
  const q=new URL(req.url).searchParams,action=q.get("action")||"home";
  if(action==="me"){const a=await auth(req,db);return a?send({profile:publicProfile(a)}):fail("Sign in with your profile recovery key.",401)}
+ if(action==="passport"){
+  // Entirely read-only. Existing verified rows belong exclusively to the
+  // authenticated profile; no client-provided profile ID or legacy score writes.
+  const a=await auth(req,db);
+  if(!a)return fail("Sign in to view your Investigator Passport.",401);
+  const id=a.id;
+  const [daily,arcane,decks,entries,comments,playtests]=await Promise.all([
+   db.prepare("SELECT game,COUNT(*) AS completed,SUM(CASE WHEN won=1 THEN 1 ELSE 0 END) AS won FROM daily_game_runs WHERE profile_id=? AND finished_at IS NOT NULL GROUP BY game").bind(id).all(),
+   db.prepare("SELECT game,COUNT(*) AS completed,SUM(CASE WHEN won=1 THEN 1 ELSE 0 END) AS won FROM daily_arcane_runs WHERE profile_id=? AND finished_at IS NOT NULL GROUP BY game").bind(id).all(),
+   db.prepare("SELECT COUNT(*) AS n FROM community_decks WHERE owner_id=?").bind(id).first(),
+   db.prepare("SELECT COUNT(*) AS n FROM community_entries WHERE member_id=?").bind(id).first(),
+   db.prepare("SELECT COUNT(*) AS n FROM community_comments WHERE author_id=? AND status='visible'").bind(id).first(),
+   db.prepare("SELECT COUNT(*) AS n FROM community_playtests WHERE author_id=?").bind(id).first()
+  ]);
+  return send({
+   games:{daily:daily.results||[],arcane:arcane.results||[]},
+   community:{publishedDecks:Number(decks?.n||0),challengeEntries:Number(entries?.n||0),visibleContributions:Number(comments?.n||0),playtests:Number(playtests?.n||0)},
+   verifiedSource:true,
+   note:"These are already verified or stored records. Commander discoveries are not yet tracked."
+  });
+ }
  if(action==="profile"){
   const handle=safe(q.get("handle"),24);
   const p=await db.prepare("SELECT id,handle,bio,bio_emoji,avatar,focus_x,focus_y,focus_zoom,created_at FROM community_profiles WHERE handle=? COLLATE NOCASE").bind(handle).first();
