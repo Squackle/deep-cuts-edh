@@ -1,4 +1,5 @@
 import test from "node:test";
+import "./rescue-report-feed.test.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import http from "node:http";
