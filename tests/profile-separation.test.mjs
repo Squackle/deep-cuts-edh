@@ -82,3 +82,6 @@ test("Community sections use clear names without gaps from removed private tabs"
  for(const name of ["DISCUSSIONS","DECK ARCHIVE","CHALLENGES","FIELD REPORTS","FIND PLAYERS","RESEARCH BOARDS","LEGACY COMPARE","RANKINGS"])assert.ok(nav.includes(name),name+" missing");
  assert.doesNotMatch(nav,/>\d{2} \/ /);
 });
+
+// Verify Passport read-only profile data through the existing profile regression suite.
+import "./passport.test.mjs";
