@@ -177,7 +177,7 @@
 .games-hive-feature{display:grid;grid-template-columns:minmax(180px,.85fr) minmax(0,1.2fr);gap:0;margin:20px 0 24px;
  border:2px solid #a68c56;background:#12291f;color:#ece3c9;box-shadow:5px 5px 0 #10241a}
 .games-hive-art{position:relative;display:flex;align-items:flex-end;min-height:225px;overflow:hidden;
- background:linear-gradient(0deg,#0c1d18eb 0%,#152a20aa 20%,#09211b40 62%),url('/games/hive-run/assets/backgrounds/hive-run-atlas.webp') left top/200% 200% no-repeat,#1b2d22;
+ background:linear-gradient(0deg,#10102488 0%,#10102408 52%),url('/assets/hive-run-first-sliver-pixel.webp') center center/cover no-repeat,#101b2f;
  image-rendering:pixelated}
 .games-hive-art span{position:relative;z-index:1;margin:12px;padding:7px 9px;background:#0a1714d9;border:1px solid #b09a63;
  color:#eddbac;font:800 9px/1.35 ui-monospace,monospace}
@@ -192,7 +192,7 @@
 .games-hive-copy .games-button{min-height:43px}
 .games-hive-copy .games-button-quiet{background:#193c2e;color:#f3e3bd;border-color:#87977b}
 .games-hive-copy .games-hive-small{font:650 11px/1.45 system-ui,sans-serif;color:#c9cfaf;margin:12px 0 0}
-@media(max-width:660px){.games-hive-feature{grid-template-columns:1fr}.games-hive-art{min-height:160px;background-position:left top}.games-hive-copy{padding:18px 16px}}
+@media(max-width:660px){.games-hive-feature{grid-template-columns:1fr}.games-hive-art{min-height:160px;background-position:center center}.games-hive-copy{padding:18px 16px}}
 
 /* Full Scryfall card on hover, keyboard focus or the dedicated touch preview.
    Tooltip lives under <body> to avoid clipping inside game cards/dossiers. */
