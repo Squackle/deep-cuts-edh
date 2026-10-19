@@ -7,8 +7,8 @@ import {BRIEFINGS,BossBriefingGate} from "../src/boss-briefing.js";
 import {newRun,start,step,RULES_VERSION} from "../src/engine.js";
 import {ABILITIES} from "../src/miniboss.js";
 
-test("four selectable Lair bosses match original encounter difficulty and correct depths",()=>{
- const ids=["stalker","warden","weaver","guardian"];
+test("five selectable Lair bosses match original encounter difficulty and correct depths",()=>{
+ const ids=["stalker","warden","weaver","guardian","broodmother"];
  assert.deepEqual(LAIR_BOSSES.map(b=>b.id),ids);
  for(const spec of LAIR_BOSSES){
   const run=createLairRun(spec.id);
@@ -41,7 +41,7 @@ test("practice is deterministic, repeatable and never treated as ranked",()=>{
  assert.equal(isLairChallenge("hunt","practice"),true);
  assert.equal(isLairChallenge("classic","practice"),false);
  assert.equal(isLairChallenge("hunt","daily"),false);
- assert.equal(RULES_VERSION,"hive-1.3","existing ranked replay rules version is unaffected");
+ assert.equal(RULES_VERSION,"hive-1.5.4","Dominion includes all five bosses");
 });
 test("practicing a boss ends in a dedicated victory instead of a mutation draft",()=>{
  const run=createLairRun("weaver");
