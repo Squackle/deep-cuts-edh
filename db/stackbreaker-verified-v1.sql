@@ -30,3 +30,12 @@ CREATE TABLE IF NOT EXISTS stackbreaker_equipped_v1(
  equipped_at INTEGER NOT NULL DEFAULT(unixepoch()),
  PRIMARY KEY(profile_id,slot)
 );
+
+-- Default-off database rollout flag. This avoids editing or overwriting existing
+-- Cloudflare Pages secrets/environment bindings during a staged launch.
+CREATE TABLE IF NOT EXISTS stackbreaker_launch_v1 (
+ feature TEXT PRIMARY KEY CHECK(feature='verified-daily'),
+ enabled INTEGER NOT NULL DEFAULT 0 CHECK(enabled IN (0,1)),
+ updated_at INTEGER NOT NULL DEFAULT(unixepoch())
+);
+INSERT OR IGNORE INTO stackbreaker_launch_v1(feature,enabled) VALUES('verified-daily',0);
