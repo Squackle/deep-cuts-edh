@@ -8,6 +8,8 @@ import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
 import {drawPlayerLocator,drawQueuedTurn} from "./player-visibility.js";
 import {drawTrapHints} from "./trap-assist.js";
+import {canPlaceWard,placeHatchlingWard,drawHatchlingWards} from "./hatchling-ward.js";
+import {drawBroodmotherHatchlings} from "./broodmother-hatchlings.js";
 import {captureFlash,drawCaptureFlash} from "./beacon-feedback.js";
 import {KEY_DIRECTIONS,keyboardDirection,mutationSelectionIndex,isTouchMutationSelection,resumeHeading,swipeHeading,SWIPE_RESUME_KEYS} from "./input-controls.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
@@ -22,7 +24,9 @@ import {editArcadeInitials,parseArcadeInitials} from "./arcade-initials.js";
 import {createSessionBest} from "./session-best.js";
 import {isLairChallenge,createLairRun,completeLairRun,lairDetails} from "./lair.js";
 import {lairFlashEvent,drawLairEffects} from "./lair-visuals.js";
-import {createGameOnlyMode} from "./game-only.js";
+import {victoryDetails,drawBroodTrailFinale} from "./victory-scenes.js";
+import {VICTORY_HUNT_DESKTOP_AVIF,VICTORY_HUNT_MOBILE_AVIF} from "./victory-art.js";
+import {VictoryFanfare} from "./victory-fanfare.js";
 
 /* HIVE RUN Alpha 0.4 — hand-authored pixel-art minibosses and encounter powers. */
 const $=id=>document.getElementById(id);
@@ -95,6 +99,9 @@ try{selectedMode=localStorage.getItem("hive-mode-v1")==="classic"?"classic":"hun
 $("gameMode").value=selectedMode;
 const STORE="deepcuts-hive-run-best-v4",SOUND_STORE="deepcuts-hive-run-audio-v1",MUSIC_STORE="deepcuts-hive-run-music-v1";
 const soundtrack=new HatcherySoundtrack();
+const victoryFanfare=new VictoryFanfare();
+let victoryOpenedAt=0,lastVictoryDrawAt=-Infinity;
+const VICTORY_PAINT_INTERVAL_MS=1000/24;
 const bossGate=new BossBriefingGate();
 // Encounter director selects music automatically; no player-facing track previews.
 function setEncounterMusic(encounterType){
@@ -131,9 +138,9 @@ function syncUI(){
  $("playerAids").hidden=run.mode==="classic";
  $("mercyStatus").textContent=run.mercy>0?"◆ INSTINCT READY · 1 FREE PREY DODGE":"◆ INSTINCT USED";
  $("trapHelp").textContent=run.encounter?"◇ BOSS · NO TRAP HINTS":
-  run.evolutionsChosen<3?"◇ AMBER = LIMITED ESCAPES":"◇ TRAP TRAINING COMPLETE";
+  run.evolutionsChosen<3?"◇ AMBER = LIMITED ESCAPES":"◇ AMBER HINTS ENDED";
  const p=progress(run);
- $("progress").textContent=lairActive()?"LAIR PRACTICE · UNRANKED":run.status==="won"?"HIVE COMPLETE":
+ $("progress").textContent=lairActive()?"LAIR PRACTICE · UNRANKED":run.status==="won"?(run.outcome==="broodmother_defeated"?"THE HIVE REIGNS":"HIVE COMPLETE"):
   run.status==="draft"?"CHOOSE YOUR EVOLUTION":("NEXT MUTATION IN "+p.untilNext+" ENERGY");
  $("evoCountdown").textContent=run.status==="draft"?"READY":p.energy+" / 5 EV";
  $("evoCount").textContent=run.evolutionsChosen+" "+(run.evolutionsChosen===1?"EVOLUTION":"EVOLUTIONS");
@@ -141,9 +148,10 @@ function syncUI(){
  $("lastEvolution").textContent=run.lastMutation?"LAST: "+run.lastMutation.name.toUpperCase():"FIVE COLORS · FIVE POWERS";
  $("stateLabel").textContent=bossGate.phase==="briefing"?"BOSS DOSSIER · PAUSED":
   bossGate.phase==="countdown"?"REGROUP · "+bossGate.seconds:
-  ({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:"HIVE COMPLETE"})[run.status];
+  ({ready:"AWAITING PLAYER",running:"IN MOTION",paused:"PAUSED",draft:"EVOLVING",over:"RUN ENDED",won:run.outcome==="broodmother_defeated"?"VICTORIOUS":"HIVE COMPLETE"})[run.status];
  const playable=run.status==="running";
  $("pauseButton").disabled=!playable||bossGate.blocking||awaitingMutationResume;
+ $("wardButton").hidden=!canPlaceWard(run)||bossGate.blocking||awaitingMutationResume;
  $("pauseButton").textContent="Ⅱ PAUSE";
  $("soundButton").textContent=state.audio?"♪ SOUND ON":"♪ SOUND OFF";
  $("soundButton").setAttribute("aria-pressed",String(state.audio));
@@ -232,6 +240,60 @@ function playTone(hz,duration=0.09,volume=.025){
   oscillator.connect(gain).connect(audio.destination);
   oscillator.start();oscillator.stop(audio.currentTime+duration);
  }catch{}
+}
+function victoryVisible(){return !$("victoryOverlay").hidden}
+function hideVictoryCelebration(){
+ $("victoryOverlay").hidden=true;
+ lastVictoryDrawAt=-Infinity;
+ document.documentElement.classList.remove("dominion-victory-active");
+ victoryFanfare.stop();
+}
+function replayVictoryCelebration(){
+ if(!victoryVisible())return false;
+ victoryOpenedAt=performance.now();lastVictoryDrawAt=-Infinity;
+ victoryFanfare.play(state.ctx,state.run.outcome,state.musicOn&&!document.hidden);
+ drawVictoryCelebration(victoryOpenedAt);
+ return true;
+}
+function drawVictoryCelebration(now=performance.now()){
+ if(!victoryVisible()||state.run.outcome!=="perfect_clear")return;
+ // Thousands of tiny retro pixels are deliberately drawn: cap this
+ // visual-only renderer at 24fps on phones. Never redraw when reduced-motion
+ // is active after the first frame; this does NOT throttle the game simulation.
+ const reduced=prefersReducedMotion();
+ if(lastVictoryDrawAt>=0&&(reduced||now-lastVictoryDrawAt<VICTORY_PAINT_INTERVAL_MS))return;
+ const canvas=$("victoryTrailCanvas");
+ const ctx=canvas.getContext("2d");
+ if(ctx){
+  drawBroodTrailFinale(ctx,Math.max(0,now-victoryOpenedAt),reduced);
+  lastVictoryDrawAt=now;
+ }
+}
+function showVictoryCelebration(run){
+ const details=victoryDetails(run);
+ if(!details||lairActive())return false;
+ const overlay=$("victoryOverlay");
+ overlay.classList.toggle("dominion-victory--hunt",details.kind==="hunt");
+ overlay.classList.toggle("dominion-victory--classic",details.kind==="classic");
+ $("victoryHeading").textContent=details.title;
+ $("victoryEyebrow").textContent=details.eyebrow;
+ $("victoryStory").textContent=details.message;
+ $("victoryScore").textContent=padScore(run.score);
+ $("victoryCountLabel").textContent=details.countLabel;
+ $("victoryCount").textContent=String(details.count).padStart(2,"0");
+ $("victoryEvolutions").textContent=String(run.evolutionsChosen).padStart(2,"0");
+ if(details.kind==="hunt"){
+  // Art assets are independent of all Director modules, cheats and shortcuts.
+  const desktop=$("victoryHuntDesktop"),mobile=$("victoryHuntMobile");
+  if(!desktop.getAttribute("src"))desktop.src=VICTORY_HUNT_DESKTOP_AVIF;
+  if(!mobile.getAttribute("src"))mobile.src=VICTORY_HUNT_MOBILE_AVIF;
+ }
+ overlay.hidden=false;
+ document.documentElement.classList.add("dominion-victory-active");
+ replayVictoryCelebration();
+ $("victorySubmitScore").hidden=!state.ranked;
+ $("victoryPlayAgain").focus({preventScroll:true});
+ return true;
 }
 function showOverlay(title,description,buttonLabel){
  showLairPicker();
@@ -339,7 +401,8 @@ function resumeMutationByKey(key){
 }
 async function begin(){
  if(startingRun||bossGate.blocking||awaitingMutationResume)return;
- wakeAudio(); // Unlock before the awaited leaderboard request drops user activation.
+ hideVictoryCelebration();
+ wakeAudio();
  if(["ready","over","won"].includes(state.run.status)){
   startingRun=true;
   $("gameMode").disabled=true;$("gameChallenge").disabled=true;$("primaryButton").disabled=true;$("primaryButton").textContent="PREPARING RUN...";
@@ -371,6 +434,8 @@ async function begin(){
 }
 function reset(){
  if(startingRun)return;
+ hideVictoryCelebration();
+ beaconCapture=null;
  resetBossBriefing();clearMutationResume();
  state.run=lairActive()?createLairRun(selectedLairBoss,COLS,ROWS):newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";latestLeaderboard=null;loadBest();
  leaderboard.session=null;leaderboard.events=[];
@@ -499,10 +564,12 @@ function draw(){
  const run=state.run;
  drawLevelBackground(context,canvas,arenaBackground,COLS,ROWS,CELLS,run.biome);
  drawTerrain(context,run,CELLS);
+ drawHatchlingWards(context,run,CELLS);
  // The brood is a gameplay target; keep it conspicuous over busy art.
  if(run.food)drawBroodPickup(context,run.food,CELLS,performance.now());
  if(run.encounter)drawWebs(context,run.encounter.webs,CELLS);
  drawPrey(context,run.enemies,CELLS,performance.now(),prefersReducedMotion());
+ drawBroodmotherHatchlings(context,run,CELLS,performance.now());
  drawTrapHints(context,run,CELLS);
  if(run.encounter){
   drawMiniboss(context,run.enemies,CELLS,run.encounter.phase);
@@ -616,19 +683,28 @@ function loop(time){
     saveBest();syncUI();
     playTone(state.run.status==="won"?720:135,.2,.03);
     const final=state.run.status==="won";
-    showOverlay(lairActive()?(final?"LAIR CONQUERED":"ENCOUNTER LOST"):(final?"HIVE COMPLETE!":"GAME OVER"),
-     lairActive()?state.run.endReason+" Practice is unranked. Retry or choose another boss.":
-      state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Session best: "+state.sessionBest.toLocaleString()+".",
-     lairActive()?"RETRY BOSS ↺":"PLAY AGAIN ↺");
-    updateSubmission($("submissionPanel"),state.run,state.ranked&&!lairActive());
-    if(!lairActive())$("finalRunSummary").textContent=(state.run.mode==="classic"?state.run.brood+" orbs":state.run.kills+" captures")+" · "+state.run.evolutionsChosen+" evolutions · "+state.run.score+" points";
-    announce((final?"Win! ":"Game over. ")+state.run.endReason+" Final score "+state.run.score+". Submit your ranked replay below.");
+    const outcome=state.run.outcome;
+    const endTitle=lairActive()?(final?"LAIR CONQUERED":"ENCOUNTER LOST"):
+     outcome==="perfect_clear"?"HIVE COMPLETE!":
+     outcome==="broodmother_defeated"?"THE HIVE REIGNS!":
+     outcome==="step_limit"?"EXPEDITION ENDED":"GAME OVER";
+    if(!showVictoryCelebration(state.run)){
+     showOverlay(endTitle,
+      lairActive()?state.run.endReason+" Practice is unranked. Select another boss or retry.":
+       state.run.endReason+" Final score: "+state.run.score.toLocaleString()+". Session best: "+state.sessionBest.toLocaleString()+".",
+      lairActive()?"RETRY BOSS ↺":"PLAY AGAIN ↺");
+    }
+     updateSubmission($("submissionPanel"),state.run,state.ranked&&!lairActive());
+     if(!lairActive())$("finalRunSummary").textContent=(state.run.mode==="classic"?state.run.brood+" orbs":state.run.kills+" captures")+" · "+state.run.evolutionsChosen+" evolutions · "+state.run.score+" points";
+    announce((final?"Victory! ":outcome==="step_limit"?"Expedition finished. ":"Game over. ")+
+     state.run.endReason+" Final score "+state.run.score+". If ranked, file your verified replay below.");
    }
   }
   if(catchUps===3)state.accumulator=Math.min(state.accumulator,effectiveTickMs(state.run));
  }
  soundtrack.tick(); // tiny lookahead schedules original 8-bit notes on AudioContext clock.
  draw();
+ drawVictoryCelebration(time);
  requestAnimationFrame(loop);
 }
 // Unlock on direct interaction; an async score request is too late for autoplay rules.
@@ -669,7 +745,21 @@ $("leaderboardForm").addEventListener("submit",async event=>{
  }catch(error){notice.textContent=error.message||"Could not submit this run."}
  finally{button.disabled=!leaderboard.session}
 });
+$("victoryReturn").addEventListener("click",()=>{hideVictoryCelebration();reset();$("primaryButton").focus({preventScroll:true})});
+$("victoryRewatch").addEventListener("click",replayVictoryCelebration);
+$("victorySubmitScore").addEventListener("click",()=>{
+ hideVictoryCelebration();
+ if(gameOnly.isActive())gameOnly.leave();
+ requestAnimationFrame(()=>{$("submissionPanel").scrollIntoView({block:"start",behavior:"smooth"});$("playerAlias").focus({preventScroll:true});});
+});
 $("pauseButton").addEventListener("click",togglePause);
+function activateWard(){
+ if(!placeHatchlingWard(state.run))return false;
+  if(!lairActive())leaderboard.action(state.run.runTicks,"ward",null);
+ announce("Hatchling Ward placed. Ordinary prey avoid its surrounding nine tiles.");
+ playTone(565,.13,.03);syncUI();draw();return true;
+}
+$("wardButton").addEventListener("click",activateWard);
 $("restartButton").addEventListener("click",reset);
 $("soundButton").addEventListener("click",()=>{
  state.audio=!state.audio;
@@ -678,12 +768,24 @@ $("soundButton").addEventListener("click",()=>{
 });
 $("musicButton").addEventListener("click",()=>{
  state.musicOn=!state.musicOn;
+ if(!state.musicOn)victoryFanfare.stop();
  try{localStorage.setItem(MUSIC_STORE,state.musicOn?"on":"off")}catch{}
  if(state.musicOn)wakeAudio();
  syncSoundtrack();syncUI();
  announce(state.musicOn?(state.ctx?.state==="running"?TRACKS[soundtrack.trackId].name+" playing.":"Music enabled. Use a game control to allow desktop audio."):"Background music muted.");
 });
 document.addEventListener("keydown",event=>{
+ if(victoryVisible()){
+  if(event.key==="Tab"){
+   const options=[$("victoryPlayAgain"),$("victoryReturn"),$("victoryRewatch")];
+   const current=options.indexOf(document.activeElement);
+   const next=event.shiftKey?(current<=0?options.length-1:current-1):
+    (current+1)%options.length;
+   event.preventDefault();options[next].focus({preventScroll:true});return;
+  }
+  if(event.key==="Escape"){event.preventDefault();hideVictoryCelebration();reset();$("primaryButton").focus({preventScroll:true})}
+  return;
+ }
  if(bossGate.blocking){
   if(event.key==="Tab"&&bossGate.phase==="briefing"){
    event.preventDefault();$("bossBriefingResume").focus({preventScroll:true});
@@ -708,6 +810,9 @@ document.addEventListener("keydown",event=>{
    if(!event.repeat)resumeMutationByKey(event.key);
   }
   return;
+ }
+ if((event.key==="q"||event.key==="Q")&&state.run.status==="running"&&!bossGate.blocking){
+  event.preventDefault();if(!event.repeat)activateWard();return;
  }
  if(Object.hasOwn(KEY_DIRECTIONS,event.key)&&state.run.status==="running"){
   event.preventDefault(); // Stop page scroll, including repeated arrow presses.
@@ -751,6 +856,7 @@ canvas.addEventListener("pointercancel",event=>{
 });
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
+  victoryFanfare.stop();
   if(bossGate.blocking)reopenBossBriefing();
    else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
   soundtrack.stop(); // Also silence title-screen music in hidden tabs.
@@ -761,12 +867,14 @@ window.addEventListener("focus",()=>{
  if(!document.hidden){syncSoundtrack();syncUI()}
 });
 window.addEventListener("pagehide",()=>{
+ victoryFanfare.stop();
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();
  state.lastFrame=0;state.accumulator=0;
 });
 window.addEventListener("blur",()=>{
+ victoryFanfare.stop();
  if(bossGate.blocking)reopenBossBriefing();
  else if(state.run.status==="running"&&!awaitingMutationResume)togglePause();
  soundtrack.stop();

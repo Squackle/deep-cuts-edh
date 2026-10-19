@@ -66,6 +66,7 @@
    <button type="button" class="lair-choice" data-lair-boss="warden" aria-pressed="false"><strong>HATCHERY WARDEN</strong><small>SEAL · 3 CAPTURES</small></button>
    <button type="button" class="lair-choice" data-lair-boss="weaver" aria-pressed="false"><strong>TUNNEL WEAVER</strong><small>WEBS · 2 CAPTURES</small></button>
    <button type="button" class="lair-choice" data-lair-boss="guardian" aria-pressed="false"><strong>RIFT GUARDIAN</strong><small>RIFTS · 3 CAPTURES</small></button>
+   <button type="button" class="lair-choice" data-lair-boss="broodmother" aria-pressed="false"><strong>BROODMOTHER</strong><small>EGG BLOOM · 3 CAPTURES</small></button>
   </div>
   <p class="lair-selection-info" id="lairTip" aria-live="polite">Watch the marked exit. Two captures to win.</p>
   <p class="lair-disclaimer">UNRANKED · REPEATABLE PRACTICE · INSTANT RETRY · NO PUBLIC SCORES</p>
@@ -129,6 +130,7 @@
     <p id="rankedNotice" class="ranked-notice">START A HUNT TO GET A RANKED SEED</p>
     </details></div>
      <div class="game-actions">
+     <button id="wardButton" type="button" hidden aria-label="Place Hatchling Ward at your current position; cost one White shield and one Green bonus-energy charge">Q · PLACE HATCHLING WARD</button>
      <button id="pauseButton" type="button" disabled>Ⅱ PAUSE</button>
      <button id="restartButton" type="button">↺ RESTART</button>
      <button id="soundButton" type="button" aria-pressed="false" aria-label="Toggle game sound effects">♪ SOUND OFF</button>
@@ -183,5 +185,35 @@
   </div>
  </main>
  <footer class="site-footer"><span>DEEP CUTS EDH · ARCADE</span><a href="/games.html">MORE DEEP CUTS GAMES ↗</a></footer>
+<!-- Real earned victories only: these visuals have NO link to unranked Director Mode. -->
+<section id="victoryOverlay" class="dominion-victory" role="dialog" aria-modal="true"
+ aria-labelledby="victoryHeading" aria-describedby="victoryStory" hidden>
+ <div class="dominion-victory-art dominion-victory-hunt-art" aria-hidden="true">
+  <img id="victoryHuntDesktop" class="dominion-desktop-poster" alt="">
+  <img id="victoryHuntMobile" class="dominion-mobile-poster" alt="">
+ </div>
+ <div class="dominion-victory-art dominion-victory-trail-art" aria-hidden="true">
+  <canvas id="victoryTrailCanvas" width="360" height="640"></canvas>
+ </div>
+ <div class="dominion-victory-narrative">
+  <p class="dominion-victory-eyebrow" id="victoryEyebrow">◈ VICTORY ◈</p>
+  <h2 id="victoryHeading">HIVE COMPLETE!</h2>
+  <p id="victoryStory">Every last tile belongs to your brood.</p>
+ </div>
+ <div class="dominion-victory-panel">
+  <div class="dominion-victory-scoreboard" aria-label="Final run summary">
+   <div><span>SCORE</span><strong id="victoryScore">000000</strong></div>
+   <div><span id="victoryCountLabel">CAPTURES</span><strong id="victoryCount">00</strong></div>
+   <div><span>EVOLUTIONS</span><strong id="victoryEvolutions">00</strong></div>
+  </div>
+  <div class="dominion-victory-actions">
+   <button id="victorySubmitScore" type="button" hidden>★ FILE VERIFIED SCORE</button>
+   <button id="victoryPlayAgain" type="button">↻ PLAY AGAIN</button>
+   <button id="victoryReturn" type="button">↩ RETURN TO ARCADE</button>
+  </div>
+  <button class="dominion-victory-rewatch" id="victoryRewatch" type="button">✦ WATCH CELEBRATION AGAIN</button>
+ </div>
+</section>
+
 </body>
 </html>
