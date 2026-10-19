@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#172522"><meta name="description" content="Manage your Deep Cuts EDH profile, private card collection, followed players, notifications, achievements, and account settings.">
 <title>My Profile | Deep Cuts EDH</title><meta name="robots" content="noindex,follow"><link rel="icon" href="assets/favicon.svg">
 <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><link rel="stylesheet" href="community.css"><link rel="stylesheet" href="field-expansion.css">
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script><script type="module" src="community.js"></script><script defer src="/supporter-ticker-settings.js"></script><link rel="stylesheet" href="/header-profile.css"><script defer src="/header-profile.js"></script><link rel="canonical" href="https://deep-cuts-edh.pages.dev/profile"><link rel="stylesheet" href="/release-polish.css"><link rel="stylesheet" href="/community-theme.css"><link rel="stylesheet" href="/profile-layout.css"></head>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script><script type="module" src="community.js"></script><script type="module" src="/passport.js"></script><link rel="stylesheet" href="/passport.css"><script defer src="/supporter-ticker-settings.js"></script><link rel="stylesheet" href="/header-profile.css"><script defer src="/header-profile.js"></script><link rel="canonical" href="https://deep-cuts-edh.pages.dev/profile"><link rel="stylesheet" href="/release-polish.css"><link rel="stylesheet" href="/community-theme.css"><link rel="stylesheet" href="/profile-layout.css"></head>
 <body data-community-page="profile"><a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner">
 <a class="wordmark" href="./"><span class="wordmark-symbol"><img src="assets/deep-cuts-mark.svg" width="46" height="56" alt=""></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>MY PROFILE</small></span></a>
@@ -28,6 +28,15 @@
  </div>
  <div id="profileOverviewSignedIn" hidden>
   <div id="ownProfile" class="cm-paper"></div>
+  <section class="cm-paper passport-panel" aria-label="My Investigator Passport">
+   <div class="passport-heading"><div><span class="retro-eyebrow">FIELD RECORD / VERIFIED PROGRESS</span><h3>Investigator Passport</h3></div><a class="passport-link" href="/games">PLAY THE ARCADE ↗</a></div>
+   <p class="cm-note">A single field record of completed cases, earned Arcade badges, and public contributions. Only the records tied to your signed-in profile appear here.</p>
+   <div id="passportStatus" class="cm-note" role="status" aria-live="polite">Checking your saved field records…</div>
+   <div class="passport-stat-grid" id="passportStats"></div>
+   <h4 class="passport-subhead">Earned Game Awards</h4>
+   <div class="passport-awards" id="passportAwards"></div>
+   <p class="cm-note passport-notice">All awards and counts are read from existing records. Exploring a commander does not yet create a permanent discovery milestone. <a href="/matchmaker">Find a commander idea ↗</a></p>
+  </section>
   <div class="profile-quick-grid">
    <a href="/deck"><strong>My Decks</strong><span>Open saved Workshop decks ↗</span></a>
    <a href="/community#decks"><strong>Public Deck Gallery</strong><span>Manage published community builds ↗</span></a>
