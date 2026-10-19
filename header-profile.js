@@ -5,7 +5,7 @@
 (() => {
  "use strict";
  const ACCOUNT_URL="/profile";
- const endpoint="/api/community?action=me";
+ const endpoint="/api/community?action=session";
  const KEY="dc-profile-key";
  const NAME_PATTERN=/^dcprofile1_[a-f0-9]{32}_[a-f0-9]{64}$/;
  const DEFAULT_ZOOM=2.8;
@@ -100,7 +100,17 @@
    }
    if(version!==requestVersion)return;
    if(!response.ok){showProfile(null);return}
-   const data=await response.json();
+   let data=await response.json();
+   // A stale local key must not obscure a valid HttpOnly remembered-device
+   // cookie. Guests receive 200 {profile:null}; keep cookie retry read-only.
+   if(key&&!data.profile){
+    const cookieResponse=await fetch(endpoint,{
+     method:"GET",credentials:"same-origin",cache:"no-store",
+     headers:{"Accept":"application/json"}
+    });
+    if(version!==requestVersion)return;
+    if(cookieResponse.ok)data=await cookieResponse.json();
+   }
    if(version===requestVersion)showProfile(data.profile||null);
   }catch{
    if(version===requestVersion)showProfile(null);
