@@ -88,3 +88,6 @@ test("Retired Binder links to specialists, while Finder and combo checker stay f
  for(const p of ["deep-cut-finder","combos","deck"])assert.ok(sitemap.includes("/"+p+"</loc>"));
  for(const p of ["index.html","library.html","deck.html","community.html"])assert.ok(fs.readFileSync(p,"utf8").includes("/deck"),p+" missing resources route");
 });
+
+// Run the new Matchmaker regression suite through the existing protected CI lane.
+import "./matchmaker.test.mjs";
