@@ -12,8 +12,8 @@ async function local(){
   const p=new URL(req.url,"http://localhost").pathname;
   const file=path.resolve(root,"."+((p==="/case-file")?"/case-file.html":p));
   if(!file.startsWith(root+path.sep))return res.writeHead(403).end();
-  try{res.writeHead(200,{"Content-Type":mime[path.extname(file)]||"text/plain"}).end(fs.readFileSync(file))}
-  catch{res.writeHead(404).end("Not found")}
+  try{const bytes=fs.readFileSync(file);res.writeHead(200,{"Content-Type":mime[path.extname(file)]||"text/plain"}).end(bytes)}
+  catch{if(!res.headersSent)res.writeHead(404);res.end("Not found")}
  });
  await new Promise(done=>server.listen(0,"127.0.0.1",done));
  return {server,url:"http://127.0.0.1:"+server.address().port};
