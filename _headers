@@ -7,6 +7,13 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
   Strict-Transport-Security: max-age=31536000
 
+# Public homepage opener isolation without breaking external sign-in/payment popups.
+# The stronger same-origin mode needs a separate cross-app review.
+/
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+/index.html
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+
 # Owner-only static entry: no caching, indexing or outgoing referrer.
 /member-operations.html
   Cache-Control: no-store, private
