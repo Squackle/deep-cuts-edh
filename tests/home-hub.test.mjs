@@ -114,7 +114,7 @@ test('Residual homepage navigation and report badges meet WCAG AA contrast',()=>
 test('Home CSS bundle preserves every source exactly in cascade order',()=>{
  const assets=['styles.css','retro.css','theme-v2.css','header-profile.css',
   'release-polish.css','home-hub.css','rescue-subscribe.css',
-  'feedback.css','home-stability.css'];
+  'feedback.css','home-stability.css','site-presence.css'];
  const bundle=readFileSync('home-styles.css','utf8');
  assert.equal((html.match(/<link rel="stylesheet"/g)||[]).length,1,
   'Homepage should issue one render-blocking author CSS request');
