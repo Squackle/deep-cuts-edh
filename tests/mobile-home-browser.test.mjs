@@ -202,5 +202,30 @@ test("Homepage reserves its header and ribbon space before deferred navigation i
  }finally{await browser?.close();await new Promise(resolve=>httpServer.close(resolve))}
 });
 
+test("Desktop nav remains accessible if enhancement fails and no-JS fallback stays visible",{timeout:40000},async()=>{
+ const {httpServer,url}=await server();let browser;
+ try{
+  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  const failed=await browser.newContext({viewport:{width:1280,height:850}});
+  try{
+   const page=await failed.newPage();
+   await page.route("**/header-profile.js",route=>route.abort());
+   await page.route(/^https:\/\//,route=>route.abort());
+   await page.goto(url+"/",{waitUntil:"domcontentloaded"});
+   const nav=page.locator(".site-header .header-inner>.primary-nav");
+   assert.equal(await nav.count(),1);
+   assert.equal(await nav.evaluate(el=>getComputedStyle(el).visibility),"hidden","Initial temporary nav should not visually jump");
+   await page.waitForTimeout(1470);
+   assert.equal(await nav.evaluate(el=>getComputedStyle(el).visibility),"visible","Public links recover if enhanced menu script fails");
+   assert.ok(await nav.locator("a").count()>=7);
+  }finally{await failed.close()}
+  const nojs=await browser.newContext({viewport:{width:1280,height:850},javaScriptEnabled:false});
+  try{
+   const page=await nojs.newPage();await page.goto(url+"/",{waitUntil:"domcontentloaded"});
+   assert.equal(await page.locator(".site-header .header-inner>.primary-nav").evaluate(el=>getComputedStyle(el).visibility),"visible","No-JS visitors retain full navigation");
+  }finally{await nojs.close()}
+ }finally{await browser?.close();await new Promise(resolve=>httpServer.close(resolve))}
+});
+
 // Run the new Matchmaker regression suite through the existing protected CI lane.
 import "./matchmaker-browser.test.mjs";
