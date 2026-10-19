@@ -13,7 +13,7 @@ const groups=[
  ["Community",[["moderation","Moderation"],["feedback","Feedback"],["directory","Member directory"],["evidence","Evidence"]]],
  ["Games",[["games","Game statistics"],["integrity","Score integrity"],["schedule","Scheduled content"]]],
  ["Business",[["members","Paid memberships"],["grants","Free keys"],["adfree","Ad-free"],["revenue","Revenue records"]]],
- ["Site",[["site","Site status"],["capacity","Capacity & usage"],["analytics","Community activity"],["features","Feature switches"]]],
+ ["Site",[["site","Site status"],["capacity","Capacity & usage"],["analytics","Community activity"],["features","Feature switches"],["services","External services"]]],
  ["Security",[["sweep","Security sweep"],["recovery","Backups & recovery"],["audit","Admin activity"],["tools","Tools & diagnostics"]]]
 ];
 const oldPanels={};
@@ -75,7 +75,7 @@ for(const [name,sections] of groups){
   const b=button(label,()=>showTool(id,name),"owner-v2-tool-card");
   links.append(b);
   const panel=oldPanels[id]||el("section",null,"owner-workspace-panel");
-  panel.hidden=true;panel.classList.add("owner-v2-tool-panel");
+  panel.hidden=true;panel.id=panel.id||"owner-panel-"+id;panel.classList.add("owner-v2-tool-panel");
   if(!oldPanels[id]){
    panel.append(el("h2",label));
    const status=el("output",null,"owner-v2-message");status.setAttribute("role","status");status.setAttribute("aria-live","polite");
@@ -107,7 +107,7 @@ showHome();
 function clearPrivateViews(){
  ++requestSeq; // discard asynchronous requests from any previous owner-key session
  for(const [id,panel] of spaces){
-  if(["home"].includes(id)||id.startsWith("group:")||oldPanels[id])continue;
+  if(["home","services"].includes(id)||id.startsWith("group:")||oldPanels[id])continue;
   const body=panel.querySelector(".owner-v2-data");
   if(body)body.replaceChildren();
   const status=panel.querySelector(".owner-v2-message");
