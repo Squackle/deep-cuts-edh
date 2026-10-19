@@ -11,7 +11,7 @@ test("Guest header session returns HTTP 200 with a neutral profile",async()=>{
  const guest=await communityRead(request("session"),noDbWrites);
  assert.equal(guest.status,200);
  assert.deepEqual(await guest.json(),{profile:null});
- assert.match(guest.headers.get("Content-Type")||"","/json|application\/json/i");
+ assert.match(guest.headers.get("Content-Type")||"",/json/i);
  const strict=await communityRead(request("me"),noDbWrites);
  assert.equal(strict.status,401,"Existing strict authentication endpoint stays protected");
  const invalid=await communityRead(request("session",{Authorization:"Bearer invalid",Cookie:"__Host-dc_device=dcdevice1_"+"f".repeat(64)}),noDbWrites);
