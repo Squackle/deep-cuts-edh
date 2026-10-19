@@ -6,6 +6,8 @@ import path from "node:path";
 import http from "node:http";
 import {execFileSync} from "node:child_process";
 import {chromium} from "playwright-core";
+// Also run Hive Run click-through/startup coverage in this existing Chromium CI step.
+import "./hive-run-browser.test.mjs";
 import {onRequestGet as dailyGet,onRequestPost as dailyPost} from "../functions/api/daily-games.js";
 import {getPuzzle} from "../src/automated-games.js";
 function chrome(){

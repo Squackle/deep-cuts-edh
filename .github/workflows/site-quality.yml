@@ -63,8 +63,6 @@ jobs:
           node --check functions/api/arcane-games.js
       - name: Install isolated Chromium test driver
         run: npm install --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
-      - name: Hive Run real-browser startup and controls (mobile and desktop)
-        run: node --test tests/hive-run-browser.test.mjs
       - name: Rescue Board static integration and script syntax
         run: |
           node --test tests/rescue-board.test.mjs
