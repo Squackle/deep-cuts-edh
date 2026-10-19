@@ -75,3 +75,17 @@ test('Desktop feature expands only into the right gutter without shifting its gr
  assert.match(css,/\.hub-feature:hover\{transform:rotate\(0\) translateY\(-3px\)/);
  assert.match(css,/@media\(max-width:980px\)/);
 });
+
+test("PageSpeed changes stabilize homepage layout without touching AdSense or authentication",()=>{
+ const stability=readFileSync('home-stability.css','utf8');
+ assert.match(html,/<script>document\.documentElement\.classList\.add\("dc-js"\)<\/script>/);
+ assert.match(html, /href="\/home-stability\.css"/);
+ assert.match(stability,/site-header:not\(:has\(>\.site-supporter-strip\)\)::after/);
+ assert.match(stability,/header-inner:not\(\.header-profile-enabled\)/);
+ assert.match(stability,/hub-card-top\{color:#435b47\}/);
+ assert.match(stability,/hub-card-desc.*#455c49/);
+ assert.match(html,/Commander%20Mustard&amp;format=image&amp;version=small/);
+ assert.match(html,/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js/);
+ assert.match(html,/name="google-site-verification"/);
+ assert.match(html,/name="follow.it-verification-code"/);
+});
