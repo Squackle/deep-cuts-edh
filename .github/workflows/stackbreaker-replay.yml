@@ -1,0 +1,29 @@
+name: Stackbreaker authenticated replay contract
+on:
+  pull_request:
+    paths:
+      - 'src/stackbreaker-verify/**'
+      - 'functions/api/stackbreaker.js'
+      - 'db/stackbreaker-verified-v1.sql'
+      - 'profile-stackbreaker.js'
+      - 'tests/stackbreaker-server-replay.test.mjs'
+      - '.github/workflows/stackbreaker-replay.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  server-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Pin 250-game Classic scenario source, replay, UTC and endpoint gating
+        run: node --test tests/stackbreaker-server-replay.test.mjs
+      - name: Syntax-check website-only replay and guarded API
+        run: |
+          node --check src/stackbreaker-verify/server-replay.js
+          node --check functions/api/stackbreaker.js
+          node --check profile-stackbreaker.js
