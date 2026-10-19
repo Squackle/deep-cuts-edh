@@ -22,6 +22,7 @@
         </div>
       </form>
       <p class="dc-follow-fine">Email delivery is provided by follow.it. Deep Cuts EDH may see the email you submit. Unsubscribe anytime. <a href="/privacy">Privacy details ↗</a></p>
+      <p class="dc-follow-direct"><a href="https://follow.it/deep-cuts-edh-commander-rescue-reports?leanpub" target="_blank" rel="noopener noreferrer">Or subscribe directly on follow.it ↗</a></p>
       <a class="dc-follow-powered" href="https://follow.it/" target="_blank" rel="noopener noreferrer">Powered by <img src="https://follow.it/images/colored-logo.svg" alt="follow.it" width="67" height="16" loading="lazy"></a>
     </div>
   </div>`;
