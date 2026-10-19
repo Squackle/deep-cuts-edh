@@ -281,12 +281,16 @@
    // A single short credit or empty invitation cannot fill the ribbon.
    // Repeat enough identical tiles to cover its viewport before cloning the
    // whole cycle; half-width translation then loops without a blank stretch.
+   // Read dimensions together, before adding duplicates. The repeated group's
+   // width is exactly repeats * (single tile width + 23px gap/padding).
+   // This avoids a second synchronous layout after cloning the group.
    const tileWidth=Math.max(120,original.getBoundingClientRect().width+23);
-   const repeats=Math.max(2,Math.min(16,Math.ceil((view.clientWidth+32)/tileWidth)+1));
+   const windowWidth=view.clientWidth;
+   const repeats=Math.max(2,Math.min(16,Math.ceil((windowWidth+32)/tileWidth)+1));
    for(let i=1;i<repeats;i++)group.append(decorative(original.cloneNode(true)));
    const copy=decorative(group.cloneNode(true));
    track.append(copy);
-   const pixels=group.getBoundingClientRect().width;
+   const pixels=repeats*tileWidth;
    track.style.setProperty("--site-supporter-duration",Math.max(24,Math.round(pixels/45))+"s");
    track.classList.add("is-scrolling");
    strip.classList.toggle("has-supporters",supporters.length>0);
