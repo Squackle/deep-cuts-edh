@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#172522"><meta name="description" content="Manage your Deep Cuts EDH profile, private card collection, followed players, notifications, achievements, and account settings.">
 <title>My Profile | Deep Cuts EDH</title><meta name="robots" content="noindex,follow"><link rel="icon" href="assets/favicon.svg">
 <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="retro.css"><link rel="stylesheet" href="theme-v2.css"><link rel="stylesheet" href="community.css"><link rel="stylesheet" href="field-expansion.css">
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script><script type="module" src="community.js"></script><script type="module" src="/passport.js"></script><link rel="stylesheet" href="/passport.css"><script defer src="/supporter-ticker-settings.js"></script><link rel="stylesheet" href="/header-profile.css"><script defer src="/header-profile.js"></script><link rel="canonical" href="https://deep-cuts-edh.pages.dev/profile"><link rel="stylesheet" href="/release-polish.css"><link rel="stylesheet" href="/community-theme.css"><link rel="stylesheet" href="/profile-layout.css"></head>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script><script type="module" src="community.js"></script><script type="module" src="/passport.js"></script><script defer src="/profile-stackbreaker.js"></script><link rel="stylesheet" href="/passport.css"><script defer src="/supporter-ticker-settings.js"></script><link rel="stylesheet" href="/header-profile.css"><script defer src="/header-profile.js"></script><link rel="canonical" href="https://deep-cuts-edh.pages.dev/profile"><link rel="stylesheet" href="/release-polish.css"><link rel="stylesheet" href="/community-theme.css"><link rel="stylesheet" href="/profile-layout.css"></head>
 <body data-community-page="profile"><a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner">
 <a class="wordmark" href="./"><span class="wordmark-symbol"><img src="assets/deep-cuts-mark.svg" width="46" height="56" alt=""></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>MY PROFILE</small></span></a>
@@ -45,6 +45,14 @@
    <button type="button" data-tab="dispatches"><strong>Notifications</strong><span>Replies, mentions and activity ↗</span></button>
    <button type="button" data-tab="account"><strong>Account Settings</strong><span>Bio, avatar and recovery ↗</span></button>
   </div>
+ <section class="cm-paper" id="stackbreakerVerified">
+  <span class="retro-eyebrow">STACKBREAKER · MY PROFILE</span>
+  <h3>Verified Titles &amp; Cosmetics</h3>
+  <p data-sb-status role="status" aria-live="polite">Checking your server-verified Stackbreaker records…</p>
+  <div data-sb-equipment></div>
+  <p class="cm-note">Local Game Lab practice never counts as a verified achievement. Unlocks are issued only after an authenticated server replay.</p>
+  <a class="cm-btn cm-outline" href="/games/stackbreaker">OPEN STACKBREAKER ↗</a>
+ </section>
  </div>
 </section>
 <section class="cm-panel" data-panel="collection" hidden>
