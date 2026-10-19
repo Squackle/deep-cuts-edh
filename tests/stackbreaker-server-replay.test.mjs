@@ -69,7 +69,7 @@ test('Site route cannot issue claimed scores/achievements without server replay'
  assert.ok(api.includes('WHERE profile_id=? AND utc_date=? AND accepted_moves=?'));
  assert.ok(api.includes("row.result!=='started'"));
  assert.ok(api.includes('source_sha!==LAB_SOURCE_SHA'));
- assert.ok(api.includes("env.STACKBREAKER_VERIFIED_READY==='true'"));
+ assert.ok(api.includes("stackbreaker_launch_v1"));
  assert.ok(api.includes("awarded_at"));
  assert.ok(!api.includes('clientWon'));
  assert.ok(!api.includes('data.achievementId'));
