@@ -956,7 +956,7 @@ dialog{background:#faf9f2;color:#24352e;border:1px solid #94b09b;border-radius:1
 .site-header .site-supporter-track{width:max-content;min-width:100%;display:flex;align-items:center;white-space:nowrap;font:700 10px/1.2 ui-sans-serif,system-ui}
 .site-header .site-supporter-group{display:inline-flex;align-items:center;gap:23px;padding-inline-end:23px;flex:none}
 .site-header .site-supporter-unit{display:inline-flex;align-items:center;gap:23px;flex:none}
-.site-header .site-supporter-track.is-scrolling{min-width:0;animation:site-supporter-roll var(--site-supporter-duration,36s) linear infinite}
+.site-header .site-supporter-track.is-scrolling{min-width:0;will-change:transform;animation:site-supporter-roll var(--site-supporter-duration,36s) linear infinite}
 .site-header .site-supporter-name{display:inline-block;white-space:nowrap;padding:5px 0;text-shadow:0 0 7px #0004}
 .site-header .site-supporter-chief{color:#f4d17f}
 .site-header .site-supporter-detective{color:#d5e2e8}
