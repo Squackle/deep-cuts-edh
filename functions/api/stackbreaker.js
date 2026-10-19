@@ -47,10 +47,24 @@ export async function onRequestGet({request,env}){
  try{
   const day=utcDay(),entry=currentDaily(),id=gate.user.id;
   const row=await activeRow(env.DB,id,day);
+  const scenario=entry?boundScenario(entry):null;
+  if(entry&&!scenario)return fail('Pinned scenario unavailable.',503);
+  if(row&&(row.puzzle_id!==entry?.puzzleId||row.rules_version!==STACKBREAKER_SERVER_RULES||
+    row.source_sha!==LAB_SOURCE_SHA||(scenario&&row.scenario_digest!==await digestScenario(scenario))))
+    return fail('The stored attempt is pinned to another version.',409);
+  let verifiedState=null;
+  if(row){
+    const actions=safeJSON(row.moves_json);
+    if(!Array.isArray(actions)||actions.length!==row.accepted_moves)return fail('Corrupt saved replay.',503);
+    verifiedState=replayServerMoves(scenario,actions).state;
+    if((row.result==='started')!==(verifiedState.status==='playing')||
+       (row.result!=='started'&&row.result!==verifiedState.status))
+      return fail('Stored result disagrees with server replay.',503);
+  }
   const awards=await verifiedAwards(env.DB,id);
   return send({ok:true,day,eligible:!!entry,entry:entry?{
    puzzleId:entry.puzzleId,revision:entry.puzzleRevision,rulesVersion:entry.rulesVersion}:null,
-   attempt:gameStatus(row),awards,equipped:await equipment(env.DB,id),
+   attempt:gameStatus(row),state:verifiedState,scenario:scenario||null,awards,equipped:await equipment(env.DB,id),
    verification:'SERVER_REPLAY_VERIFIED',sourceSha:LAB_SOURCE_SHA});
  }catch{return fail('Stackbreaker records temporarily unavailable.',503)}
 }
@@ -89,7 +103,8 @@ export async function onRequestPost({request,env}){
     VALUES(?,?,?,?,?,?,?)`).bind(id,day,entry.puzzleId,entry.puzzleRevision,
       STACKBREAKER_SERVER_RULES,digest,LAB_SOURCE_SHA).run();
    const row=await activeRow(env.DB,id,day);
-   return send({ok:true,attempt:gameStatus(row),accepted:row?.result==='started',
+   return send({ok:true,attempt:gameStatus(row),scenario,state:replayServerMoves(scenario,
+    safeJSON(row.moves_json)||[]).state,accepted:row?.result==='started',
     startLocked:row?.result!=='started'},row?.result==='started'?200:409);
   }
   const row=await activeRow(env.DB,id,day);
@@ -112,7 +127,7 @@ export async function onRequestPost({request,env}){
     completed?1:0,id,day,data.seq).run();
   if((update.meta?.changes||0)!==1)return fail('Concurrent move: refresh your attempt.',409);
   if(result.state.status==='won')await unlockedOnWin(env.DB,id);
-  return send({ok:true,attempt:{day,status:result.state.status,moves:moves.length,
+  return send({ok:true,state:result.state,attempt:{day,status:result.state.status,moves:moves.length,
     completed:result.state.status==='won'},score:result.score,
     awards:result.state.status==='won'?await verifiedAwards(env.DB,id):[]});
  }catch{return fail('Stackbreaker verification unavailable.',503)}
