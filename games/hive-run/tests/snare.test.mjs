@@ -14,8 +14,8 @@ test("Snare creates an independent, versioned and deterministic replay ruleset",
 test("the original four bosses retain their period; Broodmother uses its own tuned pace",()=>{
  for(const spec of LAIR_BOSSES){
   const run=createLairRun(spec.id);
-  assert.equal(PREY[spec.id].period,spec.id==="broodmother"?6:4);
-  assert.equal(run.enemies[0].period,spec.id==="broodmother"?6:4);
+  assert.equal(PREY[spec.id].period,spec.id==="broodmother"?7:4);
+  assert.equal(run.enemies[0].period,spec.id==="broodmother"?7:4);
   assert.equal(run.tickMs,PLAYER_BASE_TICK_MS);
   const after=run.encounter;
   after.phase=after.phases;

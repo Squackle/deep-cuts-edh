@@ -777,7 +777,7 @@ $("musicButton").addEventListener("click",()=>{
 document.addEventListener("keydown",event=>{
  if(victoryVisible()){
   if(event.key==="Tab"){
-   const options=[$("victoryPlayAgain"),$("victoryReturn"),$("victoryRewatch")];
+   const options=[$("victorySubmitScore"),$("victoryPlayAgain"),$("victoryReturn"),$("victoryRewatch")].filter(button=>!button.hidden);
    const current=options.indexOf(document.activeElement);
    const next=event.shiftKey?(current<=0?options.length-1:current-1):
     (current+1)%options.length;
