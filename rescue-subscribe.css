@@ -1,0 +1,28 @@
+/* Deep Cuts EDH: self-contained, accessible follow.it subscription panel. */
+.dc-subscribe {
+  background:#172522;
+  color:#f4f0e6;
+  border-top:3px solid #b58c56;
+  padding:42px 0 46px;
+}
+.dc-subscribe-grid {display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,440px);align-items:center;gap:clamp(22px,5vw,78px)}
+.dc-subscribe-kicker {display:block;color:#e5c995;font:800 10px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.11em;margin-bottom:14px}
+.dc-subscribe-heading {font:700 clamp(29px,3.8vw,46px)/1.12 Georgia,serif;letter-spacing:-.03em;color:#f4f0e6;margin:0 0 15px}
+.dc-subscribe-heading em {font-weight:400;color:#d9b879}
+.dc-subscribe-copy p {color:#d1ddcf;font:400 15px/1.65 ui-sans-serif,system-ui,sans-serif;max-width:570px;margin:0}
+.dc-follow-box {background:#315348;border:2px solid #b58c56;border-radius:8px;box-shadow:0 15px 35px #07180f40;padding:clamp(17px,3vw,25px);min-width:0}
+.dc-follow-form label {display:block;font:750 13px/1.5 ui-sans-serif,system-ui,sans-serif;color:#f4f0e6;margin:0 0 12px}
+.dc-follow-fields {display:flex;gap:8px;flex-wrap:wrap}
+.dc-follow-fields input {flex:1 1 170px;min-width:0;min-height:46px;background:#f4f0e6!important;border:1px solid #bfac88!important;border-radius:5px;color:#26342f!important;padding:10px 13px;text-align:left;font:500 14px/1.3 ui-sans-serif,system-ui,sans-serif}
+.dc-follow-fields input::placeholder {color:#52635d!important;opacity:1}
+.dc-follow-fields input:focus-visible,.dc-follow-fields button:focus-visible {outline:3px solid #e6c892;outline-offset:3px}
+.dc-follow-fields button {flex:0 0 auto;min-height:46px;border:1px solid #d9b879;border-radius:5px;background:#d9b879;color:#172522;font:850 11px/1.4 ui-sans-serif,system-ui,sans-serif;letter-spacing:.07em;padding:11px 17px;cursor:pointer}
+.dc-follow-fields button:hover {background:#f0d29c;border-color:#f0d29c}
+.dc-follow-fine {font:400 11px/1.55 ui-sans-serif,system-ui,sans-serif;color:#d5e0d4;margin:14px 0 5px}
+.dc-follow-powered {display:inline-flex;align-items:center;gap:5px;color:#d5e0d4;font:400 10px/1.5 ui-sans-serif,system-ui,sans-serif;text-decoration:underline;text-underline-offset:2px}
+.dc-follow-powered img {display:block;width:67px;height:16px;object-fit:contain}
+.dc-subscribe-page {background:#f9f6eb;min-height:60vh}
+.dc-subscribe-page .dc-subscribe {min-height:60vh;border-top:none;display:flex;align-items:center}
+@media(max-width:740px){.dc-subscribe-grid{grid-template-columns:1fr;gap:23px}.dc-subscribe{padding:34px 0}.dc-follow-box{width:100%}}
+@media(max-width:420px){.dc-follow-fields{display:block}.dc-follow-fields input,.dc-follow-fields button{display:block;width:100%}.dc-follow-fields button{margin-top:10px}}
+@media(prefers-reduced-motion:reduce){.dc-follow-fields button{transition:none}}
