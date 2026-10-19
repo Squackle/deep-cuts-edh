@@ -14,6 +14,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
+      - name: Checkout staging-only code
+        uses: actions/checkout@v4
+      - name: Verify staging-only security handler syntax
+        run: |
+          node --check functions/api/security-staging-harness.js
+          node --check functions/api/profile-recovery.js
+          node --check functions/api/profile-device.js
+      - name: Verify test harness stays on staging branch only
+        shell: bash
+        run: |
+          test "$GITHUB_REF_NAME" = "coord/isolate-security-staging-20261019"
+          grep -q 'env.SECURITY_STAGING==="true"' functions/api/security-staging-harness.js
+          grep -q 'Cf-Access-Jwt-Assertion' functions/api/security-staging-harness.js
       - name: Verify staging canonical and deployment aliases reject anonymous GETs
         shell: bash
         run: |
