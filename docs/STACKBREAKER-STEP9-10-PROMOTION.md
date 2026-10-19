@@ -15,19 +15,20 @@ The 250 Classic source is copied byte-for-byte into `src/stackbreaker-verify/src
 - Three **server-issued daily milestones only**: `daily-first`, `seven-dates`, `monthly-rhythm`. These unlock only gold frame, prismatic VFX, daily-adept title in the staging contract. Other 21 local/proposed achievements are **not** represented as owned public badges.
 - `profile-stackbreaker.js`: now mounted on `profile.html` to display verified equipment from authenticated GET and owner-scoped equip. It never grants local badges.
 - `db/stackbreaker-verified-v1.sql`: proposed additive schema. Migration **not executed**. No existing community, verified Hive Run, daily-game, member, subscription or identity table altered.
-- **Fail-closed feature flag**: `STACKBREAKER_VERIFIED_READY==='true'` and DB binding required. Default off. DO NOT set this flag until the migration is approved/applied, independently tested and the full qualifying move-by-move client is integrated.
+- **Fail-closed rollout**: additive D1 table `stackbreaker_launch_v1` contains `feature='verified-daily'` with `enabled=0` by default. Live API requires DB row `enabled=1`; this avoids overwriting any Cloudflare Pages secrets or other environment vars. Enable only after backup, additive migration, QA, post-merge secure smoke; immediately reset to 0 on failure.
 
 ## REQUIRED BEFORE WEBSITE PRODUCTION MERGE / SWITCH
 - [ ] Independent website developer review of full auth, device cookie, CSRF, content versions, D1 SQL and operation rate limits.
 - [x] Native `/games/stackbreaker` client added: same-origin per-move POST, server-authoritative return state, resume, unchanged Classic gameplay, unlimited unverified guest practice, separate verified start, no hints/undo in verified mode, accepted move sequence. Arcade game card added. Tested hosted preview mobile and desktop while verified backend intentionally disabled.
 - [ ] Resolve human editorial review of 60 generated manifest candidates or publish an explicit, owner-approved gated-calendar experience without silently reassigning dates.
-- [ ] Test migration on isolated preview database; backup/rollback, indexes, foreign keys, duplicate requests, multi-device races, stale day, cross-profile rejection, forged badge/equip, tampered step, missing DB binding, no TURNSTILE_SECRET, SSRF/origin failures, leaderboard separation.
+- [x] Migration executed idempotently on isolated security-staging D1 with foreign keys, unique date/profile, CAS duplicates and owner-scoped awards confirmed; SQLite-backed API contract tests exercise consent/origin, missing session, forged move, invalid sequence, one start, award ownership, rollout switch and concurrency.
+- [ ] Production D1 additive migration still requires preflight and the stored recovery bookmark. Production data must not be queried or modified for QA using real player identities.
 - [x] Dedicated Node24 replay and SQLite/API integration checks, site-quality/release coordination/security checks, exact-SHA Cloudflare Pages **successful preview build**. Hosted 390px mobile and 1280px desktop verified **guest practice**; both no overflow, mobile land tap produced white mana; My Profile panel rendered 390px and did not claim false rewards.
 - [ ] Authenticated browser end-to-end on deployed staging/production with synthetic test profile, real D1 move, full replay and verified prize, plus cross-account isolation; not yet verified.
 - [ ] Reverify latest Lab merged exact SHA and website main SHA, request website-developer approval and only then merge production site PR. Record Cloudflare production deployment exact commit, regression/rollback.
 - [ ] Set verified feature flag only AFTER migration and post-deploy secure smoke; never grant scores retroactively based on localStorage.
 
 ## Safe rollback
-Keep `STACKBREAKER_VERIFIED_READY` off if checks fail. Revert site PR without deleting D1 tables containing user data; if a DB migration was applied, retain unused additive tables for audit unless a separate data-removal approval exists. Do not touch Hive Run verified history or the old retired leaderboard.
+Keep `stackbreaker_launch_v1.enabled=0` if checks fail. Revert site PR without deleting D1 tables containing user data; if a DB migration was applied, retain unused additive tables for audit unless a separate data-removal approval exists. Do not touch Hive Run verified history or the old retired leaderboard.
 
 **Current classification: preview-tested, release-gated; Steps 9 and 10 remain UNCHECKED until production schema/feature flag, authenticated smoke and exact production SHA are verified.**
