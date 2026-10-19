@@ -171,5 +171,61 @@ test("Opted-in supporter tiers still animate; reduced-motion visitors see a stat
  }finally{await browser?.close();await new Promise(resolve=>httpServer.close(resolve))}
 });
 
+test("Homepage reserves its header and ribbon space before deferred navigation initializes",{timeout:65000},async()=>{
+ const {httpServer,url}=await server();let browser;
+ try{
+  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  for(const width of [390,840,1280]){
+   const ctx=await browser.newContext({viewport:{width,height:900}});
+   const page=await ctx.newPage();
+   let release;
+   const held=new Promise(resolve=>{release=resolve});
+   await page.route("**/header-profile.js",async route=>{await held;await route.continue()});
+   await page.route("**/api/supporter-ticker",route=>route.fulfill({status:200,contentType:"application/json",body:'{"supporters":[]}'}));
+   await page.route(/^https:\/\//,route=>route.abort());
+   try{
+    await page.goto(url+"/",{waitUntil:"commit"});
+    await page.waitForFunction(()=>{
+     const top=document.querySelector(".hub-card-top");
+     return !!top&&document.documentElement.classList.contains("dc-js")&&
+      getComputedStyle(top).color==="rgb(67, 91, 71)";
+    });
+    const before=await page.evaluate(()=>({main:document.querySelector("main#main").getBoundingClientRect().top,header:document.querySelector(".site-header").getBoundingClientRect().height}));
+    release();
+    await page.locator(".header-profile-enabled").waitFor();
+    await page.locator(".site-supporter-strip").waitFor();
+    await page.waitForTimeout(75);
+    const after=await page.evaluate(()=>({main:document.querySelector("main#main").getBoundingClientRect().top,header:document.querySelector(".site-header").getBoundingClientRect().height}));
+    assert.ok(Math.abs(after.main-before.main)<=10,`Header changed main position at ${width}px: ${JSON.stringify({before,after})}`);
+   }finally{release();await ctx.close()}
+  }
+ }finally{await browser?.close();await new Promise(resolve=>httpServer.close(resolve))}
+});
+
+test("Desktop nav remains accessible if enhancement fails and no-JS fallback stays visible",{timeout:40000},async()=>{
+ const {httpServer,url}=await server();let browser;
+ try{
+  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  const failed=await browser.newContext({viewport:{width:1280,height:850}});
+  try{
+   const page=await failed.newPage();
+   await page.route("**/header-profile.js",route=>route.abort());
+   await page.route(/^https:\/\//,route=>route.abort());
+   await page.goto(url+"/",{waitUntil:"domcontentloaded"});
+   const nav=page.locator(".site-header .header-inner>.primary-nav");
+   assert.equal(await nav.count(),1);
+   assert.equal(await nav.evaluate(el=>getComputedStyle(el).visibility),"hidden","Initial temporary nav should not visually jump");
+   await page.waitForTimeout(1470);
+   assert.equal(await nav.evaluate(el=>getComputedStyle(el).visibility),"visible","Public links recover if enhanced menu script fails");
+   assert.ok(await nav.locator("a").count()>=7);
+  }finally{await failed.close()}
+  const nojs=await browser.newContext({viewport:{width:1280,height:850},javaScriptEnabled:false});
+  try{
+   const page=await nojs.newPage();await page.goto(url+"/",{waitUntil:"domcontentloaded"});
+   assert.equal(await page.locator(".site-header .header-inner>.primary-nav").evaluate(el=>getComputedStyle(el).visibility),"visible","No-JS visitors retain full navigation");
+  }finally{await nojs.close()}
+ }finally{await browser?.close();await new Promise(resolve=>httpServer.close(resolve))}
+});
+
 // Run the new Matchmaker regression suite through the existing protected CI lane.
 import "./matchmaker-browser.test.mjs";

@@ -84,6 +84,7 @@ test("Dominion launch works on phone and desktop: Brood Trail, Hunt and Broodmot
      const broodmother=page.locator('[data-lair-boss="broodmother"]');
      await activate(broodmother);
      assert.equal(await broodmother.getAttribute("aria-pressed"),"true");
+     assert.match(await page.locator("#mercyStatus").innerText(),/1 FREE BOSS DODGE/,"Lair HUD must show the real boss Instinct life");
      await activate(page.locator("#primaryButton"));
      await page.locator("#bossBriefing").waitFor({state:"visible"});
      await activate(page.locator("#bossBriefingResume"));

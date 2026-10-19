@@ -75,3 +75,38 @@ test('Desktop feature expands only into the right gutter without shifting its gr
  assert.match(css,/\.hub-feature:hover\{transform:rotate\(0\) translateY\(-3px\)/);
  assert.match(css,/@media\(max-width:980px\)/);
 });
+
+test("PageSpeed changes stabilize homepage layout without touching AdSense or authentication",()=>{
+ const stability=readFileSync('home-stability.css','utf8');
+ assert.match(html,/<script>document\.documentElement\.classList\.add\("dc-js"\)<\/script>/);
+ assert.match(html, /href="\/home-stability\.css"/);
+ assert.match(stability,/site-header:not\(:has\(>\.site-supporter-strip\)\)::after/);
+ assert.match(stability,/header-inner:not\(\.header-profile-enabled\)/);
+ assert.match(stability,/hub-card-top\{color:#435b47\}/);
+ assert.match(stability,/hub-card-desc.*#455c49/);
+ assert.match(html,/Commander%20Mustard&amp;format=image&amp;version=small/);
+ assert.match(html,/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js/);
+ assert.match(html,/name="google-site-verification"/);
+ assert.match(html,/name="follow.it-verification-code"/);
+});
+
+test('Residual homepage navigation and report badges meet WCAG AA contrast',()=>{
+ const stability=readFileSync('home-stability.css','utf8');
+ for(const rule of [
+  /\.hub-page \.hub-case-number\{color:#3f5d43\}/,
+  /\.hub-page \.hub-index-note\{color:#455a43\}/,
+  /\.hub-page :is\(\.hub-directory,\.hub-reports\) \.hub-eyebrow\{color:#455d45\}/,
+  /dc-home-nav-handoff 1ms 1\.25s backwards/,
+  /prefers-reduced-motion:reduce/
+ ])assert.match(stability,rule);
+ const l=hex=>{
+  const v=hex.match(/[a-f0-9]{2}/gi).map(c=>parseInt(c,16)/255)
+   .map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4);
+  return v[0]*.2126+v[1]*.7152+v[2]*.0722;
+ };
+ const ratio=(a,b)=>(Math.max(l(a),l(b))+.05)/(Math.min(l(a),l(b))+.05);
+ for(const [fg,bg] of [
+  ['3f5d43','e7ede1'],['455a43','eee9d8'],
+  ['455d45','eee9d8'],['455d45','f9f6eb']
+ ])assert.ok(ratio(fg,bg)>=4.5,`Contrast below WCAG AA: #${fg} on #${bg}`);
+});
