@@ -1,0 +1,53 @@
+/* PageSpeed desktop 2026-10-19: the main layout shifted while the
+   progressive header was assembled. Reserve its final block size before JS
+   creates nav/profile and the 28px supporter ticker, without harming no-JS
+   navigation. The document class is set synchronously in the homepage head. */
+html.dc-js .hub-page .site-header:not(:has(>.site-supporter-strip))::after{
+ content:"";display:block;height:29px;box-sizing:border-box;
+ border-top:1px solid #36533e;
+ background:linear-gradient(90deg,#17291f,#1e3829 55%,#18291f);
+}
+@media(min-width:1181px){
+ html.dc-js .hub-page .site-header .header-inner:not(.header-profile-enabled){
+  display:grid;grid-template-columns:minmax(170px,max-content) minmax(0,1fr) auto 50px 42px;
+  align-items:center;gap:clamp(8px,.9vw,17px);
+  width:min(1370px,calc(100% - 44px));min-height:76px;padding:10px 0;
+ }
+ html.dc-js .hub-page .site-header .header-inner:not(.header-profile-enabled)>.wordmark{
+  grid-column:1;grid-row:1;max-width:none;min-width:0;
+ }
+ html.dc-js .hub-page .site-header .header-inner:not(.header-profile-enabled)>.primary-nav{
+  grid-column:2;grid-row:1;order:initial;display:flex;
+  width:auto;min-width:0;overflow:hidden;flex-wrap:nowrap;
+  justify-content:flex-end;gap:8px;border:0;padding:0;margin:0;
+ }
+ html.dc-js .hub-page .site-header .header-inner:not(.header-profile-enabled)>.primary-nav a{
+  white-space:nowrap;font-size:9px;letter-spacing:0;padding:8px 0;
+ }
+}
+@media(max-width:1180px){
+ html.dc-js .hub-page .site-header .header-inner:not(.header-profile-enabled){
+  display:grid;grid-template-columns:minmax(0,1fr) 46px 46px;
+  gap:9px 10px;align-items:center;width:min(1370px,calc(100% - 44px));
+  padding:9px 0 10px;min-height:183px;
+ }
+ html.dc-js .hub-page .site-header .header-inner:not(.header-profile-enabled)>.wordmark{
+  grid-column:1;grid-row:1;order:initial;max-width:none;min-width:0;
+ }
+ html.dc-js .hub-page .site-header .header-inner:not(.header-profile-enabled)>.primary-nav{display:none}
+}
+@media(max-width:720px){
+ html.dc-js .hub-page .site-header .header-inner:not(.header-profile-enabled){
+  min-height:79px;padding-block:8px;
+ }
+}
+@media(max-width:520px){
+ html.dc-js .hub-page .site-header .header-inner:not(.header-profile-enabled){
+  grid-template-columns:minmax(0,1fr) 44px 44px;width:min(1370px,calc(100% - 28px));
+ }
+}
+/* Readable navigation labels at >= WCAG AA 4.5:1 on cream/parchment.
+   Keep the site's muted olive aesthetic; only darken the text. */
+.hub-page .hub-card-top{color:#435b47}
+.hub-page .hub-card-desc,.hub-page .hub-card-desc em{color:#455c49}
+.hub-page .hub-case-copy small{color:#455c49}
