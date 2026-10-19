@@ -29,6 +29,13 @@ jobs:
           node --experimental-default-type=module --test tests/library-facets.test.mjs
           node --check artist-autocomplete.js
           node --check functions/api/artist-suggest.js
+      - name: Commander Matchmaker legality and product contract tests
+        run: |
+          node --experimental-default-type=module --test tests/matchmaker.test.mjs
+          node --check matchmaker.js
+          node --check matchmaker-core.js
+      - name: Commander Matchmaker mobile and desktop real-browser checks
+        run: node --test tests/matchmaker-browser.test.mjs
       - name: Commander Finder and Binder security / deck regression tests
         run: node --experimental-default-type=module --test tests/deep-tools.test.mjs
       - name: Commander tool syntax checks
