@@ -1,0 +1,53 @@
+name: Isolated staging Access smoke test
+on:
+  push:
+    branches:
+      - coord/isolate-security-staging-20261019
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  anonymous-access:
+    name: Anonymous staging Access must intercept
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Verify staging canonical and deployment aliases reject anonymous GETs
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+
+          const hosts = [
+            'https://deepcuts-edh-security-staging.pages.dev/',
+            'https://deepcuts-edh-security-staging.pages.dev/api/community',
+            'https://3e949f69.deepcuts-edh-security-staging.pages.dev/'
+          ];
+
+          for (const url of hosts) {
+            assert.equal(new URL(url).hostname.endsWith('deepcuts-edh-security-staging.pages.dev'), true);
+            const response = await fetch(url, {
+              method: 'GET',
+              redirect: 'manual',
+              signal: AbortSignal.timeout(15000),
+              headers: {'User-Agent':'DeepCutsEDH-Staging-Anonymous-Access-Smoke/1.0'}
+            });
+            const target = response.headers.get('Location') || '';
+            const src = new URL(url);
+            let accessRedirect = false;
+            if ([301,302,303,307,308].includes(response.status) && target) {
+              const dest = new URL(target, src);
+              accessRedirect = dest.protocol === 'https:' &&
+                (dest.hostname === 'cloudflareaccess.com' ||
+                 dest.hostname.endsWith('.cloudflareaccess.com') ||
+                 (dest.origin === src.origin && dest.pathname.startsWith('/cdn-cgi/access/')));
+            }
+            console.log(src.hostname + src.pathname + ': status=' + response.status +
+                        ' access_redirect=' + accessRedirect);
+            assert.ok(accessRedirect, 'Unauthenticated request must redirect through real Cloudflare Access');
+          }
+
+          console.log('PASS: no anonymous staging site or owner API content exposed on checked hosts');
+          JS
