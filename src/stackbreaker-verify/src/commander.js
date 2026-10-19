@@ -1,0 +1,212 @@
+import {CARDS,LANDS} from './cards.js';
+import {createGame,legalTargets,paymentOptions} from './engine.js';
+// Single response window, one-copy-per-nonbasic card *per participant*.
+// Activating a battlefield permanent uses its source and is NOT a second copy.
+// Basic lands remain repeatable under Commander singleton rules.
+// Existing thirty curated lesson IDs and authored winning action IDs are stable.
+const CORE_LINES={
+ 'sb-01':[['ward',null]],
+ 'sb-02':[['counter','bolt']],
+ 'sb-03':[['growth','bear']],
+ 'sb-04':[['negate','wrath']],
+ 'sb-05':[['intervene',null]],
+ 'sb-06':[['salve','player'],['dispel','theircounter']],
+ 'sb-07':[['ward',null],['counter','murder']],
+ 'sb-08':[['ward',null],['salve','player'],['counter','murder']],
+ 'sb-09':[['salve','player'],['dispel1','theircounter'],['dispel2','theirbolt']],
+ 'sb-10':[['salve1','player'],['salve2','player'],['dispel','theircounter']],
+ 'sb-11':[['salve','player'],['dispel','theircounter']],
+ 'sb-12':[['salve1','player'],['salve2','player'],['dispel1','theircounter'],['dispel2','bolt1']],
+
+ 'sb-13':[['defend','bear']],
+ 'sb-14':[['defend','lion']],
+ 'sb-15':[['dive','giant']],
+ 'sb-16':[['titan','bear'],['blossom','lion']],
+ 'sb-17':[['dive','giant'],['blossom','bear']],
+ 'sb-18':[['titan','bear'],['cancel','wrath']],
+ 'sb-19':[['blossom','bear'],['dive','giant']],
+ 'sb-20':[['ward',null],['dive','giant']],
+ 'sb-21':[['ward',null],['dive','giant'],['salve','player']],
+ 'sb-22':[['cancel','counterspell'],['salve','player'],['blossom','giant']],
+ 'sb-23':[['salve','player'],['counter','shock']],
+ 'sb-24':[['salve1','player'],['salve2','player'],['dispel1','enemycounter'],['dispel2','bolt1']],
+ 'sb-25':[['ward',null],['blossom','bear']],
+ 'sb-26':[['blossom','giant'],['salve','player']],
+ 'sb-27':[['ward',null],['dive','giant'],['salve','player']],
+ 'sb-28':[['blossom','giant'],['salve','player'],['dispel','enemycounter']],
+ 'sb-29':[['ward',null],['blossom','giant'],['salve','player'],['dispel','enemycounter']],
+ 'sb-30':[['ward',null],['blossom','giant'],['salve','player'],['dispel1','enemycounter'],['dispel2','bolt']]
+};
+const REPLACEMENTS={
+ 'Dispel':['Arcane Denial','Dovin\'s Veto','Negate','Cancel'],
+ 'Healing Salve':['Soothing Balm'],
+ 'Lightning Bolt':['Lightning Strike','Searing Spear','Incinerate','Open Fire','Fiery Temper'],
+ 'Lightning Strike':['Searing Spear','Incinerate','Open Fire','Fiery Temper','Lightning Bolt'],
+ 'Counterspell':['Cancel','Arcane Denial','Stoic Rebuttal'],
+ 'Grizzly Bears':['Runeclaw Bear','Glory Seeker','Goblin Chariot'],
+ 'Runeclaw Bear':['Grizzly Bears','Glory Seeker','Goblin Chariot'],
+ 'Savannah Lions':['Elite Vanguard','Coral Merfolk','Goblin Piker'],
+ 'Hill Giant':['Centaur Courser','Trained Armodon','War Mammoth'],
+ 'Murder':["Hero's Downfall",'Mortify','Terminate'],
+ 'Doom Blade':['Dark Banishing'],
+ 'Giant Growth':['Brute Force','Titanic Growth'],
+ 'Wrath of God':['Day of Judgment']
+};
+const SHARED_ALIASES=[
+ ['Lightning Bolt','Lightning Strike','Searing Spear','Incinerate','Open Fire','Fiery Temper'],
+ ['Counterspell','Cancel','Stoic Rebuttal','Arcane Denial'],
+ ['Grizzly Bears','Runeclaw Bear','Glory Seeker','Goblin Chariot'],
+ ['Savannah Lions','Elite Vanguard','Coral Merfolk','Goblin Piker'],
+ ['Hill Giant','Centaur Courser','Trained Armodon','War Mammoth'],
+ ['Healing Salve','Soothing Balm'],
+ ['Giant Growth','Brute Force'],
+ ['Murder',"Hero's Downfall",'Mortify','Terminate']
+];
+const COMMANDER_BASICS={W:'Plains',U:'Island',B:'Swamp',R:'Mountain',G:'Forest',C:'Wastes'};
+const COMMANDER_COLORS=['W','U','B','R','G','C'];
+const INSTANT_OPTIONS=[
+ 'Giant Growth',"Ranger's Guile",'Snakeskin Veil','Blossoming Defense','Dive Down',
+ 'Healing Salve','Soothing Balm','Swords to Plowshares',"Tamiyo's Safekeeping",
+ 'Lightning Bolt','Shock','Lightning Strike','Searing Spear','Incinerate','Abrade','Lightning Helix',
+ 'Unsummon','Vapor Snag','Doom Blade','Murder',"Hero's Downfall",'Mortify','Terminate',
+ 'Dispel','Negate','Counterspell','Arcane Denial',"Dovin's Veto",'Cancel',
+ 'Essence Scatter','Remove Soul','Dissipate','Brute Force','Titanic Growth',
+ 'Dissipate'
+].filter(name=>CARDS[name]?.type==='Instant');
+export const HAND_SIZE=7;
+const commanderClone=v=>structuredClone(v);
+const commanderRand=n=>{n|=0;n=Math.imul(n^n>>>16,0x7feb352d);n=Math.imul(n^n>>>15,0x846ca68b);return (n^n>>>16)>>>0;};
+const commanderPalette=(p)=>COMMANDER_COLORS.filter(color=>color!=='C'&&
+ [...p.units,...p.hand,...p.stack].some(x=>x.controller==='player'||p.hand.includes(x)?
+  CARDS[x.card]?.colors?.includes(color):false));
+function appendLand(p,color){p.lands.push({id:'commander-land-'+(p.lands.length+1),card:COMMANDER_BASICS[color],controller:'player'});}
+function ensureMana(p,line){
+ const required=Object.fromEntries(COMMANDER_COLORS.map(c=>[c,0]));let generic=0;
+ for(const [id] of line){
+  const a=p.hand.find(x=>x.id===id);if(!a||a.sourceId)continue;
+  const cost=CARDS[a.card]?.cost||{};for(const c of COMMANDER_COLORS)required[c]+=cost[c]||0;generic+=cost.generic||0;
+ }
+ const supplied=Object.fromEntries(COMMANDER_COLORS.map(c=>[c,p.lands.filter(l=>LANDS[l.card]?.mana===c).length]));
+ for(const c of COMMANDER_COLORS)while(supplied[c]<required[c]){appendLand(p,c);supplied[c]++;}
+ const total=COMMANDER_COLORS.reduce((s,c)=>s+supplied[c],0),mandatory=COMMANDER_COLORS.reduce((s,c)=>s+required[c],0);
+ for(let n=total-mandatory;n<generic;n++)appendLand(p,'C');
+ // Small, varied mana reserves make alternative one-mana responses playable;
+ // no infinite mana or auto-casting is introduced.
+ const colors=commanderPalette(p),first=colors[0]||'G',second=colors[1]||(first==='U'?'W':'U');
+ // Intro worlds get a forgiving spare land. Advanced worlds only receive
+ // their vetted solution budget: a plausible but wasteful cast can strand
+ // the colored mana needed for the true winning line.
+ if((p.difficulty?.galaxy||1)<=2){
+  if(p.lands.length<6)appendLand(p,first);
+  if(p.lands.length<6)appendLand(p,second);
+ }
+}
+function normalizeOwner(p,owner){
+ const items=[...p.units.filter(x=>x.controller===owner),...p.stack.filter(x=>x.controller===owner),...(owner==='player'?p.hand.filter(x=>!x.sourceId):[])];
+ const seen=new Set();
+ for(const x of items){
+  if(!seen.has(x.card)){seen.add(x.card);continue;}
+  const shared=SHARED_ALIASES.find(group=>group.includes(x.card))||[];
+  const alternatives=[...shared.filter(name=>name!==x.card),...(REPLACEMENTS[x.card]||[])];
+  const substitute=alternatives.find(c=>!!CARDS[c]&&!seen.has(c));
+  if(!substitute)throw Error('Cannot make '+p.id+' singleton for '+owner+': '+x.card);
+  const before=x.card;x.card=substitute;seen.add(substitute);
+  // Card identity changes, action IDs and targeting stay stable.
+  p.singletonSubstitutions??=[];
+  p.singletonSubstitutions.push({owner,from:before,to:substitute,id:x.id});
+ }
+}
+function currentPool(p){return Object.fromEntries(COMMANDER_COLORS.map(c=>[c,p.lands.filter(l=>LANDS[l.card]?.mana===c).length]));}
+function candidateScore(p,name,seed){
+ const cost=CARDS[name]?.cost;if(!cost)return -9999;
+ const pool=currentPool(p);
+ const affordable=paymentOptions({mana:pool},cost).length>0;
+ const sample=createGame({...p,hand:[...p.hand,{id:'commander-candidate',card:name}]});
+ const possibleTargets=legalTargets(sample,{id:'commander-candidate',card:name});
+ // Playable alternate answers appear first, followed by deliberately less
+ // useful or unaffordable options—recognizing that distinction is the exercise.
+ return (affordable?100:0)+(possibleTargets.length?40:0)+commanderRand(seed+name.length*97+name.charCodeAt(0))%25;
+}
+// Card roles model a midgame Commander hand, not seven interchangeable instants.
+// There is always at least one land, creature and enchantment in these curated
+// reaction windows; high-complexity cases can start with 8 cards (draw-heavy turn).
+const COMMANDER_CREATURES=[
+ 'Llanowar Elves','Birds of Paradise','Elvish Mystic','Ambush Viper','Skylasher',
+ 'Serra Angel','Soul Warden','Wall of Omens','Aven Mindcensor','Archivist of Oghma',
+ 'Mulldrifter','Archaeomancer','Blood Artist','Gray Merchant of Asphodel',
+ 'Goblin Instigator','Young Pyromancer'
+];
+const COMMANDER_ENCHANTMENTS=[
+ 'Rhystic Study','Smothering Tithe','Ghostly Prison','Propaganda',
+ 'Phyrexian Arena','Black Market Connections','Impact Tremors',
+ 'Goblin Bombardment','Sylvan Library','Fecundity',"Mirari's Wake"
+];
+const COMMANDER_SUPPORT=[
+ 'Sol Ring','Arcane Signet','Swiftfoot Boots','Lightning Greaves',
+ 'Skullclamp','Cultivate',"Kodama's Reach",'Farseek','Ponder','Harmonize','Read the Bones'
+];
+function fitCommanderCard(name,identities){
+ const c=CARDS[name];return !!c&&c.colors.every(color=>identities.has(color));
+}
+function chooseCommanderPermanent(p,index,role,seen){
+ const ids=new Set(commanderPalette(p));for(const land of p.lands){const color=LANDS[land.card]?.mana;if(color&&color!=='C')ids.add(color);}
+ const list=role==='creature'?COMMANDER_CREATURES:role==='enchantment'?COMMANDER_ENCHANTMENTS:COMMANDER_SUPPORT;
+ const candidates=list.filter(n=>!seen.has(n)&&fitCommanderCard(n,ids));
+ if(!candidates.length)throw Error('No Commander-compatible '+role+' for '+p.id);
+ // Intentionally distribute ramp/sorceries alongside artifacts instead of
+ // letting a seeded modulo picker accidentally select only artifacts.
+ const sorceries=role==='support'?candidates.filter(n=>CARDS[n].type.startsWith('Sorcery')):[];
+ const artifacts=role==='support'?candidates.filter(n=>CARDS[n].type.startsWith('Artifact')):[];
+ // Alternate staple artifacts and real sorcery-speed ramp across the atlas.
+ const wantSorcery=Math.floor(index/4)%2===0;
+ const options=role!=='support'?candidates:
+  wantSorcery&&sorceries.length?sorceries:artifacts.length?artifacts:candidates;
+ const chosen=options[commanderRand(index*31+role.length)%options.length];seen.add(chosen);return chosen;
+}
+function chooseCommanderLand(p,index){
+ const allowed=[...new Set(p.lands.map(l=>LANDS[l.card]?.mana).filter(Boolean))];
+ const colors=allowed.length?allowed:[...commanderPalette(p)];
+ const color=colors[commanderRand(index*17+111)%colors.length]||'C';
+ return COMMANDER_BASICS[color];
+}
+export function commanderScenario(input,index=0){
+ const p=commanderClone(input);const solution=p.solution||CORE_LINES[p.id];
+ if(!solution)throw Error('No vetted solution for '+p.id);
+ // Preserve *every* required response. The original 12th and 24th cases
+ // included a fifth non-solution card; remove it rather than breaking their
+ // puzzle solutions or exceeding seven physical cards.
+ const necessary=new Set(solution.map(([id])=>id));
+ while(p.hand.filter(a=>!a.sourceId).length>HAND_SIZE-3){
+  const remove=p.hand.findIndex(a=>!a.sourceId&&!necessary.has(a.id));
+  if(remove<0)throw Error('Seven-card layout requires a redesigned answer line: '+p.id);
+  p.hand.splice(remove,1);
+ }
+ normalizeOwner(p,'player');normalizeOwner(p,'opponent');
+ ensureMana(p,solution);
+ const seen=new Set([...p.units.filter(x=>x.controller==='player'),...p.stack.filter(x=>x.controller==='player'),...p.hand.filter(x=>!x.sourceId&&!LANDS[x.card])].map(x=>x.card));
+ // Three actual non-response card types remain in every *physical* hand,
+ // not faux card buttons or out-of-hand labels.
+ p.hand.push({id:'real-hand-land',card:chooseCommanderLand(p,index)});
+ p.hand.push({id:'real-hand-creature',card:chooseCommanderPermanent(p,index,'creature',seen)});
+ p.hand.push({id:'real-hand-enchantment',card:chooseCommanderPermanent(p,index+7,'enchantment',seen)});
+ if(p.hand.filter(x=>!x.sourceId).length>HAND_SIZE)throw Error('Too many mandatory spells: '+p.id);
+ const pool=INSTANT_OPTIONS.filter(n=>!seen.has(n))
+  .map(name=>({name,score:candidateScore(p,name,index*101+37)}))
+  .sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
+ let added=0;
+ if(index%4===0&&p.hand.filter(a=>!a.sourceId).length<HAND_SIZE){
+  const support=chooseCommanderPermanent(p,index+19,'support',seen);
+  p.hand.push({id:'real-hand-support',card:support});
+ }
+ while(p.hand.filter(x=>!x.sourceId).length<HAND_SIZE){
+  const next=pool.find(x=>!seen.has(x.name));
+  if(!next)throw Error('Insufficient singleton response alternatives for '+p.id);
+  p.hand.push({id:'choice-'+added++,card:next.name});seen.add(next.name);
+ }
+ if(p.hand.filter(x=>!x.sourceId).length!==HAND_SIZE)throw Error('Not exactly seven cards: '+p.id);
+ p.difficulty??={galaxy:Math.floor(index/50)+1};
+ p.difficulty.liveDecoys=added;
+ p.commanderPractice=true;p.format='singleton-realistic-hand';
+ p.solution=commanderClone(solution);p.companionColors=commanderPalette(p);
+ return p;
+}
