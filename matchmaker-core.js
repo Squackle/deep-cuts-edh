@@ -45,7 +45,7 @@ export const COLORS=Object.freeze({any:"Any colors",W:"White",U:"Blue",B:"Black"
 export function validCandidate(card){
  const type=String(card?.type_line||"");
  const text=String(card?.oracle_text||"");
- return typeof card?.name==="string"&&card.legalities?.commander==="legal"&&
+ return typeof card?.name==="string"&&card.name.trim().length>0&&card.legalities?.commander==="legal"&&
   ((/Legendary/i.test(type)&&/Creature/i.test(type))||
    /can be your commander/i.test(text));
 }
