@@ -122,4 +122,4 @@ async function board(){
  }catch(e){info('Verified rankings temporarily unavailable. Original Game Lab practice still works.');}
 }
 document.getElementById('refreshLeaderboard').addEventListener('click',board);
-board();
+board();checkRanked();
