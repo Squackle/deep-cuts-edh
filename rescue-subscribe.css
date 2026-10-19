@@ -19,6 +19,9 @@
 .dc-follow-fields button {flex:0 0 auto;min-height:46px;border:1px solid #d9b879;border-radius:5px;background:#d9b879;color:#172522;font:850 11px/1.4 ui-sans-serif,system-ui,sans-serif;letter-spacing:.07em;padding:11px 17px;cursor:pointer}
 .dc-follow-fields button:hover {background:#f0d29c;border-color:#f0d29c}
 .dc-follow-fine {font:400 11px/1.55 ui-sans-serif,system-ui,sans-serif;color:#d5e0d4;margin:14px 0 5px}
+.dc-follow-direct {margin:10px 0 7px;font:750 11px/1.5 ui-sans-serif,system-ui,sans-serif}
+.dc-follow-direct a {color:#e5c995;text-decoration:underline;text-underline-offset:3px}
+.dc-follow-direct a:hover {color:#f0d29c}
 .dc-follow-powered {display:inline-flex;align-items:center;gap:5px;color:#d5e0d4;font:400 10px/1.5 ui-sans-serif,system-ui,sans-serif;text-decoration:underline;text-underline-offset:2px}
 .dc-follow-powered img {display:block;width:67px;height:16px;object-fit:contain}
 .site-footer .dc-footer-subscribe {display:inline-flex;min-height:44px;align-items:center;color:#e5c995;font:800 11px/1.4 ui-sans-serif,system-ui,sans-serif;letter-spacing:.06em;text-decoration:underline;text-underline-offset:3px}
