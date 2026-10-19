@@ -103,7 +103,7 @@ test("browser gate freezes the frame loop and retains replay-rules version",()=>
  assert.match(main,/showMutationDraft\([^\n]*state\.run\.mode\)/);
  assert.match(html,/id="mutationResume"[^>]*hidden/);
  assert.match(html,/SESSION BEST/);
- assert.match(html,/1\.4 · BEACON/);
+ assert.match(html,/2\.0 · DOMINION/);
  assert.equal(RULES_VERSION,"hive-1.5.4","Dominion 2.0 intentionally advances replay rules");
 });
 test("permanent release naming instruction is kept in source control",()=>{

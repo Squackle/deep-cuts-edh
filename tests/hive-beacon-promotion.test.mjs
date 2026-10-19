@@ -27,7 +27,7 @@ test("rapid movement inputs cannot select a mutation at an orb transition",()=>{
   assert.equal(mutationSelectionIndex(direction,true),null,direction);
  }
  const html=readFileSync("games/hive-run/index.html","utf8");
- assert.match(html,/1\.4 · BEACON/);
+ assert.match(html,/2\.0 · DOMINION/);
  assert.match(html,/MOVEMENT KEYS IGNORE THIS MENU/);
 });
 test("score flashes 3 times at fixed position above captured tile, not over square",()=>{
