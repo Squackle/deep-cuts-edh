@@ -74,7 +74,8 @@ test("Command Center 2.0 home, sections, real-form preservation, owner API actio
     await page.getByRole("button",{name:"External services",exact:true}).click();
     const services=page.locator("#owner-panel-services");
     assert.equal(await services.isVisible(),true);
-    assert.equal(await services.locator("a.owner-service-card").count(),14);
+    assert.equal(await services.locator("a.owner-service-card").count(),15);
+    assert.equal(await services.locator("a[href='https://search.google.com/search-console/insights']").count(),1);
     assert.equal(await services.locator("a[href='https://adsense.google.com/']").count(),1);
     assert.equal(await services.locator("a[href='https://analytics.google.com/']").count(),1);
     assert.equal(await services.locator("a[href^='https://follow.it/deep-cuts-edh-commander-rescue-reports']").count(),1);
