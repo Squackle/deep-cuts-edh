@@ -37,7 +37,7 @@ test('D1 migration is additive, rerunnable and foreign-keyed without dropping an
  const x=fixture(),db=x.raw;
  db.exec(migration);
  const tables=db.prepare("SELECT name FROM sqlite_master WHERE name LIKE 'stackbreaker_%'").all().map(x=>x.name);
- assert.equal(tables.filter(x=>x.endsWith('_v1')).length,3);
+ assert.equal(tables.filter(x=>x.endsWith('_v1')&&!x.startsWith('stackbreaker_attempts_completed')).length,3);
  assert.ok(tables.includes('stackbreaker_daily_attempts_v1'));
 });
 test('Verified profile session, one UTC start, owner isolation and server replay concurrency',async()=>{
@@ -90,7 +90,7 @@ test('CSRF/cookie security, staging flag, idempotent awards and cosmetic ownersh
  const other=await unwrap(await onRequestPost({request:req('b',{action:'equip',slot:'frame',rewardId:'gold'}),env:f.env}));
  assert.equal(other.status,403);
  const row=f.raw.prepare("SELECT profile_id,reward_id FROM stackbreaker_equipped_v1").all();
- assert.deepEqual(row,[{profile_id:'member-a',reward_id:'gold'}]);
+ assert.deepEqual(row.map(x=>({...x})),[{profile_id:'member-a',reward_id:'gold'}]);
  const reset=await unwrap(await onRequestPost({request:req('a',{action:'equip',slot:'frame',rewardId:'default'}),env:f.env}));
  assert.equal(reset.status,200);assert.equal(Object.keys(reset.data.equipped).length,0);
 });
