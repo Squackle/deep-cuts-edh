@@ -14,6 +14,7 @@ import {captureFlash,drawCaptureFlash} from "./beacon-feedback.js";
 import {KEY_DIRECTIONS,keyboardDirection,mutationSelectionIndex,isTouchMutationSelection,resumeHeading,swipeHeading,SWIPE_RESUME_KEYS} from "./input-controls.js";
 import {showMutationDraft,hideMutationDraft,drawMutationHud} from "./evolution-ui.js";
 import {renderMutationEffects} from "./evolution-visuals.js";
+import {createGameOnlyMode} from "./game-only.js";
 import {drawPrey,drawCapture} from "./enemy-render.js";
 import {drawAbilityMeter,drawMiniboss,drawWebs,drawBurrowWarning} from "./boss-art.js";
 import {abilityState,ABILITIES} from "./miniboss.js";
