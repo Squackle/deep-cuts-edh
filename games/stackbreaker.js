@@ -1,7 +1,7 @@
 import {loadScenarios,utcDay} from '../src/stackbreaker-verify/server-replay.js';
 import {createGame,tapLand,playLand,activate,pass,legalActions,legalTargets,paymentOptions} from '../src/stackbreaker-verify/src/engine.js';
 import {CARDS,LANDS} from '../src/stackbreaker-verify/src/cards.js';
-import manifest from '../src/stackbreaker-verify/data/daily-manifest.json' with {type:'json'};
+import manifest from '../src/stackbreaker-verify/data/daily-manifest.js';
 // Game Lab local results cannot be imported as server-verified proof.
 const $=id=>document.getElementById(id);
 const cases=loadScenarios(),byID=new Map(cases.map(x=>[x.id,x]));
