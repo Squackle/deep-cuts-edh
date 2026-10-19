@@ -14,6 +14,10 @@ test('Homepage discovers the opt-in signup unobtrusively and has a static fallba
   assert.match(homepage, /href="\/rescue-subscribe\.css"/);
   assert.match(homepage, /src="\/rescue-subscribe\.js"/);
   assert.match(homepage, /href="\/subscribe">EMAIL UPDATES/);
+  assert.ok(homepage.includes('<meta name="follow.it-verification-code" content="yWX0twQw2GDWNdJWL78F"/>'));
+  assert.equal((homepage.match(/follow\.it-verification-code/g)||[]).length,1);
+  assert.ok(script.includes('https://follow.it/deep-cuts-edh-commander-rescue-reports?leanpub'));
+  assert.ok(page.includes('https://follow.it/deep-cuts-edh-commander-rescue-reports?leanpub'));
   assert.match(script, /\.hub-reports/);
   assert.match(script, /reports\.insertAdjacentElement\('afterend', section\)/);
 });
