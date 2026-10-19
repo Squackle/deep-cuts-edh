@@ -69,7 +69,7 @@ export async function onRequestGet({request,env}){
  }catch{return fail('Stackbreaker records temporarily unavailable.',503)}
 }
 export async function onRequestPost({request,env}){
- if(!originOK(request))return fail('Origin not allowed.',403);
+ if(!request.headers.get('Origin')||!originOK(request))return fail('Origin not allowed.',403);
  const gate=await session(request,env);if(gate.error)return gate.error;
  let data;try{data=await body(request)}catch{return fail('Invalid request.',400)}
  if(!data||typeof data!=='object'||Array.isArray(data))return fail('Invalid request.',400);
