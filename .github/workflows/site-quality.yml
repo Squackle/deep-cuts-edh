@@ -34,8 +34,6 @@ jobs:
           node --experimental-default-type=module --test tests/matchmaker.test.mjs
           node --check matchmaker.js
           node --check matchmaker-core.js
-      - name: Commander Matchmaker mobile and desktop real-browser checks
-        run: node --test tests/matchmaker-browser.test.mjs
       - name: Commander Finder and Binder security / deck regression tests
         run: node --experimental-default-type=module --test tests/deep-tools.test.mjs
       - name: Commander tool syntax checks
@@ -70,6 +68,8 @@ jobs:
           node --check functions/api/arcane-games.js
       - name: Install isolated Chromium test driver
         run: npm install --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
+      - name: Commander Matchmaker mobile and desktop real-browser checks
+        run: node --experimental-default-type=module --test tests/matchmaker-browser.test.mjs
       - name: Rescue Board static integration and script syntax
         run: |
           node --test tests/rescue-board.test.mjs
