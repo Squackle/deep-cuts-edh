@@ -183,3 +183,6 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
   }
  }finally{await browser?.close();await new Promise(r=>server.close(r))}
 });
+
+// Shared Site quality workflow also runs the independently scoped public case-file tests.
+import "./case-file-browser.test.mjs";

@@ -97,3 +97,6 @@ test("Featured gold halo remains behind card and preserves hover lift",()=>{
  assert.match(css,/\.hub-feature:hover\{transform:rotate\(0\) translateY\(-3px\)/);
  assert.match(css,/prefers-reduced-motion/);
 });
+
+// Shared Site quality workflow also runs the independently scoped public case-file tests.
+import "./case-file.test.mjs";

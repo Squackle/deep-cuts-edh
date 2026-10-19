@@ -48,6 +48,8 @@ function resultCard(pick,index){
  info.append(line,title,theme,why,footer);
  const buttons=node("div",undefined,"mm-card-links");
  buttons.append(profileLink(card.name));
+ const share=node("a","MAKE A SHAREABLE CASE FILE ↗","mm-link mm-muted");
+ share.href="/case-file?commander="+encodeURIComponent(card.name);buttons.append(share);
  const scryfall=outbound(card.scryfall_uri);
  if(scryfall){const a=node("a","CHECK CARD ↗","mm-link mm-muted");a.href=scryfall;a.target="_blank";a.rel="noopener noreferrer";buttons.append(a)}
  info.append(buttons);item.append(art,info);return item;
