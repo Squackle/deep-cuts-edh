@@ -43,3 +43,6 @@ test("Owner V2 operational reports do not claim unimplemented external integrati
  assert.match(ui,/AdSense approval and earnings are not currently available/);
  assert.match(ui,/No database restoration/);
 });
+
+// Dry-run newsletter template preflight through existing owner/site CI; no mail send.
+import "./weekly-dispatch-template.test.mjs";
