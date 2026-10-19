@@ -1,9 +1,9 @@
 // Authenticated Stackbreaker website lane. Pinned gameplay source from
 // Game Lab commit 9533987e5ec28cdbbbf07175a6cda5813b580d16.
 // Deliberately fail-closed until its additive D1 schema and QA gate are ready.
-import daily from './data/daily-manifest.json' with {type:'json'};
-import core from './data/scenarios.json' with {type:'json'};
-import expansion from './data/campaign-expansion.json' with {type:'json'};
+import daily from './data/daily-manifest.js';
+import core from './data/scenarios.js';
+import expansion from './data/campaign-expansion.js';
 import {generateStages} from './src/galaxies.js';
 import {commanderScenario} from './src/commander.js';
 import {RULES_VERSION} from './src/cards.js';
