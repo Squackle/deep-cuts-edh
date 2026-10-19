@@ -7,6 +7,7 @@ const homepage = read('index.html');
 const script = read('rescue-subscribe.js');
 const page = read('subscribe.html');
 const css = read('rescue-subscribe.css');
+const privacy = read('privacy.html');
 const expectedAction = 'https://api.follow.it/subscription-form/ZGY5eUdvK3BUVXRMdWdaMys5NVRWcUg4L3QrQkZTcUY3RlBDVWQ3SkJ4cmNVblgzMUVUNWVIaHZlUkRsaUdCUGlsWkcxQTlPMCtzUVVubTZTRkE3M2loNk9JRTRTM254MWtEaWRvVEEyUU9jd2JtQndTbEhybGQ3eFdDbzk1YkZ8K0hwc1F1K1AveXlvNGlhbzl0OVB1VHA0dk5UQ1A5YlFtT1pHSUdOY2t2az0=/8';
 
 test('Homepage discovers the opt-in signup unobtrusively and has a static fallback link', () => {
@@ -26,9 +27,13 @@ test('Both signup surfaces post only explicitly entered emails to the user-provi
     assert.match(source, /placeholder="Your email address" required/, filename);
     assert.match(source, /type="submit"/, filename);
     assert.match(source, /provided by follow\.it/, filename);
+    assert.match(source, /may see the email you submit/, filename);
+    assert.match(source, /href="\/privacy"/, filename);
     assert.match(source, /href="https:\/\/follow\.it\/"/, filename);
     assert.doesNotMatch(source, /fetch\s*\(|addEventListener\s*\(\s*['"]submit|localStorage|document\.cookie/, filename+' does not intercept or prefill address submission');
   }
+  assert.match(privacy, /follow\.it Privacy Policy/);
+  assert.match(privacy, /We do not automatically enroll Community members/);
   assert.match(page, /<meta name="robots" content="noindex,follow">/);
   assert.match(page, /rel="canonical" href="https:\/\/deep-cuts-edh\.pages\.dev\/subscribe"/);
 });
