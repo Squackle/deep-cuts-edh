@@ -57,6 +57,34 @@ test("Command Center 2.0 home, sections, real-form preservation, owner API actio
     assert.match(await sweepLink.getAttribute("rel"),/noopener/);
     assert.match(await page.locator(".owner-v2-security-help").textContent(),/select Run workflow on main/i);
     assert.equal(await page.locator(".owner-v2-menu-button").count(),7);
+    // Read-only service shortcuts have real public logos, accessible names, and safe outbound links.
+    const quick=page.locator(".owner-service-quick");
+    assert.equal(await quick.isVisible(),true);
+    assert.equal(await quick.locator("a.owner-service-card").count(),7);
+    assert.equal(await quick.locator("a[href='https://chatgpt.com/']").count(),1);
+    assert.equal(await quick.locator("a[href='https://search.google.com/search-console']").count(),1);
+    const cloudflare=quick.locator("a[href='https://dash.cloudflare.com/']");
+    assert.equal(await cloudflare.getAttribute("target"),"_blank");
+    assert.match(await cloudflare.getAttribute("rel"),/noopener noreferrer/);
+    assert.equal(await cloudflare.getAttribute("referrerpolicy"),"no-referrer");
+    const icons=quick.locator(".owner-service-icon img");
+    assert.equal(await icons.count(),7);
+    assert.equal(await icons.first().getAttribute("referrerpolicy"),"no-referrer");
+    await page.locator('[data-owner-v2-group="Site"]').click();
+    await page.getByRole("button",{name:"External services",exact:true}).click();
+    const services=page.locator("#owner-panel-services");
+    assert.equal(await services.isVisible(),true);
+    assert.equal(await services.locator("a.owner-service-card").count(),15);
+    assert.equal(await services.locator("a[href='https://search.google.com/search-console/insights']").count(),1);
+    assert.equal(await services.locator("a[href='https://adsense.google.com/']").count(),1);
+    assert.equal(await services.locator("a[href='https://analytics.google.com/']").count(),1);
+    assert.equal(await services.locator("a[href^='https://follow.it/deep-cuts-edh-commander-rescue-reports']").count(),1);
+    assert.equal(await services.locator("a[href='https://github.com/Squackle/deep-cuts-edh']").count(),1);
+    assert.equal(await services.locator("a[href='https://developers.google.com/search/docs/fundamentals/seo-starter-guide?hl=en']").count(),1);
+    assert.equal(requests.length,0,"Opening the service launcher does not call owner APIs");
+    const serviceOverflow=await page.evaluate(()=>({body:document.body.scrollWidth,viewport:innerWidth}));
+    assert.ok(serviceOverflow.body<=width+2,"Service launcher must not overflow on mobile "+JSON.stringify(serviceOverflow));
+
     assert.equal(await page.locator(".owner-key-label input[name=operatorKey]").count(),1);
     const overflow=await page.evaluate(()=>({body:document.body.scrollWidth,viewport:innerWidth}));
     assert.ok(overflow.body<=width+2,"Mobile horizontal overflow "+JSON.stringify(overflow));
