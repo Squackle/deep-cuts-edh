@@ -73,7 +73,8 @@ export async function onRequestPost({request,env}){
    env.DB.prepare("INSERT INTO community_profiles(id,handle,key_hash) VALUES(?,?,?)").bind(f.b,"StageSecB"+f.b.slice(0,8),await hash(bKey)),
    env.DB.prepare("INSERT INTO community_decks(id,owner_id,title,commander,content) VALUES(?,?,?,?,?)").bind(f.deck,f.a,"Synthetic-only security fixture","Chainer, Dementia Master",deckSql),
    env.DB.prepare("INSERT INTO community_pending_recovery_contacts(profile_id,email_hash,email_cipher,email_mask,source) VALUES(?,?,?,?,?)")
-    .bind(f.b,"b".repeat(64),"synthetic-only-not-an-email","s***@example.invalid","security-fixture")
+    // This schema accepts only connected_gmail_oauth, including on synthetic staging records.
+    .bind(f.b,await hash("staging-pending-contact:"+f.b),"synthetic-only-not-an-email","s***@example.invalid","connected_gmail_oauth")
   ]);
   const aRecovery=await recoveryGet({request:makeRequest("/api/profile-recovery?profile_id="+f.b,"GET",null,aKey),env});
   const aResult=await payload(aRecovery);
