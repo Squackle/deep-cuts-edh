@@ -48,7 +48,7 @@ function card(item,compact=false){
  img.alt="";img.width=38;img.height=38;
  img.loading="lazy";img.decoding="async";img.referrerPolicy="no-referrer";
  img.src="https://www.google.com/s2/favicons?domain="+encodeURIComponent(domain)+"&sz=64";
- img.addEventListener("error",()=>img.remove(),{once:true});
+ img.addEventListener("error",()=>{img.style.display="none";},{once:true});
  icon.append(img);
  const copy=node("span","owner-service-copy");
  copy.append(node("strong","",name));
