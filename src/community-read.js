@@ -2,6 +2,9 @@ import {send,fail,safe,auth,publicProfile,topicOK} from "./community-core.js";
 import {publicChallenge,featuredDeckEligible,isOpenChallenge} from "./featured-case.js";
 export async function communityRead(req,db){
  const q=new URL(req.url).searchParams,action=q.get("action")||"home";
+ // Public-header session preview: a guest is an expected state, not an error.
+ // Keep action=me's strict 401 contract for explicit authenticated callers.
+ if(action==="session"){const a=await auth(req,db);return send({profile:a?publicProfile(a):null})}
  if(action==="me"){const a=await auth(req,db);return a?send({profile:publicProfile(a)}):fail("Sign in with your profile recovery key.",401)}
  if(action==="passport"){
   // Entirely read-only. Existing verified rows belong exclusively to the
