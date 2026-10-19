@@ -15,8 +15,8 @@ function serve(){
   const rel=pathname==="/matchmaker"?"/matchmaker.html":pathname==="/"?"/index.html":pathname;
   const file=path.resolve(root,"."+rel);
   if(!file.startsWith(root+path.sep))return res.writeHead(403).end();
-  try{res.writeHead(200,{"Content-Type":types[path.extname(file)]||"text/plain"}).end(fs.readFileSync(file))}
-  catch{res.writeHead(404).end("Not found")}
+  try{const bytes=fs.readFileSync(file);res.writeHead(200,{"Content-Type":types[path.extname(file)]||"text/plain"}).end(bytes)}
+  catch{if(!res.headersSent)res.writeHead(404);res.end("Not found")}
  });
  return new Promise(resolve=>server.listen(0,"127.0.0.1",()=>resolve({server,url:"http://127.0.0.1:"+server.address().port})));
 }
