@@ -12,7 +12,7 @@ const robot=read("robots.txt");
 const PUB="ca-pub-1885127351876276";
 const SCRIPT='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+PUB+'" crossorigin="anonymous"></script>';
 const expectedPaths=["/","/games/hive-run/","/games","/games/cold-case","/games/obscurity-ladder",
- "/games/arcane-cipher","/games/conspiracy-board","/matchmaker","/deep-cut-finder","/combos","/library",
+ "/games/arcane-cipher","/games/conspiracy-board","/case-file","/matchmaker","/deep-cut-finder","/combos","/library",
  "/set-watch","/deck","/community","/nominations","/supporters",
  "/reports/chainer-dementia-master","/reports/alena-and-gilanra",
  "/reports/commander-mustard","/reports/ekthi-contaminator-priest","/privacy"];
@@ -44,7 +44,7 @@ test("Sitemap passes a strict XML parser and contains no stray text or escape se
  const result=spawnSync("python3",["-c",py],{input:sitemap,encoding:"utf8"});
  assert.equal(result.status,0,"Invalid XML: "+result.stderr);
  const entries=JSON.parse(result.stdout);
- assert.equal(entries.length,21);
+ assert.equal(entries.length,22);
  assert.deepEqual(entries.map(x=>new URL(x[0]).pathname),expectedPaths);
  assert.equal(new Set(entries.map(x=>x[0])).size,entries.length);
  for(const [uri,date] of entries){
