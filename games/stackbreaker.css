@@ -6,3 +6,5 @@ main{max-width:1440px;padding:0 clamp(14px,4vw,54px) 40px;margin:auto}.hero{padd
 @media(max-width:910px){.layout{grid-template-columns:1fr}aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.side:last-child{grid-column:1/-1}}
 @media(max-width:610px){.hero{padding:24px 0 15px}aside{display:block}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.brand span{display:block}.board{padding:14px}}@media(max-width:340px){.tiles{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+[hidden]{display:none!important}
