@@ -51,3 +51,24 @@ html.dc-js .hub-page .site-header:not(:has(>.site-supporter-strip))::after{
 .hub-page .hub-card-top{color:#435b47}
 .hub-page .hub-card-desc,.hub-page .hub-card-desc em{color:#455c49}
 .hub-page .hub-case-copy small{color:#455c49}
+
+/* Lighthouse's remaining shift can include the temporary wide-screen nav
+   being replaced with grouped navigation. During the short JS handoff keep
+   the legacy nav in layout but visually quiet; if the shared script fails,
+   it becomes visible after 1.25 seconds. On no-JS pages it never hides. */
+@media(min-width:1181px){
+ @keyframes dc-home-nav-handoff{from{visibility:hidden}to{visibility:hidden}}
+ html.dc-js .hub-page .site-header .header-inner:not(.site-desktop-ready)>.primary-nav{
+  animation:dc-home-nav-handoff 1ms 1.25s backwards;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ html.dc-js .hub-page .site-header .header-inner:not(.site-desktop-ready)>.primary-nav{
+  animation:none;
+ }
+}
+/* Residual Lighthouse contrast warnings were on the Rescue Report numbering
+   and muted directory helper labels. Preserve the palette with deeper sage. */
+.hub-page .hub-case-number{color:#3f5d43}
+.hub-page .hub-index-note{color:#455a43}
+.hub-page :is(.hub-directory,.hub-reports) .hub-eyebrow{color:#455d45}
