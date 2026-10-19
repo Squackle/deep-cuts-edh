@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {readFileSync,existsSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {extractPublishedRescueReports,renderRescueReportFeed} from '../src/rescue-report-feed.js';
 import {onRequestGet} from '../functions/feed.xml.js';
@@ -38,4 +39,11 @@ test('Cloudflare Pages endpoint serves public feed and fails closed on missing a
  const bad=await onRequestGet({request:new Request(origin+'/feed.xml'),env:{ASSETS:{fetch:async()=>new Response('',{status:404})}}});
  assert.equal(bad.status,503);
  assert.equal(bad.headers.get('cache-control'),'no-store');
+});
+
+test('published entries come from actual public report assets',()=>{
+ const publicHomepage=readFileSync('index.html','utf8');
+ const entries=extractPublishedRescueReports(publicHomepage);
+ assert.ok(entries.length>=4);
+ for(const entry of entries)assert.ok(existsSync('.'+entry.path+'.html'),entry.path+' is not a public report asset');
 });
