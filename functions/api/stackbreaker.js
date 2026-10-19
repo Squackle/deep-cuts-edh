@@ -3,7 +3,13 @@ import {LAB_SOURCE_SHA,STACKBREAKER_SERVER_RULES,MAX_ACCEPTED_MOVES,
  utcDay,currentDaily,boundScenario,digestScenario,replayServerMoves} from '../../src/stackbreaker-verify/server-replay.js';
 // Features remain DISABLED until the separate schema, authentication, QA and
 // production release are explicitly verified by the website developer.
-const ready=env=>env.STACKBREAKER_VERIFIED_READY==='true'&&!!env.DB;
+async function ready(env){
+ if(!env.DB)return false;
+ try{
+  const row=await env.DB.prepare("SELECT enabled FROM stackbreaker_launch_v1 WHERE feature='verified-daily'").first();
+  return Number(row?.enabled)===1;
+ }catch{return false}
+}
 const awardMap={
  'daily-first':{slot:'frame',reward:'gold',threshold:1},
  'seven-dates':{slot:'vfx',reward:'prismatic',threshold:7},
@@ -13,7 +19,7 @@ const safeJSON=x=>{try{return JSON.parse(x||'[]')}catch{return null}};
 const gameStatus=(row)=>row?{day:row.utc_date,status:row.result,
   moves:row.accepted_moves,puzzleId:row.puzzle_id,finishedAt:row.finished_at||null}:null;
 async function session(request,env){
- if(!ready(env))return {error:fail('Verified Stackbreaker is not yet enabled.',503)};
+ if(!await ready(env))return {error:fail('Verified Stackbreaker is not yet enabled.',503)};
  const user=await auth(request,env.DB);
  if(!user)return {error:fail('Sign in to your community profile first.',401)};
  return {user};
