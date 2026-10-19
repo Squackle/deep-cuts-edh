@@ -36,6 +36,8 @@ jobs:
           const hosts = [
             'https://deepcuts-edh-security-staging.pages.dev/',
             'https://deepcuts-edh-security-staging.pages.dev/api/community',
+            'https://deepcuts-edh-security-staging.pages.dev/security-staging-acceptance.html',
+            'https://deepcuts-edh-security-staging.pages.dev/api/security-staging-harness',
             'https://3e949f69.deepcuts-edh-security-staging.pages.dev/'
           ];
 
