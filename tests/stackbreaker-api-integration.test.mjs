@@ -14,11 +14,15 @@ function fixture(){
  CREATE TABLE community_limits(subject TEXT,date_key TEXT,action TEXT,attempts INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(subject,date_key,action));`);
  db.exec(migration);
  db.prepare("UPDATE stackbreaker_launch_v1 SET enabled=1 WHERE feature='verified-daily'").run();
- const d1={prepare(sql){return {bind(...args){const q=db.prepare(sql);return {
-  async first(){return q.get(...args)||null},
-  async all(){return {results:q.all(...args)}},
-  async run(){return {meta:{changes:q.run(...args).changes}}}
- };}}}};
+ const d1={prepare(sql){
+  const bound=args=>{const q=db.prepare(sql);return {
+   bind(...next){return bound(next)},
+   async first(){return q.get(...args)||null},
+   async all(){return {results:q.all(...args)}},
+   async run(){return {meta:{changes:q.run(...args).changes}}}
+  }};
+  return bound([]);
+ }};
  return {raw:db,env:{DB:d1,STACKBREAKER_VERIFIED_READY:'true',TURNSTILE_SECRET:'local-test-not-a-real-secret'}};
 }
 const token=id=>'dcdevice1_'+id.repeat(64);
