@@ -49,7 +49,7 @@ test('Server independently checks accepted actions; fabricated wins never accept
  assert.equal(empty.score.acceptedActionCount,0);
  assert.throws(()=>replayServerMoves(s,[{type:'claim-win'}]),/Unsupported or malformed/);
  assert.throws(()=>replayServerMoves(s,[{type:'tap',landId:'not-a-land'}]),/Land cannot be tapped/);
- assert.throws(()=>replayServerMoves(s,[{type:'pass',fakeAccepted:true}]),/Unsupported or malformed/);
+ assert.throws(()=>replayServerMoves(s,[{type:'pass',fakeAccepted:true}]),/Invalid move envelope/);
  assert.throws(()=>replayServerMoves(s,Array(141).fill({type:'pass'})),/Too many moves/);
 });
 test('Authenticated Stackbreaker API defaults disabled and does not touch DB',async()=>{
