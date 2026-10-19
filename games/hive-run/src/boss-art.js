@@ -1,3 +1,4 @@
+import {drawApprovedCreature,hasApprovedSprite} from "./approved-creature-art.js";
 /**
  * Original hand-pixelled gothic burrow minibosses and charge symbols.
  * 20x20 source art, 64x64 display, zero smoothing, mathematically centered.
@@ -32,8 +33,36 @@ const GUARDIAN=[
 "....hsgghddhggsh....","...hssgghhhhggssh...","..hsshssddddsshssh..","...h..hssddssh..h...",
 ".......hssssh.......","........hssh........",".........hh.........","...................."
 ].map(r=>r.padEnd(20,'.').slice(0,20));
-export const ICON_PIXELS=Object.freeze({stalker:BURROW,weaver:WEB,warden:WARDEN,guardian:GUARDIAN});
+// An original egg-crowned matriarch, wider than the existing stone/void bosses.
+const BROODMOTHER=[
+"....................",
+"......h......h......",
+".....hgh....hgh.....",
+"....hsggh..hggsh....",
+"...ksssgghhggsssk...",
+"..ksgggsshhssgggsk..",
+"..ksgghhhhhhhhggsk..",
+".ksggghddssddhgggsk.",
+".ksggshdkkddkdhsggsk",
+".ksggshdkkkkdhsggsk.",
+".ksggshdkkddkdhsggsk",
+".ksggghddddddhgggsk.",
+"..ksgggshhhhsgggsk..",
+"..kssggssssssggssk..",
+"...kssggssggssgssk..",
+"....kssghhhhgssk....",
+".....ksgssssgsk.....",
+"......ksshssk.......",
+".......kkkkkk.......",
+"...................."
+].map(r=>r.padEnd(20,'.').slice(0,20));
+export const ICON_PIXELS=Object.freeze({stalker:BURROW,weaver:WEB,warden:WARDEN,guardian:GUARDIAN,broodmother:BROODMOTHER});
 export const OCHRE=Object.freeze({track:"#414335",fill:"#98824b",ready:"#b19a5a",stone:"#b2ab8f"});
+// Legible against both painted fracture backgrounds. Presentation only.
+export const HIGH_VISIBILITY_BOSSES=Object.freeze({
+ guardian:Object.freeze({locator:"#e4c2ff",ring:"#cb91f5",ready:"#f2dbff",background:"#251633"}),
+ broodmother:Object.freeze({locator:"#ffe4a1",ring:"#eeb46d",ready:"#fff0ba",background:"#2d1b20"})
+});
 export function validateIcons(){return Object.values(ICON_PIXELS).every(a=>a.length===20&&a.every(row=>row.length===20&&[...row].every(c=>Object.hasOwn(PALETTE,c))))}
 export function chargePixels(charge){
  const c=Math.max(0,Math.min(1,Number.isFinite(charge)?charge:0)),out=[];
@@ -46,6 +75,7 @@ export function chargePixels(charge){
  return out;
 }
 export function drawBossPixelIcon(ctx,kind,x,y,size=20){
+ if(hasApprovedSprite(kind)){drawApprovedCreature(ctx,kind,x,y,size);return}
  const rows=ICON_PIXELS[kind];if(!ctx||!rows)return;
  const scale=size/20;
  ctx.save();ctx.imageSmoothingEnabled=false;
@@ -64,9 +94,10 @@ export function drawAbilityMeter(canvas,kind,charge){
  if(canvas.width!==64)canvas.width=64;
  if(canvas.height!==64)canvas.height=64;
  ctx.clearRect(0,0,64,64);ctx.imageSmoothingEnabled=false;
- ctx.fillStyle="#132019";ctx.fillRect(8,8,48,48);
+ const high=HIGH_VISIBILITY_BOSSES[kind];
+ ctx.fillStyle=high?.background||"#132019";ctx.fillRect(8,8,48,48);
  for(const pixel of chargePixels(charge)){
-  ctx.fillStyle=pixel.filled?(charge>=1?OCHRE.ready:OCHRE.fill):OCHRE.track;
+  ctx.fillStyle=pixel.filled?(high?(charge>=1?high.ready:high.ring):(charge>=1?OCHRE.ready:OCHRE.fill)):OCHRE.track;
   ctx.fillRect(pixel.x*2,pixel.y*2,2,2);
  }
  // An exact 40 x 40 centered bounding box at (12,12) inside 64 x 64.
@@ -76,29 +107,48 @@ export function drawAbilityMeter(canvas,kind,charge){
 export function drawMiniboss(ctx,enemies,cell,phase=1){
  for(const enemy of enemies){
   if(!ICON_PIXELS[enemy.kind])continue;
-  const box=24,x=enemy.pos.x*cell+(cell-box)/2,y=enemy.pos.y*cell+(cell-box)/2;
-  ctx.fillStyle="#0b1410";ctx.fillRect(x,y,box,box);
-  ctx.strokeStyle=phase>=2?"#b19a5a":"#746d56";ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,box-1,box-1);
-  drawBossPixelIcon(ctx,enemy.kind,x+2,y+2,20);
+  const high=HIGH_VISIBILITY_BOSSES[enemy.kind];
+  const box=high?36:30,x=enemy.pos.x*cell+(cell-box)/2,y=enemy.pos.y*cell+(cell-box)/2;
+  if(high){
+   const tileX=enemy.pos.x*cell,tileY=enemy.pos.y*cell;
+   // A thin grounded position cue, behind the model. No opaque square over art.
+   ctx.save();
+   ctx.fillStyle="rgba(8,10,16,.46)";
+   ctx.fillRect(tileX+2,tileY+2,cell-4,cell-4);
+   ctx.strokeStyle=high.locator;ctx.lineWidth=1;
+   ctx.strokeRect(tileX+1.5,tileY+1.5,cell-3,cell-3);
+   ctx.restore();
+  }else{
+   ctx.fillStyle="#11191a";ctx.fillRect(x+4,y+box-4,box-8,2);
+  }
+  drawBossPixelIcon(ctx,enemy.kind,x,y,box);
+  if(high){
+   // Small pin above the sprite remains visible when it overlaps darker terrain.
+   ctx.fillStyle=high.locator;ctx.fillRect(enemy.pos.x*cell+cell/2-2,y-5,4,3);
+  }else if(phase>=2){
+   ctx.fillStyle="#d2a269";ctx.fillRect(x+box/2-1,y-2,2,2);
+  }
  }
 }
 export function drawWebs(ctx,webs,cell){
  for(const web of webs||[]){
   const x=web.pos.x*cell,y=web.pos.y*cell;
-  ctx.fillStyle="#15201b";ctx.fillRect(x+2,y+2,cell-4,cell-4);
-  ctx.strokeStyle=web.lifeMs<3500?"#65674f":"#afa68f";ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(x+2,y+3);ctx.lineTo(x+cell-3,y+cell-2);
-  ctx.moveTo(x+cell-3,y+3);ctx.lineTo(x+3,y+cell-3);
-  ctx.moveTo(x+cell/2,y+2);ctx.lineTo(x+cell/2,y+cell-2);
-  ctx.moveTo(x+2,y+cell/2);ctx.lineTo(x+cell-2,y+cell/2);ctx.stroke();
-  ctx.fillStyle="#877d62";ctx.fillRect(x+cell/2-1,y+cell/2-1,2,2);
+  ctx.strokeStyle=web.lifeMs<3500?"#85728b":"#ddd6dd";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(x+2,y+2);ctx.lineTo(x+cell-2,y+cell-2);
+  ctx.moveTo(x+cell-2,y+2);ctx.lineTo(x+2,y+cell-2);
+  ctx.moveTo(x+cell/2,y+1);ctx.lineTo(x+cell/2,y+cell-1);
+  ctx.moveTo(x+1,y+cell/2);ctx.lineTo(x+cell-1,y+cell/2);
+  ctx.moveTo(x+5,y+5);ctx.lineTo(x+cell-5,y+5);ctx.lineTo(x+cell-5,y+cell-5);
+  ctx.lineTo(x+5,y+cell-5);ctx.closePath();ctx.stroke();
+  ctx.fillStyle="#ac73cc";ctx.fillRect(x+cell/2-1,y+cell/2-1,2,2);
  }
 }
 export function drawBurrowWarning(ctx,warning,cell){
  if(!warning)return;
  const p=warning.pos,x=p.x*cell,y=p.y*cell;
- ctx.fillStyle="#171a13";ctx.fillRect(x+1,y+1,cell-2,cell-2);
- ctx.strokeStyle="#a28a58";ctx.lineWidth=2;ctx.setLineDash([3,2]);
+ ctx.strokeStyle="#e3a65a";ctx.lineWidth=1;ctx.setLineDash([3,2]);
  ctx.strokeRect(x+2,y+2,cell-4,cell-4);ctx.setLineDash([]);
- ctx.fillStyle="#756747";ctx.fillRect(x+8,y+8,4,4);
+ ctx.fillStyle="#86532b";ctx.fillRect(x+5,y+9,10,2);
+ ctx.fillRect(x+9,y+5,2,10);
+ ctx.fillStyle="#eec484";ctx.fillRect(x+9,y+9,2,2);
 }

@@ -5,6 +5,9 @@ import {setBiome,tickTerrain,terrainBlocks,reservedTerrain} from "./environments
  */
 import {PREY,spawnPrey,advancePrey,same,inside,VECTORS} from "./enemies.js";
 import {encounterKind,spawnMiniboss,spawnNextPhase,tickMiniboss,triggerWeb,consumeEncounterFreeze,ABILITIES} from "./miniboss.js";
+import {ageHatchlingWards} from "./hatchling-ward.js";
+import {isHatchlingAt,hatchMatureEggs,tickHatchlings,clearBroodmotherHatchlings} from "./broodmother-hatchlings.js";
+import {compostMoltCost,driftRushMultiplier} from "./mutation-synergies.js";
 export const DIRECTIONS=Object.freeze(Object.fromEntries(Object.entries(VECTORS).map(([k,v])=>[k,{x:v[0],y:v[1]}])));
 export const COLORS=Object.freeze(["W","U","B","R","G"]);
 export const EVOLUTION_COST=5;
@@ -12,7 +15,10 @@ export const OPENING_GRACE_MS=9000;
 export const OPENING_EVOLUTIONS=2;
 export const OPENING_ORB_MIN=70;
 export const OPENING_ORB_SPREAD=35;
-export const RULES_VERSION="hive-1.3";
+export const RULES_VERSION="hive-1.5.4";
+export const ENDINGS=Object.freeze({PERFECT_CLEAR:"perfect_clear",BROODMOTHER_DEFEATED:"broodmother_defeated",STEP_LIMIT:"step_limit",DEATH:"death",LAIR_PRACTICE:"lair_practice"});
+/** Lab balance trial: Predator Hunt focuses on trapping, not filling the board. */
+export const HUNT_SWARM_LENGTH=7;
 // Player speed is set in milliseconds per grid step (larger = easier).
 // Playtest adjustment: about 10% less movement per second at every stage.
 export const PLAYER_BASE_TICK_MS=150;
@@ -21,9 +27,9 @@ export const PLAYER_ACCELERATION_MS=4;
 export const MUTATIONS=Object.freeze({
  W:{color:"W",name:"Hardened Shell",school:"CARAPACE",icon:"◈",description:"Gain one shield. Survive a fatal impact and evade danger.",short:"+1 shield"},
  U:{color:"U",name:"Temporal Drift",school:"ADAPTATION",icon:"◷",description:"Slow your hive's movement for 28 steps to steer tighter traps.",short:"28 slow steps"},
- B:{color:"B",name:"Emergency Molt",school:"REGENERATION",icon:"✦",description:"Spend one molt charge and shed three segments to avoid death.",short:"+1 molt"},
+ B:{color:"B",name:"Emergency Molt",school:"REGENERATION",icon:"✦",description:"Spend a molt charge, briefly shed three segments to dodge death, then regrow them.",short:"+1 molt"},
  R:{color:"R",name:"Blood Rush",school:"FRENZY",icon:"✹",description:"Hunt faster and score double points for 24 movements.",short:"24 frenzy steps"},
- G:{color:"G",name:"Rapid Brood",school:"BROOD",icon:"✿",description:"Your next four captures or orbs each gain extra growth.",short:"4 bonus rewards"}
+ G:{color:"G",name:"Rapid Brood",school:"BROOD",icon:"✿",description:"Your next four captures or orbs each grant bonus evolution energy instead of growth.",short:"4 bonus EV rewards"}
 });
 export function seededRandom(seed){
  let t=(Number(seed)>>>0)||1;
@@ -45,16 +51,16 @@ export function newRun({cols=18,rows=22,random,seed,mode="hunt"}={}){
  if(!["hunt","classic"].includes(mode))throw Error("Invalid game mode");
  const rng=random||((seed===undefined)?Math.random:seededRandom(seed));
  const y=Math.floor(rows/2),x=Math.max(6,Math.floor(cols/2));
- const run={cols,rows,mode,biome:1,terrain:[],hazardMs:0,biomeNoticeMs:0,bossWins:0,random:rng,seed:seed??null,body:Array.from({length:7},(_,i)=>({x:x-i,y})),
+ const run={cols,rows,mode,biome:1,terrain:[],hazardMs:0,biomeNoticeMs:0,bossWins:0,random:rng,seed:seed??null,body:Array.from({length:mode==="hunt"?HUNT_SWARM_LENGTH:7},(_,i)=>({x:x-i,y})),
   direction:"right",turnQueue:[],food:null,orbIn:mode==="hunt"?72:145,
   openingGraceMs:mode==="hunt"?OPENING_GRACE_MS:0,
   mercy:mode==="hunt"?1:0,
   score:0,brood:0,kills:0,energy:0,earnedEnergy:0,stage:1,tickMs:PLAYER_BASE_TICK_MS,
   evolutionsChosen:0,draftCount:0,draftOptions:[],mutations:{W:0,U:0,B:0,R:0,G:0},
   effects:{shield:0,molt:0,blueTicks:0,redTicks:0,greenPickups:0},growthDebt:0,
-  enemies:[],enemySerial:0,respawnIn:0,runTicks:0,moves:0,saves:0,
+  enemies:[],enemySerial:0,respawnIn:0,runTicks:0,moves:0,saves:0,wards:[],hatchlings:[],hatchlingSerial:0,
   encounter:null,queuedEncounter:null,minibossWins:0,lastEncounter:null,
-  status:"ready",endReason:"",lastMutation:null,event:null,eventSerial:0};
+  status:"ready",outcome:null,endReason:"",lastMutation:null,event:null,eventSerial:0};
  if(mode==="hunt"){const prey=spawnPrey(run);if(prey)run.enemies.push(prey)}
  else run.food=emptyTile(run.body,cols,rows,rng);
  return run;
@@ -101,32 +107,68 @@ export function chooseMutation(run,color){
  return true;
 }
 export function effectiveTickMs(run){
- return Math.max(65,Math.round(run.tickMs*(run.effects.blueTicks>0?1.35:1)*(run.effects.redTicks>0?.78:1)));
+ return Math.max(65,Math.round(run.tickMs*(run.effects.blueTicks>0?driftRushMultiplier(run):1)*(run.effects.redTicks>0?.78:1)));
 }
 const emit=(run,event)=>{run.event=event;run.eventSerial++};
+/** One authoritative simulation termination, independent of presentation.
+ * A 6,000-step boundary is a run limit, not an earned board-fill victory.
+ */
+function finishRun(run,outcome,reason,event={}){
+ if(run.status==="won"||run.status==="over")return false;
+ run.outcome=outcome;run.endReason=reason;
+ run.status=outcome===ENDINGS.PERFECT_CLEAR||outcome===ENDINGS.BROODMOTHER_DEFEATED?"won":"over";
+ run.turnQueue=[];run.draftOptions=[];run.queuedEncounter=null;
+ emit(run,{type:run.status==="won"?"victory":outcome===ENDINGS.STEP_LIMIT?"run-limit":"death",outcome,name:reason,...event});
+ return true;
+}
+/** A true perfect clear fills every enterable cell with distinct body cells.
+ * Permanent rock islands are excluded; temporary warnings/rifts are not.
+ * An orb can be temporarily unspawnable without making the board complete.
+ */
+export function isPerfectClear(run){
+ if(run.mode!=="classic")return false;
+ const body=new Set(run.body.map(p=>p.x+","+p.y));
+ if(body.size!==run.body.length)return false;
+ const rock=new Set(run.terrain.filter(t=>t.kind==="rock"&&t.lifeMs===null)
+  .map(t=>t.pos.x+","+t.pos.y));
+ for(let y=0;y<run.rows;y++)for(let x=0;x<run.cols;x++){
+  const id=x+","+y;
+  if(!body.has(id)&&!rock.has(id))return false;
+ }
+ return true;
+}
 function decay(run){if(run.effects.blueTicks>0)run.effects.blueTicks--;if(run.effects.redTicks>0)run.effects.redTicks--}
 function target(run,heading){
  const d=DIRECTIONS[heading],head=run.body[0],next={x:head.x+d.x,y:head.y+d.y};
  const wall=!inside(run,next)||terrainBlocks(run,next),eating=!!run.food&&same(next,run.food);
  const occupied=eating||run.growthDebt>0?run.body:run.body.slice(0,-1);
- return {next,wall,body:occupied.some(p=>same(p,next)),enemy:run.enemies.some(e=>same(e.pos,next)),eating};
+ return {next,wall,body:occupied.some(p=>same(p,next)),enemy:run.enemies.some(e=>same(e.pos,next)),hatchling:isHatchlingAt(run,next),eating};
 }
 function recover(run,failed,freePreyDodge=false){
  const e=run.effects;
  let color=null;
  if(freePreyDodge&&run.mercy>0){run.mercy--;color="G"}
  else if(e.shield>0){e.shield--;color="W"}
- else if(e.molt>0&&run.body.length>=5){e.molt--;color="B";run.body.splice(run.body.length-3,3)}
+ else if(e.molt>0&&run.body.length>=5){
+  e.molt--;color="B";
+  const shed=compostMoltCost(run);
+  if(shed===2)e.greenPickups--;
+  const toShed=Math.min(shed,run.body.length-3);
+  run.body.splice(run.body.length-toShed,toShed);
+  // Hunt has a tactical seven-segment length; a molt shrinks temporarily,
+  // then the lost tail returns over the next few safe movement steps.
+  if(run.mode==="hunt")run.growthDebt+=toShed;
+ }
  if(!color)return false;
  const compass=["up","right","down","left"],i=compass.indexOf(failed);
  const bend=[compass[(i+3)%4],compass[(i+1)%4]].find(h=>{
-  const t=target(run,h);return !t.wall&&!t.body&&!t.enemy;
+  const t=target(run,h);return !t.wall&&!t.body&&!t.enemy&&!t.hatchling;
  });
  if(bend){run.direction=bend;run.turnQueue=[]}
  else {
   // Teleport only as defensive emergency fallback, selecting a genuinely
   // unoccupied triple instead of blindly occupying the board center.
-  const occupied=[...run.body,...run.enemies.map(e=>e.pos),...run.terrain.map(t=>t.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
+  const occupied=[...run.body,...run.enemies.map(e=>e.pos),...run.hatchlings.map(h=>h.pos),...run.terrain.map(t=>t.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
   if(run.food)occupied.push(run.food);
   let found=null;
   for(let y=2;y<run.rows-1&&!found;y++)for(let x=3;x<run.cols-1&&!found;x++){
@@ -134,20 +176,27 @@ function recover(run,failed,freePreyDodge=false){
    if(!trial.some(p=>occupied.some(o=>same(p,o))))found=trial;
   }
   if(found){const oldLength=run.body.length;run.body=found;run.growthDebt+=Math.max(0,oldLength-3);run.direction="right";run.turnQueue=[]}
-  else{run.status="over";run.endReason="No safe recovery tile.";return false}
+  else{finishRun(run,ENDINGS.DEATH,"No safe recovery tile.");return false}
  }
  run.saves++;emit(run,{type:"rescue",color,name:freePreyDodge?"Brood Instinct":MUTATIONS[color].name});
- decay(run);run.moves++;run.runTicks++;
+ decay(run);ageHatchlingWards(run);run.moves++;run.runTicks++;
  return true;
 }
-function reward(run,{energy,score,growth,type,at}){
- run.earnedEnergy+=energy;run.energy+=energy;
+function reward(run,{energy,score,growth,type,at,terminal=false}){
+ let bonusEnergy=0;
+ if(run.effects.greenPickups>0){
+  run.effects.greenPickups--;
+  // Hunt Green is a progression tool; Brood Trail Green stays a growth tool.
+  if(run.mode==="hunt")bonusEnergy=1;
+  else run.growthDebt++;
+ }
+ const awardedEnergy=energy+bonusEnergy;
+ run.earnedEnergy+=awardedEnergy;run.energy+=awardedEnergy;
  run.score+=score*(run.effects.redTicks>0?2:1);
- run.growthDebt+=growth;
- if(run.effects.greenPickups>0){run.effects.greenPickups--;run.growthDebt++}
+ if(run.mode==="classic")run.growthDebt+=growth;
  if(type==="kill")run.kills++;
- emit(run,{type,energy,score:score*(run.effects.redTicks>0?2:1),at});
- if(run.energy>=EVOLUTION_COST){
+ emit(run,{type,energy:awardedEnergy,score:score*(run.effects.redTicks>0?2:1),at});
+ if(!terminal&&run.energy>=EVOLUTION_COST){
   run.energy-=EVOLUTION_COST;
   run.status="draft";run.draftCount++;
   run.draftOptions=draftMutationOptions(run.random);
@@ -172,14 +221,21 @@ export function orbInterval(run){
 function spawnOrb(run){
  if(run.food)return;
  if(run.mode!=="classic"&&--run.orbIn>0)return;
- const exclusions=[...run.body,...run.terrain.map(t=>t.pos),...run.enemies.map(e=>e.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
+ const exclusions=[...run.body,...run.terrain.map(t=>t.pos),...run.enemies.map(e=>e.pos),...run.hatchlings.map(h=>h.pos),...(run.encounter?.webs||[]).map(w=>w.pos)];
  run.food=emptyTile(exclusions,run.cols,run.rows,run.random);
- if(!run.food&&run.mode==="classic"){run.status="won";run.endReason="Every open tile belongs to your brood."}
- run.orbIn=orbInterval(run); // early hunt: ~10–15s; later: ~20–31s
+ if(!run.food&&run.mode==="classic"&&isPerfectClear(run)){
+  finishRun(run,ENDINGS.PERFECT_CLEAR,"Every open tile belongs to your brood.");
+ }
+ // No unoccupied orb tile can exist temporarily due to rifts/terrain.
+ // Retry on the next moving beat; never claim a perfect clear on that alone.
+ if(run.status==="running"||run.status==="draft")run.orbIn=orbInterval(run); // early hunt: ~10–15s; later: ~20–31s
 }
 export function step(run){
  if(run.status!=="running")return run;
- if(run.runTicks>=6000){run.status="won";run.endReason="Expedition complete. Your hive endured 6,000 steps.";return run}
+ if(run.runTicks>=6000){
+  finishRun(run,ENDINGS.STEP_LIMIT,"Expedition ended after 6,000 steps. The board was not fully conquered.");
+  return run;
+ }
  // Intro freezes the arena. A web, however, immobilizes ONLY the player:
  // the Weaver, cooldowns, webs and terrain continue advancing deterministically.
  const elapsed=effectiveTickMs(run);
@@ -211,36 +267,50 @@ export function step(run){
  tickTerrain(run,elapsed);
  if(!webbed){
  const heading=run.turnQueue.shift()??run.direction,t=target(run,heading);
- if(t.wall||t.body||t.enemy){
+ if(t.wall||t.body||t.enemy||t.hatchling){
   run.direction=heading;
   // Beginner's one-use instinct evades only ordinary prey, never a boss,
   // terrain wall, or the player's own body. Keep defenses for boss contact.
   const ordinary=run.mode==="hunt"&&!run.encounter&&t.enemy&&
    run.enemies.some(e=>(e.kind==="skitter"||e.kind==="runner")&&same(e.pos,t.next));
   if(recover(run,heading,ordinary&&run.mercy>0))return run;
-  run.status="over";
-  run.endReason=t.enemy?"A hunter collided with you.":t.wall?"You hit the arena wall.":"You crossed your own swarm.";
-  emit(run,{type:"death",name:run.endReason});return run;
+  if(run.status==="over")return run; // failed emergency recovery already ended the run
+  finishRun(run,ENDINGS.DEATH,t.hatchling?"A hatchling blocked your path.":t.enemy?"A hunter collided with you.":t.wall?"You hit the arena wall.":"You crossed your own swarm.");
+  return run;
  }
  run.direction=heading;
  run.body.unshift(t.next);
  if(t.eating)run.food=null;
  if(run.growthDebt>0)run.growthDebt--;else run.body.pop();
- decay(run);run.moves++;run.runTicks++;
+ decay(run);ageHatchlingWards(run);run.moves++;run.runTicks++;
  if(t.eating){
-  run.brood++;reward(run,{energy:1,score:100,growth:1,type:"orb",at:t.next});
+  const completesBoard=run.mode==="classic"&&isPerfectClear(run);
+  run.brood++;reward(run,{energy:1,score:100,growth:1,type:"orb",at:t.next,terminal:completesBoard});
   run.orbIn=orbInterval(run);
  }
  // Entering a web costs two seconds of movement, not two seconds of combat.
  if(triggerWeb(run,t.next)){emit(run,{type:"web-stun",at:t.next});return run}
+ // Brood Trail can fill its very last square on a reward that also opens a draft.
+ // Check authentic board occupancy before allowing that draft to interrupt victory.
+ if(run.mode==="classic"){spawnOrb(run);return run}
  if(run.status!=="running")return run;
  }else{
   run.runTicks++; // simulation time and enemy actions continue while head is stuck
  }
- if(run.mode==="classic"){spawnOrb(run);return run}
  // Opening grace advances only when the player can move.
  if(!webbed)run.openingGraceMs=Math.max(0,run.openingGraceMs-elapsed);
  const abilityEvent=tickMiniboss(run,elapsed);
+ if(run.encounter?.kind==="broodmother"){
+  hatchMatureEggs(run);
+  const contact=tickHatchlings(run,elapsed);
+  if(contact){
+   // A baby spider blindly ran into the head. Normal defenses may still save it.
+   run.hatchlings=run.hatchlings.filter(h=>h.id!==contact.id);
+   if(recover(run,run.direction,false))return run;
+   finishRun(run,ENDINGS.DEATH,"A blind hatchling struck your swarm.",{at:contact.pos});
+   return run;
+  }
+ }
  if(abilityEvent?.type==="burrow-warning"||abilityEvent?.type==="burrow"||abilityEvent?.type==="web")
   emit(run,abilityEvent);
  // The body is a moving wall: prey avoid it until forced into collision.
@@ -253,6 +323,7 @@ export function step(run){
    {type:"waiting"}:advancePrey(run,enemy);
   if(result.type==="captured"){
    if(encounter&&enemy.kind===encounter.kind){
+    if(encounter.kind==="broodmother")clearBroodmotherHatchlings(run);
     if(encounter.phase<encounter.phases){
      encounter.phase++;
      run.lastEncounter={kind:encounter.kind,type:"phase",phase:encounter.phase,at:{...enemy.pos},tick:run.runTicks};
@@ -270,8 +341,13 @@ export function step(run){
     if(full)run.bossWins++;else run.minibossWins++;run.kills++;
     run.terrain=run.terrain.filter(t=>t.kind==="rock");
     run.lastEncounter={kind,type:"defeat",phase:encounter.phases,at:{...enemy.pos},tick:run.runTicks};
-    reward(run,{energy:full?8:5,score:full?1500:750,growth:full?3:2,type:full?"boss":"miniboss",at:{...enemy.pos}});
-    run.respawnIn=full?36:18;
+    const earnedFinalVictory=kind==="broodmother"&&run.mode==="hunt"&&
+     !run.lairBoss&&run.evolutionsChosen>=12&&encounter.phase===encounter.phases;
+    reward(run,{energy:full?8:5,score:full?1500:750,growth:full?3:2,type:full?"boss":"miniboss",at:{...enemy.pos},terminal:earnedFinalVictory});
+    if(earnedFinalVictory){
+     finishRun(run,ENDINGS.BROODMOTHER_DEFEATED,
+      "The Broodmother has fallen. The hive reigns.",{kind,at:{...enemy.pos}});
+    }else run.respawnIn=full?36:18;
     return run;
    }
    reward(run,{energy:3,score:300,growth:1,type:"kill",at:{...enemy.pos}});
@@ -302,6 +378,6 @@ export function activeEffects(run){
  if(e.blueTicks)a.push({color:"U",count:e.blueTicks,label:e.blueTicks+" slow steps"});
  if(e.molt)a.push({color:"B",count:e.molt,label:e.molt+" molt"+(e.molt===1?"":"s")});
  if(e.redTicks)a.push({color:"R",count:e.redTicks,label:e.redTicks+" frenzy steps"});
- if(e.greenPickups)a.push({color:"G",count:e.greenPickups,label:e.greenPickups+" bonus rewards"});
+ if(e.greenPickups)a.push({color:"G",count:e.greenPickups,label:e.greenPickups+(run.mode==="hunt"?" bonus EV captures":" bonus growth orbs")});
  return a;
 }
