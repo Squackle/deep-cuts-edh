@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {COLORS,MUTATIONS,newRun,start,step,chooseMutation,draftMutationOptions,progress,activeEffects,effectiveTickMs} from "../src/engine.js";
-function run(){return newRun({seed:42})}
-function draft(color){
- const r=run();start(r);r.status="draft";r.draftOptions=[color,...COLORS.filter(x=>x!==color).slice(0,2)];
+function run(mode="hunt"){return newRun({seed:42,mode})}
+function draft(color,mode="hunt"){
+ const r=run(mode);start(r);r.status="draft";r.draftOptions=[color,...COLORS.filter(x=>x!==color).slice(0,2)];
  assert.equal(chooseMutation(r,color),true);return r;
 }
 test("all five mutations are present and a draft contains three distinct colors",()=>{
@@ -32,8 +32,8 @@ test("red grants temporary scoring multiplier and changes travel speed",()=>{
  r.food={x:r.body[0].x+1,y:r.body[0].y};const before=r.score;
  step(r);assert.equal(r.score,before+200);
 });
-test("green rewards extra growth after orb pickup without granting free EV",()=>{
- const g=draft("G");g.enemies=[];g.respawnIn=100;
+test("Brood Trail green mutation still grants additional growth without free EV",()=>{
+ const g=draft("G","classic");g.enemies=[];g.respawnIn=100;
  const size=g.body.length;g.food={x:g.body[0].x+1,y:g.body[0].y};
  step(g);assert.equal(g.energy,1);assert.equal(g.effects.greenPickups,3);
  assert.ok(g.growthDebt>=2);assert.equal(g.body.length,size);
@@ -48,4 +48,11 @@ test("effects stack with bounded durations and expose HUD information",()=>{
  assert.ok(effects.some(e=>e.color==="U"&&e.count===84));
  assert.ok(effects.some(e=>e.color==="R"&&e.count===24));
  assert.equal(progress(r).energy,0);
+});
+
+test("Dominion Hunt green mutation rewards bonus evolution energy without growth",()=>{
+ const g=draft("G","hunt");g.enemies=[];g.respawnIn=100;
+ const size=g.body.length;g.food={x:g.body[0].x+1,y:g.body[0].y};
+ step(g);assert.equal(g.energy,2);assert.equal(g.effects.greenPickups,3);
+ assert.equal(g.growthDebt,0);assert.equal(g.body.length,size);
 });

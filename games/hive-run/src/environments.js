@@ -11,7 +11,8 @@ export const terrainBlocks=(run,p)=>!!run.terrain?.some(t=>t.warningMs<=0&&same(
 export const reservedTerrain=(run,p)=>!!run.terrain?.some(t=>same(t.pos,p));
 function safeActivation(run,p){
  return !run.body.some(b=>same(b,p))&&!run.enemies.some(e=>same(e.pos,p))&&
-  !(run.food&&same(run.food,p))&&Math.abs(run.body[0].x-p.x)+Math.abs(run.body[0].y-p.y)>=4;
+  !(run.food&&same(run.food,p))&&!(run.hatchlings||[]).some(h=>same(h.pos,p))&&
+  Math.abs(run.body[0].x-p.x)+Math.abs(run.body[0].y-p.y)>=4;
 }
 export function setBiome(run){
  const next=biomeForEvolution(run.evolutionsChosen).id;
@@ -50,9 +51,36 @@ export function tickTerrain(run,dt){
 export function drawTerrain(ctx,run,cell){
  for(const t of run.terrain){
   const x=t.pos.x*cell,y=t.pos.y*cell,warn=t.warningMs>0;
+  if(t.kind==="egg"){
+   // Warm marbled shell cracks before a spider breaks free.
+   ctx.fillStyle="#2b1720";ctx.fillRect(x+4,y+3,cell-8,cell-6);
+   ctx.fillStyle=warn?"#ffe6ad":"#ffcf87";ctx.fillRect(x+6,y+3,cell-12,cell-7);
+   ctx.fillStyle="#99394a";ctx.fillRect(x+8,y+6,2,3);ctx.fillRect(x+12,y+10,2,3);
+   ctx.fillStyle="#fff4cd";ctx.fillRect(x+10,y+5,2,4);ctx.fillRect(x+11,y+9,2,2);
+   ctx.strokeStyle="#fff0c0";ctx.lineWidth=1;ctx.strokeRect(x+3.5,y+2.5,cell-7,cell-5);
+   continue;
+  }
+  if(t.kind==="seal"){
+   ctx.fillStyle=warn?"#443521":"#492919";
+   ctx.fillRect(x+3,y+3,cell-6,cell-6);
+   ctx.fillStyle="#dc8a3f";ctx.fillRect(x+8,y+4,4,12);
+   ctx.fillRect(x+4,y+8,12,4);
+   ctx.fillStyle="#f6c879";ctx.fillRect(x+9,y+7,2,6);
+   if(warn){ctx.strokeStyle="#f5bf73";ctx.lineWidth=1;ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5)}
+   continue;
+  }
+  if(t.kind==="rift"){
+   ctx.fillStyle=warn?"#4b286f":"#27183f";ctx.fillRect(x+2,y+2,cell-4,cell-4);
+   ctx.fillStyle="#bd7eec";ctx.fillRect(x+5,y+4,10,12);
+   ctx.fillStyle="#462065";ctx.fillRect(x+7,y+5,6,10);
+   ctx.fillStyle="#f3d6ff";ctx.fillRect(x+9,y+3,2,4);ctx.fillRect(x+9,y+13,2,4);
+   ctx.strokeStyle=warn?"#fff0ff":"#daa9ff";ctx.lineWidth=1;
+   ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5);
+   continue;
+  }
   ctx.fillStyle=warn?'#1d211d':t.kind==='rock'?'#615744':t.kind==='seal'?'#5c5536':'#584364';
   ctx.fillRect(x+2,y+2,cell-4,cell-4);
-  ctx.strokeStyle=warn?'#c1ad7e':t.kind==='rock'?'#b5a080':'#d8b4e5';ctx.lineWidth=1;
+  ctx.strokeStyle=warn?'#c1ad7e':t.kind==='rock'?'#b5a080':t.kind==='egg'?'#c8ce88':'#d8b4e5';ctx.lineWidth=1;
   ctx.setLineDash(warn?[3,3]:[]);ctx.strokeRect(x+2.5,y+2.5,cell-5,cell-5);ctx.setLineDash([]);
   ctx.fillStyle=warn?'#d8c08d':'#22231e';
   if(warn){ctx.fillRect(x+9,y+5,2,6);ctx.fillRect(x+9,y+13,2,2)}

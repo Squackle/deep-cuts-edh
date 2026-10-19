@@ -103,8 +103,8 @@ test("browser gate freezes the frame loop and retains replay-rules version",()=>
  assert.match(main,/showMutationDraft\([^\n]*state\.run\.mode\)/);
  assert.match(html,/id="mutationResume"[^>]*hidden/);
  assert.match(html,/SESSION BEST/);
- assert.match(html,/1\.4 · BEACON/);
- assert.equal(RULES_VERSION,"hive-1.3","UI-only release does not alter replay rules");
+ assert.match(html,/2\.0 · DOMINION/);
+ assert.equal(RULES_VERSION,"hive-1.5.4","Dominion 2.0 intentionally advances replay rules");
 });
 test("permanent release naming instruction is kept in source control",()=>{
  const naming=readFileSync(new URL("../../../docs/HIVE-RUN-RELEASE-NAMING.md",import.meta.url),"utf8");

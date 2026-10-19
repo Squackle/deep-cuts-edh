@@ -6,12 +6,12 @@ import {captureFlash,isScoreFlashVisible,drawCaptureFlash,scoreStampPosition} fr
 import {mutationSelectionIndex,KEY_DIRECTIONS} from "../games/hive-run/src/input-controls.js";
 import {discoveredDossiers,HIVE_CODEX} from "../hive-profile.js";
 
-test("Beacon promotes UI only, leaving deterministic ranked simulation hive-1.3 untouched",()=>{
- assert.equal(RULES_VERSION,"hive-1.3");
+test("Dominion promotes versioned simulation while retaining Beacon feedback",()=>{
+ assert.equal(RULES_VERSION,"hive-1.5.4");
  const engine=readFileSync("games/hive-run/src/engine.js","utf8");
  const server=readFileSync("src/hive-server/leaderboard.js","utf8");
  const main=readFileSync("games/hive-run/src/main.js","utf8");
- assert.match(engine,/RULES_VERSION="hive-1\\.3"/);
+ assert.match(engine,/RULES_VERSION="hive-1\\.5\\.4"/);
  assert.match(server,/replayScore\(record\.seed,events,summary,record\.mode\)/);
  assert.match(server,/profile_verified/);
  assert.match(main,/captureFlash\(removed\.pos,state\.run\.score-prevScore,performance\.now\(\)\)/);
@@ -27,7 +27,7 @@ test("rapid movement inputs cannot select a mutation at an orb transition",()=>{
   assert.equal(mutationSelectionIndex(direction,true),null,direction);
  }
  const html=readFileSync("games/hive-run/index.html","utf8");
- assert.match(html,/1\.4 · BEACON/);
+ assert.match(html,/2\.0 · DOMINION/);
  assert.match(html,/MOVEMENT KEYS IGNORE THIS MENU/);
 });
 test("score flashes 3 times at fixed position above captured tile, not over square",()=>{

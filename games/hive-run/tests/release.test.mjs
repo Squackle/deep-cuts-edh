@@ -33,7 +33,7 @@ test('classic and hunt cannot share replay scoring rules',()=>{
  }
  // Let the snake crash naturally.
  for(let i=0;i<100&&r.status==='running';i++)step(r);
- const summary={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks};
+ const summary={score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome};
  assert.equal(replayScore(seed,events,summary,'classic').ok,true);
  assert.equal(replayScore(seed,events,{...summary,score:summary.score+100},'classic').ok,false);
 });

@@ -64,7 +64,7 @@ export class LeaderboardClient{
   const session=this.session;
 
   const result=await this.request({action:"submit",token:session.token,events:this.events,alias,
-   summary:{score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks}});
+   summary:{score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks,outcome:run.outcome}});
   this.session=null;return result;
  }
  async load(mode="hunt",challenge="arcade"){
