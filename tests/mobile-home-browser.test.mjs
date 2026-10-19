@@ -170,3 +170,6 @@ test("Opted-in supporter tiers still animate; reduced-motion visitors see a stat
   }
  }finally{await browser?.close();await new Promise(resolve=>httpServer.close(resolve))}
 });
+
+// Run the new Matchmaker regression suite through the existing protected CI lane.
+import "./matchmaker-browser.test.mjs";
