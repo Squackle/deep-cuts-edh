@@ -69,3 +69,24 @@ test("Issue #38: one-off donations do not create recurring membership",{timeout:
  assert.equal(response.status,200);
  assert.equal(db.payments.size,0);
 });
+
+test("Staging payment fixture: reusing an authenticated message ID with altered tier/amount grants no second entitlement",{timeout:15000},async()=>{
+ const db=fakeD1(),env=envFor(db);
+ const original=fixture();
+ const initial=await webhook({request:req(original),env});
+ assert.equal(initial.status,200);
+ assert.equal((await initial.json()).recorded,true);
+ const modified={...original,tier_name:"The Chief Investigator",amount:"25.00",email:"synthetic-fixture@example.invalid"};
+ const replay=await webhook({request:req(modified),env});
+ assert.equal(replay.status,200);
+ assert.equal((await replay.json()).duplicate,true);
+ assert.deepEqual([...db.payments],[original.message_id]);
+ assert.equal(db.adfree.size,1);
+});
+test("Staging payment fixture: refunded subscriptions cannot create a recurring entitlement",{timeout:15000},async()=>{
+ const db=fakeD1(),event={...fixture(),is_refunded:true};
+ const res=await webhook({request:req(event),env:envFor(db)});
+ assert.equal(res.status,200);
+ assert.equal(db.payments.size,0);
+ assert.equal(db.adfree.size,0);
+});
