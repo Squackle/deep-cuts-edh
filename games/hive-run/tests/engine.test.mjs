@@ -39,8 +39,9 @@ test("enemy capture is credited exactly once, awards 3 EV with fixed Hunt length
  assert.equal(run.energy,3);
  assert.equal(run.score,before+300);
  assert.equal(run.enemies.length,0);
- assert.equal(run.growthDebt,0,"Dominion Hunt captures do not grow the seven-segment body");
- assert.equal(run.body.length,7);
+ assert.equal(run.growthDebt,0,"Dominion Hunt captures do not accumulate growth");
+ assert.equal(run.body.length,6,"the six-segment trap test fixture retains its initial length");
+ assert.equal(newRun({seed:1,mode:"hunt"}).body.length,7,"ordinary Dominion Hunt starts at seven segments");
  const energy=run.energy;step(run);assert.equal(run.energy,energy);
 });
 test("two normal captures unlock one mutation at 5 EV and carry remainder",()=>{
