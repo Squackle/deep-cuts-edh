@@ -13,6 +13,7 @@ function fixture(){
  CREATE TABLE community_device_sessions(profile_id TEXT, token_hash TEXT PRIMARY KEY, expires_at INTEGER);
  CREATE TABLE community_limits(subject TEXT,date_key TEXT,action TEXT,attempts INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(subject,date_key,action));`);
  db.exec(migration);
+ db.prepare("UPDATE stackbreaker_launch_v1 SET enabled=1 WHERE feature='verified-daily'").run();
  const d1={prepare(sql){return {bind(...args){const q=db.prepare(sql);return {
   async first(){return q.get(...args)||null},
   async all(){return {results:q.all(...args)}},
@@ -37,7 +38,7 @@ test('D1 migration is additive, rerunnable and foreign-keyed without dropping an
  const x=fixture(),db=x.raw;
  db.exec(migration);
  const tables=db.prepare("SELECT name FROM sqlite_master WHERE name LIKE 'stackbreaker_%'").all().map(x=>x.name);
- assert.equal(tables.filter(x=>x.endsWith('_v1')&&!x.startsWith('stackbreaker_attempts_completed')).length,3);
+ assert.equal(tables.filter(x=>x.endsWith('_v1')&&!x.startsWith('stackbreaker_attempts_completed')).length,4);
  assert.ok(tables.includes('stackbreaker_daily_attempts_v1'));
 });
 test('Verified profile session, one UTC start, owner isolation and server replay concurrency',async()=>{
@@ -78,7 +79,9 @@ test('Verified profile session, one UTC start, owner isolation and server replay
 test('CSRF/cookie security, staging flag, idempotent awards and cosmetic ownership',async()=>{
  const f=fixture();await addUser(f,'a');await addUser(f,'b');
  const authRequest=req('a');
- assert.equal((await onRequestGet({request:authRequest,env:{...f.env,STACKBREAKER_VERIFIED_READY:'false'}})).status,503);
+ f.raw.prepare("UPDATE stackbreaker_launch_v1 SET enabled=0 WHERE feature='verified-daily'").run();
+ assert.equal((await onRequestGet({request:authRequest,env:f.env})).status,503);
+ f.raw.prepare("UPDATE stackbreaker_launch_v1 SET enabled=1 WHERE feature='verified-daily'").run();
  const csrf=new Request('https://deep-cuts-edh.pages.dev/api/stackbreaker',{
   method:'POST',headers:{Origin:'https://attacker.invalid',Cookie:'__Host-dc_device='+token('a'),
    'CF-Connecting-IP':'198.51.100.11'},body:'{"action":"equip","slot":"frame","rewardId":"gold"}'});
