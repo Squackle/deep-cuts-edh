@@ -11,7 +11,7 @@ function database(){
 const url='https://test.invalid/api/leaderboard';
 function request(value,origin='https://test.invalid'){return new Request(url,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.10'},body:JSON.stringify(value)})}
 async function call(env,value,data){const r=await onRequestPost({env,request:request(value),data});return {status:r.status,body:await r.json()}}
-function ended(seed,mode){const r=newRun({seed,mode});start(r);while(r.status==='running')step(r);return {score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks}}
+function ended(seed,mode){const r=newRun({seed,mode});start(r);while(r.status==='running')step(r);return {score:r.score,kills:r.kills,evolutionsChosen:r.evolutionsChosen,ticks:r.runTicks,outcome:r.outcome}}
 test('permanent Arcade D1 session, profile identity and one-use replay',async()=>{
  const db=database(),env={HIVE_DB:db};
  assert.equal((await call(env,{action:'start',mode:'classic',challenge:'daily'})).status,400);
@@ -25,7 +25,7 @@ test('permanent Arcade D1 session, profile identity and one-use replay',async()=
  assert.equal((await call(env,submit,{hiveProfile:who})).status,409);
  const board=await onRequestGet({env,request:new Request(url+'?mode=classic&challenge=arcade'),data:{resolveProfiles:async()=>{}}});
  const rows=await board.json();assert.equal(rows.entries.length,1);
- assert.equal(rows.entries[0].profileHandle,'RealOwner');assert.equal(rows.entries[0].rulesVersion,'hive-1.3');
+ assert.equal(rows.entries[0].profileHandle,'RealOwner');assert.equal(rows.entries[0].rulesVersion,'hive-1.5.4');
  assert.equal(rows.entries[0].profileId,undefined);
  const other=await onRequestGet({env,request:new Request(url+'?mode=hunt&challenge=arcade')});
  assert.equal((await other.json()).entries.length,0);

@@ -37,7 +37,7 @@ test("main-site game route and all first-party assets are present",()=>{
 test("the site game, its replay verifier, and versioned rankings share the ruleset",async()=>{
  const game=readFileSync(new URL("../games/hive-run/src/engine.js",import.meta.url),"utf8");
  const server=readFileSync(new URL("../src/hive-server/leaderboard.js",import.meta.url),"utf8");
- assert.equal(RULES_VERSION,"hive-1.3");
+ assert.equal(RULES_VERSION,"hive-1.5.4");
  assert.match(game,/RULES_VERSION="hive-1\.3"/);
  assert.match(server,/import \{newRun,start,step,turn,chooseMutation,RULES_VERSION\}/);
  const wrapper=readFileSync(new URL("../functions/games/hive-run/api/leaderboard.js",import.meta.url),"utf8");

@@ -20,14 +20,14 @@ function finished(seed,actions=[]){
 }
 test("server replay accepts authentic zero-input ended run",()=>{
  const {run,events}=finished(103);
- const summary={score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks};
+ const summary={score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks,outcome:run.outcome};
  const replay=replayScore(103,events,summary);
  assert.equal(replay.ok,true,JSON.stringify(replay));
  assert.equal(replay.score,summary.score);
 });
 test("server replay rejects spoofed score and claimed kills",()=>{
  const {run,events}=finished(103);
- const summary={score:run.score+100000,kills:run.kills+50,evolutionsChosen:0,ticks:run.runTicks};
+ const summary={score:run.score+100000,kills:run.kills+50,evolutionsChosen:0,ticks:run.runTicks,outcome:run.outcome};
  assert.equal(replayScore(103,events,summary).ok,false);
 });
 test("server replay rejects incomplete or fabricated movement",()=>{
@@ -39,7 +39,7 @@ test("server replay rejects incomplete or fabricated movement",()=>{
 test("server replay verifies real recorded turn input",()=>{
  const events=[[0,"turn","up"]];
  const {run}=finished(32,events);
- const expected={score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks};
+ const expected={score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks,outcome:run.outcome};
  assert.equal(replayScore(32,events,expected).ok,true);
 });
 test("public profile links are allowlisted and safely encoded",()=>{
@@ -49,4 +49,15 @@ test("public profile links are allowlisted and safely encoded",()=>{
  assert.equal(profileLink("foo/bar"),null);
  const p=gamePaths();assert.match(p.api,/\/api\/leaderboard$/);
  assert.match(p.assetRoot,/\/assets\/$/);
+});
+
+test("Dominion 2.0 ranked replay rejects missing or forged terminal outcomes",()=>{
+ const {run,events}=finished(103);
+ const expected={score:run.score,kills:run.kills,evolutionsChosen:run.evolutionsChosen,ticks:run.runTicks,outcome:run.outcome};
+ assert.equal(replayScore(103,events,expected).ok,true);
+ assert.equal(replayScore(103,events,{...expected,outcome:"perfect_clear"}).ok,false);
+ const {outcome,...missing}=expected;
+ assert.equal(replayScore(103,events,missing).ok,false);
+ assert.equal(replayScore(103,[[0,"ward",null]],expected).ok,false);
+ assert.equal(replayScore(103,[[0,"ward","free"]],expected).ok,false);
 });

@@ -5,6 +5,7 @@ import {MODES} from "../../games/hive-run/src/modes.js";
  * server-side before publishing. No third-party account credentials accepted.
  */
 import {newRun,start,step,turn,chooseMutation,RULES_VERSION} from "../../games/hive-run/src/engine.js";
+import {placeHatchlingWard} from "../../games/hive-run/src/hatchling-ward.js";
 import {parseArcadeInitials} from "../../games/hive-run/src/arcade-initials.js";
 const json=(value,status=200)=>new Response(JSON.stringify(value),{
  status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}
@@ -34,7 +35,8 @@ function validEvents(events){
   if(!Array.isArray(ev)||ev.length!==3||!Number.isInteger(ev[0])||ev[0]<last||ev[0]>MAX_TICKS)return false;
   if(ev[1]==="turn"&&!["up","down","left","right"].includes(ev[2]))return false;
   if(ev[1]==="choose"&&!["W","U","B","R","G"].includes(ev[2]))return false;
-  if(ev[1]!=="turn"&&ev[1]!=="choose")return false;
+  if(ev[1]==="ward"&&ev[2]!==null)return false;
+  if(ev[1]!=="turn"&&ev[1]!=="choose"&&ev[1]!=="ward")return false;
   last=ev[0];
  }
  return true;
@@ -49,6 +51,7 @@ export function replayScore(seed,events,expected,mode="hunt"){
   while(index<events.length&&events[index][0]===run.runTicks){
    const [at,kind,value]=events[index++];
    if(kind==="turn"){if(!turn(run,value))return {ok:false,reason:"Invalid turn in replay."}}
+   else if(kind==="ward"){if(!placeHatchlingWard(run))return {ok:false,reason:"Invalid Hatchling Ward placement."}}
    else if(!chooseMutation(run,value))return {ok:false,reason:"Invalid mutation selection."};
   }
   if(run.status==="draft")return {ok:false,reason:"Missing mutation choice."};
@@ -61,7 +64,8 @@ export function replayScore(seed,events,expected,mode="hunt"){
  if(!keys.every(k=>Number.isInteger(expected[k])&&expected[k]===run[k]))
   return {ok:false,reason:"Score or evolution tally does not match replay."};
  if(run.runTicks!==expected.ticks)return {ok:false,reason:"Step count does not match replay."};
- return {ok:true,score:run.score,kills:run.kills,evolutions:run.evolutionsChosen,ticks:run.runTicks};
+ if(typeof expected.outcome!=="string"||expected.outcome!==run.outcome)return {ok:false,reason:"Terminal outcome does not match replay."};
+ return {ok:true,score:run.score,kills:run.kills,evolutions:run.evolutionsChosen,ticks:run.runTicks,outcome:run.outcome};
 }
 export async function onRequestGet({request,env,data={}}){
  if(!env.HIVE_DB)return error("Leaderboard storage unavailable.",503);
@@ -89,7 +93,7 @@ export async function onRequestGet({request,env,data={}}){
    entry.isYou=!!(data.hiveProfile?.id&&entry.profileVerified&&entry.profileId===data.hiveProfile.id);
    delete entry.profileId;
   }
-  return json({season:"1.2",mode,challenge,day,rulesVersion:RULES_VERSION,verifiedScores:true,
+  return json({season:"2.0",mode,challenge,day,rulesVersion:RULES_VERSION,verifiedScores:true,
    profile:data.hiveProfile?{handle:data.hiveProfile.handle}:null,personalBest,entries});
  }catch{return error("Could not load leaderboard.",503)}
 }
@@ -142,6 +146,6 @@ export async function onRequestPost({request,env,data:contextData={}}){
   ]);
   if((results[0].meta?.changes||0)!==1)return error("This run has already been submitted.",409);
   return json({ok:true,id,score:result.score,kills:result.kills,evolutions:result.evolutions,initials:alias,
-   profileVerified:!!identity,profileHandle:identity?.handle||null},201);
+   profileVerified:!!identity,profileHandle:identity?.handle||null,outcome:result.outcome},201);
  }catch{return error("Leaderboard is temporarily unavailable.",503)}
 }
