@@ -21,6 +21,7 @@
 .dc-follow-fine {font:400 11px/1.55 ui-sans-serif,system-ui,sans-serif;color:#d5e0d4;margin:14px 0 5px}
 .dc-follow-powered {display:inline-flex;align-items:center;gap:5px;color:#d5e0d4;font:400 10px/1.5 ui-sans-serif,system-ui,sans-serif;text-decoration:underline;text-underline-offset:2px}
 .dc-follow-powered img {display:block;width:67px;height:16px;object-fit:contain}
+.site-footer .dc-footer-subscribe {display:inline-flex;min-height:44px;align-items:center;color:#e5c995;font:800 11px/1.4 ui-sans-serif,system-ui,sans-serif;letter-spacing:.06em;text-decoration:underline;text-underline-offset:3px}
 .dc-subscribe-page {background:#f9f6eb;min-height:60vh}
 .dc-subscribe-page .dc-subscribe {min-height:60vh;border-top:none;display:flex;align-items:center}
 @media(max-width:740px){.dc-subscribe-grid{grid-template-columns:1fr;gap:23px}.dc-subscribe{padding:34px 0}.dc-follow-box{width:100%}}
