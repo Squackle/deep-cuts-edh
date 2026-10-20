@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "affiliate": {
+    "active": false,
+    "merchant": "TCGplayer",
+    "note": "Do not enable until affiliate approval, destination terms and end-to-end cart behavior have been verified."
+  },
+  "cases": {
+    "commander-mustard": {
+      "budget": {
+        "targetUsd": 100,
+        "cards": [],
+        "reviewed": false,
+        "checkoutUrl": "",
+        "checkoutUrlReviewed": false
+      }
+    }
+  }
+}
