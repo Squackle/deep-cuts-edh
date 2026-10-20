@@ -191,3 +191,16 @@
 .premade-copy-status{font-size:11px;color:#395943}
 .premade-summary:focus-visible,.premade-tier-summary:focus-visible,.premade-copy:focus-visible{outline:2px solid #ac833a;outline-offset:-3px}
 @media(max-width:650px){.premade-role-list{grid-template-columns:1fr;gap:15px}.premade-content{padding:12px}.premade-summary{padding-left:14px}.premade-tier-body{padding:11px}}
+
+
+/* Future approved TCGplayer purchasing stays collapsed in the editorial
+   sidebar; before approval the shopping module renders nothing. */
+.report-side details.report-shop{margin-top:15px;padding:0;overflow:hidden}
+.report-side details.report-shop>.report-shop-header{
+ display:block;cursor:pointer;list-style:none;padding:13px 14px;
+ color:#e7d4a9;background:#20362c;font-size:10px;line-height:1.5
+}
+.report-side details.report-shop>.report-shop-header::-webkit-details-marker{display:none}
+.report-side details.report-shop>.report-shop-header:after{content:'⌄';float:right}
+.report-side details.report-shop[open]>.report-shop-header:after{content:'⌃'}
+.report-shop-details-body{padding:0 12px 12px}

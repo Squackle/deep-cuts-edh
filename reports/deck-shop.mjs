@@ -133,9 +133,15 @@ export async function mountDeckShop(data){
  if(!/^[a-z0-9-]{1,100}$/.test(rawSlug))return;
  const config=await loadShopConfig();
  const caseConfig=config.cases?.[rawSlug]||{};
- const root=make('section','report-shop');
+ // A quiet editorial case file never displays a fake or disabled checkout.
+ // Show buying controls only after a particular tier has a reviewed list,
+ // a manually verified affiliate destination, and explicit global approval.
+ const readyTiers=TIERS.filter(t=>checkoutReady(config,caseConfig[t.id],data.commanders));
+ if(!readyTiers.length)return;
+ const root=make('details','report-shop');
  root.setAttribute('aria-label','Optional deck purchasing and build tiers');
- const header=make('div','report-shop-header','WHERE TO BUY');
+ const header=make('summary','report-shop-header','OPTIONAL · BUY A DECK ↗');
+ const inner=make('div','report-shop-details-body');
  const tabs=make('div','report-shop-tabs');
  tabs.setAttribute('role','group');
  tabs.setAttribute('aria-label','Choose build tier');
@@ -155,7 +161,9 @@ export async function mountDeckShop(data){
  }
  const disclosure=make('p','report-shop-disclosure',
   'Affiliate disclosure: if purchasing links become available, Deep Cuts EDH may earn a commission on qualifying purchases at no extra cost to you. Decklists stay free.');
- root.append(header,tabs,body,disclosure);
+ inner.append(tabs,body,disclosure);
+ root.append(header,inner);
  sidebar.append(root);
- renderTier(body,config,caseConfig,'budget',data.commanders,!!data.core?.length);
+ renderTier(body,config,caseConfig,readyTiers[0].id,data.commanders,!!data.core?.length);
+ for(const btn of tabs.children)btn.setAttribute('aria-pressed',String(btn.textContent===readyTiers[0].label));
 }
