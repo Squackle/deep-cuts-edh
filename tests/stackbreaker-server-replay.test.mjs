@@ -18,18 +18,35 @@ test('Pinned Lab replay source includes 250 unmodified classic scenarios',()=>{
  assert.equal(all[249].id,'sg-250');
  for(const s of all)assert.deepEqual(validateScenario(s),{valid:true,errors:[]},s.id);
 });
-test('All published dates are UTC, immutable and generated unreviewed days are gated',()=>{
+test('All 365 immutable UTC daily puzzles match the launched 250-case game',()=>{
  assert.equal(utcDay('2026-10-19T23:59:59Z'),'2026-10-19');
  assert.equal(utcDay('2026-10-20T00:00:00Z'),'2026-10-20');
  const manifest=JSON.parse(read('src/stackbreaker-verify/data/daily-manifest.json'));
  assert.equal(manifest.entries.length,365);
- const reviewed=manifest.entries.filter(e=>approvedDailyEntry(e.utcDate));
- const gated=manifest.entries.filter(e=>!approvedDailyEntry(e.utcDate));
- assert.ok(reviewed.length>0);
- assert.ok(gated.length>0,'Editorial review gate must remain open for generated puzzles');
- assert.ok(reviewed.every(e=>e.puzzleId.startsWith('sb-')));
- assert.ok(gated.some(e=>e.puzzleId.startsWith('sg-')));
+ const uniqueDates=new Set(manifest.entries.map(x=>x.utcDate));
+ assert.equal(uniqueDates.size,365,'One manifest puzzle per UTC day');
+ const loaded=loadScenarios();
+ const ids=new Set(loaded.map(x=>x.id));
+ const generated=manifest.entries.filter(e=>e.puzzleId.startsWith('sg-'));
+ assert.ok(generated.length>=60,'Original published generated daily cases are retained');
+ for(const e of manifest.entries){
+  const verifiedEntry=approvedDailyEntry(e.utcDate);
+  assert.deepEqual(verifiedEntry,e,'Never substitute a different ranked puzzle: '+e.utcDate);
+  assert.ok(ids.has(e.puzzleId),'Original game lacks date '+e.utcDate);
+  const bound=boundScenario(verifiedEntry);
+  assert.equal(bound.id,e.puzzleId);
+  assert.equal(bound.version,STACKBREAKER_SERVER_RULES);
+  assert.deepEqual(validateScenario(bound),{valid:true,errors:[]},'Invalid published scenario '+e.utcDate);
+ }
  assert.equal(approvedDailyEntry('2028-01-01'),null);
+});
+test('Generated day and hand-authored day both use identical server replay',()=>{
+ for(const date of ['2026-10-19','2026-10-20']){
+  const e=approvedDailyEntry(date);assert.ok(e);
+  const scene=boundScenario(e);assert.equal(scene.id,e.puzzleId);
+  assert.equal(replayServerMoves(scene,[]).state.status,'playing');
+  assert.throws(()=>replayServerMoves(scene,[{type:'claim-win'}]),/Unsupported or malformed/);
+ }
 });
 test('Pinned digest is cryptographic, scenario bound, versioned and deterministic',async()=>{
  const entry=approvedDailyEntry('2026-10-19');
