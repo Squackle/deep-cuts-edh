@@ -95,7 +95,10 @@
   for(const entry of data.core){
    const tr=document.createElement("tr"),role=document.createElement("td"),name=document.createElement("td"),a=document.createElement("a");
    role.textContent=entry[0];a.textContent=entry[1];
-   a.href="https://scryfall.com/search?q="+encodeURIComponent('!"'+entry[1]+'"');
+   a.href="https://scryfall.com/search?q="+encodeURIComponent('!"'+entry[1]+'"')+"&unique=cards";
+   a.className="premade-card-link";
+   a.setAttribute("data-scryfall-card",entry[1]);
+   a.title="View "+entry[1]+" on Scryfall (hover for card preview)";
    a.target="_blank";a.rel="noopener noreferrer";name.append(a);tr.append(role,name);rows.append(tr);
   }
  }
