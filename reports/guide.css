@@ -204,3 +204,46 @@
 .report-side details.report-shop>.report-shop-header:after{content:'⌄';float:right}
 .report-side details.report-shop[open]>.report-shop-header:after{content:'⌃'}
 .report-shop-details-body{padding:0 12px 12px}
+
+
+/* On-demand, readable desktop Scryfall card previews for premade lists.
+   The preview is mounted on document.body to escape collapsed-article overflow. */
+.premade-card-lines .premade-card-link{
+ color:#2f6849;text-decoration:underline;text-decoration-color:#b8cbbb;
+ text-decoration-thickness:1px;text-underline-offset:3px;
+ border-radius:2px;cursor:pointer;
+}
+.premade-card-lines .premade-card-link:hover{
+ color:#194b30;text-decoration-color:#3b7950;
+}
+.premade-card-lines .premade-card-link:focus-visible{
+ outline:2px solid #b68a40;outline-offset:3px;
+}
+.premade-card-preview{
+ position:fixed;z-index:2147483000;pointer-events:none;
+ width:min(380px,calc(100vw - 24px));
+ max-height:calc(100vh - 24px);overflow:hidden;
+ padding:11px;background:#192d23;color:#f5f1e7;
+ border:1px solid #c4a978;border-radius:11px;
+ box-shadow:0 16px 48px #0a2018a8,0 2px 8px #0b1718a8;
+}
+.premade-card-preview[hidden]{display:none!important}
+.premade-preview-name{
+ display:block;margin:0 0 9px;font:700 13px/1.4 ui-sans-serif,system-ui,sans-serif;
+ color:#f4e1b7;overflow-wrap:anywhere;
+}
+.premade-card-preview .premade-preview-image{
+ display:block;width:auto;max-width:100%;height:auto;
+ max-height:calc(100vh - 130px);margin:0 auto;
+ border-radius:8px;object-fit:contain;background:#203329;
+}
+.premade-card-preview .premade-preview-loading{
+ color:#e2e7dd;font:12px/1.6 ui-sans-serif,system-ui,sans-serif;margin:8px 0;
+}
+.premade-preview-hint{
+ display:block;color:#c9d5c9;margin-top:9px;
+ font:11px/1.45 ui-sans-serif,system-ui,sans-serif;
+}
+@media(hover:none),(pointer:coarse){
+ .premade-card-preview{display:none!important}
+}

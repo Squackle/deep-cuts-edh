@@ -12,6 +12,123 @@ const BASICS=new Set(["plains","island","swamp","mountain","forest","wastes",
  "snow-covered plains","snow-covered island","snow-covered swamp",
  "snow-covered mountain","snow-covered forest"]);
 const line=parse=>/^\s*(\d{1,3})\s+(\S.*?)\s*$/.exec(parse);
+/* All premade card rows link to Scryfall. Exact card-page links are resolved
+   on hover/focus, with an exact-name Scryfall search as the safe fallback.
+   The hover preview is requested only when needed, never for 1,200 cards. */
+export const scryfallSearchUrl=name=>
+ "https://scryfall.com/search?q="+encodeURIComponent('!"'+name+'"')+"&unique=cards";
+export const scryfallCardApiUrl=name=>
+ "https://api.scryfall.com/cards/named?exact="+encodeURIComponent(name);
+export function safeCardDetails(card){
+ const raw=card?.image_uris?.normal||
+  card?.card_faces?.find(face=>face?.image_uris?.normal)?.image_uris?.normal;
+ let image=null,uri=null;
+ try{
+  const u=new URL(raw);
+  if(u.protocol==="https:"&&["cards.scryfall.io","c1.scryfall.com","c2.scryfall.com"].includes(u.hostname))image=u.href;
+ }catch{/* No valid image, retain readable text fallback. */}
+ try{
+  const u=new URL(card?.scryfall_uri);
+  if(u.protocol==="https:"&&u.hostname==="scryfall.com")uri=u.href;
+ }catch{/* Exact-name search is still accessible. */}
+ return {image,uri};
+}
+const cardCache=new Map();
+let cardQueue=Promise.resolve(),lastCardRequest=0;
+async function cardDetails(name){
+ if(!cardCache.has(name)){
+  const promise=cardQueue.then(async()=>{
+   // Respect the public Scryfall API's request-rate guidance.
+   const wait=Math.max(0,125-(Date.now()-lastCardRequest));
+   if(wait)await new Promise(resolve=>setTimeout(resolve,wait));
+   lastCardRequest=Date.now();
+   const response=await fetch(scryfallCardApiUrl(name),{
+    method:"GET",headers:{"Accept":"application/json"},
+    mode:"cors",credentials:"omit"
+   });
+   if(!response.ok)return {image:null,uri:null};
+   return safeCardDetails(await response.json());
+  }).catch(()=>({image:null,uri:null}));
+  cardQueue=promise.then(()=>undefined);
+  cardCache.set(name,promise);
+  if(cardCache.size>100)cardCache.delete(cardCache.keys().next().value);
+ }
+ return cardCache.get(name);
+}
+let visibleAnchor=null,hoverDelay=null,popup=null;
+function hideCardPreview(){
+ if(hoverDelay!==null)clearTimeout(hoverDelay);
+ hoverDelay=null;visibleAnchor=null;
+ if(popup)popup.hidden=true;
+}
+function positionCardPreview(anchor){
+ if(!popup||popup.hidden||!anchor?.getBoundingClientRect)return;
+ const point=anchor.getBoundingClientRect();
+ const bounds=popup.getBoundingClientRect();
+ const gap=14,pad=12;
+ const right=point.right+gap,left=point.left-gap-bounds.width;
+ const x=right+bounds.width+pad<=window.innerWidth?right:
+  left>=pad?left:Math.max(pad,Math.min(point.left,window.innerWidth-bounds.width-pad));
+ const y=Math.max(pad,Math.min(point.top-30,window.innerHeight-bounds.height-pad));
+ popup.style.left=Math.round(x)+"px";
+ popup.style.top=Math.round(y)+"px";
+}
+function previewNode(){
+ if(popup?.isConnected)return popup;
+ popup=make("div","premade-card-preview");
+ popup.hidden=true;
+ popup.setAttribute("aria-hidden","true");
+ document.body.append(popup);
+ return popup;
+}
+function showCardPreview(anchor,name,mouse=false){
+ // Phones are intentionally out of scope. A keyboard user may still focus.
+ if(mouse&&window.matchMedia&&!window.matchMedia("(hover: hover) and (pointer: fine)").matches)return;
+ hideCardPreview();
+ visibleAnchor=anchor;
+ hoverDelay=setTimeout(async()=>{
+  hoverDelay=null;
+  if(visibleAnchor!==anchor)return;
+  const panel=previewNode();
+  panel.replaceChildren(
+   make("strong","premade-preview-name",name),
+   make("p","premade-preview-loading","Loading Scryfall card…")
+  );
+  panel.hidden=false;
+  positionCardPreview(anchor);
+  const data=await cardDetails(name);
+  // Do not display stale images when the mouse has moved to another card.
+  if(visibleAnchor!==anchor)return;
+  if(data.uri)anchor.href=data.uri;
+  panel.replaceChildren(make("strong","premade-preview-name",name));
+  if(data.image){
+   const img=make("img","premade-preview-image");
+   img.alt=name+" — Scryfall card image";
+   img.loading="eager";
+   img.decoding="async";
+   img.addEventListener("load",()=>{if(visibleAnchor===anchor)positionCardPreview(anchor)});
+   img.addEventListener("error",()=>{
+    if(visibleAnchor!==anchor)return;
+    img.remove();
+    panel.append(make("p","premade-preview-loading","Image unavailable — open on Scryfall for card details."));
+    positionCardPreview(anchor);
+   });
+   img.src=data.image;
+   panel.append(img);
+  }else{
+   panel.append(make("p","premade-preview-loading","Image unavailable — open on Scryfall for card details."));
+  }
+  panel.append(make("span","premade-preview-hint","Click the card name to open Scryfall ↗"));
+  positionCardPreview(anchor);
+ },125);
+}
+if(typeof document!=="undefined"){
+ // One listener per module, not per card, and no global image preload.
+ document.addEventListener("keydown",e=>{if(e.key==="Escape")hideCardPreview()});
+ window.addEventListener("scroll",hideCardPreview,{passive:true});
+ window.addEventListener("resize",hideCardPreview,{passive:true});
+}
+
 export function checkDraft(tier,commanders){
  if(!tier||!Array.isArray(tier.sections)||!Array.isArray(commanders)||!commanders.length)
   return {ok:false,count:0};
@@ -53,7 +170,17 @@ function sectionView(info,tier,commanders){
   const lines=make("ul","premade-card-lines");
   for(const entry of group.cards){
    const match=line(entry);
-   const item=make("li",null,match[1]+" × "+match[2]);
+   const item=make("li");
+   const name=match[2],anchor=make("a","premade-card-link",match[1]+" × "+name);
+   anchor.href=scryfallSearchUrl(name);
+   anchor.target="_blank";
+   anchor.rel="noopener noreferrer";
+   anchor.title="Open "+name+" on Scryfall (new tab)";
+   anchor.addEventListener("mouseenter",()=>showCardPreview(anchor,name,true));
+   anchor.addEventListener("mouseleave",hideCardPreview);
+   anchor.addEventListener("focus",()=>showCardPreview(anchor,name));
+   anchor.addEventListener("blur",hideCardPreview);
+   item.append(anchor);
    lines.append(item);
   }
   groupWrap.append(heading,lines);
