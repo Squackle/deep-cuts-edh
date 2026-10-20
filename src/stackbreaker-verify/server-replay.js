@@ -37,7 +37,7 @@ export function approvedDailyEntry(day){
  // Engine-generated cases were validated by the original 250-case rules suite.
  // Human editorial review remains pending and is not implied by verified replay.
  // Never substitute a different puzzle simply to issue ranked scores.
- if(!/^(?:sb-\\d{2}|sg-\\d{3})$/.test(entry.puzzleId))return null;
+ if(!/^(?:sb-\d{2}|sg-\d{3})$/.test(entry.puzzleId))return null;
  return boundScenario(entry)?entry:null;
 }
 export function currentDaily(now=new Date()){
