@@ -9,11 +9,9 @@ const fetcher=(fn)=>async(url,opts)=>{
 };
 
 test("Module-style scheduled worker publishes only safe health text",async()=>{
- let promise;
- clock.scheduled({},undefined,{waitUntil:p=>{promise=p}});
- assert.ok(promise instanceof Promise);
- // No real HTTP request is made by unit tests; catch the default live fetch.
- promise.catch(()=>{});
+ // Never invoke the scheduled handler with the real global fetch in CI:
+ // this would prewarm production without an explicit test environment.
+ assert.equal(typeof clock.scheduled,"function");
  const response=await clock.fetch();
  assert.equal(response.status,200);
  assert.equal(response.headers.get("Cache-Control"),"no-store");
