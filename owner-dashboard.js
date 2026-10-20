@@ -31,12 +31,19 @@
   keyLabel.classList.add("owner-key-label");
   keyLabel.firstChild && (keyLabel.firstChild.textContent = "Private owner key");
   const keyHelp = element("span", "owner-key-help", "Key stays in this tab only. Every protected action still requires server authorization.");
+  const unlockButton = element("button", "owner-unlock-button", "Unlock Dashboard");
+  unlockButton.type = "button";
+  unlockButton.id = "ownerUnlock";
   const lockButton = element("button", "owner-lock-button", "Lock & clear");
   lockButton.type = "button";
   lockButton.id = "ownerLock";
+  const accessActions = element("div", "owner-access-actions");
+  accessActions.append(unlockButton, lockButton);
   const lockStatus = element("span", "owner-lock-status", "Not authenticated · key required");
   lockStatus.id = "ownerLockStatus";
-  access.append(keyLabel, lockButton, lockStatus, keyHelp);
+  lockStatus.setAttribute("role", "status");
+  lockStatus.setAttribute("aria-live", "polite");
+  access.append(keyLabel, accessActions, lockStatus, keyHelp);
   heading.after(subtitle, access);
 
   const definitions = [
@@ -148,7 +155,61 @@
   }
   show("overview");
 
+  let unlockGeneration = 0;
+  let unlocked = false;
+
+  // Read-only verification against the existing server owner-auth boundary.
+  // This must never be implemented as a client-side key check or stored login.
+  async function unlockDashboard() {
+    const key = keyInput.value.trim();
+    const generation = ++unlockGeneration;
+    unlocked = false;
+    if (!/^dcissuer1_[a-f0-9]{64}$/.test(key)) {
+      lockStatus.textContent = "Enter a complete owner key, then try again.";
+      return;
+    }
+    unlockButton.disabled = true;
+    unlockButton.textContent = "Verifying…";
+    lockStatus.textContent = "Verifying your key securely…";
+    try {
+      const response = await fetch("/api/owner-ops?view=overview", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { Authorization: "Bearer " + key }
+      });
+      // A lock, idle timeout or key edit cancels this UI attempt.
+      if (generation !== unlockGeneration || keyInput.value.trim() !== key) return;
+      if (!(response.headers.get("content-type") || "").includes("application/json")) {
+        throw Error("Cloudflare Access sign-in has expired. Sign in again and retry.");
+      }
+      const result = await response.json();
+      if (!response.ok || result?.ok !== true || result.view !== "overview") {
+        throw Error(response.status === 403 || response.status === 401
+          ? "Owner key not accepted. Check the key and try again."
+          : "Owner verification unavailable. Please try again.");
+      }
+      if (generation !== unlockGeneration || keyInput.value.trim() !== key) return;
+      unlocked = true;
+      lockStatus.textContent = "Owner verified · dashboard unlocked";
+      window.dispatchEvent(new Event("deepcuts:owner-unlocked"));
+    } catch (error) {
+      if (generation !== unlockGeneration || keyInput.value.trim() !== key) return;
+      lockStatus.textContent = error?.message || "Could not verify owner key.";
+    } finally {
+      if (generation === unlockGeneration) {
+        unlockButton.disabled = false;
+        unlockButton.textContent = "Unlock Dashboard";
+      }
+    }
+  }
+  unlockButton.addEventListener("click", unlockDashboard);
+
   function clearSession(reason = "Owner key cleared. Re-enter it to continue.") {
+    ++unlockGeneration;
+    unlocked = false;
+    unlockButton.disabled = false;
+    unlockButton.textContent = "Unlock Dashboard";
     keyInput.value = "";
     form.reset();
     for (const id of ["complimentaryForm", "ownerEvidenceForm", "ownerAdFreeForm"]) $(id)?.reset();
@@ -180,7 +241,12 @@
     }
   });
   keyInput.addEventListener("input", () => {
-    lockStatus.textContent = keyInput.value ? "Owner key entered · verification occurs on every request" : "Not authenticated · key required";
+    ++unlockGeneration;
+    unlockButton.disabled = false;
+    unlockButton.textContent = "Unlock Dashboard";
+    if (unlocked) window.dispatchEvent(new Event("deepcuts:owner-key-changed"));
+    unlocked = false;
+    lockStatus.textContent = keyInput.value ? "Owner key entered · select Unlock Dashboard" : "Not authenticated · key required";
     arm();
   });
   arm();
