@@ -6,6 +6,8 @@ on:
       - 'reports/premade-decks.mjs'
       - 'reports/premade-decks.json'
       - 'reports/premade-decks.test.mjs'
+      - 'reports/scryfall-card-preview.mjs'
+      - 'reports/scryfall-card-preview.test.mjs'
       - 'reports/deck-shop.mjs'
       - 'reports/deck-shop-config.json'
       - 'reports/deck-shop.test.mjs'
@@ -27,9 +29,10 @@ jobs:
         with:
           node-version: '22'
       - name: Shared Rescue Report component contracts
-        run: node --test reports/deck-shop.test.mjs reports/premade-decks.test.mjs
+        run: node --test reports/deck-shop.test.mjs reports/premade-decks.test.mjs reports/scryfall-card-preview.test.mjs
       - name: Storefront module and guide syntax
         run: |
           node --check reports/deck-shop.mjs
           node --check reports/premade-decks.mjs
+          node --check reports/scryfall-card-preview.mjs
           node --check reports/guide.js
