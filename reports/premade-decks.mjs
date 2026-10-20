@@ -134,7 +134,8 @@ if(typeof document!=="undefined"){
 export function prepareScryfallCardLink(anchor,name){
  if(!anchor||typeof name!=="string"||!name.trim()||anchor.__dcScryfallHoverBound)return;
  anchor.__dcScryfallHoverBound=true;
- anchor.className=(anchor.className?anchor.className+" ":"")+"premade-card-link";
+ if(!anchor.className.split(/\s+/).includes("premade-card-link"))
+  anchor.className=(anchor.className?anchor.className+" ":"")+"premade-card-link";
  anchor.href=scryfallSearchUrl(name);
  anchor.target="_blank";
  anchor.rel="noopener noreferrer";
