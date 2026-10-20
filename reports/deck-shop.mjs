@@ -5,8 +5,8 @@
  */
 export const TIERS=Object.freeze([
  {id:'budget',label:'Budget',description:'Affordable cards that preserve the commander’s main plan.'},
- {id:'regular',label:'Regular',description:'More consistent mana, interaction, and synergistic upgrades.'},
- {id:'bougie',label:'Bougie',description:'Premium gameplay upgrades, without paying extra merely for special printings.'}
+ {id:'standard',label:'Standard',description:'More consistent mana, interaction, and synergistic upgrades.'},
+ {id:'no-limit',label:'No Limit',description:'Premium gameplay upgrades, without paying extra merely for special printings.'}
 ]);
 const BASICS=new Set(['plains','island','swamp','mountain','forest','wastes',
  'snow-covered plains','snow-covered island','snow-covered swamp',
