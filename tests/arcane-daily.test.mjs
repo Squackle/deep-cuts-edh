@@ -1,6 +1,8 @@
 // Run with: node --test tests/arcane-daily.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
+// Cron prewarm is part of daily-game integrity; include its isolated tests in existing CI.
+import './daily-puzzle-clock.test.mjs';
 import {CIPHER_WORDS,CIPHER_TYPES,BOARD_CATEGORIES,buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,boardMatch,boardOneAway} from '../src/arcane-game-data.js';
 
 test('Full creature subtype catalog is valid and archived five-letter editions stay available',()=>{
