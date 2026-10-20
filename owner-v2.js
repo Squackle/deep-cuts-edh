@@ -115,12 +115,13 @@ function clearPrivateViews(){
  }
  showHome();
 }
+let ownerUnlocked = false;
 const lock=$("ownerLock");
-if(lock)lock.addEventListener("click",()=>{clearPrivateViews();resetPresence()});
+if(lock)lock.addEventListener("click",()=>{ownerUnlocked=false;clearPrivateViews();resetPresence()});
 const lockStatus=$("ownerLockStatus");
 if(lockStatus)new MutationObserver(()=>{
  const status=lockStatus.textContent||"";
- if(status.includes("Auto-locked")||status.includes("Owner key cleared")){clearPrivateViews();resetPresence();}
+ if(status.includes("Auto-locked")||status.includes("Owner key cleared")){ownerUnlocked=false;clearPrivateViews();resetPresence();}
 }).observe(lockStatus,{childList:true,subtree:true,characterData:true});
 function ownerKey(){return $("opsForm").elements.operatorKey.value.trim();}
 let presenceRequest=0;
@@ -133,7 +134,7 @@ function resetPresence(){
 }
 async function refreshPresence(){
  const key=ownerKey();
- if(!/^dcissuer1_[a-f0-9]{64}$/.test(key)){resetPresence();return}
+ if(!ownerUnlocked||!/^dcissuer1_[a-f0-9]{64}$/.test(key)){resetPresence();return}
  const seq=++presenceRequest;
  try{
   const result=await api("presence");
@@ -511,12 +512,30 @@ staticPanel("sweep","Launch a safe security audit at any time. Choose Run workfl
 staticPanel("seo","Search Console indexing and AdSense approval depend on Google. The tools below open their authoritative dashboards; this page does not invent search traffic or approval.",[
  ["Search Console","https://search.google.com/search-console"],["Sitemap","https://deep-cuts-edh.pages.dev/sitemap.xml"],["Robots","https://deep-cuts-edh.pages.dev/robots.txt"],["AdSense","https://www.google.com/adsense/"]
 ]);
+// The owner key is verified on demand by the private read-only owner API.
+ // After success, refresh the headline figures immediately without page reload.
+window.addEventListener("deepcuts:owner-unlocked",()=>{
+ ownerUnlocked=true;
+ refreshPresence();
+ if(readers[active])load(active);
+});
+window.addEventListener("deepcuts:owner-key-changed",()=>{
+ ownerUnlocked=false;
+ clearPrivateViews();
+ resetPresence();
+});
 const operatorInput=$("opsForm").elements.operatorKey;
 operatorInput.addEventListener("change",refreshPresence);
-operatorInput.addEventListener("input",()=>{if(!/^dcissuer1_[a-f0-9]{64}$/.test(ownerKey()))resetPresence();});
+operatorInput.addEventListener("input",()=>{
+ if(ownerUnlocked){
+  ownerUnlocked=false;
+  clearPrivateViews();
+ }
+ resetPresence();
+});
 window.addEventListener("focus",refreshPresence);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshPresence()});
-window.setInterval(()=>{if(/^dcissuer1_[a-f0-9]{64}$/.test(ownerKey()))refreshPresence();},30000);
+window.setInterval(()=>{if(ownerUnlocked&&/^dcissuer1_[a-f0-9]{64}$/.test(ownerKey()))refreshPresence();},30000);
 refreshPresence();
 const route=decodeURIComponent(location.hash.slice(1));
 const found=groups.flatMap(([g,x])=>x.map(([id])=>({group:g,id}))).find(x=>x.id===route);

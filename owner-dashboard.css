@@ -12,6 +12,10 @@ main.ops:has(.owner-main-nav) {
 }
 .ops label.owner-key-label {margin:0; font-size:13px; line-height:1.5; letter-spacing:.02em}
 .ops label.owner-key-label input {width:100%; max-width:540px; margin-top:5px; padding:10px; border-radius:5px; background:white}
+.ops .owner-access-actions {display:flex;gap:8px;align-items:stretch;justify-content:flex-end;min-width:0}
+.ops .owner-access-actions button {margin:0;min-height:43px;padding:10px 16px;white-space:nowrap;flex:1 1 0}
+.ops .owner-unlock-button {border-radius:6px;background:#285b3d;color:#fff;min-width:130px;font-size:12px;font-weight:700}
+.ops .owner-unlock-button:disabled {opacity:.65;cursor:wait}
 .ops .owner-lock-button {margin:0; border-radius:6px; background:#713b37; min-height:43px; font-size:12px}
 .ops .owner-lock-status {font-weight:700; font-size:12px; color:#385b3b}
 .ops .owner-key-help {font-size:12px; color:#586c58; text-align:right}
@@ -52,6 +56,8 @@ main.ops:has(.owner-main-nav) {
 @media (max-width: 520px) {
   main.ops:has(.owner-main-nav) {margin:0 auto; border:0; border-radius:0; padding:15px}
   .ops .owner-access-bar {grid-template-columns:1fr}
+  .ops .owner-access-actions {width:100%}
+  .ops .owner-access-actions button {min-width:0;white-space:normal;flex:1 1 50%;padding:11px 8px}
   .ops .owner-key-help {text-align:left}
   .ops .owner-main-nav {gap:3px}
   .ops .owner-main-nav button {flex-basis:calc(33% - 4px);padding:9px 7px; font-size:11px}
