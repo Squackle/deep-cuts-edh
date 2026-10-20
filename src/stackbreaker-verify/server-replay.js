@@ -33,10 +33,12 @@ export function approvedDailyEntry(day){
  if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day))return null;
  const entry=daily.entries.find(x=>x.utcDate===day);
  if(!entry||entry.rulesVersion!==RULES_VERSION||entry.puzzleRevision!==1||entry.manifestVersion!==1)return null;
- // Editorial gate: the 60 auto-generated cases are engine-tested, but still
- // lack human review. No authenticated scores for them until review.
- if(!/^sb-\d{2}$/.test(entry.puzzleId))return null;
- return entry;
+ // Use the EXACT immutable dated puzzle selected by the launched Game Lab.
+ // Engine-generated cases were validated by the original 250-case rules suite.
+ // Human editorial review remains pending and is not implied by verified replay.
+ // Never substitute a different puzzle simply to issue ranked scores.
+ if(!/^(?:sb-\d{2}|sg-\d{3})$/.test(entry.puzzleId))return null;
+ return boundScenario(entry)?entry:null;
 }
 export function currentDaily(now=new Date()){
  return approvedDailyEntry(utcDay(now));
