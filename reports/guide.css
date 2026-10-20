@@ -158,3 +158,67 @@
 .report-shop-disclosure{border-top:1px solid #627367;padding-top:11px;margin:12px 0 0;
  font-size:9px;line-height:1.55;color:#c1ccbe}
 @media(prefers-reduced-motion:reduce){.report-shop-tab{transition:none}}
+
+
+/* Compact progressive disclosure. These rules supersede the former tall
+   sidebar shop; list DOM is only built when a tier is opened. */
+.report-decks{
+ margin:24px 0 22px;border:1px solid #bdcdbb;border-radius:10px;
+ background:#f6f8f2;overflow:hidden;color:#314d3a
+}
+.report-decks-summary{
+ cursor:pointer;list-style:none;display:flex;align-items:center;
+ justify-content:space-between;gap:10px;padding:16px 17px;
+ font:800 12px/1.5 ui-sans-serif,system-ui,sans-serif;letter-spacing:.08em;
+ color:#315b42;background:#e9f0e5;
+}
+.report-decks-summary::-webkit-details-marker,.report-decks-tier-summary::-webkit-details-marker{display:none}
+.report-decks-summary:after{content:'⌄';font-size:21px;font-weight:400;line-height:1}
+.report-decks[open]>.report-decks-summary:after{content:'⌃'}
+.report-decks[open]>.report-decks-summary{border-bottom:1px solid #d3dfd0}
+.report-content .report-decks-intro{font-size:12px;line-height:1.6;margin:13px 17px;color:#5c7160}
+.report-decks-tier-container{margin:0 13px 14px;display:grid;gap:6px}
+.report-decks-tier{background:#fffefa;border:1px solid #d0dacd;border-radius:7px;min-width:0;overflow:hidden}
+.report-decks-tier-summary{cursor:pointer;display:flex;justify-content:space-between;
+ align-items:center;gap:12px;min-height:43px;padding:10px 13px;list-style:none;
+ color:#31563e;font:750 13px ui-sans-serif,system-ui,sans-serif}
+.report-decks-tier-summary:before{content:'+';order:2;color:#58816a;font-size:18px}
+.report-decks-tier[open]>.report-decks-tier-summary:before{content:'−'}
+.report-decks-tier-summary small{font-size:10px;color:#627968;font-weight:600;margin-left:auto}
+.report-decks-tier[open]>.report-decks-tier-summary{border-bottom:1px solid #d4decf;background:#f2f5ee}
+.report-decks-tier-body{padding:14px}
+.report-content .report-decks-editorial,.report-content .report-decks-disclaimer,
+.report-content .report-decks-preview{font-size:11px;line-height:1.6;color:#687967;margin:0 0 10px}
+.report-content .report-decks-preview{color:#815a31}
+.report-decks-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.report-decks-category{border:1px solid #dde5d9;border-radius:7px;padding:12px;min-width:0;background:#fbfdf8}
+.report-decks-category h4{font:800 11px/1.5 ui-sans-serif,system-ui,sans-serif;
+ letter-spacing:.05em;color:#3e6647;margin:0 0 7px}
+.report-decks-category ul{padding-left:14px;margin:0;color:#3f5d46}
+.report-decks-category li{font-size:11px;line-height:1.65;overflow-wrap:anywhere;margin:2px 0}
+.report-decks-category a{color:#37664a;text-decoration:none}
+.report-decks-category a:hover{text-decoration:underline}
+.report-decks-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0}
+.report-decks-copy{background:#345c42;border:1px solid #345c42;border-radius:6px;
+ padding:10px 13px;min-height:40px;color:white;font:750 11px ui-sans-serif,system-ui,sans-serif;cursor:pointer}
+.report-decks-copy:hover{background:#264d35}
+.report-decks-feedback{font-size:11px;color:#4c724e}
+.report-content .report-decks-affiliate{display:inline-flex;min-height:40px;align-items:center;
+ color:#263d30;background:#dfc28a;padding:10px 14px;border-radius:6px;
+ text-decoration:none;font:800 11px ui-sans-serif,system-ui,sans-serif;margin-bottom:10px}
+.report-decks-starter{font-size:12px;display:inline-block;margin-bottom:12px}
+.report-content .report-decks-fineprint{border-top:1px solid #d5dfd0;
+ color:#708070;padding:13px 17px;margin:0;font-size:10px;line-height:1.5}
+.report-decks :is(summary,button,a):focus-visible{outline:2px solid #ba8b3b;outline-offset:3px}
+.report-side .report-decks-side-link{display:block;margin:15px 0 0;padding:10px;
+ text-align:center;background:#edf2e9;border:1px solid #c8dac5;border-radius:6px;
+ font:800 11px/1.4 ui-sans-serif,system-ui,sans-serif;color:#37684b;text-decoration:none}
+.report-side .report-decks-side-link:hover{background:#dfeadb}
+@media(max-width:650px){
+ .report-decks-categories{grid-template-columns:1fr}
+ .report-decks-tier-body{padding:10px}
+ .report-decks-summary{padding:14px;font-size:11px}
+ .report-decks-tier-container{margin:0 9px 11px}
+ .report-decks-category{padding:11px}
+}
+@media(prefers-reduced-motion:reduce){.report-decks *{scroll-behavior:auto}}
