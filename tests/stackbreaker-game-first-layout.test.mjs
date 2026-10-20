@@ -13,7 +13,7 @@ test('Daily is a full-width real original game, not a nested mini-game',()=>{
  assert.ok(page.indexOf('id="stackbreakerOriginal"')<page.indexOf('id="rankings"'));
  assert.ok(!page.includes('sb-canonical-layout'),'No game / leaderboard two-column squeeze');
  assert.ok(!page.includes('sb-canonical-intro'),'No redundant game hero');
- assert.ok(!page.includes('class="primary-nav"'),'No duplicate eight-link navigation');
+ assert.equal((page.match(/class="primary-nav"/g)||[]).length,1,'Exactly one site navigation; Lab iframe masthead hidden');
  assert.ok(!page.includes('LOCAL GAME LAB PREVIEW'),'No ranked screen claiming local-only gameplay');
  assert.match(css,/#stackbreakerOriginal\{width:100%;/);
  assert.match(css,/\.sb-ranking-list\{[^}]*grid-template-columns/);
