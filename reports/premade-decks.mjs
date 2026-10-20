@@ -129,6 +129,22 @@ if(typeof document!=="undefined"){
  window.addEventListener("resize",hideCardPreview,{passive:true});
 }
 
+/* Reuse the exact same Scryfall behavior for premade decks and starter cores.
+   Binding is idempotent, even when an existing report link is upgraded. */
+export function prepareScryfallCardLink(anchor,name){
+ if(!anchor||typeof name!=="string"||!name.trim()||anchor.__dcScryfallHoverBound)return;
+ anchor.__dcScryfallHoverBound=true;
+ anchor.className=(anchor.className?anchor.className+" ":"")+"premade-card-link";
+ anchor.href=scryfallSearchUrl(name);
+ anchor.target="_blank";
+ anchor.rel="noopener noreferrer";
+ anchor.title="Open "+name+" on Scryfall (new tab)";
+ anchor.addEventListener("mouseenter",()=>showCardPreview(anchor,name,true));
+ anchor.addEventListener("mouseleave",hideCardPreview);
+ anchor.addEventListener("focus",()=>showCardPreview(anchor,name));
+ anchor.addEventListener("blur",hideCardPreview);
+}
+
 export function checkDraft(tier,commanders){
  if(!tier||!Array.isArray(tier.sections)||!Array.isArray(commanders)||!commanders.length)
   return {ok:false,count:0};
@@ -172,14 +188,7 @@ function sectionView(info,tier,commanders){
    const match=line(entry);
    const item=make("li");
    const name=match[2],anchor=make("a","premade-card-link",match[1]+" × "+name);
-   anchor.href=scryfallSearchUrl(name);
-   anchor.target="_blank";
-   anchor.rel="noopener noreferrer";
-   anchor.title="Open "+name+" on Scryfall (new tab)";
-   anchor.addEventListener("mouseenter",()=>showCardPreview(anchor,name,true));
-   anchor.addEventListener("mouseleave",hideCardPreview);
-   anchor.addEventListener("focus",()=>showCardPreview(anchor,name));
-   anchor.addEventListener("blur",hideCardPreview);
+   prepareScryfallCardLink(anchor,name);
    item.append(anchor);
    lines.append(item);
   }
@@ -243,4 +252,10 @@ export async function mountPremadeDecks(data){
  const anchor=container.querySelector(".report-core-warning") ||
   container.querySelector(".report-references");
  if(anchor)anchor.after(box);else container.append(box);
+ // Starter core cards are generated synchronously by guide.js, then this
+ // module loads. Reuse the same preview (and canonical Scryfall resolution).
+ for(const a of document.querySelectorAll?.("#guideCoreRows a")||[]){
+  const cardName=a.textContent?.trim();
+  if(cardName)prepareScryfallCardLink(a,cardName);
+ }
 }
