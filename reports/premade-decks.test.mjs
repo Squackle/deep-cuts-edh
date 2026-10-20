@@ -196,3 +196,36 @@ test("every card in all four case files becomes a real clickable anchor with des
   globalThis.location=oldLoc;globalThis.fetch=oldFetch;
  }
 });
+
+
+test("starter core links inherit the same Scryfall URL and mouse preview as full decks",async()=>{
+ const oldDoc=globalThis.document,oldFetch=globalThis.fetch,oldLocation=globalThis.location;
+ const article=new E("article"),warning=new E("p"),starter=new E("a");
+ warning.className="report-core-warning";
+ article.append(warning);
+ starter.textContent="Sol Ring";
+ try{
+  globalThis.document={
+   createElement:t=>new E(t),
+   querySelector:q=>q===".report-content"?article:
+    q===".premade-decklists"?article.children.find(x=>x.className==="premade-decklists")||null:null,
+   querySelectorAll:q=>q==="#guideCoreRows a"?[starter]:[]
+  };
+  globalThis.location={pathname:"/reports/commander-mustard"};
+  globalThis.fetch=async()=>({ok:true,json:async()=>data});
+  await mountPremadeDecks({commanders:["Commander Mustard"]});
+  assert.equal(starter.className,"premade-card-link");
+  assert.equal(starter.target,"_blank");
+  assert.equal(starter.rel,"noopener noreferrer");
+  assert.equal(typeof starter.listeners.mouseenter,"function");
+  assert.equal(typeof starter.listeners.mouseleave,"function");
+  assert.equal(typeof starter.listeners.focus,"function");
+  const url=new URL(starter.href);
+  assert.equal(url.origin,"https://scryfall.com");
+  assert.equal(url.searchParams.get("q"),'!"Sol Ring"');
+  assert.equal(url.searchParams.get("unique"),"cards");
+  const handler=starter.listeners.mouseenter;
+  await mountPremadeDecks({commanders:["Commander Mustard"]});
+  assert.equal(starter.listeners.mouseenter,handler,"no duplicate hover handlers");
+ }finally{globalThis.document=oldDoc;globalThis.location=oldLocation;globalThis.fetch=oldFetch}
+});
