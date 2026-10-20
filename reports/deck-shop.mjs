@@ -73,7 +73,7 @@ export async function loadShopConfig(){
  }catch{return {}}
 }
 function listText(groups){
- return groups.map(([role,lines])=>'// '+role+'\n'+lines.join('\n')).join('\n\n');
+ return groups.flatMap(([,lines])=>lines).join('\n');
 }
 function starterLink(parent){
  const link=make('a','report-decks-starter','Explore the current starter-card package ↗');
