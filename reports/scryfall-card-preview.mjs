@@ -126,6 +126,12 @@ export function installPremadeCardHover(root,{lookup=resolveScryfallCard}={}){
   });
  };
  image.addEventListener('load',place);
+ image.addEventListener('error',()=>{
+  if(popup.hidden)return;
+  image.hidden=true;
+  notice.textContent='Artwork unavailable — open this card on Scryfall.';
+  place();
+ });
  const isCard=event=>{
   const a=event.target?.closest?.('a.premade-card-link');
   return a&&root.contains(a)?a:null;
