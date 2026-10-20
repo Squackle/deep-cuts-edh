@@ -59,7 +59,7 @@ test("Sitemap passes a strict XML parser and contains no stray text or escape se
  }
 });
 test("Sitemap dates reflect source-verified, substantive page changes rather than release day",()=>{
- const rows=new Map([...sitemap.matchAll(/<url>\\s*<loc>https:\/\/deep-cuts-edh\\.pages\\.dev([^<]+)<\/loc>\\s*<lastmod>([^<]+)<\/lastmod>\\s*<\/url>/g)].map(x=>[x[1],x[2]]));
+ const rows=new Map([...sitemap.matchAll(/<url>[\s\S]*?<\/url>/g)].map(x=>[x[0].match(/<loc>https:\/\/deep-cuts-edh\.pages\.dev([^<]+)<\/loc>/)?.[1],x[0].match(/<lastmod>([^<]+)<\/lastmod>/)?.[1]]));
  // See GitHub source history for launch/major content changes, not today's build time.
  const expected={
   "/":"2026-10-19", // Matchmaker discovery link and follow.it homepage signup launched
