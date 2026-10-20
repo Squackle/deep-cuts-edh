@@ -20,7 +20,12 @@ test('dashboard retains authorization contracts and does not persist bearer secr
   assert.match(js, /15 \* 60 \* 1000/);
   assert.match(js, /keyInput\.value = ""/);
   assert.match(js, /issuedKey.*textContent = ""/);
-  assert.doesNotMatch(js, /localStorage|sessionStorage|document\.cookie|fetch\(/);
+  assert.doesNotMatch(js, /localStorage|sessionStorage|document\.cookie/);
+  assert.match(js, /ownerUnlock/);
+  assert.match(js, /fetch\("\/api\/owner-ops\?view=overview"/);
+  assert.match(js, /method: "GET"/);
+  assert.doesNotMatch(js, /method: "(?:POST|PUT|PATCH|DELETE)"/);
+  assert.match(js, /unlockGeneration/); // pending auth cannot resurrect a locked UI
   for (const panel of ['overview','members','directory','grants','evidence','adfree','tools']) {
     assert.match(js, new RegExp('"'+panel+'"'));
   }
