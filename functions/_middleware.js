@@ -13,6 +13,7 @@ const AD_PAGES=new Set([
  "/reports/ekthi-contaminator-priest", "/reports/ekthi-contaminator-priest.html"
 ]);
 const PUBLIC_BADGE='<link rel="stylesheet" href="/site-presence.css"><script defer src="/site-presence.js"></script>';
+const HOME_BADGE='<script defer src="/site-presence.js"></script>';
 function isPublicHTMLPath(path){
  if(path.startsWith("/api/")||path.startsWith("/games/hive-run/api/")||path.startsWith("/member-operations")||
     path.startsWith("/diagnostics")||path.startsWith("/google"))return false;
@@ -24,7 +25,10 @@ function decorate(response,path,method){
  if(method!=="GET"||!isPublicHTMLPath(path)||!response.ok||!/text\/html/i.test(response.headers.get("Content-Type")||""))return response;
  // Cloudflare provides HTMLRewriter globally; Node test harnesses may not.
  if(typeof HTMLRewriter==="undefined")return response;
- return new HTMLRewriter().on("head",{element(element){element.append(PUBLIC_BADGE,{html:true})}}).transform(response);
+ // Homepage already includes site-presence.css in home-styles.css; append
+ // only the presence script there, and keep the previous badge elsewhere.
+ const badge=path==="/"||path==="/index.html"?HOME_BADGE:PUBLIC_BADGE;
+ return new HTMLRewriter().on("head",{element(element){element.append(badge,{html:true})}}).transform(response);
 }
 export async function onRequest(context){
  const request=context.request;

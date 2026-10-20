@@ -1,4 +1,5 @@
 import test from 'node:test';
+import "./guest-session.test.mjs";
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 const html=readFileSync('index.html','utf8');
@@ -43,7 +44,7 @@ test('Homepage loads only the shared lightweight UI scripts',()=>{
   assert.ok(html.includes('src="'+kept+'"'),kept+' retained');
  }
  assert.ok(html.includes('src="https://pagead2.googlesyndication.com/'),'AdSense retained');
- assert.ok(html.includes('href="/home-hub.css"'));
+ assert.ok(html.includes('href="/home-styles.css"'));
 });
 test('Branding, indexing, and accessible structure remain',()=>{
  assert.match(html,/<link rel="canonical" href="https:\/\/deep-cuts-edh\.pages\.dev\/"/);
@@ -79,7 +80,9 @@ test('Desktop feature expands only into the right gutter without shifting its gr
 test("PageSpeed changes stabilize homepage layout without touching AdSense or authentication",()=>{
  const stability=readFileSync('home-stability.css','utf8');
  assert.match(html,/<script>document\.documentElement\.classList\.add\("dc-js"\)<\/script>/);
- assert.match(html, /href="\/home-stability\.css"/);
+ assert.ok(html.includes('href="/home-styles.css"') &&
+  readFileSync('home-styles.css','utf8').includes('/* SOURCE: home-stability.css */'),
+  'Homepage stability CSS is present in the critical stylesheet bundle');
  assert.match(stability,/site-header:not\(:has\(>\.site-supporter-strip\)\)::after/);
  assert.match(stability,/header-inner:not\(\.header-profile-enabled\)/);
  assert.match(stability,/hub-card-top\{color:#435b47\}/);
@@ -109,4 +112,45 @@ test('Residual homepage navigation and report badges meet WCAG AA contrast',()=>
   ['3f5d43','e7ede1'],['455a43','eee9d8'],
   ['455d45','eee9d8'],['455d45','f9f6eb']
  ])assert.ok(ratio(fg,bg)>=4.5,`Contrast below WCAG AA: #${fg} on #${bg}`);
+});
+
+test('Home CSS bundle preserves every source exactly in cascade order',()=>{
+ const assets=['styles.css','retro.css','theme-v2.css','header-profile.css',
+  'release-polish.css','home-hub.css','rescue-subscribe.css',
+  'feedback.css','home-stability.css','site-presence.css'];
+ const bundle=readFileSync('home-styles.css','utf8');
+ assert.equal((html.match(/<link rel="stylesheet"/g)||[]).length,1,
+  'Homepage should issue one render-blocking author CSS request');
+ let previous=-1;
+ for(let i=0;i<assets.length;i++){
+  const name=assets[i],marker='/* SOURCE: '+name+' */';
+  const start=bundle.indexOf(marker);
+  assert.ok(start>previous,'CSS cascade order changed at '+name);
+  const from=start+marker.length;
+  const end=i===assets.length-1?bundle.length:bundle.indexOf('/* SOURCE: '+assets[i+1]+' */');
+  assert.ok(end>from,'Missing following CSS boundary '+name);
+  assert.equal(bundle.slice(from,end).trim(),readFileSync(name,'utf8').trim(),
+   'Bundled CSS has drifted from '+name);
+  previous=start;
+ }
+ for(const name of assets)assert.equal(html.includes('href="/'+name+'"'),false,'Redundant CSS request '+name);
+ assert.ok(html.includes('src="https://pagead2.googlesyndication.com/'),
+  'Preserve owner-approved AdSense script');
+});
+
+test('Supporter ticker measures its duplicated strip without a second forced reflow',()=>{
+ const ticker=readFileSync('header-profile.js','utf8');
+ assert.match(ticker,/const pixels=repeats\*tileWidth;/);
+ assert.doesNotMatch(ticker,/group\.getBoundingClientRect\(\)\.width/);
+});
+
+test("Homepage public-presence badge ships CSS only once and preserves security headers",()=>{
+ const mw=readFileSync("functions/_middleware.js","utf8");
+ const headers=readFileSync("_headers","utf8");
+ assert.match(mw,/const HOME_BADGE=/);
+ assert.match(mw,/path==="\/"\|\|path==="\/index\.html"\?HOME_BADGE:PUBLIC_BADGE/);
+ assert.match(mw,/const PUBLIC_BADGE=.*site-presence\.css/);
+ assert.match(headers,/\/\n  Cross-Origin-Opener-Policy: same-origin-allow-popups/);
+ assert.match(headers,/Strict-Transport-Security: max-age=31536000/);
+ assert.match(headers,/Content-Security-Policy: frame-ancestors/);
 });

@@ -19,7 +19,10 @@ for(const file of publicPages){
  check(html.includes('<link rel="canonical" href="'+clean+'">'),file+': bad canonical URL');
  check(!/https:\/\/deep-cuts-edh\.pages\.dev\/[^"<> ]+\.html/.test(html),file+': absolute .html redirect URLs remain');
  check((html.match(/<h1\b/gi)||[]).length===1,file+': exactly one h1 needed');
- check(html.includes('href="/release-polish.css"'),file+': release stylesheet missing');
+ check(html.includes('href="/release-polish.css"')||
+  (file==='index.html'&&html.includes('href="/home-styles.css"')&&
+   read('home-styles.css').includes('/* SOURCE: release-polish.css */')),
+  file+': release stylesheet missing (direct or bundled)');
 }
 for(const file of menuPages){
  const html=read(file);

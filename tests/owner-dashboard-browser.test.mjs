@@ -33,10 +33,19 @@ test("owner command center preserves real forms, tabs and local lock on desktop/
    const ctx=await browser.newContext({viewport:{width,height:860}});
    const page=await ctx.newPage(),errors=[];
    page.on("pageerror",e=>errors.push(String(e)));
-   // The private owner endpoint is not served by this static fixture. Mock
-   // authorization denial instead of letting an unexpected local 404 crash it.
+   // Simulate server-side, read-only owner verification. No actual owner key is used.
+   const validKey="dcissuer1_"+"a".repeat(64);
+   let verifiedCalls=0;
+   await page.route("**/api/owner-ops?view=overview",route=>{
+    verifiedCalls++;
+    const correct=route.request().headers().authorization==="Bearer "+validKey;
+    return route.fulfill({status:correct?200:403,contentType:"application/json",
+     body:JSON.stringify(correct?{ok:true,view:"overview",stats:{}}:{error:"Owner authorization required."})});
+   });
    await page.route("**/api/owner-ops?view=presence",route=>route.fulfill({
-    status:403,contentType:"application/json",body:JSON.stringify({error:"Owner authorization required."})
+    status:200,contentType:"application/json",body:JSON.stringify({
+     ok:true,view:"presence",registeredMembers:12,presence:{online:3,pages:{Home:3}}
+    })
    }));
    await page.route(/^https:\/\//,route=>route.abort());
    try{
@@ -63,7 +72,26 @@ test("owner command center preserves real forms, tabs and local lock on desktop/
     await page.locator('[data-owner-v2-group="Business"]').click();
     await page.getByRole("button",{name:"Free keys",exact:true}).click();
     await page.locator("#owner-panel-grants input[name=label]").fill("QA sample");
-    await page.locator('.owner-key-label input[name=operatorKey]').fill("dcissuer1_"+"a".repeat(64));
+    const input=page.locator('.owner-key-label input[name=operatorKey]');
+    assert.equal(await page.locator("#ownerUnlock").count(),1,"Unlock button exists");
+    const actions=await page.locator(".owner-access-actions").locator("button").evaluateAll(
+      buttons=>buttons.map(b=>b.id)
+    );
+    assert.deepEqual(actions,["ownerUnlock","ownerLock"],"Unlock appears immediately left of Lock & clear");
+    await input.fill("dcissuer1_"+"b".repeat(64));
+    await page.locator("#ownerUnlock").click();
+    await page.waitForFunction(()=>document.getElementById("ownerLockStatus").textContent.includes("not accepted"));
+    assert.equal(await page.locator(".owner-presence-stat strong").first().textContent(),"—","Invalid key must not unlock");
+    await page.evaluate(()=>{window.__ownerUnlockNoNavigationMarker=37});
+    await input.fill(validKey);
+    await page.locator("#ownerUnlock").click();
+    await page.waitForFunction(()=>document.getElementById("ownerLockStatus").textContent.includes("Owner verified"));
+    await page.waitForFunction(()=>document.querySelector(".owner-presence-stat strong").textContent==="3");
+    assert.equal(verifiedCalls,2,"Unlock must check the server, not only key shape");
+    assert.equal(await page.locator(".owner-presence-stat strong").nth(1).textContent(),"12");
+    assert.equal(await page.evaluate(()=>window.__ownerUnlockNoNavigationMarker),37,"Unlock must not reload page");
+    assert.equal(await input.inputValue(),validKey,"Key stays only in the current page until locked or reloaded");
+    assert.equal(await page.evaluate(()=>localStorage.length+sessionStorage.length),0,"No owner credential stored in browser storage");
     await page.evaluate(()=>{
      const key=document.querySelector("#issuedKey");
      key.textContent="PRIVATE-QA-NOT-REAL";
@@ -77,6 +105,13 @@ test("owner command center preserves real forms, tabs and local lock on desktop/
     assert.equal(await page.locator("#ownerStats").textContent(),"");
     assert.equal(await page.locator(".owner-presence-stat strong").first().textContent(),"—","Lock wipes visitor metrics");
     assert.equal(await page.locator("#owner-panel-grants input[name=label]").inputValue(),"");
+    assert.equal(await page.locator("#ownerLockStatus").textContent(),"Owner key cleared. Re-enter it to continue.");
+    await input.fill(validKey);
+    await page.locator("#ownerUnlock").click();
+    await page.waitForFunction(()=>document.getElementById("ownerLockStatus").textContent.includes("Owner verified"));
+    await page.reload({waitUntil:"networkidle"});
+    assert.equal(await page.locator('.owner-key-label input[name=operatorKey]').inputValue(),"","Reload does not remember owner secret");
+    assert.equal(await page.locator("#ownerUnlock").count(),1);
     assert.deepEqual(errors,[], "Unexpected browser errors at "+width);
    }finally{await ctx.close()}
   }
