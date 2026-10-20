@@ -1,3 +1,4 @@
+import {exactScryfallSearchUrl,installPremadeCardHover} from './scryfall-card-preview.mjs';
 /* Editorial Commander decklists: progressive disclosure, no shopping, no tracking.
    Future standard Rescue Reports auto-inherit the display via guide.js.
    These drafts remain free; purchase readiness is managed separately. */
@@ -53,7 +54,14 @@ function sectionView(info,tier,commanders){
   const lines=make("ul","premade-card-lines");
   for(const entry of group.cards){
    const match=line(entry);
-   const item=make("li",null,match[1]+" × "+match[2]);
+   const item=make("li");
+   const link=make("a","premade-card-link",match[1]+" × "+match[2]);
+   link.href=exactScryfallSearchUrl(match[2]);
+   link.target="_blank";
+   link.rel="noopener noreferrer";
+   link.setAttribute("data-scryfall-card",match[2]);
+   link.title="View "+match[2]+" on Scryfall (hover for card preview)";
+   item.append(link);
    lines.append(item);
   }
   groupWrap.append(heading,lines);
@@ -116,4 +124,7 @@ export async function mountPremadeDecks(data){
  const anchor=container.querySelector(".report-core-warning") ||
   container.querySelector(".report-references");
  if(anchor)anchor.after(box);else container.append(box);
+ // Attach one delegated hover handler to the entire report's card lists.
+ // Both the premade decklinks and the existing starter core share the preview.
+ installPremadeCardHover(container);
 }
