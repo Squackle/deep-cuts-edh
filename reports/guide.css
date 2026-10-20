@@ -158,3 +158,36 @@
 .report-shop-disclosure{border-top:1px solid #627367;padding-top:11px;margin:12px 0 0;
  font-size:9px;line-height:1.55;color:#c1ccbe}
 @media(prefers-reduced-motion:reduce){.report-shop-tab{transition:none}}
+
+
+/* DeepCuts premade Commander builds: tucked away under one calm disclosure. */
+.premade-decklists{margin:22px 0 26px;border:1px solid #c6d7c5;border-radius:10px;background:#f6faf2;overflow:hidden}
+.premade-summary{position:relative;cursor:pointer;list-style:none;padding:17px 45px 17px 18px;
+ background:#eef4e9;color:#365943;font-size:12px;font-weight:800;letter-spacing:.075em;line-height:1.6}
+.premade-summary::-webkit-details-marker,.premade-tier-summary::-webkit-details-marker{display:none}
+.premade-summary:after{content:"⌄";position:absolute;right:18px;top:13px;font-size:20px;color:#688774}
+.premade-decklists[open]>.premade-summary:after{content:"⌃"}
+.premade-content{padding:16px 18px 18px}
+.report-content .premade-intro{font-size:12px;line-height:1.65;color:#617367;margin:0 0 13px}
+.premade-tiers{display:grid;gap:8px}
+.premade-tier{border:1px solid #cdd8cb;background:#fffefb;border-radius:7px;overflow:hidden}
+.premade-tier-summary{position:relative;cursor:pointer;list-style:none;padding:13px 37px 13px 13px;
+ color:#365943;font-size:13px;font-weight:750}
+.premade-tier-summary:after{position:absolute;right:13px;content:"+";font-size:18px;color:#55765b;top:9px}
+.premade-tier[open]>.premade-tier-summary{background:#e6efe1;border-bottom:1px solid #ccd9c8}
+.premade-tier[open]>.premade-tier-summary:after{content:"−"}
+.premade-tier-body{padding:12px 13px 15px}
+.report-content .premade-unverified{font-size:11px;line-height:1.6;color:#80683a;margin:2px 0 15px}
+.premade-role-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px}
+.premade-role{min-width:0}
+.report-content .premade-role-title{font:750 12px ui-sans-serif,system-ui,sans-serif;
+ letter-spacing:.03em;color:#2c5a3c;margin:0 0 6px;padding-bottom:6px;border-bottom:1px solid #dde5d9}
+.premade-card-lines{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+.premade-card-lines li{font-size:11px;line-height:1.5;color:#526853;overflow-wrap:anywhere;padding:0}
+.premade-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:19px;padding-top:13px;border-top:1px solid #dde6d8}
+.premade-copy{min-height:39px;padding:9px 14px;background:#356547;color:#fff;
+ border:1px solid #356547;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer}
+.premade-copy:hover{background:#274f36}
+.premade-copy-status{font-size:11px;color:#395943}
+.premade-summary:focus-visible,.premade-tier-summary:focus-visible,.premade-copy:focus-visible{outline:2px solid #ac833a;outline-offset:-3px}
+@media(max-width:650px){.premade-role-list{grid-template-columns:1fr;gap:15px}.premade-content{padding:12px}.premade-summary{padding-left:14px}.premade-tier-body{padding:11px}}

@@ -71,7 +71,7 @@ test('existing and future report slugs inherit safe shopping with no checkout',a
   assert.equal(starter.href,'#guideCoreRows');
   starter.listeners.click();
   assert.equal(details.open,true);
-  const regular=buttons.find(b=>b.textContent==='Regular');
+  const regular=buttons.find(b=>b.textContent==='Standard');
   regular.listeners.click();
   assert.match(all(section,e=>e.className==='report-shop-price')[0].children[1].textContent,/To be confirmed/);
   await mountDeckShop({commanders,core:[]});
