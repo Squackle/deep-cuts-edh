@@ -71,7 +71,16 @@ window.addEventListener('message',async event=>{
  if(event.source!==frame.contentWindow||event.origin!==gameOrigin)return;
  const data=event.data;
  if(!data||typeof data!=='object')return;
+ if(data.type==='dc-sb-ranked-layout'){
+  // Layout metadata only, not score or authentication evidence.
+  const height=data.height;
+  if(Number.isInteger(height)&&height>=500&&height<=3000){
+   frame.style.height=(height+2)+'px';
+  }
+  return;
+ }
  if(data.type==='dc-sb-ranked-ready'){
+  loaded.hidden=true;
   frameReady=true;
   if(server?.attempt?.status==='started'&&server?.state)sendState(server);
   else await checkRanked();
@@ -93,8 +102,10 @@ window.addEventListener('message',async event=>{
  }finally{inFlight=false;}
 });
 function info(message){status.textContent=message;}
-frame.addEventListener('load',()=>{loaded.textContent='Original Stackbreaker loaded. Ranked results come only from your website-verified official attempt.';});
-frame.addEventListener('error',()=>{loaded.textContent='Unable to embed the game. Use Open Original Game to play.';});
+frame.addEventListener('load',()=>{
+ if(!frameReady){loaded.hidden=false;loaded.textContent='Loading the original game…';}
+});
+frame.addEventListener('error',()=>{loaded.hidden=false;loaded.textContent='Unable to load Stackbreaker. You can still play unlimited Classic from the link above.';});
 async function board(){
  info('Checking current UTC verified rankings…');
  list.replaceChildren();
