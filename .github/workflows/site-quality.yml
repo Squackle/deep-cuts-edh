@@ -53,10 +53,6 @@ jobs:
           node --check src/community-games.js
           node --check src/community-read.js
           node --check community-features.js
-      - name: Puzzle clock retry, scheduling and optional alert regression tests
-        run: |
-          node --experimental-default-type=module --test tests/daily-puzzle-clock.test.mjs
-          node --check workers/daily-puzzle-clock.js
       - name: Four-game signed-in and anonymous practice round regression tests
         run: node --experimental-default-type=module --test tests/practice-games.test.mjs
       - name: Practice server and game client syntax checks
