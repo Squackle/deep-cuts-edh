@@ -12,7 +12,7 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const BACKOFF=[350,900]; // Three bounded attempts, < 2 seconds intentional backoff.
 function validSnapshot(value,game){
  return value&&value.game===game&&/^\d{4}-\d\d-\d\d$/.test(value.day||"")&&
-  value.snapshot&&typeof value.snapshot==="object";
+  (typeof value.snapshot==="string"?value.snapshot.length>0:!!value.snapshot);
 }
 function statusError(response,game){
  const error=new Error("Puzzle prewarm "+game+" returned HTTP "+response.status);
