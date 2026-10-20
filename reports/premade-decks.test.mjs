@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {checkDraft,deckText,mountPremadeDecks} from "./premade-decks.mjs";
+import {checkDraft,deckText,mountPremadeDecks,scryfallSearchUrl,scryfallCardApiUrl,safeCardDetails} from "./premade-decks.mjs";
 
 const data=JSON.parse(readFileSync(new URL("./premade-decks.json",import.meta.url),"utf8"));
 const banned=new Set(["mana crypt","jeweled lotus","dockside extortionist","nadu, winged wisdom",
@@ -88,4 +88,111 @@ test("one collapsed disclosure contains three collapsed tier dropdowns",async()=
   await mountPremadeDecks({commanders:["Commander Mustard"]});
   assert.equal(article.children.length,2,"No duplicate panels");
  }finally{globalThis.document=oldDoc;globalThis.location=oldLocation;globalThis.fetch=oldFetch;}
+});
+
+
+test("Scryfall exact-name links and preview URLs encode unusual card names safely",()=>{
+ const names=["Sol Ring","Wear // Tear","Gilanra, Caller of Wirewood","Kemba, Kha Enduring","Alena's Gambit"];
+ for(const name of names){
+  const search=new URL(scryfallSearchUrl(name));
+  const api=new URL(scryfallCardApiUrl(name));
+  assert.equal(search.origin,"https://scryfall.com");
+  assert.equal(search.searchParams.get("q"),'!"'+name+'"');
+  assert.equal(api.origin,"https://api.scryfall.com");
+  assert.equal(api.searchParams.get("exact"),name);
+ }
+ const preview=safeCardDetails({
+  scryfall_uri:"https://scryfall.com/card/cmr/305/sol-ring",
+  image_uris:{normal:"https://cards.scryfall.io/normal/front/8/7/test.jpg"}
+ });
+ assert.equal(preview.uri,"https://scryfall.com/card/cmr/305/sol-ring");
+ assert.match(preview.image,/cards\.scryfall\.io/);
+ const split=safeCardDetails({card_faces:[{image_uris:{normal:"https://cards.scryfall.io/normal/front/a/test.jpg"}}]});
+ assert.match(split.image,/cards\.scryfall\.io/);
+ const hostile=safeCardDetails({scryfall_uri:"https://scryfall.com.evil.test/steal",
+  image_uris:{normal:"javascript:alert(1)"}});
+ assert.equal(hostile.uri,null);
+ assert.equal(hostile.image,null);
+});
+test("every card in all four case files becomes a real clickable anchor with desktop hover preview",async()=>{
+ const oldDoc=globalThis.document,oldFetch=globalThis.fetch;
+ const oldLoc=globalThis.location,oldWindow=globalThis.window;
+ class Node{
+  constructor(tag){this.tag=tag;this.className="";this.textContent="";this.children=[];this.attrs={};this.listeners={};
+   this.style={};this.hidden=false;this.open=false;this.isConnected=false;}
+  setAttribute(k,v){this.attrs[k]=String(v)}
+  addEventListener(k,fn){this.listeners[k]=fn}
+  append(...nodes){for(const n of nodes){this.children.push(n);n.parent=this;n.isConnected=true}}
+  replaceChildren(...nodes){this.children=[];this.append(...nodes)}
+  after(node){const i=this.parent.children.indexOf(this);this.parent.children.splice(i+1,0,node);node.parent=this.parent}
+  querySelector(q){return this.children.find(n=>n.className===q.slice(1))||null}
+  getBoundingClientRect(){
+   return this.tag==="a"?{left:200,right:345,top:150,bottom:174,width:145,height:24}:
+    {left:0,right:380,top:0,bottom:550,width:380,height:550};
+  }
+  remove(){if(this.parent)this.parent.children=this.parent.children.filter(n=>n!==this)}
+ }
+ const visit=(node,predicate)=>{
+  const result=[];
+  const walk=n=>{if(predicate(n))result.push(n);for(const child of n.children)walk(child)};
+  walk(node);return result;
+ };
+ const docBody=new Node("body");
+ let cardRequests=0;
+ try{
+  globalThis.window={innerWidth:1440,innerHeight:900,
+   matchMedia:()=>({matches:true})};
+  globalThis.fetch=async(url)=>{
+   const raw=String(url);
+   if(raw.includes("premade-decks.json"))return {ok:true,json:async()=>data};
+   if(raw.includes("api.scryfall.com/cards/named?exact=")){
+    cardRequests++;
+    return {ok:true,json:async()=>({
+     scryfall_uri:"https://scryfall.com/card/cmr/305/sol-ring",
+     image_uris:{normal:"https://cards.scryfall.io/normal/front/8/7/test.jpg"}
+    })};
+   }
+   throw Error("Unexpected URL "+raw);
+  };
+  for(const [slug,caseData] of Object.entries(data.cases)){
+   const article=new Node("article"),warning=new Node("p");
+   warning.className="report-core-warning";article.append(warning);
+   globalThis.document={body:docBody,createElement:tag=>new Node(tag),
+    querySelector:q=>q===".report-content"?article:
+     q===".premade-decklists"?article.children.find(x=>x.className==="premade-decklists")||null:null};
+   globalThis.location={pathname:"/reports/"+slug+".html"};
+   await mountPremadeDecks({commanders:caseData.commanders,preview:caseData.preview});
+   const links=visit(article,x=>x.className==="premade-card-link");
+   assert.equal(links.length,caseData.tiers.budget.sections.flatMap(s=>s.cards).length+
+    caseData.tiers.standard.sections.flatMap(s=>s.cards).length+
+    caseData.tiers["no-limit"].sections.flatMap(s=>s.cards).length,slug);
+   for(const a of links){
+    assert.equal(a.tag,"a");
+    assert.match(a.href,/^https:\/\/scryfall\.com\/search\?/);
+    assert.equal(a.target,"_blank");
+    assert.equal(a.rel,"noopener noreferrer");
+    assert.equal(typeof a.listeners.mouseenter,"function");
+    assert.equal(typeof a.listeners.mouseleave,"function");
+   }
+   if(slug==="commander-mustard"){
+    assert.equal(cardRequests,0,"no image API calls before a user hovers");
+    const link=links[0];
+    link.listeners.mouseenter();
+    await new Promise(resolve=>setTimeout(resolve,270));
+    assert.equal(cardRequests,1,"on demand only");
+    const pop=docBody.children[docBody.children.length-1];
+    assert.equal(pop.className,"premade-card-preview");
+    assert.equal(pop.hidden,false);
+    const img=visit(pop,n=>n.tag==="img")[0];
+    assert.match(img.src,/cards\.scryfall\.io/);
+    assert.match(link.href,/^https:\/\/scryfall\.com\/card\//);
+    assert.match(pop.style.left,/px$/);
+    link.listeners.mouseleave();
+    assert.equal(pop.hidden,true,"hover preview disappears after leaving the card");
+   }
+  }
+ }finally{
+  globalThis.document=oldDoc;globalThis.window=oldWindow;
+  globalThis.location=oldLoc;globalThis.fetch=oldFetch;
+ }
 });
