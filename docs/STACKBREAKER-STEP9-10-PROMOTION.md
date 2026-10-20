@@ -1,3 +1,13 @@
+# Production addendum — one original puzzle, one attempt, every UTC date
+
+**2026-10-20:** Owner requires Daily Stackbreaker be exactly the launched Game Lab game, differing only in one official run and a leaderboard. The website [Daily Stackbreaker](/games/stackbreaker) embeds original Lab UI, and the server pins its same 365-day date manifest and original 250 Classic scenarios. There must be **no ranked puzzle substitution** or alternate simplified game.
+
+The original Lab's 60 generated daily candidate scenarios were already validated by its deterministic 250-case gameplay/test suite. Their human editorial review remains pending; **server-verified** means the website independently replays the original limited rules engine, *not* that a human Magic judge certified its rules. The original daily cases are now eligible for one ranked run on all 365 published dates, not only `sb-*` dates. Versioned server replay, one attempt per Community profile per UTC day and owner-scoped verified leaderboard remain mandatory. Do not assign earned rankings from local achievements/screenshots.
+
+This addendum supersedes the older *practice-only generated date* requirement and *staging/not launched* statements below, which are retained as historical pre-launch planning context.
+
+---
+
 # Stackbreaker Steps 9–10: website integration and release gate (staged, NOT launched)
 
 **Owner instruction:** "can you deploy the last three steps at once" — October 19, 2026, authorizing investigation and implementation of Steps 8/9/10 in order. This draft PR is the *website-only* promotion lane; Game Lab Step 8 is independently tracked in issue #96. Owner authorization is not a reason to bypass release gates or mutate protected player records before proven replay/auth.
