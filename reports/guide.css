@@ -204,3 +204,31 @@
 .report-side details.report-shop>.report-shop-header:after{content:'⌄';float:right}
 .report-side details.report-shop[open]>.report-shop-header:after{content:'⌃'}
 .report-shop-details-body{padding:0 12px 12px}
+
+
+/* Desktop Scryfall card preview: a single viewport-fixed, large artwork
+   overlay, never clipped by the collapsed report accordions. */
+.premade-card-link{color:#2b6044;text-decoration:underline;text-decoration-color:#98b79d;
+ text-underline-offset:2px;cursor:pointer}
+.premade-card-link:hover,.premade-card-link:focus-visible{
+ color:#17432d;text-decoration-color:#17432d;text-decoration-thickness:2px}
+.premade-card-hover{
+ position:fixed;left:12px;top:12px;z-index:1100;box-sizing:border-box;
+ width:min(355px,calc(100vw - 24px));
+ padding:9px;border:1px solid #718e75;border-radius:11px;
+ background:#172c24;box-shadow:0 16px 44px rgba(0,0,0,.42);
+ display:flex;flex-direction:column;gap:7px;pointer-events:none;
+ color:#fff4df;
+}
+.premade-card-hover[hidden],.premade-card-hover-image[hidden]{display:none}
+.premade-card-hover-name{
+ color:#f4dfae;font:750 13px/1.45 ui-sans-serif,system-ui,sans-serif;
+ overflow-wrap:anywhere;padding:1px 5px;
+}
+.premade-card-hover-image{
+ display:block;width:100%;max-height:calc(100vh - 105px);
+ object-fit:contain;border-radius:7px;background:#253d2f;
+}
+.premade-card-hover-notice{margin:0;padding:3px 5px;
+ color:#d6e3d1;font:12px/1.5 ui-sans-serif,system-ui,sans-serif}
+.premade-card-hover-notice:empty{display:none}
