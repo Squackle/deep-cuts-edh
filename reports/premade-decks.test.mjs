@@ -89,3 +89,39 @@ test("one collapsed disclosure contains three collapsed tier dropdowns",async()=
   assert.equal(article.children.length,2,"No duplicate panels");
  }finally{globalThis.document=oldDoc;globalThis.location=oldLocation;globalThis.fetch=oldFetch;}
 });
+
+
+test("all twelve decks render every card as a safe Scryfall link, including split cards",async()=>{
+ const prev={document:globalThis.document,fetch:globalThis.fetch,location:globalThis.location};
+ const descend=(node,pred)=>{
+  const found=[];const scan=n=>{if(pred(n))found.push(n);for(const c of n.children||[])scan(c)};scan(node);return found;
+ };
+ try{
+  for(const [slug,deck] of Object.entries(data.cases)){
+   const article=new E("article"),anchor=new E("p");
+   anchor.className="report-core-warning";article.append(anchor);
+   globalThis.document={createElement:t=>new E(t),querySelector:q=>
+    q===".report-content"?article:q===".premade-decklists"?
+    article.children.find(x=>x.className==="premade-decklists")||null:null};
+   globalThis.location={pathname:"/reports/"+slug};
+   globalThis.fetch=async()=>({ok:true,json:async()=>data});
+   await mountPremadeDecks({commanders:deck.commanders});
+   for(const tier of descend(article,x=>x.className==="premade-tier")){
+    const links=descend(tier,x=>x.className==="premade-card-link");
+    const lines=descend(tier,x=>x.tag==="li");
+    assert.equal(links.length,lines.length,slug+" card names must all be clickable");
+    assert.ok(links.length>70,slug+" complete 100-card list has many rows");
+    for(const link of links){
+     const url=new URL(link.href);
+     assert.equal(url.origin,"https://scryfall.com");
+     assert.equal(url.pathname,"/search");
+     assert.equal(url.searchParams.get("unique"),"cards");
+     assert.equal(link.target,"_blank");
+     assert.equal(link.rel,"noopener noreferrer");
+     assert.equal(link.attrs["data-scryfall-card"]!==undefined,true);
+     assert.equal(url.searchParams.get("q"),'!"'+link.attrs["data-scryfall-card"]+'"');
+    }
+   }
+  }
+ }finally{globalThis.document=prev.document;globalThis.fetch=prev.fetch;globalThis.location=prev.location}
+});
