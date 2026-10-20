@@ -1,32 +1,49 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101c1c"><title>Daily Stackbreaker | Deep Cuts EDH</title>
-<meta name="description" content="Play the original Stackbreaker Magic priority game; daily ranked runs and verified leaderboard are being integrated.">
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101c1c">
+<title>Daily Stackbreaker | Deep Cuts EDH</title>
+<meta name="description" content="Play the original Stackbreaker. One verified run per day, with a leaderboard.">
 <link rel="canonical" href="https://deep-cuts-edh.pages.dev/games/stackbreaker">
-<link rel="stylesheet" href="/release-polish.css"><link rel="stylesheet" href="/games/stackbreaker.css"><script type="module" src="/games/stackbreaker-canonical.js"></script>
-</head><body class="sb-canonical-page">
-<a href="#game" class="skip">Skip to Stackbreaker</a>
-<header class="sb-site-toolbar"><a href="/games" class="brand">← DEEP CUTS <strong>EDH</strong> / ARCADE</a>
- <strong class="sb-parity-label">DAILY STACKBREAKER · ORIGINAL GAME</strong>
-<nav class="primary-nav" aria-label="Main navigation"><a href="/#latest">RESCUE REPORT</a><a href="/#archive">COMMANDERS</a><a href="/library">CARD LIBRARY</a><a href="/deck">TOOLS &amp; RESOURCES</a><a href="/games">ARCADE</a><a href="/nominations">NOMINATIONS</a><a href="/community">COMMUNITY</a><a href="/members">MEMBERS' LOUNGE</a></nav></header>
+<link rel="stylesheet" href="/release-polish.css"><link rel="stylesheet" href="/games/stackbreaker.css">
+<script type="module" src="/games/stackbreaker-canonical.js"></script>
+</head><body class="sb-canonical-page sb-game-first">
+<a class="skip" href="#game">Skip to game</a>
+<header class="sb-site-toolbar">
+ <a class="brand" href="/games" aria-label="Return to Deep Cuts EDH Arcade">← DEEP CUTS <strong>EDH</strong> <span class="sb-header-divider">/ ARCADE</span></a>
+ <nav class="primary-nav" aria-label="Main navigation">
+  <a href="/#latest">RESCUE REPORT</a><a href="/#archive">COMMANDERS</a><a href="/library">CARD LIBRARY</a><a href="/deck">TOOLS &amp; RESOURCES</a><a href="/games" aria-current="page">ARCADE</a><a href="/nominations">NOMINATIONS</a><a href="/community">COMMUNITY</a><a href="/members">MEMBERS' LOUNGE</a>
+ </nav>
+ <a class="sb-account-link" href="/profile">MY PROFILE ↗</a>
+</header>
 <main id="game" class="sb-canonical-shell">
-<section class="sb-canonical-intro"><div><h1>DAILY <em>STACKBREAKER.</em></h1>
-<p>The exact launched Stackbreaker game, not a separate simplified remake. The embedded daily window uses the original gameplay, card visuals, mana and priority interactions.</p></div>
-<a class="sb-source-link" href="https://deep-cuts-game-lab.pages.dev/stackbreaker/?daily=1" target="_blank" rel="noopener noreferrer">OPEN ORIGINAL GAME ↗</a></section>
-<div class="sb-canonical-layout">
-<section class="sb-canonical-play" aria-label="Original Stackbreaker game">
-<iframe id="stackbreakerOriginal" title="Original Stackbreaker daily rules game" src="https://deep-cuts-game-lab.pages.dev/stackbreaker/?daily=1&amp;siteRanked=1" loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-<p class="sb-runtime-warning" id="frameStatus" role="status">Loading the original game. If the frame is blocked, use “Open Original Game”.</p>
-</section>
-<aside class="sb-rankings" aria-labelledby="boardTitle">
- <span class="eyebrow">DAILY RANKINGS / UTC</span><h2 id="boardTitle">LEADERBOARD</h2>
- <p id="rankedStatus" role="status">Loading verified leaderboard status…</p>
- <button type="button" id="rankedRun" disabled>CHECKING VERIFIED ATTEMPT…</button>
- <p id="rankedRunState" role="status">The original game is playable locally while ranked status is checked.</p>
- <p id="runRule"><strong>One official attempt per Community profile per UTC day.</strong> This is the same launched Stackbreaker board, card art and rules. Only this run is ranked; unlimited Classic remains available via “Open Original Game”. Local scores and screenshots never count toward the leaderboard.</p>
- <ol id="rankings" aria-label="Verified daily leaderboard"></ol>
- <button type="button" id="refreshLeaderboard">REFRESH LEADERBOARD</button>
- <a href="/profile">SIGN IN / MANAGE MY PROFILE ↗</a>
- <p class="sb-ranked-disclosure">Only server-replayed completed attempts qualify. Leaderboard sorting: fewest accepted moves, then earliest completion. Daily selects the exact Game Lab puzzle, including engine-tested generated cases. A verified score confirms server replay, not separate human editorial certification of Magic rules.</p>
-</aside>
-</div></main><footer>DEEP CUTS EDH · ORIGINAL STACKBREAKER RULES AND VISUALS · <a href="/privacy">PRIVACY</a></footer>
+ <section class="sb-runbar" aria-label="Daily attempt controls">
+  <div class="sb-runbar-heading">
+   <span class="eyebrow">ONE STACK. ONE DAY.</span>
+   <h1>STACKBREAKER<span class="sb-period">.</span></h1>
+  </div>
+  <p id="rankedRunState" class="sb-run-message" role="status">Checking your verified daily attempt…</p>
+  <button type="button" id="rankedRun" disabled>CHECKING TODAY'S RUN…</button>
+  <a class="sb-source-link" href="https://deep-cuts-game-lab.pages.dev/stackbreaker/" target="_blank" rel="noopener noreferrer">UNLIMITED CLASSIC ↗</a>
+ </section>
+ <section class="sb-canonical-play" aria-label="Play the original Stackbreaker">
+  <iframe id="stackbreakerOriginal" title="Daily Stackbreaker — original game"
+    src="https://deep-cuts-game-lab.pages.dev/stackbreaker/?daily=1&amp;siteRanked=1"
+    loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  <p class="sb-runtime-warning" id="frameStatus" role="status">Loading the original Stackbreaker game…</p>
+ </section>
+ <section class="sb-board-section" aria-label="Verified daily leaderboard">
+  <div class="sb-board-top">
+   <div><span class="eyebrow">VERIFIED · UTC</span><h2 id="boardTitle">Daily leaderboard</h2>
+    <p id="rankedStatus" role="status">Checking verified rankings…</p></div>
+   <button type="button" id="refreshLeaderboard">REFRESH ↻</button>
+  </div>
+  <ol id="rankings" class="sb-ranking-list" aria-label="Verified Daily Stackbreaker leaderboard"></ol>
+  <div class="sb-board-foot">
+   <span id="runRule">One official run per Community profile each UTC day. Lowest legal-action count wins; ties break by finish time.</span>
+   <a href="/profile">SIGN IN / MY PROFILE ↗</a>
+  </div>
+  <p class="sb-ranked-disclosure">Rankings are based only on website-server-replayed completed wins. Local results cannot be submitted. Puzzles are checked by the game's engine; generated cases are not separately human-certified.</p>
+ </section>
+</main>
+<footer class="sb-site-footer">DEEP CUTS EDH · <a href="/games">ARCADE</a> · <a href="/privacy">PRIVACY</a></footer>
 </body></html>
