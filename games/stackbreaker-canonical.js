@@ -1,8 +1,7 @@
 // Canonical daily front end deliberately embeds the original Game Lab game.
 // This module only presents authenticated server-replayed rankings.
 // It never trusts localStorage, screenshots, query parameters, or Lab messages
-// as proof of a win. Once-per-day scored moves require a separately audited
-// same-origin relay before verified mode may be enabled.
+// as proof of a win. Only same-origin server-replayed daily moves qualify for ranked scoring.
 const frame=document.getElementById('stackbreakerOriginal');
 const status=document.getElementById('rankedStatus');
 const list=document.getElementById('rankings');
@@ -94,7 +93,7 @@ window.addEventListener('message',async event=>{
  }finally{inFlight=false;}
 });
 function info(message){status.textContent=message;}
-frame.addEventListener('load',()=>{loaded.textContent='Original Game Lab Stackbreaker loaded. Its local Daily option remains unverified until ranked integration is enabled.';});
+frame.addEventListener('load',()=>{loaded.textContent='Original Stackbreaker loaded. Ranked results come only from your website-verified official attempt.';});
 frame.addEventListener('error',()=>{loaded.textContent='Unable to embed the game. Use Open Original Game to play.';});
 async function board(){
  info('Checking current UTC verified rankings…');
