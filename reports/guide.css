@@ -111,3 +111,50 @@
 .report-community-actions a{display:inline-flex;align-items:center;min-height:42px;border:1px solid #b6ceb7;border-radius:7px;padding:9px 12px;color:#316443;font-size:11px;font-weight:800;text-decoration:none;background:#fffefa}
 .report-community-actions a:hover,.report-community-actions a:focus-visible{background:#e3f0e0}
 @media(max-width:620px){.report-community-fold>summary{font-size:11px;padding:13px}.report-community-content{padding:0 13px 13px}.report-community-actions a{flex:1;justify-content:center;text-align:center}}
+
+
+/* Subtle, optional zero-inventory deck-shopping panel shared by every Rescue Report.
+   Its presence does not imply a complete deck, a quote, or affiliate approval. */
+.report-side .report-shop{
+ margin-top:22px;padding:14px 12px 12px;border:1px solid #58705c;border-radius:8px;
+ background:#20362c;color:#f4f0e6;box-shadow:inset 0 1px #ffffff10;
+}
+.report-shop-header{font:750 10px/1.5 ui-sans-serif,system-ui,sans-serif;
+ letter-spacing:.13em;color:#c7d5c4}
+.report-shop-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:13px 0 10px}
+.report-shop-tab{
+ min-width:0;min-height:36px;padding:8px 2px;border:1px solid #6d7e67;
+ border-radius:5px;background:#314a3b;color:#e2e8dd;font:750 11px ui-sans-serif,system-ui,sans-serif;
+ cursor:pointer;transition:background .12s ease;
+}
+.report-shop-tab:hover{background:#44624b}
+.report-shop-tab[aria-pressed="true"]{background:#dfbb7e;border-color:#dfbb7e;color:#203126}
+.report-shop-tab:focus-visible,.report-shop a:focus-visible,.report-shop button:focus-visible,
+.report-shop summary:focus-visible{outline:2px solid #ffdb95;outline-offset:3px}
+.report-shop-price{display:flex;flex-direction:column;gap:3px;margin:0 0 9px}
+.report-shop-price span{font-size:10px;color:#b9cbb8}
+.report-shop-price strong{font:700 20px Georgia,serif;color:#f6d99d}
+.report-shop-description{font-size:11px;line-height:1.55;color:#d6e2d4;margin:0 0 12px}
+.report-side .report-shop-buy{
+ display:flex;align-items:center;justify-content:center;width:100%;min-height:40px;
+ margin:0;padding:10px;border:1px solid #b68b50;border-radius:6px;
+ background:#62471f;color:#ffdda2;font:750 12px ui-sans-serif,system-ui,sans-serif;
+ text-decoration:none;cursor:pointer;text-align:center;
+}
+.report-side .report-shop-buy:hover:not(:disabled){background:#79552a;color:#ffe6b5}
+.report-shop-buy:disabled{opacity:.65;cursor:not-allowed}
+.report-shop-status{font-size:10px;line-height:1.5;color:#c0cbbd;margin:9px 0 0}
+.report-side .report-shop-source{
+ display:block;margin:10px 0 0;font-size:11px;text-align:center;font-weight:700;
+ color:#f1d6aa;text-decoration:underline;text-underline-offset:3px
+}
+.report-shop-decklist{margin:12px 0 0;border:1px solid #73806f;border-radius:5px;padding:9px}
+.report-shop-decklist summary{cursor:pointer;font-size:11px;font-weight:700;color:#f3d8a7}
+.report-shop-decklist pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;
+ font:11px/1.5 ui-monospace,monospace;color:#e9eee6}
+.report-shop-copy{padding:7px 9px;border-radius:5px;border:1px solid #9aa993;
+ background:#3f5e49;color:white;cursor:pointer;font-size:11px}
+.report-shop-copy-status{font-size:11px;color:#dbe5d5;margin-left:7px}
+.report-shop-disclosure{border-top:1px solid #627367;padding-top:11px;margin:12px 0 0;
+ font-size:9px;line-height:1.55;color:#c1ccbe}
+@media(prefers-reduced-motion:reduce){.report-shop-tab{transition:none}}
