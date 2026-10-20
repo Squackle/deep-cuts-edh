@@ -1,3 +1,5 @@
+> **Current engineering entrypoints:** [Local testing](docs/TESTING.md) · [October 20 technical audit](docs/AUDIT-2026-10-20.md). The prototype narrative below includes historical states; current source and these verification notes take precedence. `/deck` now serves Tools & Resources, not the old Workshop editor.
+
 # Deep Cuts EDH — first deployable website prototype
 
 An **independent, no-framework, static** prototype for an obscure Commander discovery website and a weekly editorial series called **The Rescue Report**.

@@ -31,6 +31,9 @@ export async function authorize(request,env,minTier="informant"){
  if(!env.DB)return {error:reply({error:"Membership storage is unavailable."},503)};
  const bearer=request.headers.get("Authorization")||"";
  const m=/^Bearer (dcdevice1_[0-9a-f]{64})$/.exec(bearer);
+ // An explicitly supplied credential must never silently select a different
+ // identity from the browser's cookie, including an empty Authorization header.
+ if(request.headers.has("Authorization")&&!m)return {error:reply({error:"Invalid membership device credential."},401)};
  const cookie=/(?:^|;\s*)dc_member_device=(dcdevice1_[0-9a-f]{64})(?:;|$)/.exec(request.headers.get("Cookie")||"");
  if(!m&&!cookie)return {error:reply({error:"Activate this device with your member key first."},401)};
  const digest=await sha(m?.[1]||cookie[1]);
@@ -45,6 +48,7 @@ export async function authorize(request,env,minTier="informant"){
 export async function json(request,limit=15000){
  if(Number(request.headers.get("content-length")||0)>limit)throw new Error("Request too large.");
  const data=await request.json();
+ if(!data||typeof data!=="object"||Array.isArray(data))throw new Error("Invalid request object.");
  if(JSON.stringify(data).length>limit)throw new Error("Request too large.");
  return data;
 }

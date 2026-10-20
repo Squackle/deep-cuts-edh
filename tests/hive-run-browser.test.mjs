@@ -5,17 +5,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import {execFileSync} from "node:child_process";
-import {chromium} from "playwright-core";
+import {launchBrowser} from "./helpers/browser.mjs";
 
 const root=process.cwd();
-function chrome(){
- if(process.env.CHROME_BIN&&fs.existsSync(process.env.CHROME_BIN))return process.env.CHROME_BIN;
- for(const bin of ["google-chrome","google-chrome-stable","chromium","chromium-browser"]){
-  try{return execFileSync("which",[bin],{encoding:"utf8"}).trim()}catch{}
- }
- throw Error("Chromium browser unavailable; cannot validate the Hive Run release");
-}
+
 async function serve(){
  const server=http.createServer((req,res)=>{
   let pathname=decodeURIComponent(new URL(req.url,"http://local").pathname);
@@ -38,7 +31,7 @@ test("Dominion launch works on phone and desktop: Brood Trail, Hunt and Broodmot
  const {server,origin}=await serve();
  let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const width of [390,1280]){
    await t.test(width===390?"mobile touch":"desktop mouse",{timeout:42000},async()=>{
     const context=await browser.newContext({
