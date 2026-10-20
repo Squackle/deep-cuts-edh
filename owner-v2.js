@@ -511,6 +511,16 @@ staticPanel("sweep","Launch a safe security audit at any time. Choose Run workfl
 staticPanel("seo","Search Console indexing and AdSense approval depend on Google. The tools below open their authoritative dashboards; this page does not invent search traffic or approval.",[
  ["Search Console","https://search.google.com/search-console"],["Sitemap","https://deep-cuts-edh.pages.dev/sitemap.xml"],["Robots","https://deep-cuts-edh.pages.dev/robots.txt"],["AdSense","https://www.google.com/adsense/"]
 ]);
+// The owner key is verified on demand by the private read-only owner API.
+ // After success, refresh the headline figures immediately without page reload.
+window.addEventListener("deepcuts:owner-unlocked",()=>{
+ refreshPresence();
+ if(readers[active])load(active);
+});
+window.addEventListener("deepcuts:owner-key-changed",()=>{
+ clearPrivateViews();
+ resetPresence();
+});
 const operatorInput=$("opsForm").elements.operatorKey;
 operatorInput.addEventListener("change",refreshPresence);
 operatorInput.addEventListener("input",()=>{if(!/^dcissuer1_[a-f0-9]{64}$/.test(ownerKey()))resetPresence();});
