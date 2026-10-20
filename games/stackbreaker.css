@@ -8,3 +8,27 @@ main{max-width:1440px;padding:0 clamp(14px,4vw,54px) 40px;margin:auto}.hero{padd
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
 [hidden]{display:none!important}
+
+/* Canonical Game Lab experience (do NOT rebuild a second game field). */
+.sb-canonical-page{background:#091819;color:#f2eddf;min-width:320px}
+.sb-site-toolbar{background:#0b1a1c;border-bottom:1px solid #395950;padding:11px clamp(10px,2vw,28px);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sb-site-toolbar a{font-size:12px;white-space:nowrap}.sb-parity-label{font-size:11px;letter-spacing:.09em;color:#edca81}
+.sb-canonical-shell{max-width:1800px;margin:auto;padding:0 clamp(8px,1.5vw,25px) 24px}
+.sb-canonical-intro{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 4px}
+.sb-canonical-intro h1{font-size:clamp(25px,3vw,44px);margin:0 0 4px;font-weight:850;letter-spacing:-.05em}
+.sb-canonical-intro em{font-style:normal;color:#edca81}.sb-canonical-intro p{font-size:12px;max-width:730px;color:#bdcfc5;margin:0}
+.sb-source-link{font-size:11px;white-space:nowrap;font-weight:700}
+.sb-canonical-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,280px);gap:11px;align-items:start}
+.sb-canonical-play{min-width:0;overflow:hidden;border:1px solid #42675e;background:#071214}
+.sb-canonical-play iframe{display:block;width:100%;height:calc(100dvh - 160px);min-height:600px;border:0;background:#071214}
+.sb-runtime-warning{font-size:11px;color:#bdcfc5;padding:5px 10px;margin:0}
+.sb-rankings{background:#14292a;border:1px solid #42675e;border-radius:4px;padding:15px;min-width:0}
+.sb-rankings h2{font-size:24px;color:#edca81;margin:2px 0 10px}.sb-rankings p{font-size:12px;line-height:1.5;color:#bfd0c8}
+.sb-rankings .eyebrow{font-size:10px;letter-spacing:.13em}
+.sb-rankings ol{padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.sb-rankings li{font-size:13px;padding:9px 7px;background:#1f3837;display:flex;gap:5px;justify-content:space-between;overflow-wrap:anywhere}
+.sb-rankings button{background:#edca81;border:0;border-radius:3px;padding:10px 12px;font-weight:800;color:#162928;min-height:44px}
+.sb-rankings>a{display:block;font-size:11px;margin:13px 0}
+.sb-ranked-disclosure{border-top:1px solid #37564d;padding-top:10px}
+@media(max-width:1080px){.sb-canonical-layout{grid-template-columns:minmax(0,1fr)}.sb-rankings{order:2}.sb-canonical-play iframe{height:780px;min-height:600px}}
+@media(max-width:530px){.sb-parity-label{display:none}.sb-canonical-intro{align-items:flex-start;flex-direction:column}.sb-canonical-play iframe{height:760px;min-height:600px}}

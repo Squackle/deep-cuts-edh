@@ -49,6 +49,27 @@ async function unlockedOnWin(db,profileId){
  }
 }
 export async function onRequestGet({request,env}){
+ const url=new URL(request.url);
+ if(url.searchParams.get('view')==='leaderboard'){
+  // Anonymous read-only display of VERIFIED server-replayed wins, never Lab saves.
+  if(!await ready(env))return send({ok:true,enabled:false,day:utcDay(),entries:[],method:'SERVER_REPLAY_ONLY'});
+  try{
+   const day=utcDay(),entry=currentDaily();
+   if(!entry)return send({ok:true,enabled:false,day,entries:[],method:'SERVER_REPLAY_ONLY'});
+   const result=await env.DB.prepare(`SELECT p.handle AS handle,a.accepted_moves AS acceptedMoves,
+    a.finished_at AS finishedAt
+    FROM stackbreaker_daily_attempts_v1 a
+    JOIN community_profiles p ON p.id=a.profile_id
+    WHERE a.utc_date=? AND a.result='won' AND a.rules_version=?
+     AND a.puzzle_id=? AND a.source_sha=? AND a.finished_at IS NOT NULL
+    ORDER BY a.accepted_moves ASC,a.finished_at ASC,p.handle COLLATE NOCASE ASC LIMIT 25`)
+    .bind(day,STACKBREAKER_SERVER_RULES,entry.puzzleId,LAB_SOURCE_SHA).all();
+   return send({ok:true,enabled:true,day,entries:(result.results||[]).map((row,i)=>({
+    rank:i+1,handle:String(row.handle||'').slice(0,24),
+    acceptedMoves:Math.max(0,Number(row.acceptedMoves)||0)
+   })),method:'SERVER_REPLAY_ONLY'});
+  }catch{return fail('Verified leaderboard temporarily unavailable.',503)}
+ }
  const gate=await session(request,env);if(gate.error)return gate.error;
  try{
   const day=utcDay(),entry=currentDaily(),id=gate.user.id;
