@@ -14,7 +14,7 @@ const robot=read("robots.txt");
 const PUB="ca-pub-1885127351876276";
 const SCRIPT='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+PUB+'" crossorigin="anonymous"></script>';
 const expectedPaths=["/","/games/hive-run/","/games","/games/cold-case","/games/obscurity-ladder",
- "/games/arcane-cipher","/games/conspiracy-board","/case-file","/matchmaker","/deep-cut-finder","/combos","/library",
+ "/games/arcane-cipher","/games/conspiracy-board","/games/stackbreaker","/case-file","/matchmaker","/deep-cut-finder","/binder-to-brew","/combos","/library",
  "/set-watch","/deck","/community","/nominations","/supporters",
  "/reports/chainer-dementia-master","/reports/alena-and-gilanra",
  "/reports/commander-mustard","/reports/ekthi-contaminator-priest","/privacy"];
@@ -46,17 +46,47 @@ test("Sitemap passes a strict XML parser and contains no stray text or escape se
  const result=spawnSync("python3",["-c",py],{input:sitemap,encoding:"utf8"});
  assert.equal(result.status,0,"Invalid XML: "+result.stderr);
  const entries=JSON.parse(result.stdout);
- assert.equal(entries.length,22);
+ assert.equal(entries.length,24);
  assert.deepEqual(entries.map(x=>new URL(x[0]).pathname),expectedPaths);
  assert.equal(new Set(entries.map(x=>x[0])).size,entries.length);
  for(const [uri,date] of entries){
   const u=new URL(uri);assert.equal(u.origin,origin);assert.equal(u.search,"");assert.equal(u.hash,"");
   assert.equal(u.href,origin+u.pathname);
-  assert.match(date,/^2026-10-(?:13|14|15|19)$/);
+  assert.match(date,/^2026-10-(?:13|14|15|16|19|20)$/);
   assert.ok(Date.parse(date+"T00:00:00Z")<=Date.now(),"Future sitemap lastmod");
   assert.ok(!/\/(?:api|admin|diagnostics|member-operations|members|profile)(?:\/|$)/.test(u.pathname));
   assert.ok(!u.pathname.endsWith(".html"));
  }
+});
+test("Sitemap dates reflect source-verified, substantive page changes rather than release day",()=>{
+ const rows=new Map([...sitemap.matchAll(/<url>[\s\S]*?<\/url>/g)].map(x=>[x[0].match(/<loc>https:\/\/deep-cuts-edh\.pages\.dev([^<]+)<\/loc>/)?.[1],x[0].match(/<lastmod>([^<]+)<\/lastmod>/)?.[1]]));
+ // See GitHub source history for launch/major content changes, not today's build time.
+ const expected={
+  "/":"2026-10-19", // Matchmaker discovery link and follow.it homepage signup launched
+  "/games/hive-run/":"2026-10-19", // Dominion 2.0 launch
+  "/games":"2026-10-19", // Stackbreaker launch prominently added to arcade
+  "/games/stackbreaker":"2026-10-20", // Daily board and rankings overhaul (#93)
+  "/binder-to-brew":"2026-10-16", // Specialist deckbuilding resource changes
+  "/deep-cut-finder":"2026-10-19", // Matchmaker discovery link integrated
+  "/combos":"2026-10-16", // Specialist handoffs
+  "/library":"2026-10-15", // Artist search and distinct art options
+  "/deck":"2026-10-16", // Broken external deck-tutor destination removed
+  "/community":"2026-10-16", // Rescue Challenge submissions
+  "/nominations":"2026-10-15", // Rescue Board findings and nomination display
+  "/privacy":"2026-10-19" // follow.it newsletter data disclosures
+ };
+ for(const [path,date] of Object.entries(expected)){
+  assert.equal(rows.get(path),date,"Unverified or stale material lastmod: "+path);
+ }
+});
+test("Discovery sitemap excludes noindex, owner and verification endpoints",()=>{
+ for(const path of ["/subscribe","/profile","/members","/member-operations","/diagnostics","/404",
+   "/api/","/google7b284a3c34baa4aa","/google9a5fa26d2f63a39b"]){
+  assert.ok(!sitemap.includes("<loc>"+origin+path),path+" should not be a sitemap result");
+ }
+ assert.match(read("games/stackbreaker.html"),/<link rel="canonical" href="https:\/\/deep-cuts-edh\.pages\.dev\/games\/stackbreaker">/);
+ assert.match(read("binder-to-brew.html"),/<link rel="canonical" href="https:\/\/deep-cuts-edh\.pages\.dev\/binder-to-brew">/);
+ assert.match(robot,/Disallow: \/api\//);
 });
 test("Each sitemap page has a real public HTML asset, one exact self-canonical, one H1 and no noindex",()=>{
  for(const path of expectedPaths){

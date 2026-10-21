@@ -2,15 +2,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://deep-cuts-edh.pages.dev/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-19</lastmod>
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/games/hive-run/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-19</lastmod>
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/games</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-19</lastmod>
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/games/cold-case</loc>
@@ -29,6 +29,10 @@
     <lastmod>2026-10-14</lastmod>
   </url>
   <url>
+    <loc>https://deep-cuts-edh.pages.dev/games/stackbreaker</loc>
+    <lastmod>2026-10-20</lastmod>
+  </url>
+  <url>
     <loc>https://deep-cuts-edh.pages.dev/case-file</loc>
     <lastmod>2026-10-19</lastmod>
   </url>
@@ -38,15 +42,19 @@
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/deep-cut-finder</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-19</lastmod>
+  </url>
+  <url>
+    <loc>https://deep-cuts-edh.pages.dev/binder-to-brew</loc>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/combos</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/library</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-15</lastmod>
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/set-watch</loc>
@@ -54,15 +62,15 @@
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/deck</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/community</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/nominations</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-15</lastmod>
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/supporters</loc>
@@ -86,6 +94,6 @@
   </url>
   <url>
     <loc>https://deep-cuts-edh.pages.dev/privacy</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-19</lastmod>
   </url>
 </urlset>
