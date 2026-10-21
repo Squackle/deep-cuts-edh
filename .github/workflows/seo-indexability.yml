@@ -1,0 +1,26 @@
+name: Public SEO indexing safeguards
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.html'
+      - 'sitemap.xml'
+      - 'robots.txt'
+      - 'scripts/seo-indexability.test.mjs'
+      - '.github/workflows/seo-indexability.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-indexability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify sitemap matches canonical public pages
+        run: node --test scripts/seo-indexability.test.mjs
