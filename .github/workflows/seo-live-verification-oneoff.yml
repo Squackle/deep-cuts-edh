@@ -42,11 +42,13 @@ jobs:
               ("Canonical homepage", 'rel="canonical" href="https://deep-cuts-edh.pages.dev/"' in page),
               ("Original hero", "Old legends." in page and "New purpose." in page),
               ("Google verification intact", 'name="google-site-verification"' in page),
-              ("Publisher account intact", 'ca-pub-1885127351876276' in page)
+              ("Publisher account intact", 'ca-pub-1885127351876276' in page),
+              ("Official GitHub footer link", 'class="dc-footer-subscribe" style="margin-left:12px" href="https://github.com/Squackle/deep-cuts-edh" target="_blank" rel="noopener noreferrer">GITHUB SOURCE ↗</a>' in page),
+              ("Original seven footer-grid links", page.split('<div class="footer-links">',1)[1].split('</div>',1)[0].count('<a ') == 7)
           ]
           for label, ok in checks:
               print(("PASS" if ok else "FAIL") + " | " + label)
           if not all(ok for _, ok in checks):
               raise SystemExit("FAIL: One or more publicly served homepage HTML checks did not pass")
-          print("Verified production homepage live GET, 11 checks passed")
+          print("Verified production homepage live GET, 13 checks passed")
           PY
