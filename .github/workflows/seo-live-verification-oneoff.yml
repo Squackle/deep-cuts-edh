@@ -1,0 +1,52 @@
+name: One-off public homepage SEO readback (no secrets)
+on:
+  push:
+    branches:
+      - site/seo-live-verification-20261020
+permissions:
+  contents: read
+jobs:
+  verify-public-homepage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Confirm actual production HTTP response and Step 04 HTML
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.error, time
+          url = "https://deep-cuts-edh.pages.dev/"
+          result = None
+          for attempt in range(3):
+              try:
+                  req = urllib.request.Request(url, headers={"User-Agent": "DeepCutsEDH-ReadOnly-SEOVerifier/1.0","Accept": "text/html"})
+                  with urllib.request.urlopen(req, timeout=20) as response:
+                      body = response.read(250000).decode("utf-8", "replace")
+                      result = (response.status, response.geturl(), body)
+                  break
+              except (urllib.error.URLError, TimeoutError) as error:
+                  print(f"Live GET attempt {attempt + 1} unavailable: {type(error).__name__}")
+                  if attempt < 2:
+                      time.sleep(2)
+          if result is None:
+              raise SystemExit("FAIL: Unable to independently read live production homepage")
+          status, final_url, page = result
+          checks = [
+              ("HTTP 200", status == 200),
+              ("Correct live origin", final_url == url),
+              ("Brand title", "<title>Deep Cuts EDH | Underplayed &amp; Budget Commander Ideas</title>" in page),
+              ("Meta description", 'content="Explore underplayed MTG commanders, budget-friendly commander ideas, original Rescue Reports' in page),
+              ("OG brand title", 'content="Deep Cuts EDH — Underplayed &amp; Budget Commander Ideas"' in page),
+              ("Hero eyebrow", "DEEP CUTS EDH / UNDERPLAYED COMMANDERS" in page),
+              ("Budget Matchmaker CTA", 'href="/matchmaker">FIND BUDGET-FRIENDLY COMMANDERS ↗</a>' in page),
+              ("Canonical homepage", 'rel="canonical" href="https://deep-cuts-edh.pages.dev/"' in page),
+              ("Original hero", "Old legends." in page and "New purpose." in page),
+              ("Google verification intact", 'name="google-site-verification"' in page),
+              ("Publisher account intact", 'ca-pub-1885127351876276' in page)
+          ]
+          for label, ok in checks:
+              print(("PASS" if ok else "FAIL") + " | " + label)
+          if not all(ok for _, ok in checks):
+              raise SystemExit("FAIL: One or more publicly served homepage HTML checks did not pass")
+          print("Verified production homepage live GET, 11 checks passed")
+          PY
