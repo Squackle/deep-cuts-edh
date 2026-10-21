@@ -1,0 +1,10 @@
+{
+  "name": "deepcuts-edh-private-admin",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-admin.mjs",
+    "test": "node --test tests/verify-build.test.mjs",
+    "check": "npm run build && npm test"
+  }
+}
