@@ -42,3 +42,23 @@ test('one proven unsolvable puzzle blocks certification even when coverage meets
  rows.push({band:1,analysis:{status:'unsolvable'}});
  assert.equal(checkProgression(rows,{bands:1}).accepted,false);
 });
+
+test('choice pressure is a diagnostic, not invariant across equal-length winning routes',()=>{
+ // Both games have the same graph of legal outcomes; changing only action
+ // enumeration selects a different shortest winning parent route.
+ const a=graph({start:['risk','safe'],risk:['winRisk','trap'],safe:['winSafe']},['winRisk','winSafe']);
+ const b=graph({start:['safe','risk'],risk:['winRisk','trap'],safe:['winSafe']},['winRisk','winSafe']);
+ const x=analyze(a),y=analyze(b);
+ assert.equal(x.status,'complete');assert.equal(y.status,'complete');
+ assert.equal(x.shortestActions,2);assert.equal(y.shortestActions,2);
+ assert.ok(x.pressure>y.pressure,'First shortest winning route can overstate apparent pressure');
+ assert.equal(y.pressure,0);
+ // Never present a single-route proxy as an invariant, calibrated skill grade.
+});
+test('all-winning branches and terminal initial states never manufacture challenge',()=>{
+ const all=analyze(graph({start:['a','b','c'],a:['win'],b:['win'],c:['win']}));
+ assert.equal(all.status,'complete');assert.equal(all.pressure,0);
+ const done=analyze({...graph({}),initial:()=> 'win'});
+ assert.equal(done.status,'complete');assert.equal(done.shortestActions,0);
+ assert.equal(done.pressure,0);
+});
