@@ -115,3 +115,9 @@ Both new visual regressions were also run against the unmodified baseline: Mana 
 - [Earlier website audit PR #96](https://github.com/Squackle/deep-cuts-edh/pull/96): separate API fixes and test setup. Its remaining protected avatar fixture and preview configuration blocker are not resolved by this game-quality batch.
 
 The complete Lab suite after the Stackbreaker patch is **729/729** (original 725 plus four renderer tests). This run uses baseline Mana Heist CSS; the separate Mana Heist tree passed its 215 tests and the combined browser harness. Counts overlap and must not be added as independent coverage.
+
+### CI follow-up — 21 October 2026
+
+The first published Website head passed audit reproducibility, site quality, the safe security sweep and release coordination, but CodeQL reported two high-severity findings. The local browser servers now preload an explicit asset snapshot: incoming URLs only select an existing in-memory entry and never form a filesystem path. Hidden files, dependency trees and symlinks are excluded; non-read methods are rejected. A regression covers traversal encodings, symlink escapes, private files, writes and files introduced after startup. All **9** audit/server tests and all **16** new browser cases pass after this hardening. Fresh remote checks must be consulted before merge; the existing Workers preview-build failure also remains a separate deployment-configuration concern.
+
+Both game PRs passed all reported CI checks. Cloudflare's existing GitHub integration automatically created isolated branch previews; no manual deployment or production promotion was performed. Their preview URLs and exact-head status are recorded in the PR descriptions. Local browser QA is not represented as verification of those hosted previews.

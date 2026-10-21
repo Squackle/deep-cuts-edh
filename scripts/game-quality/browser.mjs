@@ -1,22 +1,13 @@
 // Local-only UI regression. No production accounts, scores or network APIs.
 import assert from 'node:assert/strict';
-import {createServer} from 'node:http';
-import {readFileSync,statSync,mkdirSync} from 'node:fs';
-import {resolve,extname} from 'node:path';
+import {createAssetServer} from './static-server.mjs';
+import {mkdirSync} from 'node:fs';
+import {resolve} from 'node:path';
 import {chromium} from 'playwright-core';
 const [manaRoot,stackRoot,output='game-quality-screens']=process.argv.slice(2);
 if(!manaRoot||!stackRoot)throw Error('Usage: node scripts/game-quality/browser.mjs <mana-lab-root> <stack-lab-root> [screens-dir]');
-const roots={'mana-heist':resolve(manaRoot),'stackbreaker':resolve(stackRoot)};
 mkdirSync(output,{recursive:true});
-const server=createServer((req,res)=>{
- const p=new URL(req.url,'http://local').pathname,root=roots[p.split('/')[1]]||roots['mana-heist'];
- let f=resolve(root,'.'+p);
- if(!f.startsWith(root+'/'))return res.writeHead(403).end();
- try{
-  if(statSync(f).isDirectory())f+='/index.html';
-  res.writeHead(200,{'Content-Type':{'.js':'application/javascript','.html':'text/html','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp'}[extname(f)]||'application/octet-stream'}).end(readFileSync(f));
- }catch{res.writeHead(404).end();}
-});
+const server=createAssetServer([{directory:resolve(manaRoot,'mana-heist'),url:'/mana-heist/'},{directory:resolve(stackRoot,'stackbreaker'),url:'/stackbreaker/'},{directory:resolve(manaRoot,'lab'),url:'/lab/'}]);
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port;
 let browser;

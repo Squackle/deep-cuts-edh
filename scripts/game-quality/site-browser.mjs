@@ -1,19 +1,13 @@
 // Read-only local UI inspection of the public Arcade. Every API is isolated.
 import assert from 'node:assert/strict';
-import {createServer} from 'node:http';
-import {readFileSync,statSync,mkdirSync} from 'node:fs';
-import {resolve,extname} from 'node:path';
+import {createAssetServer} from './static-server.mjs';
+import {mkdirSync} from 'node:fs';
+import {resolve} from 'node:path';
 import {chromium} from 'playwright-core';
 import {onRequestGet as dailyGet,onRequestPost as dailyPost} from '../../functions/api/daily-games.js';
 import {onRequestGet as arcaneGet,onRequestPost as arcanePost} from '../../functions/api/arcane-games.js';
 const root=resolve('.'),out=resolve(process.argv[2]||'game-quality-screens');mkdirSync(out,{recursive:true});
-const server=createServer((req,res)=>{
- let f=resolve(root,'.'+new URL(req.url,'http://local').pathname);
- if(!f.startsWith(root+'/'))return res.writeHead(403).end();
- try{if(statSync(f).isDirectory())f+='/index.html';
- res.writeHead(200,{'Content-Type':{'.js':'application/javascript','.html':'text/html','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp'}[extname(f)]||'application/octet-stream'}).end(readFileSync(f));
- }catch{res.writeHead(404).end();}
-});
+const server=createAssetServer([{directory:root}]);
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const origin='http://127.0.0.1:'+server.address().port;
 let browser;
