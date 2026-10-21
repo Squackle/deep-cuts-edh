@@ -57,7 +57,7 @@ test('public sitemap is well-formed, distinct, canonical and has only public HTT
   assert.ok(!urls.has(url.pathname),'Duplicate sitemap path: '+url.pathname);
   urls.add(url.pathname);
   assert.ok(!entry.lastmod||/^\d{4}-\d{2}-\d{2}$/.test(entry.lastmod),'Invalid lastmod: '+entry.url);
-  assert.ok(!entry.lastmod||entry.lastmod<='2026-10-21','Future-dated lastmod: '+entry.url);
+  assert.ok(!entry.lastmod||entry.lastmod<=new Date().toISOString().slice(0,10),'Future-dated lastmod: '+entry.url);
  }
 });
 test('all sitemap URLs have an actual HTML page, unique title, description, H1 and self-canonical',()=>{
