@@ -20,8 +20,14 @@
 </main>
 <script>
 const run=document.getElementById('run'),status=document.getElementById('status'),checks=document.getElementById('checks');
-const canonical='deepcuts-edh-security-staging.pages.dev';
-if(location.hostname!==canonical){run.disabled=true;status.textContent='Run only at the canonical protected staging hostname.'}
+const allowedStagingHosts=new Set([
+ 'deepcuts-edh-security-staging.pages.dev',
+ 'security-isolated-test-lane-20261020.deepcuts-edh-security-staging.pages.dev'
+]);
+if(location.protocol!=='https:'||!allowedStagingHosts.has(location.hostname)){
+ run.disabled=true;
+ status.textContent='Run only at the protected isolated-testing hostname.';
+}
 run.addEventListener('click',async()=>{
  run.disabled=true;checks.replaceChildren();status.textContent='Running synthetic staging tests…';
  try{
