@@ -1,0 +1,40 @@
+name: Private admin migration preflight
+on:
+  push:
+    branches:
+      - coord/private-admin-all-phases-prep-20261020
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  admin-allowlist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build admin-only Pages root without any Cloudflare credentials
+        run: npm --prefix private-admin run build
+      - name: Test route allowlist and runtime fail-closed behavior
+        run: npm --prefix private-admin test
+      - name: Syntax-check every generated admin Function and server module
+        shell: bash
+        run: |
+          set -euo pipefail
+          find private-admin/functions private-admin/src -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Fail if public or payment webhook routes were bundled
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e private-admin/functions/api/kofi-webhook.js
+          test ! -e private-admin/functions/api/stripe-webhook.js
+          test ! -e private-admin/functions/api/site-presence.js
+          test ! -e private-admin/functions/api/security-staging-harness.js
+          test ! -e private-admin/public/members.html
+          test ! -e private-admin/public/security-staging-acceptance.html
+          test -e private-admin/public/member-operations.html
+          test -e private-admin/public/diagnostics.html
