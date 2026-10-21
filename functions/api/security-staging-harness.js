@@ -11,19 +11,22 @@ import {onRequestPost as kofiPost} from "./kofi-webhook.js";
 import {emailHash,encryptEmail,codeHash} from "../../src/profile-email.js";
 import {buildArcanePuzzle,chicagoDate,cipherLetters} from "../../src/arcane-game-data.js";
 
-const BASE="https://deepcuts-edh-security-staging.pages.dev";
+const ALLOWED_TEST_HOSTS=new Set([
+ "deepcuts-edh-security-staging.pages.dev",
+ "security-isolated-test-lane-20261020.deepcuts-edh-security-staging.pages.dev"
+]);
 function stageOK(request,env){
  let url;try{url=new URL(request.url)}catch{return false}
- return env.SECURITY_STAGING==="true"&&url.origin===BASE&&
+ return env.SECURITY_STAGING==="true"&&url.protocol==="https:"&&ALLOWED_TEST_HOSTS.has(url.hostname)&&!url.port&&
   !!env.DB&&!!env.TURNSTILE_SECRET&&!!env.KOFI_VERIFICATION_TOKEN&&
   !!env.KOFI_EMAIL_HASH_SECRET&&!!request.headers.get("Cf-Access-Jwt-Assertion");
 }
-function makeRequest(path,method="GET",payload=null,authKey="",cookie=""){
- const headers={Origin:BASE,"CF-Connecting-IP":"192.0.2.81"};
+function makeRequest(base,path,method="GET",payload=null,authKey="",cookie=""){
+ const headers={Origin:base,"CF-Connecting-IP":"192.0.2.81"};
  if(authKey)headers.Authorization="Bearer "+authKey;
  if(cookie)headers.Cookie=cookie;
  if(payload!==null)headers["Content-Type"]="application/json";
- return new Request(BASE+path,{method,headers,
+ return new Request(base+path,{method,headers,
   body:payload!==null?JSON.stringify(payload):undefined});
 }
 const note=(checks,name,passed)=>{checks.push({name,passed:!!passed});if(!passed)throw Error("Verification failed: "+name)};
@@ -57,6 +60,7 @@ async function removeFixtures(db,f){
 }
 export async function onRequestPost({request,env}){
  if(!stageOK(request,env))return fail("Not found.",404);
+ const BASE=new URL(request.url).origin;
  if(request.headers.get("Origin")!==BASE)return fail("Origin rejected.",403);
  let data;try{data=await request.json()}catch{return fail("Malformed test request.",400)}
  if(data?.action!=="run-synthetic-security-suite")return fail("Unknown operation.",404);
@@ -76,36 +80,36 @@ export async function onRequestPost({request,env}){
     // This schema accepts only connected_gmail_oauth, including on synthetic staging records.
     .bind(f.b,await hash("staging-pending-contact:"+f.b),"synthetic-only-not-an-email","s***@example.invalid","connected_gmail_oauth")
   ]);
-  const aRecovery=await recoveryGet({request:makeRequest("/api/profile-recovery?profile_id="+f.b,"GET",null,aKey),env});
+  const aRecovery=await recoveryGet({request:makeRequest(BASE,"/api/profile-recovery?profile_id="+f.b,"GET",null,aKey),env});
   const aResult=await payload(aRecovery);
   note(checks,"Cross-profile recovery query cannot reveal B's pending contact",
    aRecovery.status===200&&aResult.pending===false&&aResult.pendingMaskedEmail===null);
-  const bRecovery=await recoveryGet({request:makeRequest("/api/profile-recovery?profile_id="+f.a,"GET",null,bKey),env});
+  const bRecovery=await recoveryGet({request:makeRequest(BASE,"/api/profile-recovery?profile_id="+f.a,"GET",null,bKey),env});
   const bResult=await payload(bRecovery);
   note(checks,"B can see only B's own pending recovery setting",
    bRecovery.status===200&&bResult.pending===true&&bResult.pendingMaskedEmail==="s***@example.invalid");
 
-  const forbidden=await communityPost({request:makeRequest("/api/community","POST",
+  const forbidden=await communityPost({request:makeRequest(BASE,"/api/community","POST",
    {action:"version",id:f.deck,deck,owner_id:f.a},bKey),env});
   const dbVersion=await env.DB.prepare("SELECT version FROM community_decks WHERE id=?").bind(f.deck).first();
   note(checks,"Cross-account deck version POST denied before write",forbidden.status===403&&dbVersion?.version===1);
-  const allowed=await communityPost({request:makeRequest("/api/community","POST",
+  const allowed=await communityPost({request:makeRequest(BASE,"/api/community","POST",
    {action:"version",id:f.deck,deck,note:"synthetic staged review"},aKey),env});
   const updated=await env.DB.prepare("SELECT version FROM community_decks WHERE id=?").bind(f.deck).first();
   note(checks,"Owner-only deck version POST succeeds",allowed.status===200&&updated?.version===2);
 
-  const remembered=await profileDevice({request:makeRequest("/api/profile-device","POST",{action:"remember"},aKey),env});
+  const remembered=await profileDevice({request:makeRequest(BASE,"/api/profile-device","POST",{action:"remember"},aKey),env});
   const cookie=(remembered.headers.get("Set-Cookie")||"").split(";")[0];
-  const viaCookie=await recoveryGet({request:makeRequest("/api/profile-recovery","GET",null,"",cookie),env});
+  const viaCookie=await recoveryGet({request:makeRequest(BASE,"/api/profile-recovery","GET",null,"",cookie),env});
   note(checks,"Bearer enrollment issues a working HttpOnly remembered-device cookie",
    remembered.status===200&&cookie.startsWith("__Host-dc_device=dcdevice1_")&&viaCookie.status===200);
-  const forgot=await profileDevice({request:makeRequest("/api/profile-device","POST",{action:"forget"},"",cookie),env});
-  const afterForget=await recoveryGet({request:makeRequest("/api/profile-recovery","GET",null,"",cookie),env});
+  const forgot=await profileDevice({request:makeRequest(BASE,"/api/profile-device","POST",{action:"forget"},"",cookie),env});
+  const afterForget=await recoveryGet({request:makeRequest(BASE,"/api/profile-recovery","GET",null,"",cookie),env});
   note(checks,"Forget revokes remembered-device authorization",forgot.status===200&&afterForget.status===401);
-  const bareCookie=await profileDevice({request:makeRequest("/api/profile-device","POST",{action:"remember"},"",cookie),env});
+  const bareCookie=await profileDevice({request:makeRequest(BASE,"/api/profile-device","POST",{action:"remember"},"",cookie),env});
   note(checks,"Cookie alone cannot silently enroll another device",bareCookie.status===401);
 
-  const rememberedAgain=await profileDevice({request:makeRequest("/api/profile-device","POST",{action:"remember"},aKey),env});
+  const rememberedAgain=await profileDevice({request:makeRequest(BASE,"/api/profile-device","POST",{action:"remember"},aKey),env});
   const oldCookie=(rememberedAgain.headers.get("Set-Cookie")||"").split(";")[0];
   note(checks,"Second device enrollment for recovery invalidation",rememberedAgain.status===200);
   const email="fixture-"+f.a+"@example.invalid",challengeId=rnd(),code="12345678",now=Math.floor(Date.now()/1000);
@@ -115,23 +119,23 @@ export async function onRequestPost({request,env}){
    env.DB.prepare("INSERT INTO community_email_challenges(id,profile_id,purpose,email_hash,code_hash,expires_at) VALUES(?,?,?,?,?,?)")
     .bind(challengeId,f.a,"recover",await emailHash(email,env),await codeHash(challengeId,code,env),now+900)
   ]);
-  const recoverReq=()=>makeRequest("/api/profile-recovery","POST",{action:"finish_recovery",email,requestId:challengeId,code,profile_id:f.b});
+  const recoverReq=()=>makeRequest(BASE,"/api/profile-recovery","POST",{action:"finish_recovery",email,requestId:challengeId,code,profile_id:f.b});
   const recovered=await recoveryPost({request:recoverReq(),env});
   const rotated=await payload(recovered),newKey=rotated.key;
-  const oldAccess=await recoveryGet({request:makeRequest("/api/profile-recovery","GET",null,aKey),env});
-  const newAccess=await recoveryGet({request:makeRequest("/api/profile-recovery","GET",null,newKey),env});
-  const lostCookie=await recoveryGet({request:makeRequest("/api/profile-recovery","GET",null,"",oldCookie),env});
+  const oldAccess=await recoveryGet({request:makeRequest(BASE,"/api/profile-recovery","GET",null,aKey),env});
+  const newAccess=await recoveryGet({request:makeRequest(BASE,"/api/profile-recovery","GET",null,newKey),env});
+  const lostCookie=await recoveryGet({request:makeRequest(BASE,"/api/profile-recovery","GET",null,"",oldCookie),env});
   note(checks,"Verified synthetic recovery rotates A's key, not B's, and revokes old key/devices",
    recovered.status===200&&typeof newKey==="string"&&newKey.startsWith("dcprofile1_"+f.a+"_")&&
    oldAccess.status===401&&newAccess.status===200&&lostCookie.status===401);
   const replay=await recoveryPost({request:recoverReq(),env});
   note(checks,"One-time recovery code replay is refused",replay.status===400);
-  const bStill=await recoveryGet({request:makeRequest("/api/profile-recovery","GET",null,bKey),env});
+  const bStill=await recoveryGet({request:makeRequest(BASE,"/api/profile-recovery","GET",null,bKey),env});
   note(checks,"Recovery operation did not invalidate unrelated profile B",bStill.status===200);
 
   const puzzle=buildArcanePuzzle("cipher",chicagoDate());
   const answer=cipherLetters(puzzle.word),guess=(answer==="Z".repeat(answer.length)?"X":"Z").repeat(answer.length);
-  const game=await arcanePost({request:makeRequest("/api/arcane-games","POST",{
+  const game=await arcanePost({request:makeRequest(BASE,"/api/arcane-games","POST",{
    game:"cipher",mode:"daily",day:chicagoDate(),seed:0,action:"guess",guess,
    profile_id:f.b,score:999999,won:true,history:[answer],badges:["cipher_perfect"]
   },newKey),env});
