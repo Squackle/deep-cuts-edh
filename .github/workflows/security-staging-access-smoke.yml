@@ -16,6 +16,15 @@ jobs:
     steps:
       - name: Checkout staging-only code
         uses: actions/checkout@v4
+      - name: Build future shared-root isolated security preview
+        run: |
+          cd private-admin
+          node scripts/build-admin.mjs
+          test -f public/security-staging-acceptance.html
+          test -f functions/api/security-staging-harness.js
+          node --check functions/_middleware.js
+          node --check functions/api/security-staging-harness.js
+          test ! -f functions/api/owner-ops.js
       - name: Verify staging-only security handler syntax
         run: |
           node --check functions/api/security-staging-harness.js
