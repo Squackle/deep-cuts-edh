@@ -48,7 +48,7 @@ test("Fails closed if wildcard previews enabled",()=>{
 });
 test("Fails closed if Access wildcard lacks owner policy",()=>{
  const x=snapshot();x.apps.pop();
- assert.throws(()=>verify(x),/Access app/);
+ assert.throws(()=>verify(x),/Access policy evidence|Access app/);
 });
 test("Fails closed if Access permits bypass",()=>{
  const x=snapshot();x.apps[0].policies[0].decision="bypass";
@@ -56,7 +56,7 @@ test("Fails closed if Access permits bypass",()=>{
 });
 test("Fails closed if deploy SHA mismatches",()=>{
  const x=snapshot("live");x.project.canonical_deployment.deployment_trigger.metadata.commit_hash="wrong";
- assert.throws(()=>verify(x),/deployment.*SHA/);
+ assert.throws(()=>verify(x),/release SHA/);
 });
 test("Fails closed when public project mistaken for admin project",()=>{
  const x=snapshot();x.project.name="deep-cuts-edh";
