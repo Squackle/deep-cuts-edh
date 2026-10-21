@@ -1,0 +1,8 @@
+{
+  "name": "deepcuts-security-preview",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-admin.mjs"
+  }
+}
