@@ -21,6 +21,10 @@ jobs:
         run: npm --prefix private-admin run build
       - name: Test route allowlist and runtime fail-closed behavior
         run: npm --prefix private-admin test
+      - name: Review future public-route retirement manifest without modifying files
+        run: |
+          node private-admin/scripts/plan-public-retirement.mjs > "$RUNNER_TEMP/admin-retirement-manifest.json"
+          node -e 'const d=require(process.argv[1]);if(d.operation!=="DRY-RUN-ONLY"||d.writesPerformed!==0||!d.prRequired)process.exit(1)' "$RUNNER_TEMP/admin-retirement-manifest.json"
       - name: Syntax-check every generated admin Function and server module
         shell: bash
         run: |
