@@ -193,7 +193,7 @@ test('Brand-search copy describes the actual Commander site without losing its i
 
 test("The official source link and brand directory are public, accurate and safe",()=>{
  const source='https://github.com/Squackle/deep-cuts-edh';
- assert.match(html,/<a href="https:\/\/github\.com\/Squackle\/deep-cuts-edh" target="_blank" rel="noopener noreferrer">GITHUB SOURCE ↗<\/a>/);
+ assert.match(html,/<a class="dc-footer-subscribe" style="margin-left:12px" href="https:\/\/github\.com\/Squackle\/deep-cuts-edh" target="_blank" rel="noopener noreferrer">GITHUB SOURCE ↗<\/a>/);
  const notes=readFileSync('docs/BRAND-AND-OFFICIAL-LINKS.md','utf8');
  assert.match(notes,/Official live website:\*\* https:\/\/deep-cuts-edh\.pages\.dev\//);
  assert.ok(notes.includes(source),'Link directory identifies the same repository as the footer');
@@ -203,4 +203,6 @@ test("The official source link and brand directory are public, accurate and safe
  assert.equal((html.match(/href="https:\/\/github\.com\/Squackle\/deep-cuts-edh"/g)||[]).length,1);
  assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22500,'Official link must preserve page-performance byte cap');
  assert.ok(!html.includes('href="/about"'),'Never link an About page that does not exist');
+ assert.equal((html.match(/class="footer-links"/g)||[]).length,1);
+ assert.equal((html.match(/class="dc-footer-subscribe"/g)||[]).length,1,'Preserve original email updates link');
 });
