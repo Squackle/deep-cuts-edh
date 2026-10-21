@@ -1,8 +1,8 @@
-name: Isolated staging Access smoke test
+name: Dedicated security test lane CI
 on:
   push:
     branches:
-      - coord/isolate-security-staging-20261019
+      - security/isolated-test-lane-20261020
   workflow_dispatch:
 
 permissions:
@@ -24,9 +24,12 @@ jobs:
       - name: Verify test harness stays on staging branch only
         shell: bash
         run: |
-          test "$GITHUB_REF_NAME" = "coord/isolate-security-staging-20261019"
+          test "$GITHUB_REF_NAME" = "security/isolated-test-lane-20261020"
           grep -q 'env.SECURITY_STAGING==="true"' functions/api/security-staging-harness.js
           grep -q 'Cf-Access-Jwt-Assertion' functions/api/security-staging-harness.js
+          grep -q 'security-isolated-test-lane-20261020.deepcuts-edh-security-staging.pages.dev' functions/api/security-staging-harness.js
+          grep -q 'SECURITY_STAGING' functions/api/security-staging-harness.js
+          test -f docs/ADMIN-CONVERSION-PHASE1.md
       - name: Verify staging canonical and deployment aliases reject anonymous GETs
         shell: bash
         run: |
