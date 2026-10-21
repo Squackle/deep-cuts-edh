@@ -204,5 +204,5 @@ test("The official source link and brand directory are public, accurate and safe
  assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22500,'Official link must preserve page-performance byte cap');
  assert.ok(!html.includes('href="/about"'),'Never link an About page that does not exist');
  assert.equal((html.match(/class="footer-links"/g)||[]).length,1);
- assert.equal((html.match(/class="dc-footer-subscribe"/g)||[]).length,1,'Preserve original email updates link');
+ assert.equal((html.match(/class="dc-footer-subscribe"/g)||[]).length,2,'Preserve the email and official source links together');
 });
