@@ -51,6 +51,7 @@ export function buildArcanePuzzle(game,day,mode="daily",seed=0){
   const index=dayNumber-startNumber,cycle=Math.floor(index/4),slot=index%4;
   let previousLast=null,categories=null;
   for(let i=0;i<=cycle;i++){
+   categories=null;
    // Editorial seed 5 ensures today's first case is entirely new relative
    // to the already published original October 22 daily board.
    for(let attempt=i===0?5:0;attempt<256;attempt++){
