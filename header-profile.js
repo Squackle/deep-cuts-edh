@@ -4,6 +4,17 @@
    temporary profile key. No secrets are persisted or exposed in the header. */
 (() => {
  "use strict";
+ // Public pages share this header, so one analytics entrypoint covers
+ // current and future standard pages without duplicating the GA4 snippet.
+ const analyticsExcluded=["/profile","/members","/member-operations","/diagnostics","/api"]
+  .some(p=>location.pathname===p||location.pathname===p+".html"||location.pathname.startsWith(p+"/"));
+ if(!analyticsExcluded&&
+    !document.querySelector('script[src="/site-analytics.js"]')){
+  const analytics=document.createElement("script");
+  analytics.src="/site-analytics.js";
+  analytics.async=true;
+  document.head.append(analytics);
+ }
  const ACCOUNT_URL="/profile";
  const endpoint="/api/community?action=session";
  const KEY="dc-profile-key";
