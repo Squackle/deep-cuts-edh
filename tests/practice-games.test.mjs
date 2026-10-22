@@ -108,7 +108,11 @@ test("All practice modes retain client-side history after authentication and do 
  assert.match(arcane,/\(practice\|\|!state\.authenticated\)\?\{history:before\}/);
  assert.match(arcane,/if\(practice\|\|!state\.authenticated\)writeLocal/);
  assert.match(arcane,/if\(!practice&&!working\)load\(\)/);
- assert.match(arcane,/practice\?"practice:"\+seed:day/);
+ assert.match(arcane,/practice\\?"practice:"\\+seed:boardEdition\\+day/);
+ assert.match(arcane,/const boardEdition=game==="board"&&!practice\\?"v2:":""/);
+ // A new daily board must not reuse prior anonymous answers; practice keys
+ // retain their original seed, including across deployments.
+ assert.match(arcane,/practice\\?"practice:"\\+seed:boardEdition\\+day/);
 });
 test("Fresh practice generation remains seeded on all four Arcade links",()=>{
  const hub=fs.readFileSync("daily-games.js","utf8");
