@@ -24,7 +24,21 @@ async function puzzleFor(db,params){
  const {game,mode,seed,day}=params;
  if(mode==="practice")return buildArcanePuzzle(game,"practice",mode,seed); // Stable for this seed across dates and sessions.
  const existing=await db.prepare("SELECT payload FROM daily_arcane_puzzles WHERE game=? AND day=?").bind(game,day).first();
- if(existing?.payload)return JSON.parse(existing.payload);
+ if(existing?.payload){
+  const frozen=JSON.parse(existing.payload);
+  // One-time editorial replacement for Oct 22 only. Old puzzles are otherwise
+  // immutable. Never reset any signed-in run, score or badge: replacement is
+  // atomic and is rejected if even an unstarted run already exists.
+  if(game==="board"&&day==="2026-10-22"&&frozen.edition==="hand-curated-v1"){
+   const fresh=buildArcanePuzzle(game,day);
+   await db.prepare("UPDATE daily_arcane_puzzles SET payload=? WHERE game=? AND day=? AND json_extract(payload,'$.edition')='hand-curated-v1' AND NOT EXISTS (SELECT 1 FROM daily_arcane_runs WHERE game=? AND day=?)")
+    .bind(JSON.stringify(fresh),game,day,game,day).run();
+   const selected=await db.prepare("SELECT payload FROM daily_arcane_puzzles WHERE game=? AND day=?").bind(game,day).first();
+   if(!selected?.payload)throw Error("Daily puzzle snapshot unavailable");
+   return JSON.parse(selected.payload);
+  }
+  return frozen;
+ }
  const chosen=buildArcanePuzzle(game,day);
  await db.prepare("INSERT OR IGNORE INTO daily_arcane_puzzles(game,day,payload) VALUES(?,?,?)").bind(game,day,JSON.stringify(chosen)).run();
  const frozen=await db.prepare("SELECT payload FROM daily_arcane_puzzles WHERE game=? AND day=?").bind(game,day).first();
