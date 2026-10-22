@@ -6,7 +6,9 @@
  "use strict";
  // Public pages share this header, so one analytics entrypoint covers
  // current and future standard pages without duplicating the GA4 snippet.
- if(!/^\\/(?:profile|members|member-operations|diagnostics|api)(?:$|\\/|\\.html)/.test(window.location.pathname)&&
+ const analyticsExcluded=["/profile","/members","/member-operations","/diagnostics","/api"]
+  .some(p=>location.pathname===p||location.pathname===p+".html"||location.pathname.startsWith(p+"/"));
+ if(!analyticsExcluded&&
     !document.querySelector('script[src="/site-analytics.js"]')){
   const analytics=document.createElement("script");
   analytics.src="/site-analytics.js";
