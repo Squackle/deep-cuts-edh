@@ -12,7 +12,10 @@
  const link=(name,url,cls="")=>{const a=node("a",cls,name);a.href=url;a.target="_blank";a.rel="noopener noreferrer";return a};
  const exactCard=name=>"https://scryfall.com/search?q="+encodeURIComponent('!"'+name+'"');
  const centralDay=()=>{const d=new Intl.DateTimeFormat("en-US",{timeZone:"America/Chicago",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const part=k=>d.find(p=>p.type===k)?.value||"";return part("year")+"-"+part("month")+"-"+part("day")};
- const memoryKey=day=>"deepcuts:arcane:"+game+":"+(practice?"practice:"+seed:day);
+ // Oct 22 launches a fresh Conspiracy Board edition. Do not replay an
+ // anonymous visitor's moves from the retired same-day board into new tiles.
+ const boardEdition=game==="board"&&!practice?"v2:":"";
+ const memoryKey=day=>"deepcuts:arcane:"+game+":"+(practice?"practice:"+seed:boardEdition+day);
  const readLocal=day=>{try{const x=JSON.parse(localStorage.getItem(memoryKey(day))||"[]");return Array.isArray(x)?x:[]}catch{return []}};
  const writeLocal=(day,history)=>{try{localStorage.setItem(memoryKey(day),JSON.stringify(history))}catch{}};
  const status=(text,bad=false)=>{const e=$("arcaneMessage");e.textContent=text;e.dataset.kind=bad?"error":"info"};
@@ -296,6 +299,9 @@
    else if(/^[A-Za-z]$/.test(e.key)){e.preventDefault();inputKey(e.key)}
   });
   document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!practice&&state&&centralDay()!==state.day)load()});
+  // A tab left open overnight must switch to the new daily case even if the
+  // visitor never hides the tab or refreshes it.
+  if(!practice)window.setInterval(()=>{if(!document.hidden&&!working&&state&&centralDay()!==state.day)load()},60000);
   window.addEventListener("deepcuts:profile-change",()=>{if(!practice&&!working)load()});
   load();
  }
