@@ -1,5 +1,6 @@
 // Run with: node --test tests/arcane-daily.test.mjs
 import test from 'node:test';
+import {onRequestGet as arcaneGet} from '../functions/api/arcane-games.js';
 import assert from 'node:assert/strict';
 // Cron prewarm is part of daily-game integrity; include its isolated tests in existing CI.
 import './daily-puzzle-clock.test.mjs';
@@ -115,4 +116,47 @@ test('Conspiracy Board practice mode remains independently randomized and stable
  assert.equal(first.groups.length,4);
  assert.equal(first.edition,'hand-curated-v1');
  assert.notDeepEqual(first.tiles,alternative.tiles);
+});
+
+test('Oct 22 frozen board automatically refreshes only when no signed-in run exists',async()=>{
+ const day=chicagoDate();
+ if(day!=='2026-10-22')return; // Runtime clock only controls same-day hotfix test.
+ const original={groups:BOARD_CATEGORIES.slice(0,4).map(([title,description,cards])=>({title,description,cards})),
+  tiles:BOARD_CATEGORIES.slice(0,4).flatMap(g=>g[2]),edition:'hand-curated-v1'};
+ const url='https://deep-cuts-edh.pages.dev/api/arcane-games?game=board&action=state&mode=daily';
+ const request=new Request(url);
+ for(const started of [false,true]){
+  let snapshot=JSON.stringify(original),changes=0;
+  const db={prepare(sql){
+   let args=[];
+   return {
+    bind(...parts){args=parts;return this},
+    async first(){
+     if(sql.includes('SELECT payload FROM daily_arcane_puzzles'))return {payload:snapshot};
+     return null;
+    },
+    async all(){return {results:[]}},
+    async run(){
+     if(sql.startsWith('UPDATE daily_arcane_puzzles')){
+      if(!started&&JSON.parse(snapshot).edition==='hand-curated-v1'){
+       snapshot=args[0];changes++;return {meta:{changes:1}};
+      }
+      return {meta:{changes:0}};
+     }
+     throw Error('Unexpected database write: '+sql);
+    }
+   };
+  }};
+  const response=await arcaneGet({request,env:{DB:db}});
+  assert.equal(response.status,200);
+  const result=await response.json();
+  assert.equal(result.tiles.length,16);
+  assert.equal(changes,started?0:1,'Must not replace frozen puzzle after signed-in play begins');
+  const chosen=JSON.parse(snapshot);
+  assert.equal(chosen.edition,started?'hand-curated-v1':'hand-curated-v2');
+  if(!started){
+   assert.deepEqual(chosen.groups,buildArcanePuzzle('board',day).groups);
+   assert.deepEqual(chosen.tiles,buildArcanePuzzle('board',day).tiles);
+  }
+ }
 });
