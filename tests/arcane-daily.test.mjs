@@ -1,9 +1,10 @@
 // Run with: node --test tests/arcane-daily.test.mjs
 import test from 'node:test';
+import {onRequestGet as arcaneGet} from '../functions/api/arcane-games.js';
 import assert from 'node:assert/strict';
 // Cron prewarm is part of daily-game integrity; include its isolated tests in existing CI.
 import './daily-puzzle-clock.test.mjs';
-import {CIPHER_WORDS,CIPHER_TYPES,BOARD_CATEGORIES,buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,boardMatch,boardOneAway} from '../src/arcane-game-data.js';
+import {CIPHER_WORDS,CIPHER_TYPES,BOARD_CATEGORIES,buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,boardMatch,boardOneAway,chicagoDate} from '../src/arcane-game-data.js';
 
 test('Full creature subtype catalog is valid and archived five-letter editions stay available',()=>{
  // Rule 205.3m includes 324 types, including a two-word type and punctuation.
@@ -71,4 +72,91 @@ test('Connection one-away feedback does not count already-solved groups',()=>{
  assert.equal(boardMatch(p,[...g.cards.slice(0,3),other.cards[0]]),null);
  assert.equal(boardOneAway(p,[...g.cards.slice(0,3),other.cards[0]],[]),true);
  assert.equal(boardOneAway(p,[...g.cards.slice(0,3),other.cards[0]],[g.title]),false);
+});
+
+test('Conspiracy Board v2 changes October 22 and rotates without adjacent-day category repeats',()=>{
+ const previous=buildArcanePuzzle('board','2026-10-21');
+ const today=buildArcanePuzzle('board','2026-10-22');
+ const oldToday=['SPOT REMOVAL','TOKEN DOUBLERS','COUNTERMAGIC','TREASURE MAKERS'];
+ assert.equal(previous.edition,'hand-curated-v1','Do not rewrite historic dated puzzles');
+ assert.equal(today.edition,'hand-curated-v2');
+ assert.equal(today.groups.length,4);
+ assert.equal(new Set(today.tiles).size,16);
+ assert.equal(today.groups.some(g=>oldToday.includes(g.title)),false,
+  'October 22 new puzzle must contain four different groups from its original frozen board');
+ const all=new Set(BOARD_CATEGORIES.map(g=>g[0]));
+ let prior=new Set();
+ const signatures=[];
+ for(let i=0;i<52;i++){
+  const date=new Date(Date.UTC(2026,9,22+i)).toISOString().slice(0,10);
+  const puzzle=buildArcanePuzzle('board',date);
+  assert.equal(puzzle.edition,'hand-curated-v2');
+  assert.deepEqual(puzzle,buildArcanePuzzle('board',date),'Everybody must get the same deterministic daily puzzle');
+  assert.equal(new Set(puzzle.tiles).size,16);
+  assert.equal(new Set(puzzle.groups.map(g=>g.title)).size,4);
+  for(const group of puzzle.groups){
+   assert.ok(all.has(group.title));
+   assert.equal(boardMatch(puzzle,group.cards)?.title,group.title);
+   assert.ok(!prior.has(group.title),'Repeated category on adjacent date: '+date+' '+group.title);
+  }
+  prior=new Set(puzzle.groups.map(g=>g.title));
+  signatures.push(puzzle.groups.map(g=>g.title).join('/'));
+  if(i%4===3){
+   const groupNames=signatures.slice(-4).flatMap(s=>s.split('/'));
+   assert.equal(new Set(groupNames).size,16,'All 16 groups must be featured once in a 4-day cycle');
+  }
+ }
+ assert.ok(new Set(signatures).size>10,'Rotating days should not repeat a small set of boards');
+});
+test('Conspiracy Board practice mode remains independently randomized and stable by seed',()=>{
+ const first=buildArcanePuzzle('board','practice','practice',78321);
+ const second=buildArcanePuzzle('board','practice','practice',78321);
+ const alternative=buildArcanePuzzle('board','practice','practice',78322);
+ assert.deepEqual(first,second);
+ assert.equal(first.groups.length,4);
+ assert.equal(first.edition,'hand-curated-v1');
+ assert.notDeepEqual(first.tiles,alternative.tiles);
+});
+
+test('Oct 22 frozen board automatically refreshes only when no signed-in run exists',async()=>{
+ const day=chicagoDate();
+ if(day!=='2026-10-22')return; // Runtime clock only controls same-day hotfix test.
+ const original={groups:BOARD_CATEGORIES.slice(0,4).map(([title,description,cards])=>({title,description,cards})),
+  tiles:BOARD_CATEGORIES.slice(0,4).flatMap(g=>g[2]),edition:'hand-curated-v1'};
+ const url='https://deep-cuts-edh.pages.dev/api/arcane-games?game=board&action=state&mode=daily';
+ const request=new Request(url);
+ for(const started of [false,true]){
+  let snapshot=JSON.stringify(original),changes=0;
+  const db={prepare(sql){
+   let args=[];
+   return {
+    bind(...parts){args=parts;return this},
+    async first(){
+     if(sql.includes('SELECT payload FROM daily_arcane_puzzles'))return {payload:snapshot};
+     return null;
+    },
+    async all(){return {results:[]}},
+    async run(){
+     if(sql.startsWith('UPDATE daily_arcane_puzzles')){
+      if(!started&&JSON.parse(snapshot).edition==='hand-curated-v1'){
+       snapshot=args[0];changes++;return {meta:{changes:1}};
+      }
+      return {meta:{changes:0}};
+     }
+     throw Error('Unexpected database write: '+sql);
+    }
+   };
+  }};
+  const response=await arcaneGet({request,env:{DB:db}});
+  assert.equal(response.status,200);
+  const result=await response.json();
+  assert.equal(result.tiles.length,16);
+  assert.equal(changes,started?0:1,'Must not replace frozen puzzle after signed-in play begins');
+  const chosen=JSON.parse(snapshot);
+  assert.equal(chosen.edition,started?'hand-curated-v1':'hand-curated-v2');
+  if(!started){
+   assert.deepEqual(chosen.groups,buildArcanePuzzle('board',day).groups);
+   assert.deepEqual(chosen.tiles,buildArcanePuzzle('board',day).tiles);
+  }
+ }
 });
