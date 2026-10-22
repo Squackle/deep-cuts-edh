@@ -66,7 +66,7 @@ export function buildArcanePuzzle(game,day,mode="daily",seed=0){
   chosen=categories.slice(slot*4,slot*4+4);
  }else chosen=legacyBoard();
  return {groups:chosen.map(([title,description,cards])=>({title,description,cards})),
-  tiles:gameShuffle(chosen.flatMap(g=>g[2]),gameHash(id+":board:tiles:"+(mode==="daily"&&day>=BOARD_V2_START?"v2":"v1"))),
+  tiles:gameShuffle(chosen.flatMap(g=>g[2]),gameHash(id+":board:tiles"+(mode==="daily"&&day>=BOARD_V2_START?":v2":""))),
   edition:mode==="daily"&&day>=BOARD_V2_START?"hand-curated-v2":"hand-curated-v1"};
 }
 export function cipherFeedback(guess,answer){
