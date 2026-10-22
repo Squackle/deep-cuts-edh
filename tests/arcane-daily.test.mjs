@@ -72,3 +72,47 @@ test('Connection one-away feedback does not count already-solved groups',()=>{
  assert.equal(boardOneAway(p,[...g.cards.slice(0,3),other.cards[0]],[]),true);
  assert.equal(boardOneAway(p,[...g.cards.slice(0,3),other.cards[0]],[g.title]),false);
 });
+
+test('Conspiracy Board v2 changes October 22 and rotates without adjacent-day category repeats',()=>{
+ const previous=buildArcanePuzzle('board','2026-10-21');
+ const today=buildArcanePuzzle('board','2026-10-22');
+ const oldToday=['SPOT REMOVAL','TOKEN DOUBLERS','COUNTERMAGIC','TREASURE MAKERS'];
+ assert.equal(previous.edition,'hand-curated-v1','Do not rewrite historic dated puzzles');
+ assert.equal(today.edition,'hand-curated-v2');
+ assert.equal(today.groups.length,4);
+ assert.equal(new Set(today.tiles).size,16);
+ assert.equal(today.groups.some(g=>oldToday.includes(g.title)),false,
+  'October 22 new puzzle must contain four different groups from its original frozen board');
+ const all=new Set(BOARD_CATEGORIES.map(g=>g[0]));
+ let prior=new Set();
+ const signatures=[];
+ for(let i=0;i<52;i++){
+  const date=new Date(Date.UTC(2026,9,22+i)).toISOString().slice(0,10);
+  const puzzle=buildArcanePuzzle('board',date);
+  assert.equal(puzzle.edition,'hand-curated-v2');
+  assert.deepEqual(puzzle,buildArcanePuzzle('board',date),'Everybody must get the same deterministic daily puzzle');
+  assert.equal(new Set(puzzle.tiles).size,16);
+  assert.equal(new Set(puzzle.groups.map(g=>g.title)).size,4);
+  for(const group of puzzle.groups){
+   assert.ok(all.has(group.title));
+   assert.equal(boardMatch(puzzle,group.cards)?.title,group.title);
+   assert.ok(!prior.has(group.title),'Repeated category on adjacent date: '+date+' '+group.title);
+  }
+  prior=new Set(puzzle.groups.map(g=>g.title));
+  signatures.push(puzzle.groups.map(g=>g.title).join('/'));
+  if(i%4===3){
+   const groupNames=signatures.slice(-4).flatMap(s=>s.split('/'));
+   assert.equal(new Set(groupNames).size,16,'All 16 groups must be featured once in a 4-day cycle');
+  }
+ }
+ assert.ok(new Set(signatures).size>10,'Rotating days should not repeat a small set of boards');
+});
+test('Conspiracy Board practice mode remains independently randomized and stable by seed',()=>{
+ const first=buildArcanePuzzle('board','practice','practice',78321);
+ const second=buildArcanePuzzle('board','practice','practice',78321);
+ const alternative=buildArcanePuzzle('board','practice','practice',78322);
+ assert.deepEqual(first,second);
+ assert.equal(first.groups.length,4);
+ assert.equal(first.edition,'hand-curated-v1');
+ assert.notDeepEqual(first.tiles,alternative.tiles);
+});
