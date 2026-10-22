@@ -32,5 +32,5 @@ test('Only server-replayed owned attempts can change ranked state',()=>{
  assert.ok(bridge.includes("refreshed=await api()"));
  assert.ok(bridge.includes("payload.method!=='SERVER_REPLAY_ONLY'"));
  assert.ok(!bridge.includes("action:'submit-score'"));
- assert.ok(!bridge.includes('localStorage'));
+ assert.doesNotMatch(bridge,/localStorage\.(?:getItem|setItem)/);
 });

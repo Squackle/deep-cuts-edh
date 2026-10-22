@@ -30,6 +30,7 @@ export async function onRequestPost({request,env}){
  if(!env.DB||!env.TURNSTILE_SECRET)return out({error:"Cloud storage or abuse protection is not configured."},503);
  if(Number(request.headers.get("content-length")||0)>40000)return out({error:"Deck is too large."},413);
  let parsed;try{parsed=await request.json()}catch{return out({error:"Invalid JSON."},400)}
+ if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))return out({error:"Enter a JSON request object."},400);
  if(JSON.stringify(parsed).length>40000)return out({error:"Deck is too large."},413);
  const deck=cleanDeck(parsed.deck);
  if(!deck)return out({error:"Enter a valid commander and card list before sharing."},400);

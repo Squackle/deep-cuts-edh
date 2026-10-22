@@ -8,3 +8,10 @@
 *.pfx
 *.key
 *.secret
+
+# Local test tools and generated reports are never deployment source.
+node_modules/
+.wrangler/
+security-report-output/
+playwright-report/
+test-results/
