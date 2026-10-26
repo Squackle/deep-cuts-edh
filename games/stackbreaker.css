@@ -3,7 +3,7 @@
    this file styles ONLY the Stackbreaker panel, iframe and ranking content. */
 .sb-games-main .sb-hero:after{content:"DCE · STACK OPERATIONS"}
 .sb-games-main .sb-wide-stage{
- width:min(1500px,calc(100vw - 32px));
+ width:min(1500px,calc(100vw - 32px));max-width:1600px;
  position:relative;left:50%;transform:translateX(-50%);
  margin-top:25px;min-width:0
 }
