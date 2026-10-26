@@ -1,0 +1,32 @@
+/* All site header, supporter ticker, footer and responsive chrome are shared. */
+.weekly-main .games-wrap{width:min(1080px,calc(100% - 32px))}
+.weekly-paper{margin-top:24px;padding:clamp(20px,3vw,42px);background:#fffbf1;border:1px solid #c5b79a;box-shadow:0 10px 24px #43362016;color:#2b4134}
+.weekly-paper>h2{font:700 clamp(23px,3vw,31px)/1.15 Georgia,serif;color:#294a3a}
+.weekly-note,.weekly-empty{color:#526354;font-size:14px;line-height:1.75}
+.weekly-index{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:13px;margin-top:19px}
+.weekly-index-card{display:flex;flex-direction:column;gap:7px;padding:20px;border:1px solid #c4b494;background:#f6efdf;text-decoration:none;color:#284639;min-height:160px}
+.weekly-index-card span,.weekly-index-card b{font:800 10px/1.5 ui-monospace,monospace;letter-spacing:.1em;color:#805f35}
+.weekly-index-card strong{font:700 23px Georgia,serif}
+.weekly-index-card small{font-size:13px;line-height:1.5}
+.weekly-index-card b{margin-top:auto}
+.weekly-index-card:hover{background:#eae0c9;border-color:#886b42}
+.weekly-status{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;border-bottom:2px solid #c7b488;padding-bottom:14px;margin-bottom:18px;color:#725d3d;font:800 10px ui-monospace,monospace;letter-spacing:.08em}
+.weekly-title{font:700 clamp(29px,4vw,43px)/1.14 Georgia,serif;color:#264736;margin:0 0 14px}
+.weekly-lead{font-size:17px;line-height:1.6;color:#43584a}
+.weekly-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:25px 0;background:#c3b79a;border:1px solid #c3b79a}
+.weekly-facts div{padding:15px;background:#f3ead8;min-width:0}
+.weekly-facts small{display:block;color:#6d5d40;font-size:10px;letter-spacing:.08em;font-weight:800}
+.weekly-facts strong{display:block;font-size:14px;margin-top:5px;overflow-wrap:anywhere}
+.weekly-prose{margin:35px 0;max-width:800px}
+.weekly-prose h2,.weekly-disclosure h2{font:700 25px Georgia,serif;color:#244332;border-bottom:1px solid #c9bba1;padding-bottom:10px}
+.weekly-prose h3{font:700 18px Georgia,serif;margin:18px 0 0}
+.weekly-prose p,.weekly-disclosure p{font-size:15px;line-height:1.8;color:#45584a}
+.weekly-evidence{padding-left:22px;display:grid;gap:16px}
+.weekly-evidence li{padding:12px 15px;background:#f6efe1;border-left:3px solid #a18350}
+.weekly-evidence li strong{font:700 17px Georgia,serif}
+.weekly-evidence li a,.weekly-disclosure a{color:#286047;text-decoration:underline}
+.weekly-evidence li p{margin:6px 0}
+.weekly-evidence summary{cursor:pointer;color:#6f5835;font-size:12px;font-weight:700}
+.weekly-evidence details p{font-size:12px;white-space:pre-wrap}
+.weekly-disclosure{background:#eee8d8;padding:19px;border:1px solid #c8b99c;margin-top:25px}
+@media(max-width:600px){.weekly-facts{grid-template-columns:1fr}.weekly-main .games-wrap{width:calc(100% - 22px)}.weekly-paper{padding:18px}.weekly-index{grid-template-columns:1fr}}
