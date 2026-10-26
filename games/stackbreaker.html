@@ -1,32 +1,42 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101c1c">
-<title>Daily Stackbreaker | Deep Cuts EDH</title>
-<meta name="description" content="Play the original Stackbreaker. One verified run per day, with a leaderboard.">
+<meta name="theme-color" content="#172522">
+<title>Daily Stackbreaker — MTG Stack Puzzle | Deep Cuts EDH</title>
+<meta name="description" content="Play Daily Stackbreaker, a free daily Magic: The Gathering stack-and-mana puzzle. One date-selected challenge, unlimited practice, and a verified leaderboard.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Daily Stackbreaker — One Stack. One Day. | Deep Cuts EDH">
+<meta property="og:description" content="Tap mana, choose spells, and solve a new shared Daily Stackbreaker challenge.">
+<meta property="og:url" content="https://deep-cuts-edh.pages.dev/games/stackbreaker">
 <link rel="canonical" href="https://deep-cuts-edh.pages.dev/games/stackbreaker">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/retro.css"><link rel="stylesheet" href="/theme-v2.css">
+<link rel="stylesheet" href="/header-profile.css"><link rel="stylesheet" href="/games.css">
 <link rel="stylesheet" href="/release-polish.css"><link rel="stylesheet" href="/games/stackbreaker.css">
-<script defer src="/site-analytics.js"></script>
+<script defer src="/header-profile.js"></script>
+<script defer src="/arcade-journey.js"></script>
 <script type="module" src="/games/stackbreaker-canonical.js"></script>
-</head><body class="sb-canonical-page sb-game-first">
-<a class="skip" href="#game">Skip to game</a>
-<header class="sb-site-toolbar">
- <a class="brand" href="/games" aria-label="Return to Deep Cuts EDH Arcade">← DEEP CUTS <strong>EDH</strong> <span class="sb-header-divider">/ ARCADE</span></a>
- <nav class="primary-nav" aria-label="Main navigation">
-  <a href="/#latest">RESCUE REPORT</a><a href="/#archive">COMMANDERS</a><a href="/library">CARD LIBRARY</a><a href="/deck">TOOLS &amp; RESOURCES</a><a href="/games" aria-current="page">ARCADE</a><a href="/nominations">NOMINATIONS</a><a href="/community">COMMUNITY</a><a href="/members">MEMBERS' LOUNGE</a>
- </nav>
- <a class="sb-account-link" href="/profile">MY PROFILE ↗</a>
-</header>
-<main id="game" class="sb-canonical-shell">
- <section class="sb-runbar" aria-label="Daily attempt controls">
+</head><body class="sb-canonical-page">
+<a class="skip-link" href="#main">Skip to Daily Stackbreaker</a>
+<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="/" aria-label="Deep Cuts EDH home"><span class="wordmark-symbol" aria-hidden="true"><img src="/assets/deep-cuts-mark.svg" width="46" height="56" alt=""></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>ONE STACK. ONE DAY.</small></span></a><nav class="primary-nav" aria-label="Main navigation"><a href="/#latest">RESCUE REPORT</a><a href="/#archive">COMMANDERS</a><a href="/library">CARD LIBRARY</a><a href="/deck">TOOLS & RESOURCES</a><a class="workshop-link daily-games-nav-link" href="/games" aria-current="page">ARCADE</a><a href="/nominations">NOMINATIONS</a><a href="/community">COMMUNITY</a><a class="member-nav-link" href="/members">MEMBERS' LOUNGE</a></nav></div></header>
+<main class="games-main sb-games-main" id="main"><div class="games-wrap">
+<nav class="games-breadcrumbs" aria-label="Breadcrumbs"><a href="/">HOME</a><span aria-hidden="true">/</span><a href="/games">DAILY MTG GAMES</a><span aria-hidden="true">/</span><span>STACKBREAKER</span></nav>
+<section class="games-masthead sb-hero" aria-labelledby="sb-title">
+ <span class="games-kicker">GAME 005 / THE STACK CHAMBER</span>
+ <h1 id="sb-title">Stackbreaker: <em>One Stack. One Day.</em></h1>
+ <p>One decisive turn. Tap your mana sources, choose the right response, and resolve the stack to survive today's shared challenge.</p>
+ <div class="games-page-links"><a href="/games">← ALL GAMES</a><a href="https://deep-cuts-game-lab.pages.dev/stackbreaker/" target="_blank" rel="noopener noreferrer">UNLIMITED CLASSIC ↗</a></div>
+</section>
+<div class="sb-wide-stage">
+ <section class="sb-runbar" aria-label="Daily verified attempt controls">
   <div class="sb-runbar-heading">
-   <span class="eyebrow">ONE STACK. ONE DAY.</span>
-   <h1>STACKBREAKER<span class="sb-period">.</span></h1>
+   <span class="games-kicker">TODAY'S CHALLENGE · UTC</span>
+   <h2>Daily Stackbreaker</h2>
+   <p>Practice as often as you like. Your official run can be started once per UTC day.</p>
   </div>
-  <p id="rankedRunState" class="sb-run-message" role="status">Checking your verified daily attempt…</p>
-  <button type="button" id="rankedRun" disabled>CHECKING TODAY'S RUN…</button>
-  <a class="sb-source-link" href="https://deep-cuts-game-lab.pages.dev/stackbreaker/" target="_blank" rel="noopener noreferrer">UNLIMITED CLASSIC ↗</a>
+  <p id="rankedRunState" class="sb-run-message" role="status" aria-live="polite">Checking your verified daily attempt…</p>
+  <button type="button" class="games-button games-button-primary" id="rankedRun" disabled>CHECKING TODAY'S RUN…</button>
  </section>
- <section class="sb-canonical-play" aria-label="Play the original Stackbreaker">
+ <section class="sb-canonical-play" aria-label="Play the original Stackbreaker game">
   <iframe id="stackbreakerOriginal" title="Daily Stackbreaker — original game"
     src="https://deep-cuts-game-lab.pages.dev/stackbreaker/?daily=1&amp;siteRanked=1"
     loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
@@ -34,9 +44,9 @@
  </section>
  <section class="sb-board-section" aria-label="Verified daily leaderboard">
   <div class="sb-board-top">
-   <div><span class="eyebrow">VERIFIED · UTC</span><h2 id="boardTitle">Daily leaderboard</h2>
+   <div><span class="games-kicker">VERIFIED / UTC</span><h2 id="boardTitle">Daily leaderboard</h2>
     <p id="rankedStatus" role="status">Checking verified rankings…</p></div>
-   <button type="button" id="refreshLeaderboard">REFRESH ↻</button>
+   <button type="button" class="games-button games-button-quiet" id="refreshLeaderboard">REFRESH ↻</button>
   </div>
   <ol id="rankings" class="sb-ranking-list" aria-label="Verified Daily Stackbreaker leaderboard"></ol>
   <div class="sb-board-foot">
@@ -45,6 +55,11 @@
   </div>
   <p class="sb-ranked-disclosure">Rankings are based only on website-server-replayed completed wins. Local results cannot be submitted. Puzzles are checked by the game's engine; generated cases are not separately human-certified.</p>
  </section>
-</main>
-<footer class="sb-site-footer">DEEP CUTS EDH · <a href="/games">ARCADE</a> · <a href="/privacy">PRIVACY</a></footer>
+</div>
+<section class="games-disclosure"><h2>How to play Stackbreaker</h2>
+ <p>Tap a land to add mana, cast a spell or activate an ability, and use PASS / RESOLVE to work through the stack from top to bottom. The board is the original Stackbreaker, not a simplified remake.</p>
+ <p>Today's challenge is identical for every player on the same UTC date. Practice runs are unlimited; one authenticated official attempt per Community profile and UTC date may appear in the verified leaderboard. <a href="https://deep-cuts-game-lab.pages.dev/stackbreaker/" target="_blank" rel="noopener noreferrer">Play the full Classic campaign ↗</a></p>
+</section>
+</div></main>
+<footer class="site-footer"><div class="wrap footer-content"><div><strong>DEEP CUTS <span>EDH</span></strong><p>Bad commanders. Good decks. No excuses.</p></div><div class="footer-links"><a href="/privacy">PRIVACY &amp; ADS</a><a href="/library">CARD LIBRARY ↗</a><a href="/deck">TOOLS & RESOURCES ↗</a><a href="/games">ARCADE ↗</a><a href="/supporters">SUPPORT</a><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">CARD DATA: SCRYFALL ↗</a><a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener noreferrer">FAN CONTENT POLICY ↗</a></div></div><div class="wrap fine-print">Deep Cuts EDH is unofficial Magic: The Gathering fan content permitted under the Fan Content Policy, not approved or endorsed by Wizards of the Coast. Portions of these materials are property of Wizards of the Coast LLC. Card data and images via Scryfall. We are not affiliated with Scryfall or EDHREC. Community posts and gameplay results are user-submitted; card prices, rankings and legality can change.</div></footer>
 </body></html>
