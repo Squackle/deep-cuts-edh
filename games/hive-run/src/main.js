@@ -2,7 +2,8 @@ import {BIOMES,drawTerrain} from "./environments.js";
 import {MODES,boardKey} from "./modes.js";
 import {newRun,start,pause,turn,step,progress,MUTATIONS,COLORS,chooseMutation,effectiveTickMs,activeEffects} from "./engine.js";
 import {loadCreatureArt,variantForSegment} from "./creature-sprites.js";
-import {drawLevelBackground,loadLevelBackground,levelForStage} from "./level-background.js";
+import {createCachedBackdrop,loadLevelBackground,levelForStage} from "./level-background.js";
+import {smoothBody,motionPhase} from "./render-motion.js";
 import {drawBroodPickup} from "./pickups.js";
 import {HatcherySoundtrack,TRACKS,trackForEncounter} from "./soundtrack.js";
 import {canPlayMusic,resumeFromGesture} from "./audio-activation.js";
@@ -35,6 +36,7 @@ const canvas=$("gameCanvas");
 const context=canvas.getContext("2d",{alpha:false});
 const gameOnly=createGameOnlyMode({doc:document,win:window,root:$("game"),button:$("fullscreenButton")});
 const CELLS=20,COLS=18,ROWS=22;
+const paintBackdrop=createCachedBackdrop();
 const WUBRG_COLORS=["#e7d8b4","#65a9d5","#7e6a88","#dd684a","#75ad7b"];
 let creatureArt=null;
 let arenaBackground=null;
@@ -110,7 +112,7 @@ function setEncounterMusic(encounterType){
  syncSoundtrack();syncUI();
 }
 const state={run:newRun({cols:COLS,rows:ROWS,mode:selectedMode}),best:0,sessionBest:0,audio:false,musicOn:false,ctx:null,
- lastFrame:0,accumulator:0,lastAnnouncement:"",pointer:null,ranked:false};
+ lastFrame:0,accumulator:0,visualBefore:null,lastAnnouncement:"",pointer:null,ranked:false};
 try{state.best=Math.max(0,Number(localStorage.getItem(bestKey()))||0);
  state.audio=localStorage.getItem(SOUND_STORE)==="on";
  state.musicOn=localStorage.getItem(MUSIC_STORE)==="on";
@@ -365,7 +367,7 @@ function selectMutation(color,inputEvent){
  visualBurst={color,until:performance.now()+1150};
  hideMutationDraft($("mutationOverlay"));
  if(state.run.status==="draft"){showDraftScreen();return}
- state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;state.visualBefore=null;
  setEncounterMusic(musicForRun());
  playTone({W:540,U:670,B:330,R:790,G:475}[color],.18,.045);
  if(state.run.encounter){
@@ -422,6 +424,7 @@ async function begin(){
     $("rankedNotice").textContent=session.ranked?"RANKED · REPLAY VERIFIED AFTER GAME OVER":"PRACTICE · RANKED SERVICE UNAVAILABLE";
    }
    lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;beaconCapture=null;
+   state.visualBefore=null;
   }finally{startingRun=false;$("gameMode").disabled=false;$("gameChallenge").disabled=false;$("primaryButton").disabled=false}
  }
  start(state.run);
@@ -441,7 +444,7 @@ function reset(){
  state.run=lairActive()?createLairRun(selectedLairBoss,COLS,ROWS):newRun({cols:COLS,rows:ROWS,mode:selectedMode});state.day="";latestLeaderboard=null;loadBest();
  leaderboard.session=null;leaderboard.events=[];
  state.ranked=false;lastCapture=null;visualBurst=null;lastEncounterSeen=null;lairBurst=null;beaconCapture=null;
- state.accumulator=0;state.lastFrame=0;state.pointer=null;
+ state.accumulator=0;state.lastFrame=0;state.pointer=null;state.visualBefore=null;
  hideMutationDraft($("mutationOverlay"));
  showOverlay(lairActive()?lairTitle():MODES[selectedMode].name.toUpperCase(),
  lairActive()?"Practice a single boss in a repeatable, unranked encounter.":MODES[selectedMode].description,
@@ -458,7 +461,7 @@ function togglePause(){
   showOverlay("RUN PAUSED","Your swarm will wait here until you're ready.","RESUME RUN ▶");
   announce("Game paused.");
  }else if(state.run.status==="paused"){
-  start(state.run);hideOverlay();state.accumulator=0;state.lastFrame=0;
+  start(state.run);hideOverlay();state.accumulator=0;state.lastFrame=0;state.visualBefore=null;
   announce("Game resumed.");
  }
  syncSoundtrack();syncUI();
@@ -563,7 +566,10 @@ function drawArtCreature(part,kind,id,heading){
 function draw(){
  if(!context)return;
  const run=state.run;
- drawLevelBackground(context,canvas,arenaBackground,COLS,ROWS,CELLS,run.biome);
+ paintBackdrop(context,canvas,arenaBackground,COLS,ROWS,CELLS,run.biome);
+ // One shared render path for Brood Trail, Predator Hunt, and unranked Lairs.
+ const body=run.status==="running"?smoothBody(state.visualBefore,run.body,
+  motionPhase(state.accumulator,effectiveTickMs(run)),{enabled:!prefersReducedMotion()}):run.body;
  drawTerrain(context,run,CELLS);
  drawHatchlingWards(context,run,CELLS);
  // The brood is a gameplay target; keep it conspicuous over busy art.
@@ -577,19 +583,19 @@ function draw(){
   drawBurrowWarning(context,run.encounter.telegraph,CELLS);
  }
  // The head tile is framed independently from the detailed creature sprite.
- drawPlayerLocator(context,run.body[0],run.direction,CELLS,"below");
+ drawPlayerLocator(context,body[0],run.direction,CELLS,"below");
  // A single outlined spine connects the independently colored WUBRG plates.
  // Draw back-to-front so the pointed head stays visible over the neck.
- if(creatureArt)drawConnectedSpine(run.body);
+ if(creatureArt)drawConnectedSpine(body);
  for(let i=run.body.length-1;i>=0;i--){
-  const part=run.body[i],next=run.body[i+1];
-  const heading=i===0?(run.turnQueue[0]??run.direction):orientation(next??run.body[i-1],part);
+  const part=body[i],next=run.body[i+1];
+  const heading=i===0?(run.turnQueue[0]??run.direction):orientation(next??run.body[i-1],run.body[i]);
   const kind=i===0?"head":i===run.body.length-1?"tail":"body";
   const id=variantForSegment(Math.max(0,i-1));
   if(creatureArt)drawArtCreature(part,kind,id,heading);
   else drawCreaturePiece(part,kind,id,heading);
  }
- drawPlayerLocator(context,run.body[0],run.turnQueue[0]??run.direction,CELLS,"above");
+ drawPlayerLocator(context,body[0],run.turnQueue[0]??run.direction,CELLS,"above");
  drawQueuedTurn(context,run.body[0],run.turnQueue[0],COLS,ROWS,CELLS);
  renderMutationEffects(context,run,CELLS,performance.now(),visualBurst,prefersReducedMotion());
  drawLairEffects(context,run,CELLS,performance.now(),lairBurst,prefersReducedMotion());
@@ -634,7 +640,10 @@ function loop(time){
    const currentTick=effectiveTickMs(state.run);
    const prevBrood=state.run.brood,prevEvent=state.run.eventSerial,prevKills=state.run.kills,prevScore=state.run.score;
    const enemyBefore=state.run.enemies.map(e=>({id:e.id,pos:{...e.pos}}));
+   const bodyBefore=state.run.body.map(p=>({x:p.x,y:p.y})),movesBefore=state.run.moves;
    step(state.run);
+   // Presentation-only snapshot; authoritative engine and ranked replay untouched.
+   state.visualBefore=state.run.moves>movesBefore?bodyBefore:null;
    if(lairActive())completeLairRun(state.run);
    state.accumulator=Math.max(0,state.accumulator-currentTick);
    catchUps++;

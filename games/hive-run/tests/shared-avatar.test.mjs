@@ -29,16 +29,20 @@ test("game top-right avatar reuses the actual site-wide account component",async
  const profile={handle:"Squackle",avatar:"Chainer, Dementia Master",focus_zoom:3.1,focus_x:42,focus_y:22};
  const document={
   readyState:"complete",
+  // Modern sitewide analytics bootstraps in <head>; supply a harmless
+  // browser fixture rather than requiring a real analytics network request.
+  head:{append(){}},
   querySelector:q=>q===".lab-header[data-profile-header]"?header:null,
   createElement:element,createElementNS:(_ns,tag)=>element(tag),
   addEventListener:(k,listener)=>{events["document:"+k]=listener}
  };
- const window={addEventListener:(k,listener)=>{events[k]=listener}};
- vm.runInNewContext(shared,{document,window,encodeURIComponent,Date,
+ const location={pathname:"/games/hive-run/"};
+ const window={location,addEventListener:(k,listener)=>{events[k]=listener}};
+ vm.runInNewContext(shared,{document,window,location,encodeURIComponent,Date,
   sessionStorage:{getItem:()=>null},localStorage:{getItem:()=>null},
   fetch:async(url,options)=>{
    checks++;
-   assert.equal(url,"/api/community?action=me");
+   assert.equal(url,"/api/community?action=session");
    assert.equal(options.credentials,"same-origin");
    return{ok:true,json:async()=>({profile})};
   }
