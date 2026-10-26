@@ -13,7 +13,7 @@ const sitemap=read("sitemap.xml");
 const robot=read("robots.txt");
 const PUB="ca-pub-1885127351876276";
 const SCRIPT='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+PUB+'" crossorigin="anonymous"></script>';
-const expectedPaths=["/","/games/hive-run/","/rescues","/games","/games/cold-case","/games/obscurity-ladder",
+const expectedPaths=["/","/games/hive-run/","/games/mana-heist/","/rescues","/games","/games/cold-case","/games/obscurity-ladder",
  "/games/arcane-cipher","/games/conspiracy-board","/games/stackbreaker","/case-file","/matchmaker","/deep-cut-finder","/binder-to-brew","/combos","/library",
  "/set-watch","/deck","/community","/nominations","/supporters",
  "/reports/chainer-dementia-master","/reports/alena-and-gilanra",
@@ -21,7 +21,7 @@ const expectedPaths=["/","/games/hive-run/","/rescues","/games","/games/cold-cas
 const adPages=["index.html","library.html","reports/chainer-dementia-master.html",
  "reports/alena-and-gilanra.html","reports/commander-mustard.html",
  "reports/ekthi-contaminator-priest.html"];
-const staticHtml=path=>path==="/"? "index.html":path==="/games/hive-run/"?"games/hive-run/index.html":path.slice(1)+".html";
+const staticHtml=path=>path==="/"? "index.html":path==="/games/hive-run/"?"games/hive-run/index.html":path==="/games/mana-heist/"?"games/mana-heist/index.html":path.slice(1)+".html";
 const canonical=html=>[...html.matchAll(/<link\b[^>]*\brel=["']canonical["'][^>]*>/gi)].map(t=>t[0].match(/\bhref=["']([^"']+)/)?.[1]);
 const noIndex=html=>/<meta\s+[^>]*name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(html);
 
@@ -46,7 +46,7 @@ test("Sitemap passes a strict XML parser and contains no stray text or escape se
  const result=spawnSync("python3",["-c",py],{input:sitemap,encoding:"utf8"});
  assert.equal(result.status,0,"Invalid XML: "+result.stderr);
  const entries=JSON.parse(result.stdout);
- assert.equal(entries.length,25);
+ assert.equal(entries.length,26);
  assert.deepEqual(entries.map(x=>new URL(x[0]).pathname),expectedPaths);
  assert.equal(new Set(entries.map(x=>x[0])).size,entries.length);
  for(const [uri,date] of entries){
@@ -64,7 +64,8 @@ test("Sitemap dates reflect source-verified, substantive page changes rather tha
  const expected={
   "/":"2026-10-19", // Matchmaker discovery link and follow.it homepage signup launched
   "/games/hive-run/":"2026-10-19", // Dominion 2.0 launch
-  "/games":"2026-10-19", // Stackbreaker launch prominently added to arcade
+  "/games":"2026-10-26", // Mana Heist first-party Arcade entry
+  "/games/mana-heist/":"2026-10-26", // Owner-authorized unranked beta
   "/games/stackbreaker":"2026-10-20", // Daily board and rankings overhaul (#93)
   "/binder-to-brew":"2026-10-16", // Specialist deckbuilding resource changes
   "/deep-cut-finder":"2026-10-19", // Matchmaker discovery link integrated

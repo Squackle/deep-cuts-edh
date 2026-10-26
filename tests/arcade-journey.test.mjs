@@ -7,7 +7,7 @@ const GAME_FILES=["games.html","games/cold-case.html","games/obscurity-ladder.ht
 test("Arcade journey is loaded on hub and four puzzles without changing global navigation",()=>{
  for(const file of GAME_FILES)assert.match(read(file),/src="\/arcade-journey\.js"/,file);
  const html=read("games.html");
- assert.equal((html.match(/class="games-feature"/g)||[]).length,5);
+ assert.equal((html.match(/class="games-feature"/g)||[]).length,6);
  assert.match(html,/href="\/games\/stackbreaker"/);
  assert.doesNotMatch(read("index.html"),/arcade-journey\.js/,"No new homepage script");
 });
