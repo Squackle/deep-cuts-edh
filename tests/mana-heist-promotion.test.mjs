@@ -24,6 +24,7 @@ test('game shell uses production navigation and assets with truthful unranked me
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
  assert.equal((html.match(/rel="canonical"/g)||[]).length,1);
  assert.match(html,/https:\/\/deep-cuts-edh.pages.dev\/games\/mana-heist\//);
+ assert.match(html,/<script async src="\/site-analytics\.js"><\/script>/);
  assert.match(html,/href="\/games"/);assert.match(html,/\/assets\/favicon.svg/);
  assert.match(html,/SOLO · UNRANKED BETA/);assert.match(html,/does not submit profile scores/);
  assert.doesNotMatch(html,/\/lab\/|<iframe|id="gameProfileBridge"/);

@@ -15,7 +15,7 @@ All records are browser-local guest progress. No authoritative profile scores, r
 
 ## Production adaptations
 
-The game shell uses the main site's favicon, canonical/OG metadata, one H1 and Arcade return links. It states unranked beta, device-only saving and simplified turn-based mana clearing. Developer HTML pages are noindex, and their paths are excluded from discovery. The new Arcade entry does not change the four daily games or their achievements.
+The game shell uses the main site's favicon, canonical/OG metadata, one H1, Arcade return links and the shared privacy-aware analytics loader. The existing query-stripping, private-route exclusion and Global Privacy Control behavior is preserved. Browser smoke contexts enable Global Privacy Control and block third-party requests. It states unranked beta, device-only saving and simplified turn-based mana clearing. Developer HTML pages are noindex, and their paths are excluded from discovery. The new Arcade entry does not change the four daily games or their achievements.
 
 All functional Lab test files are retained. Three Lab-host-only tests for the Lab badge, return route and beaker favicon are replaced by production integration/provenance checks. Two display-copy assertions are adapted for the production beta label and five-sample inventory; gameplay assertions are retained. The production game package has 248 tests, plus five production contract tests at the website root.
 
@@ -31,6 +31,7 @@ The browser test accepts `MANA_HEIST_GAME_URL` for GET-only public smoke tests i
 - Main-site quality/navigation contract: **240 checks passed**.
 - Local Mana Heist real-browser progression: **20/20** sample playthroughs across 320×568, 375×667, 390×844 and 1280×900, including Ward Plan, Undo, Restart, manual Cast, next/return, saves and existing lesson/bonus/campaign access.
 - Existing Arcade practice, journey, homepage mobile and Library browser regression suite: **20/20** (local mocked APIs).
+- Shared analytics coverage/privacy regressions: **6/6**. CI caught the initially missing shared loader before merge; the production shell now uses the existing loader without changing its behavior.
 - Source syntax and diff checks passed. Static security sweep has no confirmed high/critical finding. New DOM-sink review items use static game definitions, fixed mana symbols or validated numeric guest progress; no new server-supplied user content or account credentials are rendered by the game.
 
 Run from the website root:
@@ -48,6 +49,10 @@ The dedicated first-party Mana Heist workflow runs provenance, all promoted test
 ### Pre-existing Hive test drift
 
 The full Hive suite gives **172 passing / 2 failing** both on untouched main `65aabee...` and this promotion. The failing tests are `game top-right avatar reuses the actual site-wide account component` and `main-site game route and all first-party assets are present`; they still expect `/api/community?action=me`, whereas current production uses the session endpoint. The relevant test files are already owned by older open website PR #96. They were not altered or disabled here, and the failures are not represented as passing. No Hive runtime/profile path is changed by this promotion.
+
+### Separate Workers preview configuration
+
+The separate `Workers Builds: deep-cuts-edh` branch check runs `npx wrangler preview` and fails because the repository has no Workers `previews` configuration. This is distinct from the canonical Cloudflare Pages deployment. Production main's Workers and Pages checks were successful before this release. This promotion does not introduce a second hosting configuration or change deployment settings to mask that preview failure; Pages production must still be verified at the exact merged SHA.
 
 ## Unfinished work remains unfinished
 

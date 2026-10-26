@@ -21,6 +21,7 @@ function collect(directory,url){
   else if(types[extname(e.name)])assets.set(key,{body:readFileSync(path),type:types[extname(e.name)]});
  }
 }
+for(const [url,file,type] of [["/site-analytics.js","../../../site-analytics.js","application/javascript"],["/assets/favicon.svg","../../../assets/favicon.svg","image/svg+xml"]])assets.set(url,{body:readFileSync(new URL(file,import.meta.url)),type});
 collect(root,"/games/mana-heist/");assets.set("/games/mana-heist/",assets.get("/games/mana-heist/index.html"));
 const server=createServer((req,res)=>{
  if(req.method!=="GET")return res.writeHead(405).end();
@@ -45,6 +46,7 @@ try{
  browser=await chromium.launch({headless:true,...(proxy?{proxy}:{}),...(process.env.PLAYWRIGHT_EXECUTABLE_PATH?{executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH}:{}),args:["--no-sandbox","--disable-dev-shm-usage"]});
  for(const [width,height] of [[320,568],[375,667],[390,844],[1280,900]]){
   const context=await browser.newContext({viewport:{width,height},reducedMotion:"reduce",ignoreHTTPSErrors:process.env.MANA_HEIST_TEST_IGNORE_TLS==="1"});
+  await context.addInitScript(()=>Object.defineProperty(navigator,"globalPrivacyControl",{get:()=>true}));
   await context.route("**/*",r=>r.request().method()==="GET"&&new URL(r.request().url()).origin===trustedOrigin?r.continue():r.abort());
   const page=await context.newPage(),errors=[];page.on("pageerror",e=>errors.push(e.message));
   await page.goto(gameUrl);
