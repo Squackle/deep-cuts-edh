@@ -14,7 +14,7 @@ button:disabled{opacity:.56;cursor:not-allowed}
 .sb-header-divider{color:var(--muted)}
 .primary-nav{min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:clamp(7px,1.1vw,17px);flex:1;font-size:10px;font-weight:800;white-space:nowrap;overflow-x:auto;scrollbar-width:none}.primary-nav::-webkit-scrollbar{display:none}.primary-nav a{font-size:10px;white-space:nowrap}
 .sb-account-link{font-size:11px;font-weight:750;white-space:nowrap;flex:none}
-.sb-canonical-shell{width:100%;max-width:1800px;margin:0 auto;padding:0 clamp(8px,1.1vw,20px) 24px}
+.sb-canonical-shell{width:100%;max-width:1600px;margin:0 auto;padding:0 clamp(8px,1.1vw,20px) 24px}
 .sb-runbar{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(190px,1fr) auto auto;gap:14px;align-items:center;padding:12px clamp(6px,.9vw,16px);min-height:87px}
 .eyebrow{display:block;font-size:10px;line-height:1.5;color:var(--gold);font-weight:800;letter-spacing:.15em}
 .sb-runbar-heading h1{font:700 clamp(25px,2.4vw,37px)/1.05 Georgia,serif;letter-spacing:.025em;margin:2px 0 0}
@@ -24,7 +24,7 @@ button:disabled{opacity:.56;cursor:not-allowed}
 .sb-source-link{font-size:11px;font-weight:850;text-decoration:none;white-space:nowrap;padding:12px 4px}
 .sb-source-link:hover,.sb-account-link:hover{text-decoration:underline}
 .sb-canonical-play{width:100%;background:#071214;position:relative;min-width:0}
-#stackbreakerOriginal{width:100%;height:880px;display:block;background:#071214;border:0;overflow:hidden}
+#stackbreakerOriginal{width:100%;height:calc(100svh - 44px);min-height:470px;display:block;background:#071214;border:0;overflow:hidden}
 .sb-runtime-warning{margin:0;padding:8px 12px;color:var(--muted);font-size:12px;border:1px solid var(--line)}
 .sb-board-section{margin:12px 0 0;padding:16px clamp(12px,2vw,28px);border:1px solid var(--line);background:var(--panel);border-radius:8px}
 .sb-board-top{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
@@ -55,10 +55,13 @@ button:disabled{opacity:.56;cursor:not-allowed}
  .sb-run-message{grid-column:1 / -1;grid-row:2;max-width:none}
  .sb-source-link{grid-column:1 / -1;grid-row:3;text-align:left;padding:4px 0}
  .sb-canonical-shell{padding:0 5px 16px}
- #stackbreakerOriginal{height:950px}
+ #stackbreakerOriginal{height:calc(100svh - 44px)}
  .sb-board-section{padding:14px 12px}
  .sb-board-top{gap:10px}
  .sb-ranking-list{grid-template-columns:1fr}
+}
+@media(max-width:500px){
+ #stackbreakerOriginal{height:calc(100svh - 37px)}
 }
 @media(max-width:365px){
  .sb-account-link{font-size:10px}
