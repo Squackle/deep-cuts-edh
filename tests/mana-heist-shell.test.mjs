@@ -57,7 +57,7 @@ test('approved cinematic home prioritizes both game modes and collapses local to
  assert.match(html,/<button[^>]*class="mode-option"[^>]*data-mode="learn"/);
  assert.match(html,/<button[^>]*class="mode-option"[^>]*data-mode="heist"/);
  assert.equal((html.match(/class="mana-choice-scene"/g)||[]).length,2);
- const tools=html.match(/<details class="mana-advanced-tools" id="manaAdvancedTools">([\s\S]*?)<\/div><\/details>/)?.[1];
+ const tools=html.slice(html.indexOf('<details class="mana-advanced-tools"'),html.indexOf('<div id="gameScreen" hidden>'));
  assert.ok(tools,'Local utilities are grouped behind one collapsed drawer');
  for(const id of ['playtestPanel','deviceQa','guestBackupPanel','guestMilestonesPanel','reducedFxToggle']){
   assert.ok(tools.includes('id="'+id+'"') || (id==='deviceQa'&&tools.includes('class="device-qa"')),id+' missing from tools');
