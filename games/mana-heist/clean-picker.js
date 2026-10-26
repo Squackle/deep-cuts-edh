@@ -23,6 +23,9 @@ const setup=()=>{
   if(g<0||n<1||n>5)return;
   const world=g*5+n-1,galaxy=GALAXIES[g];
   select.value=String(world);
+  const intro=document.querySelector(".heist-panel .campaign-top .muted");
+  if(intro)intro.textContent="Ten galaxies. Five hundred open vaults.";
+  $("worldSubtitle").textContent=CHAPTERS[world].subtitle+" · Ten stages";
   $("currentGalaxyLabel").textContent="GALAXY "+roman[g];
   $("currentGalaxyName").textContent=galaxy.name;
   const cards=[...stages.querySelectorAll(".overworld-stage[data-level]")];
