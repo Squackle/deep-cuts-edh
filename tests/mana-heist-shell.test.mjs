@@ -92,27 +92,27 @@ test('owner-approved painting is served verbatim as the desktop menu, with paint
  assert.ok(html.includes('<button type="button" class="mode-option" data-mode="heist"'));
 });
 
-test('vault picker has a restrained hero, real progress meter, dropdown for every world and painted stage cards',()=>{
- const picker=read('games/mana-heist/src/overworld.js');
- const runtime=read('games/mana-heist/src/main.js');
+test('vault picker simplifies 500 levels without modifying promoted Game Lab runtime',()=>{
+ const adapter=read('games/mana-heist/clean-picker.js');
  const pickerCss=read('games/mana-heist/clean-picker.css');
  assert.ok(html.includes('href="./clean-picker.css"'));
+ assert.ok(html.includes('src="./clean-picker.js"'));
  assert.ok(html.includes('id="vaultProgressBar"'));
  for(const id of ['worldSelect','currentGalaxyLabel','currentGalaxyName','worldProgress','previousWorld','nextWorld','chapterPicker','galaxyPicker','worldPips','mapHint'])
   assert.ok(html.includes('id="'+id+'"'),'missing preserved control: '+id);
- assert.ok(html.includes('<details class="heist-world-tools">'),'gallery of extra shortcuts should start collapsed');
+ assert.ok(html.includes('<details class="heist-world-tools">'),'alternate navigation starts collapsed');
  assert.ok(!html.includes('<details class="heist-world-tools" open'));
- assert.ok(picker.includes('select.replaceChildren(fragment)'),'world select must list all chapters');
- assert.ok(picker.includes('CHAPTERS.length'),'world picker must include 50 worlds');
- assert.ok(picker.includes('worldLevels.map((p,off)'),'cards must reflect currently selected ten actual levels');
- assert.ok(picker.includes('chapter.range[0]+off'),'stage indices remain correct when starting a vault');
- assert.ok(picker.includes('bests[p.id]'),'medals/progress are still tied to local results');
- assert.ok(picker.includes('level-difficulty'),'difficulty stays grounded in level rank');
- assert.ok(runtime.includes('el("worldSelect").addEventListener("change"'),'new dropdown must navigate in game');
- assert.ok(runtime.includes('if(Number.isInteger(chosen)&&chosen>=0&&chosen<CHAPTERS.length)'),'reject invalid indices');
+ assert.ok(adapter.includes('select.replaceChildren(list)'),'the fifty-world dropdown must be populated');
+ assert.ok(adapter.includes('CHAPTERS.length'),'all fifty world options must exist');
+ assert.ok(adapter.includes('MutationObserver(update)'),'react to the original engine redrawing its ten levels');
+ assert.ok(adapter.includes('LEVELS[Number(button.dataset.level)]'),'decorate real stage index, never invent stages');
+ assert.ok(adapter.includes('button.classList.contains("finished")'),'preserve saved progress and replay labels');
+ assert.ok(adapter.includes('.click()'),'route selections through the original game controls');
+ assert.ok(adapter.includes('galaxyPicker [data-galaxy=')&&adapter.includes('worldPips [data-world='));
+ assert.ok(!adapter.includes('localStorage')&&!adapter.includes('fetch('),'presentation must not mutate saves or send scores');
  assert.equal(fs.statSync(new URL('../games/mana-heist/vault-level-scenes.webp',import.meta.url)).size,40640);
  assert.ok(pickerCss.includes('vault-level-scenes.webp'));
- assert.ok(pickerCss.includes('grid-template-columns:repeat(2,minmax(0,1fr))!important'),'small-screen stages stay readable');
- assert.ok(pickerCss.includes(':not(.in-heist)'),'picker styles must not affect gameplay');
- assert.ok(pickerCss.includes('.mana-approved-art'),'approved painted homepage remains');
+ assert.ok(pickerCss.includes('grid-template-columns:repeat(2,minmax(0,1fr))!important'),'phone picker keeps big tap targets');
+ assert.ok(pickerCss.includes(':not(.in-heist)'),'presentation must not affect the live vault');
+ assert.ok(pickerCss.includes('.mana-approved-art'),'approved painted home stays in place');
 });
