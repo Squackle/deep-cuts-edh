@@ -17,7 +17,7 @@ const jsonFromModel=x=>{const str=typeof x==='string'?x:x?.response??x?.choices?
 const eligible=x=>x&&x.lang==='en'&&x.legalities?.commander==='legal'&&x.games?.includes('paper')&&Array.isArray(x.color_identity)&&x.color_identity.length<=5&&!!(x.oracle_text||x.card_faces?.[0]?.oracle_text);
 const cardMini=x=>({name:x.name,oracle:clean(x.oracle_text||x.card_faces?.map(f=>f.oracle_text).join(' // ')||'',1100),type:clean(x.type_line,120),colors:x.color_identity,rank:Number.isInteger(x.edhrec_rank)?x.edhrec_rank:null,scryfall:x.scryfall_uri,price:Number.isFinite(Number(x.prices?.usd))?Number(x.prices.usd):null});
 const numericHash=s=>{let n=2166136261;for(const c of s){n^=c.charCodeAt(0);n=Math.imul(n,16777619)}return n>>>0};
-const pickPages=date=>{const week=Math.floor(Date.parse(date+'T00:00:00Z')/604800000);return week%4===0?[3,4,5]:week%4===1?[8,11,15]:week%4===2?[2,8,17]:[4,10,21]};
+const pickPages=date=>{const week=Math.floor(Date.parse(date+'T00:00:00Z')/604800000);return week%4===0?[3,4,5]:week%4===1?[5,7,9]:week%4===2?[2,6,10]:[4,8,10]};
 async function fromScryfall(url){const response=await fetch(url,{headers,signal:AbortSignal.timeout(16000)});if(!response.ok)fail('Scryfall request failed '+response.status);return response.json()}
 async function candidates(date){const results=[];const pages=pickPages(date);for(let i=0;i<pages.length;i++){
  const query=new URL(SOURCE+'/cards/search');query.searchParams.set('q','is:commander legal:commander game:paper');query.searchParams.set('order','edhrec');query.searchParams.set('dir','asc');query.searchParams.set('unique','cards');query.searchParams.set('page',String(pages[i]));
