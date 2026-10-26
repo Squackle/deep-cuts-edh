@@ -20,7 +20,7 @@ test("main-site game route and all first-party assets are present",()=>{
  assert.doesNotMatch(html,/id="gameProfileLink"/);
  const headerJs=readFileSync(new URL("../header-profile.js",import.meta.url),"utf8");
  assert.match(headerJs,/\.lab-header\[data-profile-header\]/);
- assert.match(headerJs,/\/api\/community\?action=session/);
+ assert.match(headerJs,/\/api\/community\?action=me/);
  const gameJs=readFileSync(new URL("../games/hive-run/src/main.js",import.meta.url),"utf8");
  assert.match(gameJs,/\$\("gameProfileBridge"\)\.hidden=!!data\.profile/);
  assert.match(gameJs,/\$\("gameProfileBridge"\)\.hidden=true/);
