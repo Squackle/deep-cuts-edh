@@ -56,6 +56,7 @@
    <div class="heist-progress-stat"><span class="overline">CURRENT GALAXY</span><strong id="currentGalaxyLabel">GALAXY I</strong><span id="currentGalaxyName">THE FIRST SPARK</span></div>
    <div class="heist-progress-stat"><span class="overline">WORLD PROGRESS</span><strong id="worldProgress">0 / 10</strong><span>Completed stages in this world</span></div>
   </div>
+  <div class="galaxy-navigation" id="galaxyPicker" role="group" aria-label="Choose any galaxy"></div>
   <div class="world-navigation">
    <button type="button" id="previousWorld" aria-label="Previous world">← PREVIOUS</button>
    <label class="world-select-box" for="worldSelect"><span class="visually-hidden">Choose any galaxy and world</span><select id="worldSelect" aria-label="Choose any galaxy and world"></select></label>
@@ -65,7 +66,7 @@
   <div class="campaign-track" aria-label="Select a vault"><div id="chapterPicker" class="chapter-picker" role="group" aria-label="Ten stages in the selected world"></div></div>
   <details class="heist-world-tools"><summary>Browse galaxies and worlds</summary>
    <div class="vault-jump" role="group" aria-label="Jump to a different galaxy"><span>QUICK JUMP</span><button type="button" data-jump-galaxy="0">I · FOUNDATIONS</button><button type="button" data-jump-galaxy="1">II · COLOR</button><button type="button" data-jump-galaxy="2">III · MANA</button><button type="button" data-jump-galaxy="3">IV · SEQUENCING</button><button type="button" data-jump-galaxy="4">V · GRAND HEISTS</button></div>
-   <div class="galaxy-navigation" id="galaxyPicker" role="group" aria-label="Choose any galaxy"></div>
+   
    <div class="overworld-footer"><p id="mapHint" role="status" class="muted"></p><div id="worldPips" class="world-pips" aria-label="Worlds in the current galaxy"></div></div>
   </details>
   </div>
