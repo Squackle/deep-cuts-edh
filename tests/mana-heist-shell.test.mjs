@@ -43,3 +43,28 @@ test('Immersive game keeps the site navigation and supporter header visible',()=
  assert.ok(js.includes("document.querySelector('.site-header')"));
  assert.ok(!js.includes('localStorage')&&!js.includes('fetch('));
 });
+
+test('approved cinematic home prioritizes both game modes and collapses local tools',()=>{
+ const menuCss=read('games/mana-heist/cinematic-menu.css');
+ const parts=['vault-hall.svg','mana-study.svg','mana-vault.svg'];
+ for(const file of parts){
+  const asset=read('games/mana-heist/'+file);
+  assert.ok(asset.includes('<svg'),'Missing cinematic vector art: '+file);
+ }
+ assert.ok(html.includes('<link rel="stylesheet" href="./cinematic-menu.css">'));
+ assert.ok(html.includes('id="mana-site-title">MANA HEIST</h1>'));
+ assert.ok(html.includes('class="mana-hero-lead"'));
+ assert.match(html,/<button[^>]*class="mode-option"[^>]*data-mode="learn"/);
+ assert.match(html,/<button[^>]*class="mode-option"[^>]*data-mode="heist"/);
+ assert.equal((html.match(/class="mana-choice-scene"/g)||[]).length,2);
+ const tools=html.slice(html.indexOf('<details class="mana-advanced-tools"'),html.indexOf('<div id="gameScreen" hidden>'));
+ assert.ok(tools,'Local utilities are grouped behind one collapsed drawer');
+ for(const id of ['playtestPanel','deviceQa','guestBackupPanel','guestMilestonesPanel','reducedFxToggle']){
+  assert.ok(tools.includes('id="'+id+'"') || (id==='deviceQa'&&tools.includes('class="device-qa"')),id+' missing from tools');
+ }
+ assert.ok(!html.includes('<details class="mana-advanced-tools" id="manaAdvancedTools" open'),'Tools must start collapsed');
+ assert.ok(menuCss.includes('.mode-options'));
+ assert.ok(menuCss.includes('grid-template-columns:1fr!important'),'Mobile should stack the two menu cards');
+ assert.ok(menuCss.includes(':not(.in-heist)'),'Menu styles cannot override immersive gameplay');
+ assert.ok(html.includes('This game does not submit profile scores.'));
+});

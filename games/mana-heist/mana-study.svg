@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 290">
+<defs>
+<linearGradient id="room" x2="0" y2="1"><stop stop-color="#142e2c"/><stop offset=".5" stop-color="#0b201f"/><stop offset="1" stop-color="#041211"/></linearGradient>
+<radialGradient id="halo"><stop stop-color="#47615a" stop-opacity=".56"/><stop offset=".5" stop-color="#183831" stop-opacity=".42"/><stop offset="1" stop-color="#051716" stop-opacity="0"/></radialGradient>
+<linearGradient id="metal" x2="1" y2="1"><stop stop-color="#e0b972"/><stop offset=".46" stop-color="#71572c"/><stop offset=".7" stop-color="#e0be7a"/><stop offset="1" stop-color="#4e3719"/></linearGradient>
+<radialGradient id="candle"><stop stop-color="#f6c075" stop-opacity=".7"/><stop offset=".18" stop-color="#e8a55c" stop-opacity=".25"/><stop offset="1" stop-color="#f6c075" stop-opacity="0"/></radialGradient>
+<pattern id="stone" width="68" height="68" patternUnits="userSpaceOnUse"><path d="M0 67H68M67 0V68" stroke="#d4ad70" stroke-opacity=".035"/><path d="M0 32H68" stroke="#9eaa89" stroke-opacity=".02"/></pattern>
+</defs><rect width="620" height="290" fill="#0b2523"/><ellipse cx="316" cy="124" rx="300" ry="220" fill="url(#halo)"/>
+<path d="M0 235L620 205V290H0Z" fill="#1a2924" stroke="#a48a59" stroke-opacity=".25"/>
+<ellipse cx="310" cy="236" rx="233" ry="28" fill="#000" opacity=".35"/>
+<g transform="translate(105 47) rotate(-7 140 140)">
+<path d="M8 172l225-22 89 45-229 23Z" fill="#345247" stroke="url(#metal)" stroke-width="3"/>
+<path d="M30 135l220-20 70 32-221 28Z" fill="#243e39" stroke="#ad9362" stroke-width="4"/>
+<path d="M44 62l187-17 66 87-189 20Z" fill="#112e30" stroke="url(#metal)" stroke-width="5"/>
+<path d="M62 78l159-14 47 61-155 17Z" fill="none" stroke="#ac965c" stroke-opacity=".57" stroke-width="2"/>
+<circle cx="172" cy="101" r="24" fill="none" stroke="#e1be76" stroke-width="2"/>
+<path d="M172 65v72M136 101h72M172 78l8 22-8 24-8-24Z" fill="#e3ba65" stroke="#d2b276"/>
+</g>
+<path d="M420 203L492 93 518 226" stroke="#ccb37a" stroke-opacity=".32" stroke-width="9"/>
+<g opacity=".5"><circle cx="512" cy="81" r="7" fill="#e4bf87"/><ellipse cx="512" cy="81" rx="44" ry="44" fill="url(#candle)"/></g>
+</svg>
