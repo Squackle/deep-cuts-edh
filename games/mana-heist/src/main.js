@@ -876,13 +876,6 @@ el("previousWorld").addEventListener("click",()=>{
 el("nextWorld").addEventListener("click",()=>{
  if(world<CHAPTERS.length-1){world++;renderOverworld({world,bests:displayBests(),index,proofs,medal});}
 });
-el("worldSelect").addEventListener("change",e=>{
- const chosen=Number(e.currentTarget.value);
- if(Number.isInteger(chosen)&&chosen>=0&&chosen<CHAPTERS.length){
-  world=chosen;
-  renderOverworld({world,bests:displayBests(),index,proofs,medal});
- }
-});
 el("galaxyPicker").addEventListener("click",e=>{
  const button=e.target.closest("[data-galaxy]");
  if(!button||button.disabled)return;
