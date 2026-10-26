@@ -72,11 +72,9 @@ window.addEventListener('message',async event=>{
  const data=event.data;
  if(!data||typeof data!=='object')return;
  if(data.type==='dc-sb-ranked-layout'){
-  // Layout metadata only, not score or authentication evidence.
-  const height=data.height;
-  if(Number.isInteger(height)&&height>=500&&height<=3000){
-   frame.style.height=(height+2)+'px';
-  }
+  // The original game uses viewport-relative board sizing. Feeding its measured
+  // height back into the iframe created a resizing loop and a distorted Daily
+  // layout. Keep the frame's responsive CSS height fixed like Classic.
   return;
  }
  if(data.type==='dc-sb-ranked-ready'){
