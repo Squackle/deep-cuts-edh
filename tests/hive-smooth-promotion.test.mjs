@@ -15,6 +15,8 @@ test("lab-based visual motion is common to both Brood Trail and Predator Hunt",(
  assert.match(main,/const body=run\.status==="running"\?smoothBody\(state\.visualBefore,run\.body/);
  assert.match(main,/paintBackdrop\(context,canvas,arenaBackground,COLS,ROWS,CELLS,run\.biome\)/);
  assert.match(main,/drawConnectedSpine\(body\)/);
+ assert.match(main,/drawPlayerLocator\(context,body\[0\],run\.direction/);
+ assert.match(main,/drawPlayerLocator\(context,body\[0\],run\.turnQueue/);
  assert.match(main,/const part=body\[i\],next=run\.body\[i\+1\]/);
  assert.match(main,/state\.visualBefore=state\.run\.moves>movesBefore\?bodyBefore:null/);
  assert.match(main,/state\.visualBefore=null/);
