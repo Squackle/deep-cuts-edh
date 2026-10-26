@@ -68,5 +68,10 @@
     "QA browser route and offline CLI repository-relative paths",
     "developer HTML pages noindex",
     "two ported display-copy assertions now check production beta branding and five-vault practice inventory; functional assertions retained"
-  ]
+  ],
+  "securityFollowUp": {
+    "runtimeChanged": false,
+    "testAssertions": "Compare actual Scryfall URL origins and paths instead of unanchored source regexes",
+    "offlineCatalog": "Exact HTTPS bulk origin; reject redirects; JSON-only data basenames; exclusive create; local regression tests"
+  }
 }

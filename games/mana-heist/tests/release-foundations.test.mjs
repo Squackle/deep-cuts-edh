@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {CARDS,VERSION,COLORS} from "../src/engine.js";
 import {BASE_LEVELS,LEVELS,CHAPTERS,GALAXIES} from "../src/levels.js";
-import {knownCardKeys,knownCardNames} from "../src/scryfall-cards.js";
+import {cardImageUrl,knownCardKeys,knownCardNames} from "../src/scryfall-cards.js";
+import {randomPrintingUrl} from "../src/printing-art.js";
+import {referenceFor} from "../src/card-references.js";
 import {stageCode} from "../src/campaign.js";
 
 const read=(f)=>readFileSync(new URL("../"+f,import.meta.url),"utf8");
@@ -85,14 +87,13 @@ test("P01 remains blocked; independently approved later work can be in progress 
 
 test("baseline lists browser-only guest saving and all external card image paths",()=>{
  const main=read("src/main.js");
- const img=read("src/printing-art.js");
- const refer=read("src/card-references.js");
- const named=read("src/scryfall-cards.js");
  assert.match(main,/dc-mana-heist-landfall-v2/);
  assert.match(main,/localStorage/);
- assert.match(img,/https:\/\/api\.scryfall\.com\/cards\/random/);
- assert.match(refer,/https:\/\/api\.scryfall\.com\/cards\/named/);
- assert.match(named,/https:\/\/api\.scryfall\.com\/cards\/named/);
+ for(const [value,path] of [[randomPrintingUrl("Plains","fixture"),"/cards/random"],[referenceFor("plains").image,"/cards/named"],[cardImageUrl("plains"),"/cards/named"]]){
+  const url=new URL(value);
+  assert.equal(url.origin,"https://api.scryfall.com");
+  assert.equal(url.pathname,path);
+ }
  const rules=read("src/engine.js");
  assert.doesNotMatch(rules,/\bfetch\s*\(|\bXMLHttpRequest\b/);
 });

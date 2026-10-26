@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Complete discovery snapshot, NOT an automatic rules engine.
- * Run manually: node mana-heist/tools/build-mana-catalog.mjs [output.json]
+ * Run manually: node games/mana-heist/tools/build-mana-catalog.mjs [new-snapshot.json]
  * This consumes the full Scryfall Oracle Cards bulk export (one per oracle
  * identity), never the rate-limited card-by-card Scryfall API.
  *
@@ -15,16 +15,14 @@
  *
  * Output is data for an offline audit, not automatically playable cards.
  */
-import {writeFile,mkdir} from "node:fs/promises";
-import {dirname} from "node:path";
-import {fileURLToPath} from "node:url";
+import {catalogDestination,bulkDownloadUrl,writeCatalogSnapshot} from "./catalog-output.mjs";
 const ENDPOINT="https://api.scryfall.com/bulk-data/oracle_cards";
-const dest=process.argv[2]||new URL("../data/mana-oracle-candidates.json",import.meta.url);
-const response=await fetch(ENDPOINT,{headers:{"User-Agent":"DeepCutsEDH-ManaHeist-Research/1.0 (offline catalog build)","Accept":"application/json"}});
+const dest=catalogDestination(process.argv[2]);
+const response=await fetch(ENDPOINT,{redirect:"error",headers:{"User-Agent":"DeepCutsEDH-ManaHeist-Research/1.0 (offline catalog build)","Accept":"application/json"}});
 if(!response.ok)throw new Error("Scryfall bulk metadata "+response.status);
 const metadata=await response.json();
-if(metadata.type!=="oracle_cards"||!/^https:\/\/data\.scryfall\.io\//.test(metadata.download_uri||""))throw new Error("Unexpected bulk export metadata");
-const cardsResponse=await fetch(metadata.download_uri,{headers:{"User-Agent":"DeepCutsEDH-ManaHeist-Research/1.0"}});
+const downloadUrl=bulkDownloadUrl(metadata);
+const cardsResponse=await fetch(downloadUrl,{redirect:"error",headers:{"User-Agent":"DeepCutsEDH-ManaHeist-Research/1.0"}});
 if(!cardsResponse.ok)throw new Error("Scryfall oracle data "+cardsResponse.status);
 const source=await cardsResponse.json();
 if(!Array.isArray(source))throw new Error("Expected Oracle card collection");
@@ -66,6 +64,5 @@ const snapshot={source:{provider:"Scryfall",bulk_type:"oracle_cards",updated_at:
  scope:"All potentially mana-relevant artifact, instant and sorcery Oracle identities matching public discovery filters; not full rules implementation",
  caveat:"Candidates include false positives and exclude atypical mana interactions. Every playable card requires explicit Oracle verification and mechanics tests.",
  count:candidates.length,counts_by_type:tally,cards:candidates};
-await mkdir(dirname(typeof dest==="string"?dest:fileURLToPath(dest)),{recursive:true});
-await writeFile(dest,JSON.stringify(snapshot,null,2));
+await writeCatalogSnapshot(dest,snapshot);
 console.log(JSON.stringify({count:snapshot.count,types:tally,output:String(dest),sourceUpdated:metadata.updated_at}));

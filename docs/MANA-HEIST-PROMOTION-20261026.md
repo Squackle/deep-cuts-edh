@@ -17,7 +17,7 @@ All records are browser-local guest progress. No authoritative profile scores, r
 
 The game shell uses the main site's favicon, canonical/OG metadata, one H1, Arcade return links and the shared privacy-aware analytics loader. The existing query-stripping, private-route exclusion and Global Privacy Control behavior is preserved. Browser smoke contexts enable Global Privacy Control and block third-party requests. It states unranked beta, device-only saving and simplified turn-based mana clearing. Developer HTML pages are noindex, and their paths are excluded from discovery. The new Arcade entry does not change the four daily games or their achievements.
 
-All functional Lab test files are retained. Three Lab-host-only tests for the Lab badge, return route and beaker favicon are replaced by production integration/provenance checks. Two display-copy assertions are adapted for the production beta label and five-sample inventory; gameplay assertions are retained. The production game package has 248 tests, plus five production contract tests at the website root.
+All functional Lab test files are retained. Three Lab-host-only tests for the Lab badge, return route and beaker favicon are replaced by production integration/provenance checks. Two display-copy assertions are adapted for the production beta label and five-sample inventory; gameplay assertions are retained. The production game package has 251 tests, plus five production contract tests at the website root.
 
 The browser test accepts `MANA_HEIST_GAME_URL` for GET-only public smoke tests in fresh contexts. Other origins and every non-GET request are blocked. Host proxy settings are honored only for explicitly selected live tests; `MANA_HEIST_TEST_IGNORE_TLS=1` is an opt-in test-host proxy workaround, never a product TLS setting. Normal local/CI testing leaves it off. The offline audit CLI now derives its actual repository-relative source paths.
 
@@ -25,7 +25,7 @@ The browser test accepts `MANA_HEIST_GAME_URL` for GET-only public smoke tests i
 
 - Combined Lab suite: **251/251**.
 - Exact deployed Lab source: **20/20 GET-only live browser playthroughs**, using fresh contexts and the documented test-host proxy workaround.
-- Promoted functional game suite: **248/248**.
+- Promoted functional game suite before security follow-up: **248/248**. Three additional offline-catalog tests verify exact HTTPS download origins, traversal/extension rejection, JSON encoding and overwrite/symlink refusal; updated CI reruns the resulting 251-test suite.
 - Main-site provenance, SEO, Arcade journey, account isolation/payment replay and Stackbreaker replay tests: **51/51**.
 - Additional protected-route authorization/security regressions: **34/34**.
 - Main-site quality/navigation contract: **240 checks passed**.
@@ -53,6 +53,12 @@ The full Hive suite gives **172 passing / 2 failing** both on untouched main `65
 ### Separate Workers preview configuration
 
 The separate `Workers Builds: deep-cuts-edh` branch check runs `npx wrangler preview` and fails because the repository has no Workers `previews` configuration. This is distinct from the canonical Cloudflare Pages deployment. Production main's Workers and Pages checks were successful before this release. This promotion does not introduce a second hosting configuration or change deployment settings to mask that preview failure; Pages production must still be verified at the exact merged SHA.
+
+### CodeQL follow-up
+
+Three high-severity missing-URL-anchor findings were in source-text test assertions, not production host authorization. Replaced them with actual URL origin/path assertions against the exported image builders. The medium `js/http-to-file-access` finding was the manual offline Scryfall catalog exporter persisting downloaded card JSON. Hardened it to permit only a new JSON basename inside the game data directory, validate the exact HTTPS bulk origin, reject redirects and exclusively create files so existing files/symlinks cannot be overwritten. The live game never invokes this tool. Added three local-only regressions; no Scryfall bulk download was performed. CodeQL is rerun rather than suppressed.
+
+New command: `node games/mana-heist/tools/build-mana-catalog.mjs research-20261026.json`; output is `games/mana-heist/data/research-20261026.json`. An existing snapshot requires a new filename. Historical Lab tool instructions describe the old CLI and are retained as archived evidence.
 
 ## Unfinished work remains unfinished
 
