@@ -197,3 +197,86 @@
 @media(prefers-reduced-motion:reduce){
  .mana-heist-site-page:not(.in-heist) .mode-option{transition:none!important}
 }
+
+/* Owner-approved artwork correction (Oct 26): use the ACTUAL painted concept,
+   never surrogate geometric SVG scenery. The image contains its own hero and
+   button art, so the real, accessible native controls overlay those button
+   regions on wide screens. Crop before the baked-in advanced tools strip:
+   the real collapsible <details> is placed in precisely that position. */
+.mana-heist-site-page:not(.in-heist) .mana-approved-stage{position:relative;min-width:0}
+.mana-heist-site-page:not(.in-heist) .mana-approved-art{display:none}
+.mana-heist-site-page:not(.in-heist) .mana-approved-art img{display:block;width:100%;height:auto}
+@media(min-width:981px){
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]){
+  background:#071715!important;
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden])::before{
+  background:none!important;
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mana-site-masthead{
+  position:absolute!important;width:1px!important;height:1px!important;
+  overflow:hidden!important;clip-path:inset(50%)!important;padding:0!important;
+  margin:0!important;white-space:nowrap!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mana-site-surface{
+  width:min(1586px,calc(100vw - 28px))!important;
+  max-width:none!important;margin:0 auto!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mana-approved-art{
+  display:block!important;aspect-ratio:1586/792;overflow:hidden;
+  width:100%;background:#061613
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mana-approved-art img{
+  width:100%;height:auto;max-width:none;object-fit:initial
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mode-chooser{
+  position:absolute!important;inset:0!important;padding:0!important;margin:0!important;
+  width:100%!important;height:100%!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;z-index:2
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mode-options{
+  position:absolute!important;top:48.2%!important;left:20.1%!important;
+  width:56.7%!important;height:49.9%!important;max-width:none!important;
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:2.5%!important;margin:0!important;align-items:stretch!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mode-option{
+  display:block!important;min-width:0!important;min-height:0!important;
+  height:100%!important;width:100%!important;margin:0!important;padding:0!important;
+  border:2px solid transparent!important;border-radius:16px!important;
+  background:transparent!important;box-shadow:none!important;color:transparent!important;
+  transform:none!important;outline-offset:-6px!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mode-option>span{
+  opacity:0!important;pointer-events:none!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mode-option:hover{
+  border-color:#f8dba57a!important;box-shadow:0 0 30px #eac47b24!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mode-option:focus-visible{
+  border-color:#ffe2aa!important;outline:3px solid #fff1bc!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mana-advanced-tools{
+  margin:19px auto 0!important;position:relative;z-index:1
+ }
+}
+/* Phones and narrower tablets render genuine text controls, using detailed
+   crops of the SAME painting for their illustrated card tops. This avoids
+   shrinking baked-in words and buttons to an unreadable screenshot. */
+@media(max-width:980px){
+ .mana-heist-site-page:not(.in-heist) .mana-site-main{
+  background:linear-gradient(180deg,#061715c9,#061715c7 48%,#041411f2),
+   url('./approved-mana-ambient.webp') center top / cover no-repeat!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mode-options{
+  display:grid!important;grid-template-columns:1fr!important;
+  width:min(450px,100%)!important;max-width:450px!important;gap:16px!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mode-option[data-mode="learn"] .mana-choice-scene{
+  background-image:url('./approved-mana-study.webp')!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mode-option[data-mode="heist"] .mana-choice-scene{
+  background-image:url('./approved-mana-vault.webp')!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-approved-art{display:none!important}
+}
