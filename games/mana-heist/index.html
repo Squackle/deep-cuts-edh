@@ -11,7 +11,7 @@
 <script async src="/site-analytics.js"></script>
 <link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/retro.css"><link rel="stylesheet" href="/theme-v2.css"><link rel="stylesheet" href="/header-profile.css"><link rel="stylesheet" href="/games.css"><link rel="stylesheet" href="/release-polish.css">
 <link rel="stylesheet" href="./production.css">
-<link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./tabletop-immersion.css"><link rel="stylesheet" href="./mode-paths.css"><link rel="stylesheet" href="./playtest-mobile.css"><link rel="stylesheet" href="./site-shell.css">
+<link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./tabletop-immersion.css"><link rel="stylesheet" href="./mode-paths.css"><link rel="stylesheet" href="./playtest-mobile.css"><link rel="stylesheet" href="./site-shell.css"><link rel="stylesheet" href="./cinematic-menu.css">
 <script defer src="/header-profile.js"></script><script defer src="./site-shell.js"></script><script type="module" src="./src/main.js"></script>
 </head>
 <body class="mana-heist-site-page">
@@ -21,21 +21,21 @@
  <div class="games-wrap">
   <nav class="games-breadcrumbs" aria-label="Breadcrumbs"><a href="/">HOME</a><span aria-hidden="true">/</span><a href="/games">DAILY MTG GAMES</a><span aria-hidden="true">/</span><span>MANA HEIST</span></nav>
   <section class="games-masthead mana-site-masthead" aria-labelledby="mana-site-title">
-   <span class="games-kicker">THE ARCADE / MANA VAULTS · SOLO · UNRANKED BETA</span>
-   <h1 id="mana-site-title">Mana Heist: <em>Crack the vault.</em></h1>
-   <p>Five hundred mana puzzles. Twenty-eight lessons. A tabletop full of choices. Master the mana arts in this solo challenge.</p>
+   <span class="games-kicker">THE MANA ARTS · SOLO · UNRANKED BETA</span>
+   <h1 id="mana-site-title">MANA HEIST</h1>
+   <p class="mana-hero-lead">A turn-based mana puzzle. Study the craft, or jump straight into a heist.</p>
+   <p class="mana-hero-foot">Both paths are open.</p>
    <div class="games-page-links"><a href="/games">← ALL GAMES</a><a href="/games/stackbreaker">PLAY STACKBREAKER ↗</a></div>
   </section>
  </div>
  <div class="mana-site-surface" aria-label="Mana Heist solo game">
  <div class="shell">
  <section id="campaignScreen" class="campaign-screen" aria-labelledby="chooseTitle">
-  <section class="site-game-intro" aria-label="About this game"><h2>Choose your mana route.</h2><p>Crack the vault, one mana decision at a time. Free solo play · progress stays on this device.</p><p class="scope-note">A simplified mana puzzle with turn-based mana clearing. Difficulty ratings are estimates. Learn Mana includes five unscored Decision Lab vaults. This game does not submit profile scores.</p></section>
   <div class="mode-chooser" aria-label="Choose how to play Mana Heist">
-   <div class="mode-intro"><p class="overline">THE MANA ARTS</p><h2 id="chooseTitle">Choose your path</h2><p>Study the craft, or jump straight into a heist. Both paths are open.</p></div>
+   <div class="mode-intro"><h2 id="chooseTitle" class="visually-hidden">Choose your path</h2></div>
    <div class="mode-options" role="group" aria-label="Game mode">
-    <button type="button" class="mode-option" data-mode="learn" aria-pressed="false"><span class="mode-emblem" aria-hidden="true">✧</span><span class="mode-name">LEARN MANA</span><span class="mode-tag">Guided practice</span><span class="mode-description">Learn lands, mana rituals, opponent-dependent colors and artifact life tradeoffs across 28 lessons.</span><span class="mode-action">STUDY THE ARTS →</span></button>
-    <button type="button" class="mode-option" data-mode="heist" aria-pressed="false"><span class="mode-emblem" aria-hidden="true">◇</span><span class="mode-name">MANA HEIST</span><span class="mode-tag">Open challenge vaults</span><span class="mode-description">All 500 vaults are unsealed across ten galaxies. Pick any challenge, solve its mana circuit and improve your stars.</span><span class="mode-action">ENTER THE VAULTS →</span></button>
+    <button type="button" class="mode-option" data-mode="learn" aria-pressed="false"><span class="mana-choice-scene" aria-hidden="true"></span><span class="mode-emblem" aria-hidden="true">✧</span><span class="mode-name">LEARN MANA</span><span class="mode-tag">Guided practice</span><span class="mode-description">Learn lands, mana rituals, opponent-dependent colors and artifact life tradeoffs across 28 lessons.</span><span class="mode-action">STUDY THE ARTS →</span></button>
+    <button type="button" class="mode-option" data-mode="heist" aria-pressed="false"><span class="mana-choice-scene" aria-hidden="true"></span><span class="mode-emblem" aria-hidden="true">◇</span><span class="mode-name">MANA HEIST</span><span class="mode-tag">Open challenge vaults</span><span class="mode-description">All 500 vaults are unsealed across ten galaxies. Pick any challenge, solve its mana circuit and improve your stars.</span><span class="mode-action">ENTER THE VAULTS →</span></button>
    </div>
   </div>
   <div id="learnPanel" class="learn-panel" hidden aria-label="Learn Mana practice exercises">
@@ -50,6 +50,10 @@
   <div class="campaign-track" aria-label="Campaign map"><div class="path-line" aria-hidden="true"></div><div id="chapterPicker" class="chapter-picker" role="group" aria-label="Stages in the current chapter"></div></div>
   <div class="overworld-footer"><p id="mapHint" role="status" class="muted">All vaults are open. Choose any stage to begin.</p><div id="worldPips" class="world-pips" aria-label="Worlds in the current galaxy"></div></div>
   </div>
+  <details class="mana-advanced-tools" id="manaAdvancedTools">
+   <summary>⌄ &nbsp; ADVANCED / LOCAL TOOLS</summary>
+   <div class="mana-advanced-content">
+   <p class="mana-local-disclaimer">Solo, unranked play. Progress is saved on this device. Mana Heist uses simplified turn-based mana clearing, not the complete Magic turn structure.</p>
   <details class="local-playtest" id="playtestPanel">
    <summary>✧ OPTIONAL PLAYTEST NOTES · ON THIS DEVICE ONLY</summary>
    <div class="local-playtest-content">
@@ -98,6 +102,7 @@
    <label><input type="checkbox" id="reducedFxToggle"> Reduce animated effects (fluid, orbiting mana, flashes)</label>
    <p>Optional on this device. The mana solver, puzzles, color labels and scores do not change. System reduced-motion preference is also respected.</p>
   </section>
+   </div></details>
  </section>
  <div id="gameScreen" hidden>
   <p id="cardKeyboardHelp" class="card-keyboard-instructions">Keyboard: Tab to a card. Left and right arrows or up and down arrows move between cards in its rack; Home and End jump to the first and last card. Enter or Space selects or uses a card, I opens its card reference, and Escape cancels open choices.</p>
