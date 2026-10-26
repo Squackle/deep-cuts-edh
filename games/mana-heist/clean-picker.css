@@ -1,0 +1,274 @@
+/* Mana Heist — first approved painted home + quieter, playable vault picker.
+   The game engine, progress storage, and site header are not modified.
+   Layer LAST, after cinematic-menu.css and all game styles. */
+.mana-heist-site-page:not(.in-heist) #campaignScreen{
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ padding:0!important;margin:0!important;overflow:visible!important;
+ background:transparent!important
+}
+.mana-heist-site-page:not(.in-heist) #campaignScreen::before{display:none!important}
+/* HOME: the actual approved image owns the entire composition. Never draw
+   a second gold border over its already-painted cards. Native buttons remain
+   the clickable + keyboard-accessible elements. */
+@media(min-width:981px){
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]){
+  padding:0 0 30px!important;background:#0a1e1b!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mana-site-surface{
+  width:min(1586px,100%)!important;margin:0 auto!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mode-option{
+  border:0!important;border-radius:0!important;outline:0!important;box-shadow:none!important;
+  background:transparent!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mode-option:hover{
+  border:0!important;box-shadow:inset 0 0 0 2px #f3d29c7a!important;
+  border-radius:14px!important
+ }
+ .mana-heist-site-page:not(.in-heist) .mana-site-main:has(#learnPanel[hidden]):has(#heistPanel[hidden]) .mode-option:focus-visible{
+  border:0!important;outline:3px solid #f8d89f!important;outline-offset:-6px!important
+ }
+}
+/* The gallery's existing illustration clips include a fully painted
+   Advanced Tools graphic near the bottom; show ONE real tools control. */
+.mana-heist-site-page:not(.in-heist) .mana-advanced-tools{
+ border:1px solid #a58e615e!important;box-shadow:0 6px 24px #0006!important;
+ background:#0a231ea8!important
+}
+/* SELECTED MODE: completely retire the home painting rather than displaying
+   title-on-title, two giant illustrations, and the level picker together. */
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mana-site-masthead,
+.mana-heist-site-page:not(.in-heist):has(#learnPanel:not([hidden])) .mana-site-masthead{
+ display:none!important
+}
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mana-site-main,
+.mana-heist-site-page:not(.in-heist):has(#learnPanel:not([hidden])) .mana-site-main{
+ padding:12px 0 64px!important;
+ background:radial-gradient(ellipse at 48% 10%,#18382e,#071c1a 64%,#04110f)!important;
+}
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mana-site-surface,
+.mana-heist-site-page:not(.in-heist):has(#learnPanel:not([hidden])) .mana-site-surface{
+ width:min(1240px,calc(100% - 28px))!important;max-width:none!important;margin:0 auto!important
+}
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mana-approved-art,
+.mana-heist-site-page:not(.in-heist):has(#learnPanel:not([hidden])) .mana-approved-art{
+ display:none!important
+}
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mode-chooser,
+.mana-heist-site-page:not(.in-heist):has(#learnPanel:not([hidden])) .mode-chooser{
+ position:relative!important;inset:auto!important;width:min(740px,100%)!important;
+ height:auto!important;margin:0 auto 16px!important;padding:0!important;
+ border:0!important;box-shadow:none!important;background:transparent!important
+}
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mode-options,
+.mana-heist-site-page:not(.in-heist):has(#learnPanel:not([hidden])) .mode-options{
+ position:relative!important;inset:auto!important;display:grid!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ width:100%!important;height:auto!important;gap:10px!important;margin:0!important
+}
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mode-option,
+.mana-heist-site-page:not(.in-heist):has(#learnPanel:not([hidden])) .mode-option{
+ min-height:53px!important;height:auto!important;padding:9px 12px!important;
+ border:1px solid #97835e!important;border-radius:9px!important;
+ background:#09211df0!important;box-shadow:none!important;display:flex!important;
+ align-items:center!important;justify-content:center!important;gap:4px!important
+}
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mode-option.active,
+.mana-heist-site-page:not(.in-heist):has(#learnPanel:not([hidden])) .mode-option.active{
+ background:#254337!important;border-color:#f1d29a!important;
+ box-shadow:inset 0 0 0 1px #bdb07b50!important
+}
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mode-option .mode-name,
+.mana-heist-site-page:not(.in-heist):has(#learnPanel:not([hidden])) .mode-option .mode-name{
+ font:normal clamp(14px,1.4vw,18px)/1.2 Georgia,serif!important;color:#f4dcb0!important
+}
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mode-option .mode-action,
+.mana-heist-site-page:not(.in-heist):has(#learnPanel:not([hidden])) .mode-option .mode-action{
+ font-size:9px!important;letter-spacing:.1em!important;opacity:.8
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel{
+ background:transparent!important;border:0!important;border-radius:0!important;
+ padding:0!important;box-shadow:none!important;margin:0!important;min-width:0
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .campaign-top{
+ display:flex!important;justify-content:center;align-items:center;
+ min-height:210px;margin:0 0 16px!important;padding:28px 24px!important;
+ text-align:center;border:1px solid #ad98705c;border-radius:14px;
+ background:linear-gradient(90deg,#08231fec,#08231f95,#10251cd1),
+ url('./approved-mana-vault.webp') center/cover no-repeat!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .campaign-top h2{
+ font:normal clamp(27px,4vw,50px)/1.12 Georgia,serif!important;
+ color:#f6deb1!important;margin:7px 0 10px!important;letter-spacing:.01em!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .campaign-top h2 em{
+ font-style:italic;color:#f0bb73
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .campaign-top .muted{
+ color:#e3d5bb!important;font:normal 14px/1.55 Georgia,serif!important;
+ margin:0!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-progress{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:0;border:1px solid #bda77e70;border-radius:12px;
+ background:linear-gradient(120deg,#15332df2,#071f1eec);padding:17px 12px;
+ margin:0 auto 16px!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-progress-stat{
+ display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;
+ min-width:0;padding:6px 12px;text-align:center;border-right:1px solid #a98e5a44
+}
+.mana-heist-site-page:not(.in-heist) .heist-progress-stat:last-child{border:0}
+.mana-heist-site-page:not(.in-heist) .heist-progress-stat .overline{
+ color:#dec38c!important;font-size:10px!important;white-space:normal;
+ margin:0!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-progress-stat strong{
+ color:#f7e0b0;font:normal clamp(20px,2.4vw,29px)/1.2 Georgia,serif
+}
+.mana-heist-site-page:not(.in-heist) .heist-progress-stat>span:last-child{
+ color:#c2c8bb;font-size:11px;line-height:1.5
+}
+.mana-heist-site-page:not(.in-heist) #vaultProgressBar{
+ width:min(260px,100%);height:8px;border:0;background:#0c1815;
+ border-radius:99px;overflow:hidden
+}
+.mana-heist-site-page:not(.in-heist) #vaultProgressBar::-webkit-progress-bar{background:#0b1a16;border-radius:99px}
+.mana-heist-site-page:not(.in-heist) #vaultProgressBar::-webkit-progress-value{background:#d5b57f;border-radius:99px}
+.mana-heist-site-page:not(.in-heist) #vaultProgressBar::-moz-progress-bar{background:#d5b57f}
+.mana-heist-site-page:not(.in-heist) .heist-panel .world-navigation{
+ display:grid!important;grid-template-columns:minmax(105px,1fr) minmax(180px,2.5fr) minmax(105px,1fr);
+ gap:12px;align-items:center;margin:0 0 28px!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .world-navigation>button,
+.mana-heist-site-page:not(.in-heist) #worldSelect{
+ min-height:48px;color:#f3d6a5;border:1px solid #aa9b756b;
+ background:#0e2925;border-radius:8px;
+ font:700 12px/1.4 system-ui,sans-serif;letter-spacing:.08em;padding:9px 15px
+}
+.mana-heist-site-page:not(.in-heist) #worldSelect{
+ display:block;width:100%;font:normal 15px/1.3 Georgia,serif;
+ text-align:center;cursor:pointer;appearance:auto
+}
+.mana-heist-site-page:not(.in-heist) #worldSelect option{background:#0d2521;color:#fff0d4}
+.mana-heist-site-page:not(.in-heist) .heist-panel .world-nameplate{
+ text-align:center;margin:0 0 21px
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .world-nameplate .overline{
+ color:#dfbf81!important;font-size:11px!important;margin:0 0 7px
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .world-nameplate h3{
+ font:normal clamp(31px,5vw,58px)/1.05 Georgia,serif!important;
+ color:#f5d8a0!important;margin:0 0 8px;text-wrap:balance
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .world-nameplate .muted{
+ font:normal 14px/1.5 Georgia,serif!important;color:#c9d2c5
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .campaign-track{
+ background:none!important;border:0!important;box-shadow:none!important;
+ padding:0!important;min-height:0!important;overflow:visible!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .chapter-picker{
+ display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+ gap:12px!important;width:100%!important;max-width:none!important;
+ justify-content:stretch!important;margin:0!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage{
+ min-width:0!important;min-height:224px!important;height:auto!important;
+ display:flex!important;flex-direction:column!important;
+ justify-content:flex-start!important;align-items:center!important;
+ gap:7px!important;padding:5px 6px 9px!important;width:100%!important;
+ background:linear-gradient(180deg,#18332ef5,#08201fee)!important;
+ border:1px solid #bca477a8!important;border-radius:11px!important;
+ box-shadow:0 7px 20px #0006!important;transform:none!important;
+ transition:transform .18s ease,border-color .18s ease!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage:hover,
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage:focus-visible{
+ transform:translateY(-2px)!important;border-color:#ffe3a0!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage .stage-node{display:none!important}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage .stage-scene{
+ display:block!important;width:100%!important;aspect-ratio:176/102!important;
+ border:1px solid #c4aa7985;border-radius:7px;overflow:hidden;
+ background-image:url('./vault-level-scenes.webp');
+ background-size:500% 200%;background-repeat:no-repeat;
+ flex:0 0 auto;margin-bottom:4px
+}
+.mana-heist-site-page:not(.in-heist) .scene-0,.mana-heist-site-page:not(.in-heist) .scene-5{background-position-x:0%}
+.mana-heist-site-page:not(.in-heist) .scene-1,.mana-heist-site-page:not(.in-heist) .scene-6{background-position-x:25%}
+.mana-heist-site-page:not(.in-heist) .scene-2,.mana-heist-site-page:not(.in-heist) .scene-7{background-position-x:50%}
+.mana-heist-site-page:not(.in-heist) .scene-3,.mana-heist-site-page:not(.in-heist) .scene-8{background-position-x:75%}
+.mana-heist-site-page:not(.in-heist) .scene-4,.mana-heist-site-page:not(.in-heist) .scene-9{background-position-x:100%}
+.mana-heist-site-page:not(.in-heist) :is(.scene-0,.scene-1,.scene-2,.scene-3,.scene-4){background-position-y:0%}
+.mana-heist-site-page:not(.in-heist) :is(.scene-5,.scene-6,.scene-7,.scene-8,.scene-9){background-position-y:100%}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage .stage-code{
+ font:normal 17px/1 Georgia,serif!important;letter-spacing:0!important;color:#f7d6a0!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage strong{
+ font:normal clamp(14px,1.4vw,17px)/1.25 Georgia,serif!important;
+ color:#f1e2ca;white-space:normal;overflow-wrap:anywhere;flex:1
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage .level-difficulty{
+ border:1px solid #a6a177a8;border-radius:30px;min-width:68px;
+ padding:4px 8px;color:#dddfb1;font-size:10px;font-weight:800;letter-spacing:.09em
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage .rank-easy{border-color:#65af70;color:#a0e29e}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage .rank-medium{border-color:#cca35c;color:#efce85}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage .rank-hard{border-color:#c56b62;color:#eda59b}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage .stage-detail{
+ display:block;width:100%;padding:9px 5px;border:1px solid #bfa36a;
+ border-radius:6px;font:800 11px/1.3 system-ui,sans-serif!important;
+ letter-spacing:.14em;color:#f0d199
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage.finished{
+ border-color:#8ebc9b!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage.current{
+ box-shadow:0 0 0 1px #ffe1a5aa,0 8px 25px #d5b77929!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-world-tools{
+ width:100%;margin:23px auto 0;border:1px solid #7b8c796c;
+ border-radius:9px;background:#091b19b0;color:#d4bf94
+}
+.mana-heist-site-page:not(.in-heist) .heist-world-tools>summary{
+ padding:15px;text-align:center;cursor:pointer;list-style:none;
+ font:800 11px/1.3 system-ui,sans-serif;letter-spacing:.1em
+}
+.mana-heist-site-page:not(.in-heist) .heist-world-tools>summary::-webkit-details-marker{display:none}
+.mana-heist-site-page:not(.in-heist) .heist-world-tools>summary::before{content:"⌄ ";margin-right:6px}
+.mana-heist-site-page:not(.in-heist) .heist-world-tools[open]{padding-bottom:12px}
+.mana-heist-site-page:not(.in-heist) .heist-world-tools :is(.galaxy-navigation,.vault-jump,.overworld-footer){
+ margin:10px 12px!important
+}
+.mana-heist-site-page:not(.in-heist):has(#heistPanel:not([hidden])) .mana-advanced-tools{
+ max-width:100%!important;margin-top:22px!important
+}
+@media(max-width:900px){
+ .mana-heist-site-page:not(.in-heist) .heist-panel .chapter-picker{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important
+ }
+}
+@media(max-width:640px){
+ .mana-heist-site-page:not(.in-heist) .heist-progress{padding:8px 2px}
+ .mana-heist-site-page:not(.in-heist) .heist-progress-stat{padding:8px 3px}
+ .mana-heist-site-page:not(.in-heist) .heist-progress-stat strong{font-size:18px}
+ .mana-heist-site-page:not(.in-heist) .heist-progress-stat .overline{font-size:9px!important;letter-spacing:.03em}
+ .mana-heist-site-page:not(.in-heist) .heist-progress-stat>span:last-child{font-size:10px}
+ .mana-heist-site-page:not(.in-heist) .heist-panel .world-navigation{
+  grid-template-columns:70px minmax(0,1fr) 70px;gap:5px
+ }
+ .mana-heist-site-page:not(.in-heist) .heist-panel .world-navigation>button{padding:7px 4px;font-size:9px}
+ .mana-heist-site-page:not(.in-heist) #worldSelect{font-size:12px;padding:6px}
+ .mana-heist-site-page:not(.in-heist) .heist-panel .chapter-picker{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important
+ }
+ .mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage{min-height:218px!important}
+ .mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage strong{font-size:14px!important}
+ .mana-heist-site-page:not(.in-heist) .heist-panel .campaign-top{min-height:150px;padding:18px 10px!important}
+ .mana-heist-site-page:not(.in-heist) .heist-panel .campaign-top h2{font-size:30px!important}
+ .mana-heist-site-page:not(.in-heist) .heist-panel .world-nameplate h3{font-size:30px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage{transition:none!important}
+}
