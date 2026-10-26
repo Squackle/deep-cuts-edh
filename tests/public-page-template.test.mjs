@@ -8,13 +8,13 @@ const expectedLabels=['RESCUE REPORT','COMMANDERS','CARD LIBRARY','TOOLS & RESOU
 const pagePaths=['index.html','games.html','games/cold-case.html','games/stackbreaker.html','games/mana-heist/index.html'];
 function audit(path){
  const html=read(path);
- for(const css of ['/styles.css','/retro.css','/theme-v2.css','/header-profile.css']){
+ for(const css of (path==='index.html'?['/home-styles.css']:['/styles.css','/retro.css','/theme-v2.css','/header-profile.css'])){
   assert.ok(html.includes('href="'+css+'"'),path+' missing '+css);
  }
  assert.match(html,/<header\b[^>]*class="site-header"[^>]*>/,path+' missing standard header');
  assert.match(html,/<div class="wrap header-inner">/,path+' missing shared header inner');
  assert.match(html,/<a class="wordmark"/,path+' missing original logo wordmark');
- assert.match(html,/<img src="\/assets\/deep-cuts-mark.svg"/,path+' missing site mark');
+ assert.match(html,/<img src="\/?assets\/deep-cuts-mark.svg"/,path+' missing site mark');
  const nav=html.match(/<nav\b[^>]*class="primary-nav"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
  assert.ok(nav,path+' missing fallback primary nav');
  for(const link of expectedLabels)assert.ok(nav.includes(link),path+' missing '+link);
