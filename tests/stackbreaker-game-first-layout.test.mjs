@@ -18,11 +18,13 @@ test('Daily is a full-width real original game, not a nested mini-game',()=>{
  assert.match(css,/#stackbreakerOriginal\{width:100%;/);
  assert.match(css,/\.sb-ranking-list\{[^}]*grid-template-columns/);
 });
-test('Only original embedded frame can request safe height changes',()=>{
+test('Daily preserves Classic viewport; frame layout messages cannot resize the board',()=>{
  assert.match(bridge,/event\.source!==frame\.contentWindow\|\|event\.origin!==gameOrigin/);
  assert.ok(bridge.includes("data.type==='dc-sb-ranked-layout'"));
- assert.ok(bridge.includes('Number.isInteger(height)&&height>=500&&height<=3000'));
- assert.ok(bridge.includes("frame.style.height=(height+2)+'px'"));
+ assert.ok(!bridge.includes('frame.style.height'), 'No self-amplifying ResizeObserver loop');
+ assert.ok(css.includes('height:calc(100svh - 44px)'));
+ assert.ok(css.includes('height:calc(100svh - 37px)'));
+ assert.ok(css.includes('min-height:470px'));
  assert.ok(bridge.includes('loaded.hidden=true'));
  assert.ok(!bridge.includes("iframe.contentDocument"),'No cross-origin DOM access');
 });
