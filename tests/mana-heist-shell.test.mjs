@@ -68,3 +68,26 @@ test('approved cinematic home prioritizes both game modes and collapses local to
  assert.ok(menuCss.includes(':not(.in-heist)'),'Menu styles cannot override immersive gameplay');
  assert.ok(html.includes('This game does not submit profile scores.'));
 });
+
+test('owner-approved painting is served verbatim as the desktop menu, with painted responsive crops',()=>{
+ const menuCss=read('games/mana-heist/cinematic-menu.css');
+ assert.match(html,/<div class="mana-approved-stage">[\s\S]*?<img src="\.\/approved-mana-heist-hall\.webp" alt="" width="1586" height="992"/);
+ for(const [p,bytes] of [
+  ['approved-mana-heist-hall.webp',167060],
+  ['approved-mana-ambient.webp',22462],
+  ['approved-mana-study.webp',16006],
+  ['approved-mana-vault.webp',20066]
+ ]){
+  assert.equal(fs.statSync(new URL('../games/mana-heist/'+p,import.meta.url)).size,bytes,p+' has changed unexpectedly');
+ }
+ assert.ok(menuCss.includes('aspect-ratio:1586/792'),'The painted desktop image must end before its baked-in utility strip');
+ assert.ok(menuCss.includes('.mana-approved-art img'),'The real approved painting should be presented as an image');
+ assert.ok(menuCss.includes('approved-mana-study.webp'),'Mobile learning card should use the painted crop');
+ assert.ok(menuCss.includes('approved-mana-vault.webp'),'Mobile vault card should use the painted crop');
+ assert.ok(menuCss.includes('approved-mana-ambient.webp'),'Mobile room background must use the approved painting');
+ assert.ok(menuCss.includes('mode-option:focus-visible'),'Interactive hotspots need a visible keyboard focus');
+ assert.ok(menuCss.includes('min-width:981px'),'Desktop painted layout should leave narrower touch screens readable');
+ assert.ok(menuCss.includes('.mana-advanced-tools'),'The real tools drawer should remain a functioning native details element');
+ assert.ok(html.includes('<button type="button" class="mode-option" data-mode="learn"'));
+ assert.ok(html.includes('<button type="button" class="mode-option" data-mode="heist"'));
+});
