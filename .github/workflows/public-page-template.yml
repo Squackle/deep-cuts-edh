@@ -1,0 +1,36 @@
+name: Mandatory public-site page template
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.html'
+      - 'tests/public-page-template.test.mjs'
+      - 'tests/mana-heist-shell.test.mjs'
+      - 'AGENTS.md'
+      - 'docs/DEVELOPMENT-LANES.md'
+      - '.github/workflows/public-page-template.yml'
+  push:
+    branches: [main]
+    paths:
+      - '**/*.html'
+      - 'tests/public-page-template.test.mjs'
+      - 'tests/mana-heist-shell.test.mjs'
+      - 'AGENTS.md'
+      - '.github/workflows/public-page-template.yml'
+permissions:
+  contents: read
+jobs:
+  public-site-template:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce shared logo, navigation, supporter/profile shell on new pages
+        env:
+          DC_TEMPLATE_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node --test tests/public-page-template.test.mjs tests/mana-heist-shell.test.mjs
