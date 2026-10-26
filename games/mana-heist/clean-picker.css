@@ -272,3 +272,31 @@
 @media(prefers-reduced-motion:reduce){
  .mana-heist-site-page:not(.in-heist) .heist-panel .overworld-stage{transition:none!important}
 }
+
+/* Ten original galaxy controls become a quiet, scrollable symbol rail.
+   Keeping them visible is required by the original tested browser navigation. */
+.mana-heist-site-page:not(.in-heist) .heist-panel .galaxy-navigation{
+ position:relative;display:flex!important;flex-wrap:nowrap;justify-content:center;
+ gap:7px!important;max-width:100%;overflow-x:auto;overflow-y:hidden;
+ margin:0 0 14px!important;padding:4px 3px 8px!important;
+ scrollbar-width:thin;scrollbar-color:#ac9665 #0a1f1b
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .galaxy-tab{
+ display:grid!important;place-items:center!important;flex:0 0 43px;
+ width:43px!important;height:43px!important;min-width:43px!important;
+ padding:3px!important;border-radius:50%!important;
+ text-align:center!important;background:#102b25!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .galaxy-tab .galaxy-symbol{
+ display:grid!important;place-items:center;width:30px;height:30px;flex:0 0 30px;
+ font:normal 18px/1 Georgia,serif
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .galaxy-tab>span:nth-child(2){
+ display:none!important
+}
+.mana-heist-site-page:not(.in-heist) .heist-panel .galaxy-tab.active{
+ background:#3b5743!important;border-color:#f4d597!important
+}
+@media(max-width:640px){
+ .mana-heist-site-page:not(.in-heist) .heist-panel .galaxy-navigation{justify-content:flex-start}
+}
