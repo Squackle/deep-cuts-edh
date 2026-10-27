@@ -69,6 +69,23 @@ export function buildArcanePuzzle(game,day,mode="daily",seed=0){
   tiles:gameShuffle(chosen.flatMap(g=>g[2]),gameHash(id+":board:tiles"+(mode==="daily"&&day>=BOARD_V2_START?":v2":""))),
   edition:mode==="daily"&&day>=BOARD_V2_START?"hand-curated-v2":"hand-curated-v1"};
 }
+/* Generate a new practice *puzzle*, not merely a tile rearrangement.
+ * The old seeded practice generator and published daily snapshots remain
+ * unchanged, so old practice URLs and all daily records still replay.
+ * Every category has unique card names: no shared tiles guarantees all four
+ * categories differ from the preceding practice/daily round. */
+export function nextBoardPracticeSeed(previousTiles=[],previousSeed=0,random=()=>Math.floor(Math.random()*999999999)+1){
+ const names=new Set(Array.isArray(previousTiles)?previousTiles:[]);
+ const start=Number(random());
+ if(!Number.isSafeInteger(start)||start<1||start>999999999)throw new RangeError("Practice seed must be in range");
+ for(let offset=0;offset<4096;offset++){
+  const seed=((start+offset-1)%999999999)+1;
+  if(seed===previousSeed)continue;
+  const puzzle=buildArcanePuzzle("board","practice","practice",seed);
+  if(!puzzle.tiles.some(name=>names.has(name)))return seed;
+ }
+ throw Error("No distinct practice category set found");
+}
 export function cipherFeedback(guess,answer){
  const target=cipherLetters(answer),attempt=cipherLetters(guess);
  if(attempt.length!==target.length)throw new RangeError("Guess length does not match the cipher.");
