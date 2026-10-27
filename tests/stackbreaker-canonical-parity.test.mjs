@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 const read=x=>readFileSync(new URL('../'+x,import.meta.url),'utf8');
-test('Daily embeds exact original launched game rather than a simplified clone',()=>{
+test('Daily embeds pinned first-party Classic game rather than a simplified clone',()=>{
  const html=read('games/stackbreaker.html');
- assert.ok(html.includes('deep-cuts-game-lab.pages.dev/stackbreaker/?daily=1&amp;siteRanked=1'));
+ assert.ok(html.includes('/games/stackbreaker-play/?daily=1&amp;siteRanked=1'));
  assert.ok(html.includes('id="stackbreakerOriginal"'));
  assert.ok(html.includes('id="rankings"'));
  assert.ok(html.includes('id="rankedRun"'));
@@ -17,7 +17,7 @@ test('Daily embeds exact original launched game rather than a simplified clone',
 test('Ranked replay is sourced from independent website server, never messages or local score',()=>{
  const source=read('games/stackbreaker-canonical.js');
  assert.ok(source.includes("event.source!==frame.contentWindow||event.origin!==gameOrigin"));
- assert.ok(source.includes("type:'dc-sb-ranked-move'"));
+ assert.ok(source.includes("data.type!=='dc-sb-ranked-move'"),"Only ranked move events reach the server");
  assert.ok(source.includes("action:'move',seq:ranked.attempt.moves,move:data.move"));
  assert.ok(source.includes("type:'dc-sb-ranked-state'"));
  assert.ok(source.includes("credentials:'same-origin'"));

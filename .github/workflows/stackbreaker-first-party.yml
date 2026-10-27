@@ -1,0 +1,38 @@
+name: Stackbreaker first-party gameplay and replay
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'games/stackbreaker.html'
+      - 'games/stackbreaker-canonical.js'
+      - 'games/stackbreaker-play/**'
+      - 'tests/stackbreaker-*.test.mjs'
+      - 'src/stackbreaker-verify/**'
+      - 'functions/api/stackbreaker.js'
+      - '_headers'
+      - '.github/workflows/stackbreaker-first-party.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  first-party-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: First-party bundle, UTC clock, Classic/Daily isolation, secure bridge, API replay
+        run: |
+          node --test \
+            tests/stackbreaker-first-party.test.mjs \
+            tests/stackbreaker-canonical-parity.test.mjs \
+            tests/stackbreaker-classic-viewport.test.mjs \
+            tests/stackbreaker-game-first-layout.test.mjs \
+            tests/stackbreaker-site-template.test.mjs \
+            tests/stackbreaker-server-replay.test.mjs \
+            tests/stackbreaker-api-integration.test.mjs
+      - name: Validate complete standalone game JavaScript parse
+        run: |
+          node --input-type=module -e "import {readFileSync} from 'node:fs';import vm from 'node:vm';const html=readFileSync('games/stackbreaker-play/index.html','utf8');const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];if(scripts.length!==1)throw Error('Expected one complete bundled game script');new vm.Script(scripts[0][1]);console.log('Standalone game script parsed, bytes:',scripts[0][1].length);"
