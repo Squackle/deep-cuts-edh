@@ -1,0 +1,41 @@
+/* Budget Commander editorial page: scoped; uses the standard site header, footer and cream Arcade shell. */
+.budget-main{padding-bottom:90px}
+.budget-hero{background:linear-gradient(120deg,#1d362c 5%,#325043 75%,#213e33);border-color:#71896e}
+.budget-hero h1{max-width:820px}
+.budget-hero p{font-size:clamp(15px,1.7vw,18px);max-width:760px}
+.budget-hero .games-page-links{display:flex;flex-wrap:wrap;gap:15px;margin-top:19px}
+.budget-hero .games-page-links a{color:#f4d9a4;text-decoration:underline;text-underline-offset:4px;font-weight:800;font-size:12px}
+.budget-disclosure{background:#fff9e9;border:1px solid #b79c67;border-left:5px solid #8b6735;padding:18px 21px;margin:23px 0 32px;color:#3d4739;font-size:14px;line-height:1.75}
+.budget-disclosure span{display:block;color:#56644d;font-size:12px;margin-top:8px}
+.budget-section{margin:38px 0 48px}
+.budget-section-head{max-width:900px;margin-bottom:21px}
+.budget-eyebrow{font:800 11px/1.5 ui-monospace,monospace;color:#84623c;letter-spacing:.1em}
+.budget-section h2,.budget-next h2{font:700 clamp(26px,3.6vw,38px)/1.18 Georgia,serif;color:#22392e;margin:9px 0 12px}
+.budget-section-head>p{line-height:1.7;font-size:15px;color:#485d4b}
+.budget-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+.budget-card{display:flex;flex-direction:column;background:#fffcf4;border:1px solid #c9b998;border-top:4px solid #9b7849;padding:clamp(18px,2vw,26px);box-shadow:0 7px 22px #4939230b;min-width:0}
+.budget-card-meta{display:flex;gap:7px;flex-wrap:wrap;font:800 10px/1.5 ui-monospace,monospace;color:#725734;letter-spacing:.05em}
+.budget-card-meta span{background:#f4e9d3;padding:5px 7px;border:1px solid #d8c7a6}
+.budget-card h3{font:700 clamp(22px,2.6vw,29px)/1.16 Georgia,serif;color:#243f32;margin:20px 0 10px}
+.budget-card p{font-size:14px;line-height:1.72;color:#405449;margin:0 0 15px}
+.budget-card .budget-card-lead{color:#263d31;font-weight:650;font-size:15px}
+.budget-card .budget-read{margin-top:auto;color:#255b43;text-decoration:underline;text-underline-offset:4px;font-weight:800;font-size:13px;line-height:1.6;padding-top:10px}
+.budget-steps{list-style:none;margin:0;padding:0;display:grid;gap:12px;counter-reset:budget-step}
+.budget-steps>li{counter-increment:budget-step;position:relative;background:#fffbf0;border:1px solid #d0c4ac;padding:20px 22px 21px 77px;min-height:95px}
+.budget-steps>li:before{content:counter(budget-step,decimal-leading-zero);position:absolute;left:21px;top:24px;font:800 24px/1 ui-monospace,monospace;color:#8b6c42}
+.budget-steps h3{font:700 20px Georgia,serif;margin:0 0 8px;color:#263d30}
+.budget-steps p{margin:0;font-size:14px;line-height:1.75;color:#43574b}
+.budget-steps a,.budget-faq a{color:#1f6648;text-decoration:underline;text-underline-offset:3px}
+.budget-faq details{background:#fffcf4;border:1px solid #cabea8;margin:10px 0;padding:0 18px}
+.budget-faq summary{cursor:pointer;min-height:56px;padding:17px 0;color:#243e30;font-weight:800;line-height:1.5}
+.budget-faq summary:focus-visible{outline:3px solid #b38242;outline-offset:2px}
+.budget-faq details p{font-size:14px;line-height:1.75;color:#455749;margin:0 0 18px}
+.budget-next{background:#203a2f;padding:clamp(24px,4vw,40px);color:#ecedde}
+.budget-next h2{color:#f2e4c6}
+.budget-next p{line-height:1.65}
+.budget-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.budget-actions a{display:inline-flex;align-items:center;min-height:44px;padding:10px 14px;border:1px solid #a6aa83;color:#f4e7cc;font-weight:750;text-decoration:none;font-size:13px}
+.budget-actions a:hover,.budget-actions a:focus-visible{background:#385b45;outline-offset:3px}
+@media(max-width:950px){.budget-cards{grid-template-columns:1fr}.budget-card{padding:23px}.budget-card h3{margin-top:14px}}
+@media(max-width:480px){.budget-main{padding-top:25px}.budget-section{margin:31px 0}.budget-steps>li{padding:18px 16px 18px 58px}.budget-steps>li:before{left:14px;top:21px;font-size:19px}.budget-actions{flex-direction:column}.budget-actions a{width:100%}.budget-disclosure{padding:15px}}
+@media(prefers-reduced-motion:reduce){.budget-card,.budget-actions a{transition:none}}
