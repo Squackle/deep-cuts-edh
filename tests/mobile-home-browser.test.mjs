@@ -5,15 +5,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import {execFileSync} from "node:child_process";
-import {chromium} from "playwright-core";
+import {launchBrowser} from "./helpers/browser.mjs";
 
-function chrome(){
- for(const bin of ["google-chrome","google-chrome-stable","chromium","chromium-browser"]){
-  try{const cmd=execFileSync("which",[bin],{encoding:"utf8"}).trim();if(cmd)return cmd}catch{}
- }
- throw Error("Chromium browser unavailable");
-}
+
 const contentTypes={".html":"text/html",".css":"text/css",".js":"application/javascript",".svg":"image/svg+xml",".png":"image/png"};
 async function server(){
  const root=process.cwd(),httpServer=http.createServer((req,res)=>{
@@ -30,7 +24,7 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
  const {httpServer,url}=await server();
  let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const width of [320,390,600,1280]){
    const ctx=await browser.newContext({viewport:{width,height:844}});
    const page=await ctx.newPage();
@@ -150,7 +144,7 @@ test("Mobile homepage navigation, supporter strip, hero and footer remain compac
 test("Opted-in supporter tiers still animate; reduced-motion visitors see a stationary accessible link",{timeout:30000},async()=>{
  const {httpServer,url}=await server();let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const reduce of [false,true]){
    const ctx=await browser.newContext({viewport:{width:390,height:780},reducedMotion:reduce?"reduce":"no-preference"});
    const page=await ctx.newPage();
@@ -174,7 +168,7 @@ test("Opted-in supporter tiers still animate; reduced-motion visitors see a stat
 test("Homepage reserves its header and ribbon space before deferred navigation initializes",{timeout:65000},async()=>{
  const {httpServer,url}=await server();let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const width of [390,840,1280]){
    const ctx=await browser.newContext({viewport:{width,height:900}});
    const page=await ctx.newPage();
@@ -205,7 +199,7 @@ test("Homepage reserves its header and ribbon space before deferred navigation i
 test("Desktop nav remains accessible if enhancement fails and no-JS fallback stays visible",{timeout:40000},async()=>{
  const {httpServer,url}=await server();let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   const failed=await browser.newContext({viewport:{width:1280,height:850}});
   try{
    const page=await failed.newPage();

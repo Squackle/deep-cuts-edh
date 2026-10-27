@@ -1,0 +1,28 @@
+{
+  "name": "deep-cuts-edh",
+  "private": true,
+  "description": "Development-only verification for the existing buildless Cloudflare Pages site",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "test": "node scripts/test.mjs all",
+    "test:unit": "node scripts/test.mjs unit",
+    "test:browser": "node scripts/test.mjs browser",
+    "test:workers": "node scripts/test.mjs workers",
+    "test:live": "node --test tests/owner-access-smoke.test.mjs",
+    "test:install-browser": "playwright-core install chromium",
+    "check": "node scripts/site-release-check.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "miniflare": "4.20260730.0",
+    "playwright-core": "1.56.1"
+  },
+  "overrides": {
+    "miniflare": {
+      "undici": "7.29.1",
+      "sharp": "0.35.5"
+    }
+  }
+}

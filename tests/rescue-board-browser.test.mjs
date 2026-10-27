@@ -3,15 +3,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import {execFileSync} from "node:child_process";
-import {chromium} from "playwright-core";
+import {launchBrowser} from "./helpers/browser.mjs";
 
-function browserPath(){
- for(const name of ["google-chrome","chromium","google-chrome-stable","chromium-browser"]){
-  try{return execFileSync("which",[name],{encoding:"utf8"}).trim()}catch{}
- }
- throw Error("Chromium unavailable");
-}
+
 async function serve(){
  const root=process.cwd();
  const server=http.createServer((req,res)=>{
@@ -33,7 +27,7 @@ test("Rescue Board preserves voting, reveals useful details and reads existing p
  const {server,url}=await serve();
  let browser;
  try{
-  browser=await chromium.launch({executablePath:browserPath(),headless:true,args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const width of [390,1280]){
    const ctx=await browser.newContext({viewport:{width,height:850}});
    const page=await ctx.newPage(),errors=[];
