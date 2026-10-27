@@ -4,6 +4,8 @@ import {onRequestGet as arcaneGet} from '../functions/api/arcane-games.js';
 import assert from 'node:assert/strict';
 // Cron prewarm is part of daily-game integrity; include its isolated tests in existing CI.
 import './daily-puzzle-clock.test.mjs';
+// P1 Conspiracy Board Central midnight, shuffle and practice nonrepetition.
+import './conspiracy-board-variety.test.mjs';
 import {CIPHER_WORDS,CIPHER_TYPES,BOARD_CATEGORIES,buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,boardMatch,boardOneAway,chicagoDate} from '../src/arcane-game-data.js';
 
 test('Full creature subtype catalog is valid and archived five-letter editions stay available',()=>{
