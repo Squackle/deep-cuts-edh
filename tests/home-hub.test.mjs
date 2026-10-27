@@ -1,5 +1,6 @@
 import test from 'node:test';
 import "./guest-session.test.mjs";
+import "./budget-commander-seo.test.mjs";
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 const html=readFileSync('index.html','utf8');
