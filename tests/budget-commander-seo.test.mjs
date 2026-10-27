@@ -55,3 +55,38 @@ test('Existing sitemap, first-party discovery links and mobile/keyboard presenta
  assert.ok(sitemap.includes('<loc>https://deep-cuts-edh.pages.dev/rescues</loc>'));
  assert.ok(!sitemap.includes('budget-commander-decks'),'No unshipped new route in sitemap');
 });
+
+
+import {staticArchiveHtml} from '../src/weekly-rescues-html.js';
+import {onRequestGet as rescueIndex} from '../functions/rescues/index.js';
+
+test('Canonical SSR /rescues keeps the exact budget guide, static metadata and weekly feed',()=>{
+ const live=staticArchiveHtml(page,[{date:'2026-10-30',commander:'Harmless & <script>alert(1)</script>',theme:'Mono-black <b>graveyard</b>'}]);
+ assert.ok(live.includes('id="budget-commander-ideas"'));
+ assert.ok(live.includes('href="/budget-commander-decks.css"'));
+ assert.ok(live.includes('Budget Commander Deck Ideas &amp; Weekly Rescue Reports'));
+ assert.ok(live.includes('href="/rescues/2026-10-30"'));
+ assert.ok(live.includes('Harmless &amp; &lt;script&gt;alert(1)&lt;/script&gt;'));
+ assert.ok(live.includes('Mono-black &lt;b&gt;graveyard&lt;/b&gt;'));
+ assert.ok(!live.includes('<script>alert(1)</script>'));
+ assert.ok(!live.includes('Checking the weekly archive…'));
+ assert.equal((live.match(/<h1\b/g)||[]).length,1);
+ assert.match(live,/id="weeklyReportList"/);
+});
+
+test('Canonical weekly function has a safe offline asset fallback and never invents report links',async()=>{
+ const empty=staticArchiveHtml(page,[],{unavailable:true});
+ assert.match(empty,/weekly archive is temporarily unavailable/);
+ assert.match(empty,/id="budget-commander-ideas"/);
+ const malformed=staticArchiveHtml(page,[{date:'javascript:evil()',commander:'Fake',theme:'Fake'}]);
+ assert.doesNotMatch(malformed,/javascript:evil/);
+ assert.throws(()=>staticArchiveHtml('<main>old unrelated template</main>',[]),/Canonical Rescue Report asset/);
+ const response=await rescueIndex({request:new Request('https://deep-cuts-edh.pages.dev/rescues'),env:{
+  ASSETS:{fetch:async request=>{
+   assert.equal(new URL(request.url).pathname,'/rescues');
+   return new Response('missing',{status:404});
+  }}
+ }});
+ assert.equal(response.status,503);
+ assert.match(response.headers.get('content-type'),/text\/html/i);
+});
