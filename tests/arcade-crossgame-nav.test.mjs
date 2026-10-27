@@ -43,11 +43,14 @@ function setup(path,{victory=false}={}){
   return {document,listeners,observers,body,drawer:document.getElementById("dcCrossGameNav")};
 }
 
-test("all seven playable main-site pages load the shared switcher",()=>{
+test("all seven games load the shared header's route-scoped switcher",()=>{
+  const header=read("header-profile.js");
+  assert.match(header,/src="\/arcade-crossgame\.js"|gameNavigation\.src="\/arcade-crossgame\.js"/);
+  assert.match(header,/href="\/arcade-crossgame\.css"|gameStyles\.href="\/arcade-crossgame\.css"/);
   for(const [file] of pages){
     const html=read(file);
-    assert.match(html,/href="\/arcade-crossgame.css"/,file);
-    assert.match(html,/src="\/arcade-crossgame.js"/,file);
+    assert.match(html,/src="\/header-profile\.js"/,file);
+    assert.doesNotMatch(html,/src="\/arcade-crossgame\.js"/,file);
   }
 });
 
