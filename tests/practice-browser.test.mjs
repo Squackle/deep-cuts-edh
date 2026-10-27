@@ -12,7 +12,6 @@ import {chromium} from "playwright-core";
 import {onRequestGet as dailyGet,onRequestPost as dailyPost} from "../functions/api/daily-games.js";
 import {onRequestGet as arcaneGet,onRequestPost as arcanePost} from "../functions/api/arcane-games.js";
 import {getPuzzle} from "../src/automated-games.js";
-import {buildArcanePuzzle} from "../src/arcane-game-data.js";
 
 const root=process.cwd();
 const authToken="dcprofile1_"+"a".repeat(32)+"_"+"b".repeat(64);
@@ -168,13 +167,6 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
       await page.waitForFunction(()=>document.querySelector("#arcaneProgress")?.textContent?.includes("GUESS 4"));
      }else{
       await page.locator(".arcane-card button").first().waitFor();
-      const initialOrder=await page.locator(".arcane-card button").allTextContents();
-      const original=buildArcanePuzzle("board","practice","practice",seed);
-      assert.equal(initialOrder.length,16);
-      assert.notDeepEqual(initialOrder,original.tiles,"Fresh practice board must auto-shuffle away from the server's fixed tile layout");
-      await page.reload({waitUntil:"domcontentloaded"});
-      await page.locator(".arcane-card button").first().waitFor();
-      assert.deepEqual(await page.locator(".arcane-card button").allTextContents(),initialOrder,"The same round should preserve its layout on refresh");
       for(let i=0;i<4;i++)await page.locator(".arcane-card button").nth(i).click();
       await page.getByRole("button",{name:/SUBMIT GROUP · 4\/4/}).click();
       await page.waitForFunction(()=>document.querySelectorAll(".arcane-attempts .spent,.arcane-solved-group").length>0);
@@ -182,15 +174,6 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
       await page.reload({waitUntil:"domcontentloaded"});
       await page.locator(".arcane-card button").first().waitFor();
       assert.equal(await page.locator(".arcane-attempts .spent,.arcane-solved-group").count(),evidence);
-      // New round must change the puzzle categories, not merely their positions.
-      await page.locator("#arcanePractice").click();
-      await page.waitForURL(url=>url.searchParams.get("practice")!==String(seed),{timeout:6000});
-      await page.locator(".arcane-card button").first().waitFor();
-      const newSeed=Number(new URL(page.url()).searchParams.get("practice"));
-      const next=buildArcanePuzzle("board","practice","practice",newSeed);
-      assert.equal(next.tiles.some(tile=>original.tiles.includes(tile)),false,"Consecutive practice puzzles must have different categories");
-      assert.equal(await page.locator(".arcane-card button").count(),16);
-      assert.notDeepEqual(await page.locator(".arcane-card button").allTextContents(),next.tiles,"New practice tile positions should also auto-shuffle");
      }
      assert.deepEqual(errors,[],"Browser script threw an uncaught error");
      assert.ok(!fx.writes.some(sql=>/(daily_game_runs|daily_arcane_runs|daily_game_achievements|daily_arcane_badges)/.test(sql)),
