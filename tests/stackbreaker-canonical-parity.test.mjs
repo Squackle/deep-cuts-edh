@@ -17,7 +17,7 @@ test('Daily embeds pinned first-party Classic game rather than a simplified clon
 test('Ranked replay is sourced from independent website server, never messages or local score',()=>{
  const source=read('games/stackbreaker-canonical.js');
  assert.ok(source.includes("event.source!==frame.contentWindow||event.origin!==gameOrigin"));
- assert.ok(source.includes("type:'dc-sb-ranked-move'"));
+ assert.ok(source.includes("data.type!=='dc-sb-ranked-move'"),"Only ranked move events reach the server");
  assert.ok(source.includes("action:'move',seq:ranked.attempt.moves,move:data.move"));
  assert.ok(source.includes("type:'dc-sb-ranked-state'"));
  assert.ok(source.includes("credentials:'same-origin'"));
