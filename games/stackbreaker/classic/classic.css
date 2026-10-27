@@ -1,0 +1,10 @@
+/* Stackbreaker Classic — main-site shell only; game CSS is isolated inside play.html. */
+.sb-classic-main .sb-classic-hero{padding-bottom:16px}
+.sb-classic-main .sb-classic-hero h1{margin-bottom:12px}
+.sb-classic-main .sb-classic-hero p{max-width:840px}
+.sb-classic-stage{width:min(1600px,calc(100% - 24px));margin:12px auto 26px;padding:5px;background:#071214;border:1px solid #b9aa87;box-shadow:0 12px 24px #332c201d}
+#classicGame{width:100%;height:100svh;min-height:650px;display:block;border:0;background:#071214}
+.sb-classic-guide{margin-bottom:34px}
+.sb-classic-main :is(a,button):focus-visible{outline:3px solid #ac7533;outline-offset:3px}
+@media(max-width:640px){.sb-classic-main .sb-classic-hero{padding-bottom:9px}.sb-classic-stage{width:calc(100% - 10px);padding:2px;margin-top:8px}#classicGame{min-height:570px}.sb-classic-guide{padding-inline:3px}}
+@media(prefers-reduced-motion:reduce){.sb-classic-main *{scroll-behavior:auto}}

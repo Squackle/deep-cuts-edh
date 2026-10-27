@@ -1,0 +1,39 @@
+name: Stackbreaker Classic main-site promotion
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'games/stackbreaker/classic/**'
+      - 'games/stackbreaker.html'
+      - 'games.html'
+      - '_headers'
+      - '_redirects'
+      - 'tests/stackbreaker-classic-*.test.mjs'
+      - '.github/workflows/stackbreaker-classic-promotion.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'games/stackbreaker/classic/**'
+      - 'games/stackbreaker.html'
+      - 'games.html'
+      - '_headers'
+      - '_redirects'
+      - 'tests/stackbreaker-classic-*.test.mjs'
+      - '.github/workflows/stackbreaker-classic-promotion.yml'
+permissions:
+  contents: read
+jobs:
+  classic-promotion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Classic source bundle, exact shared site template, saves and same-origin frame policy
+        run: node --test tests/stackbreaker-classic-promotion.test.mjs
+      - name: Install Chromium test driver
+        run: npm install --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
+      - name: Test real Classic campaign gameplay on phone and desktop Chromium
+        run: node --test tests/stackbreaker-classic-browser.test.mjs
