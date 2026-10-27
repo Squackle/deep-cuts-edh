@@ -109,7 +109,7 @@ test('Arcade distinguishes the first-party Daily and the currently available Cla
   assert.doesNotMatch(classic,/GAME LAB/,'First-party mode should not be mislabeled Lab');
  }else{
   assert.equal(target,'https://deep-cuts-game-lab.pages.dev/stackbreaker/');
-  assert.match(classic,/GAME LAB/,'Keep external hosting explicit until Classic promotion');
+  assert.match(card,/CLASSIC · GAME LAB ↗<\/a>/,'Keep the visible CTA labeled with external Game Lab hosting');
   assert.match(card,/currently hosted in our Game Lab/,'do not imply first-party Classic integration');
  }
  assert.doesNotMatch(card,/siteRanked=1.*classic/,'Classic must not imply ranked Daily results');
