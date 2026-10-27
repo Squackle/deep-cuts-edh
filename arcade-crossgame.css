@@ -1,0 +1,83 @@
+/* Shared Arcade game switcher; accessible during play and in result screens. */
+.dc-cross-game{
+  box-sizing:border-box;position:fixed;z-index:2147483000;
+  right:max(12px,env(safe-area-inset-right,0px));
+  bottom:max(12px,env(safe-area-inset-bottom,0px));
+  width:max-content;max-width:calc(100vw - 24px);
+  font:600 13px/1.4 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:#f7efdb;isolation:isolate
+}
+.dc-cross-game *{box-sizing:border-box}
+.dc-cross-game-toggle{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  min-height:44px;max-width:100%;padding:11px 16px;
+  color:#f7efdb;background:#203c30;border:1px solid #c6a667;
+  border-radius:6px;box-shadow:0 4px 18px #0b1e19aa;
+  font:800 12px/1.4 ui-sans-serif,system-ui,sans-serif;
+  letter-spacing:.065em;cursor:pointer;list-style:none;user-select:none
+}
+.dc-cross-game-toggle::-webkit-details-marker{display:none}
+.dc-cross-game-toggle::after{content:"⌃";font-size:18px;line-height:1;transform:rotate(180deg)}
+.dc-cross-game[open] .dc-cross-game-toggle{background:#365741}
+.dc-cross-game[open] .dc-cross-game-toggle::after{transform:none}
+.dc-cross-game-toggle:hover{background:#345641}
+.dc-cross-game :is(summary,a):focus-visible{outline:3px solid #f1cc83;outline-offset:3px}
+.dc-cross-game-panel{
+  position:absolute;right:0;bottom:calc(100% + 9px);
+  width:min(384px,calc(100vw - 24px));
+  max-height:min(68dvh,510px);overflow-y:auto;overscroll-behavior:contain;
+  padding:17px;background:#182d25;color:#f7efdb;
+  border:1px solid #bea16c;border-radius:7px;
+  box-shadow:0 15px 35px #071812db
+}
+.dc-cross-game-kicker{
+  display:block;font:800 10px/1.4 ui-monospace,monospace;
+  letter-spacing:.11em;color:#e2be7d;margin-bottom:5px
+}
+.dc-cross-game-heading{
+  margin:0 0 13px;color:#f7efdb;font:500 23px/1.15 Georgia,serif;
+  letter-spacing:normal;text-transform:none
+}
+.dc-cross-game-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.dc-cross-game-link{
+  display:flex;flex-direction:column;justify-content:center;gap:2px;
+  min-width:0;min-height:56px;padding:9px 10px;
+  color:#f5e9cf;text-decoration:none!important;
+  background:#284438;border:1px solid #66806d;border-radius:4px
+}
+.dc-cross-game-link:hover,.dc-cross-game-link:focus-visible{
+  color:#fff7df;background:#40634d;border-color:#e0ba7a
+}
+.dc-cross-game-link strong{
+  color:inherit;font:800 12px/1.25 ui-sans-serif,system-ui,sans-serif;letter-spacing:normal
+}
+.dc-cross-game-link small{
+  color:#cbd7c7;font:500 10px/1.3 ui-sans-serif,system-ui,sans-serif;letter-spacing:normal
+}
+.dc-cross-game-hub{
+  display:inline-block;margin-top:13px;color:#f0cc8d!important;
+  text-decoration:underline;text-underline-offset:3px;font:700 12px/1.5 ui-sans-serif,system-ui,sans-serif
+}
+/* The Mana Heist tabletop covers the page body while a vault is active. */
+body.in-heist .dc-cross-game{
+  top:calc(var(--mana-site-header-h,118px) + 8px);bottom:auto
+}
+body.in-heist .dc-cross-game-panel{top:calc(100% + 9px);bottom:auto}
+/* Hive Run Game Only hides its normal header; keep the drawer above the arena. */
+body.game-only .dc-cross-game{
+  top:max(5px,env(safe-area-inset-top,0px));right:max(114px,env(safe-area-inset-right,0px));
+  bottom:auto;font-size:11px
+}
+body.game-only .dc-cross-game-toggle{padding:7px 9px;min-height:32px;font-size:10px}
+body.game-only .dc-cross-game-panel{top:calc(100% + 7px);bottom:auto}
+.dominion-victory .dc-cross-game{
+  top:max(10px,env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));bottom:auto
+}
+.dominion-victory .dc-cross-game-panel{top:calc(100% + 8px);bottom:auto}
+@media(max-width:440px){
+  .dc-cross-game-panel{padding:12px;max-height:64dvh}
+  .dc-cross-game-heading{font-size:20px;margin-bottom:10px}
+  .dc-cross-game-link{min-height:50px;padding:8px}
+  .dc-cross-game-link strong{font-size:11px}
+  .dc-cross-game-link small{font-size:9px}
+}

@@ -1,0 +1,33 @@
+name: Arcade cross-game navigation
+on:
+  pull_request:
+    paths:
+      - arcade-crossgame.js
+      - arcade-crossgame.css
+      - header-profile.js
+      - tests/arcade-crossgame-nav.test.mjs
+      - .github/workflows/arcade-crossgame.yml
+  push:
+    branches: [main]
+    paths:
+      - arcade-crossgame.js
+      - arcade-crossgame.css
+      - header-profile.js
+      - tests/arcade-crossgame-nav.test.mjs
+      - .github/workflows/arcade-crossgame.yml
+permissions:
+  contents: read
+jobs:
+  cross-game-navigation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax and direct game-navigation regressions
+        run: |
+          node --check arcade-crossgame.js
+          node --check header-profile.js
+          node --test tests/arcade-crossgame-nav.test.mjs
