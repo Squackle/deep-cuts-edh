@@ -1,7 +1,7 @@
 /* Arcane Cipher + Conspiracy Board. The server alone validates and scores
    daily moves, stores authenticated progress, and freezes dated puzzles. */
 import {send,fail,auth,body,originOK,quota,safe} from "../../src/community-core.js";
-import {buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,gameHash,gameShuffle,boardMatch,boardOneAway,chicagoDate} from "../../src/arcane-game-data.js";
+import {buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,gameHash,gameShuffle,boardMatch,boardOneAway,chicagoDate,nextBoardPracticeSeed,BOARD_CATEGORIES} from "../../src/arcane-game-data.js";
 const GAMES=new Set(["cipher","board"]);
 export const ARCANE_BADGES={
  cipher_solved:{title:"🔐 Cipher Breaker",detail:"Solve a daily Arcane Cipher."},
@@ -158,6 +158,17 @@ export async function onRequestGet({request,env}){
    return send({badges:await profileBadges(env.DB,profile.id)});
   }
   const p=normalizeGame(url);if(!p)return fail("Unknown daily game.",400);
+  if(action==="new-practice"){
+   if(p.game!=="board")return fail("Practice selection unavailable for this game.",400);
+   let previous=[];
+   try{previous=JSON.parse(url.searchParams.get("previousTiles")||"[]")}catch{return fail("Invalid previous practice tiles.",400)}
+   const catalog=new Set(BOARD_CATEGORIES.flatMap(group=>group[2]));
+   if(!Array.isArray(previous)||!(previous.length===0||previous.length===16)||
+    previous.some(name=>typeof name!=="string"||!catalog.has(name))||
+    new Set(previous).size!==previous.length)return fail("Invalid previous practice tiles.",400);
+   const priorSeed=p.mode==="practice"?p.seed:0;
+   return send({game:"board",mode:"practice",seed:nextBoardPracticeSeed(previous,priorSeed)});
+  }
   if(action==="board"){
    const r=await env.DB.prepare("SELECT p.handle,r.score,r.won,r.finished_at,r.progress FROM daily_arcane_runs r JOIN community_profiles p ON p.id=r.profile_id WHERE r.game=? AND r.day=? AND r.finished_at IS NOT NULL ORDER BY r.score DESC,r.finished_at ASC LIMIT 12").bind(p.game,p.day).all();
    return send({game:p.game,day:p.day,leaders:(r.results||[]).map(({progress,...row})=>({
