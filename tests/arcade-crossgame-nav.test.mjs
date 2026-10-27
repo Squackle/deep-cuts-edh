@@ -88,7 +88,7 @@ test("drawer persists through gameplay and finished screens and closes on Escape
   document.fullscreenElement=null;listeners.fullscreenchange();
   assert.equal(drawer.parentElement,body);
   const overlay=document.getElementById("victoryOverlay");overlay.hidden=false;
-  assert.deepEqual(observers[0].options.attributeFilter,["hidden"]);
+  assert.equal(observers[0].options.attributeFilter.join(","),"hidden");
   observers[0].callback();assert.equal(drawer.parentElement,overlay);
   overlay.hidden=true;observers[0].callback();assert.equal(drawer.parentElement,body);
   drawer.open=true;listeners.keydown({key:"Escape"});assert.equal(drawer.open,false);
