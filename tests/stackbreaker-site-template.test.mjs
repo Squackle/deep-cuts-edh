@@ -31,7 +31,7 @@ test('Daily Stackbreaker inherits the same site shell as Cold Case',()=>{
 
 test('Daily stays the authentic ranked Classic game, not a template-specific clone',()=>{
  assert.ok(daily.includes('id="stackbreakerOriginal"'));
- assert.ok(daily.includes('deep-cuts-game-lab.pages.dev/stackbreaker/?daily=1&amp;siteRanked=1'));
+ assert.ok(daily.includes('/games/stackbreaker-play/?daily=1&amp;siteRanked=1'));
  for(const id of ['rankedRun','rankedRunState','rankedStatus','rankings','refreshLeaderboard','boardTitle','runRule','frameStatus']){
   assert.ok(daily.includes('id="'+id+'"'), 'ranked UI required by canonical bridge: '+id);
  }
