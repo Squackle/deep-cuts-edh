@@ -82,3 +82,76 @@ test("Arcade hero copy and CTA keep the hierarchy clean and motion optional",()=
  assert.match(css, /arcade-continue-button:focus-visible/);
  assert.doesNotMatch(read("index.html"),/arcade-hub-masthead/);
 });
+
+
+// Task 5: Arcade integration acceptance (works before and after Classic promotion).
+test('Arcade distinguishes the first-party Daily and the currently available Classic mode',()=>{
+ const html=read('games.html');
+ const card=html.match(/<article class="games-feature" data-game="stackbreaker">([\s\S]*?)<\/article>/)?.[1];
+ assert.ok(card,'one Stackbreaker hub card covers both playable choices');
+ assert.match(card,/<strong>Daily Stackbreaker<\/strong>/);
+ assert.match(card,/<strong>Classic Stackbreaker<\/strong>/);
+ const choice=(mode)=>card.match(new RegExp('<a\\b(?=[^>]*data-stackbreaker-mode="'+mode+'")([^>]+)>'));
+ const daily=choice('daily')?.[1],classic=choice('classic')?.[1];
+ assert.ok(daily&&classic,'both modes need distinct visible anchor controls');
+ assert.match(daily,/href="\/games\/stackbreaker"/);
+ assert.match(daily,/aria-label="Play Daily Stackbreaker on Deep Cuts EDH"/);
+ assert.ok(fs.existsSync('games/stackbreaker.html'),'Daily Stackbreaker must remain live on the main site');
+ const dailyPage=read('games/stackbreaker.html');
+ assert.match(dailyPage,/rel="canonical" href="https:\/\/deep-cuts-edh\.pages\.dev\/games\/stackbreaker"/);
+ assert.match(dailyPage,/id="rankedRun"/,'server-run controls cannot disappear');
+ assert.match(dailyPage,/id="rankings"/,'verified leaderboard cannot disappear');
+ const target=classic.match(/href="([^"]+)"/)?.[1];
+ assert.ok(target,'Classic needs its own reachable target');
+ if(target.startsWith('/')){
+  const expected='.'+target.replace(/\/$/,'')+'/index.html';
+  assert.ok(fs.existsSync(expected),'First-party Classic game cannot be advertised before it is published: '+expected);
+  assert.doesNotMatch(classic,/GAME LAB/,'First-party mode should not be mislabeled Lab');
+ }else{
+  assert.equal(target,'https://deep-cuts-game-lab.pages.dev/stackbreaker/');
+  assert.match(card,/CLASSIC · GAME LAB ↗<\/a>/,'Keep the visible CTA labeled with external Game Lab hosting');
+  assert.match(card,/currently hosted in our Game Lab/,'do not imply first-party Classic integration');
+ }
+ assert.doesNotMatch(card,/siteRanked=1.*classic/,'Classic must not imply ranked Daily results');
+});
+
+test('Arcade links resolve to real first-party routes; unrelated game pages remain findable',()=>{
+ const hub=read('games.html');
+ const routes={
+  '/games/hive-run/':'games/hive-run/index.html',
+  '/games/mana-heist/':'games/mana-heist/index.html',
+  '/games/stackbreaker':'games/stackbreaker.html',
+  '/games/cold-case':'games/cold-case.html',
+  '/games/obscurity-ladder':'games/obscurity-ladder.html',
+  '/games/arcane-cipher':'games/arcane-cipher.html',
+  '/games/conspiracy-board':'games/conspiracy-board.html'
+ };
+ for(const [route,path] of Object.entries(routes)){
+  assert.ok(hub.includes('href="'+route+'"'),'Missing Arcade route '+route);
+  assert.ok(fs.existsSync(path),'Arcade destination does not exist: '+path);
+  const page=read(path);
+  assert.ok(page.includes('href="/games"'),'Missing return to Arcade: '+path);
+ }
+ assert.match(hub,/class="site-header"/);
+ assert.match(hub,/class="primary-nav"/);
+ assert.match(hub,/class="site-footer"/);
+});
+
+test('Arcade metadata accurately exposes shipped destinations and does not index unshipped Classic',()=>{
+ const html=read('games.html'),sitemap=read('sitemap.xml');
+ const schema=JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1]||'null');
+ assert.equal(schema?.['@type'],'CollectionPage');
+ for(const [name,url] of [
+  ['Daily Stackbreaker','https://deep-cuts-edh.pages.dev/games/stackbreaker'],
+  ['Mana Heist','https://deep-cuts-edh.pages.dev/games/mana-heist/'],
+  ['Hive Run','https://deep-cuts-edh.pages.dev/games/hive-run/'],
+  ['Classic Stackbreaker (Game Lab)','https://deep-cuts-game-lab.pages.dev/stackbreaker/']
+ ])assert.ok(schema.hasPart.some(x=>x.name===name&&x.url===url),'Invalid discovery entry for '+name);
+ for(const path of ['/games','/games/stackbreaker','/games/mana-heist/','/games/hive-run/']){
+  assert.ok(sitemap.includes('<loc>https://deep-cuts-edh.pages.dev'+path+'</loc>'),'Missing first-party sitemap route '+path);
+ }
+ assert.ok(!sitemap.includes('deep-cuts-game-lab.pages.dev'),'Lab remains a separate host, not a main-site canonical');
+ assert.ok(!sitemap.includes('/games/stackbreaker/classic/'),'An unshipped first-party route must not appear in sitemap');
+ assert.match(html,/CREATURE TYPES · VARIABLE LENGTH/,'Arcane Cipher supports variable-length creature types');
+ assert.doesNotMatch(html,/chase daily or arcade records/i,'Do not resurrect retired Hive Run daily rankings');
+});
