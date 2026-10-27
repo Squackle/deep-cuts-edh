@@ -1,6 +1,6 @@
 // Canonical daily front end runs a pinned first-party copy of the Classic game.
 // This module only presents authenticated server-replayed rankings.
-// It never trusts localStorage, screenshots, query parameters, or Lab messages
+// It never trusts browser-saved scores, screenshots, query parameters, or game messages
 // as proof of a win. Only same-origin server-replayed daily moves qualify for ranked scoring.
 const frame=document.getElementById('stackbreakerOriginal');
 const status=document.getElementById('rankedStatus');

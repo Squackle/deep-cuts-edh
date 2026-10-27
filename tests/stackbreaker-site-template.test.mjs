@@ -42,7 +42,7 @@ test('Daily stays the authentic ranked Classic game, not a template-specific clo
 });
 
 test('Stackbreaker page-specific CSS does not replace the shared site theme',()=>{
- assert.ok(styles.includes('#stackbreakerOriginal{width:100%'));
+ assert.match(styles,/#stackbreakerOriginal\s*\{\s*width:100%/);
  assert.ok(styles.includes('height:calc(100svh - 44px)'));
  assert.ok(styles.includes('height:calc(100svh - 37px)'));
  assert.ok(!/^:root\s*\{/m.test(styles), 'do not override global site variables');
