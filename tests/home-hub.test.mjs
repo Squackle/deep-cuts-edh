@@ -69,7 +69,7 @@ test('The homepage explains the full site and enlarges the featured card without
  assert.match(css,/\.hub-feature-main\{[^\n]*grid-template-columns:154px minmax\(0,1fr\)/);
  assert.match(css,/\.hub-feature-portrait\{[^\n]*width:154px;height:215px/);
  assert.match(css,/@media\(max-width:430px\)\{\.hub-feature-main\{grid-template-columns:110px/);
- assert.match(html,/href="\/rescues\/2026-10-30" aria-label="Read the latest weekly Commander Rescue Report: Vhati il-Dal"/);
+ assert.match(html,/id="homeWeeklyFeature" data-weekly-date="2026-10-30" href="\/rescues\/2026-10-30"/);
 });
 
 test('Desktop feature expands only into the right gutter without shifting its grid origin',()=>{
