@@ -54,5 +54,5 @@ test('DOM update changes the accessible feature and archive link without HTML in
 test('Unreachable weekly API cannot remove the featured current report',()=>{
  assert.match(source,/\.catch\(\(\)=>\{ \/\* Keep the fully linked, crawlable featured fallback/);
  assert.match(source,/https:\/\/deep-cuts-weekly-publisher\.logan-ottfamily\.workers\.dev\/v1\/latest/);
- assert.match(homepage,/aria-label="Read the latest weekly Commander Rescue Report: Vhati il-Dal"/);
+ assert.match(homepage,/data-weekly-name>Vhati il-Dal<\/strong>/);
 });
