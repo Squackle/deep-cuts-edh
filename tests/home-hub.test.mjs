@@ -2,6 +2,7 @@ import test from 'node:test';
 import "./guest-session.test.mjs";
 import "./budget-commander-seo.test.mjs";
 import "./weekly-rescue-publisher-reliability.test.mjs";
+import "./home-weekly-feature.test.mjs";
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 const html=readFileSync('index.html','utf8');
@@ -68,7 +69,7 @@ test('The homepage explains the full site and enlarges the featured card without
  assert.match(css,/\.hub-feature-main\{[^\n]*grid-template-columns:154px minmax\(0,1fr\)/);
  assert.match(css,/\.hub-feature-portrait\{[^\n]*width:154px;height:215px/);
  assert.match(css,/@media\(max-width:430px\)\{\.hub-feature-main\{grid-template-columns:110px/);
- assert.match(html,/href="\/reports\/commander-mustard" aria-label="Read the featured Commander Mustard rescue report"/);
+ assert.match(html,/id="homeWeeklyFeature" data-weekly-date="2026-10-30" href="\/rescues\/2026-10-30"/);
 });
 
 test('Desktop feature expands only into the right gutter without shifting its grid origin',()=>{
@@ -89,7 +90,7 @@ test("PageSpeed changes stabilize homepage layout without touching AdSense or au
  assert.match(stability,/header-inner:not\(\.header-profile-enabled\)/);
  assert.match(stability,/hub-card-top\{color:#435b47\}/);
  assert.match(stability,/hub-card-desc.*#455c49/);
- assert.match(html,/Commander%20Mustard&amp;format=image&amp;version=small/);
+ assert.match(html,/Vhati%20il-Dal&amp;format=image&amp;version=small/);
  assert.match(html,/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js/);
  assert.match(html,/name="google-site-verification"/);
  assert.match(html,/name="follow.it-verification-code"/);

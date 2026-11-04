@@ -25,11 +25,13 @@ async function submit(ch,owned){
  const d=dbMock(ch,owned),r=await gamesWrite(d,{id:profile},{action:"challenge_entry",deck_id:own,challenge_id:ch.id});
  return {status:r.status,data:await r.json(),changes:d.changes};
 }
-test("Current featured Commander Mustard matches homepage Featured Case File",()=>{
+test("Latest weekly homepage feature stays distinct from the current community Rescue Challenge",()=>{
  const homepage=fs.readFileSync("index.html","utf8");
- assert.match(homepage,new RegExp('class="hub-feature" href="/reports/'+CURRENT_CASE.slug+'"'));
+ assert.match(homepage,/class="hub-feature" id="homeWeeklyFeature" data-weekly-date="2026-10-30" href="\/rescues\/2026-10-30"/);
+ assert.match(homepage,/data-weekly-name>Vhati il-Dal<\/strong>/);
+ assert.match(homepage,/href="\/reports\/commander-mustard"/,'Existing community featured report remains available in archive');
  assert.equal(CURRENT_CASE.commander,"Commander Mustard");
- assert.match(homepage,/Commander<br>Mustard/);
+ assert.equal(CURRENT_CASE.slug,"commander-mustard");
 });
 test("Featured challenge presents current case regardless of the old persisted title",()=>{
  assert.equal(publicChallenge(featured).commander,"Commander Mustard");
