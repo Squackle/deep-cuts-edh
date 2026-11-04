@@ -13,7 +13,17 @@ const dateKey=p=>`${p.year}-${p.month}-${p.day}`;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const fail=msg=>{throw Error(msg)};
 const clean=(x,max=1500)=>typeof x==='string'?x.replace(/[\u0000-\u001f]/g,' ').trim().slice(0,max):'';
-const jsonFromModel=x=>{const str=typeof x==='string'?x:x?.response??x?.choices?.[0]?.message?.content??'';const start=str.indexOf('{'),end=str.lastIndexOf('}');if(start<0||end<start)fail('AI supplied no JSON');return JSON.parse(str.slice(start,end+1))};
+// Workers AI can return parsed JSON in .response or textual choices.
+export const jsonFromModel=x=>{
+ const value=typeof x==='string'?x:(x?.response??x?.choices?.[0]?.message?.content??'');
+ if(value&&typeof value==='object'&&!Array.isArray(value))return value;
+ if(typeof value!=='string')fail('AI supplied unsupported JSON response');
+ const start=value.indexOf('{'),end=value.lastIndexOf('}');
+ if(start<0||end<start)fail('AI supplied no JSON');
+ const parsed=JSON.parse(value.slice(start,end+1));
+ if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))fail('AI supplied invalid JSON object');
+ return parsed;
+};
 const eligible=x=>x&&x.lang==='en'&&x.legalities?.commander==='legal'&&x.games?.includes('paper')&&Array.isArray(x.color_identity)&&x.color_identity.length<=5&&!!(x.oracle_text||x.card_faces?.[0]?.oracle_text);
 const cardMini=x=>({name:x.name,oracle:clean(x.oracle_text||x.card_faces?.map(f=>f.oracle_text).join(' // ')||'',1100),type:clean(x.type_line,120),colors:x.color_identity,rank:Number.isInteger(x.edhrec_rank)?x.edhrec_rank:null,scryfall:x.scryfall_uri,price:Number.isFinite(Number(x.prices?.usd))?Number(x.prices.usd):null});
 const numericHash=s=>{let n=2166136261;for(const c of s){n^=c.charCodeAt(0);n=Math.imul(n,16777619)}return n>>>0};
@@ -53,20 +63,60 @@ async function research(env,date){
  return {version:1,date,createdAt:new Date().toISOString(),commander:{name:commander.name,identity:commander.colors,oracle:commander.oracle,scryfall:commander.scryfall,edhrecCardUseRank:commander.rank},theme:clean(proposal.theme,80),usualBuild:clean(proposal.usualBuild,70),hook:clean(proposal.hook,210),selectionReason:clean(proposal.selectionReason,220),sections,synergies:examples.slice(0,8),methodology:'AI-assisted editorial strategy hypothesis using live Scryfall Oracle text and card-legality checks. The EDHREC card-use rank is NOT the commander-as-leader deck count. Strategy adoption was not independently measured; interaction interpretations and playtesting have not been judge-certified.',status:'AI-assisted and source-checked; not independently playtested'};
 }
 export const localReleaseWindow=now=>{const p=chicago(now);return p.weekday==='Fri'&&Number(p.hour)===10};
-export async function publish(env,now){if(!env.REPORTS)fail('Rescue-only KV binding missing');const parts=chicago(now);
- if(parts.weekday!=='Fri'||Number(parts.hour)!==10)return {status:'not_release_window',local:dateKey(parts)+' '+parts.hour};
- const date=dateKey(parts);if(await env.REPORTS.get('article:'+date))return {status:'already_published',date};
- let item;try{item=await research(env,date)}catch(e){const error=clean(e?.message,170);await env.REPORTS.put('last-status',JSON.stringify({status:'held_for_review',date,reason:error,checkedAt:new Date().toISOString()}));return {status:'held_for_review',date,reason:error}}
+const asJSON=(value,fallback)=>{try{return JSON.parse(value??'null')??fallback}catch{return fallback}};
+const status=(env,data)=>env.REPORTS.put('last-status',JSON.stringify({...data,checkedAt:new Date().toISOString()}));
+const indexArticle=async(env,item)=>{
+ const previous=asJSON(await env.REPORTS.get('index'),[]);
+ const list=Array.isArray(previous)?previous:[];
+ const next=[{date:item.date,commander:item.commander.name,theme:item.theme,headline:item.sections.headline},...list.filter(x=>x.date!==item.date)].slice(0,104);
+ await env.REPORTS.put('index',JSON.stringify(next));
+};
+export async function publish(env,now){if(!env.REPORTS)fail('Rescue-only KV binding missing');
+ const parts=chicago(now);
+ if(!localReleaseWindow(now))return {status:'not_release_window',local:dateKey(parts)+' '+parts.hour};
+ const date=dateKey(parts);
+ // Repair the public index if an earlier run saved an article but crashed.
+ const existing=await env.REPORTS.get('article:'+date,'json');
+ if(existing){
+  await indexArticle(env,existing);
+  await status(env,{status:'published',date,commander:existing.commander.name,recoveredIndex:true});
+  return {status:'already_published',date,recoveredIndex:true};
+ }
+ await status(env,{status:'researching',date});
+ let item;
+ try{item=await research(env,date)}
+ catch(e){
+  const reason=clean(e?.message,170);
+  await status(env,{status:'held_for_review',date,reason});
+  return {status:'held_for_review',date,reason};
+ }
+ // Publish only after live card and editorial checks pass.
  await env.REPORTS.put('article:'+date,JSON.stringify(item));
- const previous=JSON.parse(await env.REPORTS.get('index')||'[]');const next=[{date,commander:item.commander.name,theme:item.theme,headline:item.sections.headline},...previous.filter(x=>x.date!==date)].slice(0,104);
- await env.REPORTS.put('index',JSON.stringify(next));await env.REPORTS.put('last-status',JSON.stringify({status:'published',date,checkedAt:new Date().toISOString()}));return {status:'published',date,commander:item.commander.name};
+ await indexArticle(env,item);
+ await status(env,{status:'published',date,commander:item.commander.name});
+ return {status:'published',date,commander:item.commander.name};
+}
+export async function scheduledRun(event,env){
+ if(!env.REPORTS)fail('Rescue-only KV binding missing');
+ // Use the scheduled timestamp to survive delayed Cloudflare cron execution.
+ const epoch=Number(event?.scheduledTime);
+ const scheduledAt=new Date(Number.isFinite(epoch)&&epoch>0?epoch:Date.now());
+ await env.REPORTS.put('last-trigger',JSON.stringify({scheduledAt:scheduledAt.toISOString(),observedAt:new Date().toISOString(),releaseWindow:localReleaseWindow(scheduledAt)}));
+ const result=await publish(env,scheduledAt);
+ await env.REPORTS.put('last-run',JSON.stringify({...result,scheduledAt:scheduledAt.toISOString(),observedAt:new Date().toISOString()}));
+ return result;
 }
 export default {
- async scheduled(_event,env,ctx){ctx.waitUntil(publish(env,new Date()).then(x=>console.log('Rescue publication',x.status,x.date||'')).catch(e=>console.error('Rescue release worker failed',String(e))))},
+ async scheduled(event,env,ctx){
+  ctx.waitUntil(scheduledRun(event,env).then(x=>console.log('Rescue publication',x.status,x.date||'')).catch(async e=>{
+   console.error('Rescue release worker failed',String(e));
+   if(env.REPORTS)try{await status(env,{status:'worker_error',reason:clean(e?.message,170)})}catch(writeError){console.error('Rescue status write failed',String(writeError))}
+  }));
+ },
  async fetch(request,env){const u=new URL(request.url);if(request.method!=='GET')return reply({error:'Method not allowed'},405);if(!env.REPORTS)return reply({error:'Publication store unavailable'},503);
-  if(u.pathname==='/v1/health')return reply({ok:true,schedule:'Friday at 10:00 America/Chicago',aiConfigured:!!env.AI,last:JSON.parse(await env.REPORTS.get('last-status')||'null')});
-  if(u.pathname==='/v1/index')return reply({reports:JSON.parse(await env.REPORTS.get('index')||'[]')});
-  if(u.pathname==='/v1/latest'){const list=JSON.parse(await env.REPORTS.get('index')||'[]');return reply({report:list[0]||null})}
+  if(u.pathname==='/v1/health')return reply({ok:true,schedule:'Friday at 10:00 America/Chicago',aiConfigured:!!env.AI,last:asJSON(await env.REPORTS.get('last-status'),null),lastTrigger:asJSON(await env.REPORTS.get('last-trigger'),null),lastRun:asJSON(await env.REPORTS.get('last-run'),null)});
+  if(u.pathname==='/v1/index')return reply({reports:asJSON(await env.REPORTS.get('index'),[])});
+  if(u.pathname==='/v1/latest'){const list=asJSON(await env.REPORTS.get('index'),[]);return reply({report:list[0]||null})}
   if(u.pathname==='/v1/report'){const date=u.searchParams.get('date')||'';if(!/^20\d\d-\d\d-\d\d$/.test(date))return reply({error:'Invalid report date'},400);const x=await env.REPORTS.get('article:'+date,'json');return x?reply({report:x}):reply({error:'Report not found'},404)}
   return reply({error:'Not found'},404);
  }
