@@ -28,3 +28,28 @@ test('DST and standard time both select 10 Central, not UTC midnight',async()=>{
 test('AI invalid candidate holds publication rather than inventing a report',async()=>{await withMock(async()=>{const kv=mem();const env={REPORTS:kv,AI:{async run(){return {response:'{"commander":"Invented Commander","supportCards":[]}'}}}};const {publish}=await import('../workers/weekly-rescue-publisher.js');const r=await publish(env,new Date('2026-10-30T15:00:00Z'));assert.equal(r.status,'held_for_review');assert.equal(kv.map.has('index'),false);assert.equal(kv.map.has('article:2026-10-30'),false)})});
 
 test('HTML output escapes report text; archive empty has no fabricated reports',()=>{assert.equal(escaped('<script>"'), '&lt;script&gt;&quot;');const s=listHtml([]);assert.ok(s.includes('No autonomous weekly report'));assert.ok(s.includes('class="site-header"'));assert.ok(s.includes('weekly-index')===false)});
+
+
+test('An editorial backfill is visibly labeled without claiming direct Scryfall API validation',()=>{
+ const sample={
+  date:'2026-10-30',createdAt:'2026-11-04T16:32:24.424Z',
+  status:'AI-assisted source-checked editorial backfill; not independently playtested',
+  commander:{name:'Vhati il-Dal',scryfall:'https://scryfall.com/card/tpr/214/vhati-il-dal',edhrecCardUseRank:null},
+  theme:'One-Toughness Control',hook:'A careful source-checked hypothesis.',
+  usualBuild:'Approximate control',selectionReason:'Source-grounded and qualified.',
+  sections:{headline:'One point can change a combat step',diagnosis:'Hypothesis only',prescription:'Hypothesis only',earlyGame:'Plan',midGame:'Plan',lateGame:'Plan',risks:'Risks',verdict:'Provisional'},
+  synergies:[{name:'Pestilence',url:'https://scryfall.com/card/usg/147/pestilence',oracle:'One damage to all creatures and players.',why:'Qualified card interaction, not a confirmed win.'}],
+  methodology:'Backfilled from independent public card records while Scryfall API was rate limited.'
+ };
+ const html=reportHtml(sample);
+ assert.match(html,/EDITORIAL BACKFILL/);
+ assert.match(html,/November 4, 2026/);
+ assert.match(html,/not published on its original scheduled date/);
+ assert.match(html,/source-checked using the method described in the editorial disclosure/);
+ assert.doesNotMatch(html,/verified Scryfall card sources|Every linked card is an actual Scryfall record/);
+ assert.match(html,/Backfilled from independent public card records/);
+ assert.match(html,/source-checked card research/);
+ assert.match(html,/Card lookup:.*Commander on Scryfall/);
+ const regular=reportHtml({...sample,status:'AI-assisted and source-checked; not independently playtested'});
+ assert.doesNotMatch(regular,/EDITORIAL BACKFILL/);
+});
