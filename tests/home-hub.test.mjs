@@ -90,7 +90,7 @@ test("PageSpeed changes stabilize homepage layout without touching AdSense or au
  assert.match(stability,/header-inner:not\(\.header-profile-enabled\)/);
  assert.match(stability,/hub-card-top\{color:#435b47\}/);
  assert.match(stability,/hub-card-desc.*#455c49/);
- assert.match(html,/cards\.scryfall\.io\/normal\/front\/a\/8\/a8564611-b678-4336-87e0-5a00a930de48\.jpg/);
+ assert.ok(html.includes('src="https://cards.scryfall.io/normal/front/a/8/a8564611-b678-4336-87e0-5a00a930de48.jpg?1783938448"'),'Featured card image must use exact trusted Scryfall CDN URL');
  assert.match(html,/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js/);
  assert.match(html,/name="google-site-verification"/);
  assert.match(html,/name="follow.it-verification-code"/);
