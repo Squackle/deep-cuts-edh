@@ -24,14 +24,22 @@ export const jsonFromModel=x=>{
  if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))fail('AI supplied invalid JSON object');
  return parsed;
 };
+// Card art comes from the image CDN URL included with the verified Scryfall
+// record. Never make an image request to the rate-limited /cards/named API.
+export const verifiedCardImageUrl=card=>{
+ const value=card?.image_uris?.normal||card?.card_faces?.find(face=>face.image_uris?.normal)?.image_uris?.normal;
+ if(typeof value!=='string')return null;
+ try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='cards.scryfall.io'&&/^\/normal\/(?:front|back)\/[a-f0-9]\/[a-f0-9]\/[a-f0-9-]{36}\.jpg$/.test(u.pathname)?u.href:null}
+ catch{return null}
+};
 const eligible=x=>x&&x.lang==='en'&&x.legalities?.commander==='legal'&&x.games?.includes('paper')&&Array.isArray(x.color_identity)&&x.color_identity.length<=5&&!!(x.oracle_text||x.card_faces?.[0]?.oracle_text);
-const cardMini=x=>({name:x.name,oracle:clean(x.oracle_text||x.card_faces?.map(f=>f.oracle_text).join(' // ')||'',1100),type:clean(x.type_line,120),colors:x.color_identity,rank:Number.isInteger(x.edhrec_rank)?x.edhrec_rank:null,scryfall:x.scryfall_uri,price:Number.isFinite(Number(x.prices?.usd))?Number(x.prices.usd):null});
+const cardMini=x=>({name:x.name,oracle:clean(x.oracle_text||x.card_faces?.map(f=>f.oracle_text).join(' // ')||'',1100),type:clean(x.type_line,120),colors:x.color_identity,rank:Number.isInteger(x.edhrec_rank)?x.edhrec_rank:null,scryfall:x.scryfall_uri,price:Number.isFinite(Number(x.prices?.usd))?Number(x.prices.usd):null,imageUrl:verifiedCardImageUrl(x)});
 const numericHash=s=>{let n=2166136261;for(const c of s){n^=c.charCodeAt(0);n=Math.imul(n,16777619)}return n>>>0};
 const pickPages=date=>{const week=Math.floor(Date.parse(date+'T00:00:00Z')/604800000);return week%4===0?[3,4,5]:week%4===1?[5,7,9]:week%4===2?[2,6,10]:[4,8,10]};
 async function fromScryfall(url){const response=await fetch(url,{headers,signal:AbortSignal.timeout(16000)});if(!response.ok)fail('Scryfall request failed '+response.status);return response.json()}
 async function candidates(date){const results=[];const pages=pickPages(date);for(let i=0;i<pages.length;i++){
  const query=new URL(SOURCE+'/cards/search');query.searchParams.set('q','is:commander legal:commander game:paper');query.searchParams.set('order','edhrec');query.searchParams.set('dir','asc');query.searchParams.set('unique','cards');query.searchParams.set('page',String(pages[i]));
- const data=await fromScryfall(query);const pool=(data.data||[]).filter(eligible);
+ const data=await fromScryfall(query);const pool=(data.data||[]).filter(x=>eligible(x)&&verifiedCardImageUrl(x));
  if(!pool.length)fail('No eligible commander candidates');
  const start=numericHash(date+':'+i)%pool.length;
  let selected=null;for(let j=0;j<pool.length;j++){const x=pool[(start+j)%pool.length];if(!results.some(v=>v.name===x.name)&&x.oracle_text?.length>=65){selected=x;break}}
@@ -60,7 +68,7 @@ async function research(env,date){
  const keys=['headline','diagnosis','prescription','earlyGame','midGame','lateGame','risks','verdict'];const sections={};for(const key of keys){sections[key]=clean(article[key],key==='prescription'?650:500);if(sections[key].length<(key==='headline'?18:55))fail('Incomplete researched section '+key)}
  const banned=/\b(infinite combo|guaranteed (?:win|kill)|always win|100%|according to EDHREC|\d+% of (?:decks|players)|playtested|proven in testing)\b/i;
  if([Object.values(sections).join(' '),examples.map(x=>x.why).join(' ')].some(x=>banned.test(x)))fail('Unsafe or unsupported editorial certainty');
- return {version:1,date,createdAt:new Date().toISOString(),commander:{name:commander.name,identity:commander.colors,oracle:commander.oracle,scryfall:commander.scryfall,edhrecCardUseRank:commander.rank},theme:clean(proposal.theme,80),usualBuild:clean(proposal.usualBuild,70),hook:clean(proposal.hook,210),selectionReason:clean(proposal.selectionReason,220),sections,synergies:examples.slice(0,8),methodology:'AI-assisted editorial strategy hypothesis using live Scryfall Oracle text and card-legality checks. The EDHREC card-use rank is NOT the commander-as-leader deck count. Strategy adoption was not independently measured; interaction interpretations and playtesting have not been judge-certified.',status:'AI-assisted and source-checked; not independently playtested'};
+ return {version:1,date,createdAt:new Date().toISOString(),commander:{name:commander.name,identity:commander.colors,oracle:commander.oracle,scryfall:commander.scryfall,edhrecCardUseRank:commander.rank,imageUrl:commander.imageUrl},theme:clean(proposal.theme,80),usualBuild:clean(proposal.usualBuild,70),hook:clean(proposal.hook,210),selectionReason:clean(proposal.selectionReason,220),sections,synergies:examples.slice(0,8),methodology:'AI-assisted editorial strategy hypothesis using live Scryfall Oracle text and card-legality checks. The EDHREC card-use rank is NOT the commander-as-leader deck count. Strategy adoption was not independently measured; interaction interpretations and playtesting have not been judge-certified.',status:'AI-assisted and source-checked; not independently playtested'};
 }
 export const localReleaseWindow=now=>{const p=chicago(now);return p.weekday==='Fri'&&Number(p.hour)===10};
 const asJSON=(value,fallback)=>{try{return JSON.parse(value??'null')??fallback}catch{return fallback}};
@@ -68,7 +76,7 @@ const status=(env,data)=>env.REPORTS.put('last-status',JSON.stringify({...data,c
 const indexArticle=async(env,item)=>{
  const previous=asJSON(await env.REPORTS.get('index'),[]);
  const list=Array.isArray(previous)?previous:[];
- const next=[{date:item.date,commander:item.commander.name,theme:item.theme,headline:item.sections.headline},...list.filter(x=>x.date!==item.date)].slice(0,104);
+ const next=[{date:item.date,commander:item.commander.name,theme:item.theme,headline:item.sections.headline,imageUrl:item.commander.imageUrl||null},...list.filter(x=>x.date!==item.date)].slice(0,104);
  await env.REPORTS.put('index',JSON.stringify(next));
 };
 export async function publish(env,now){if(!env.REPORTS)fail('Rescue-only KV binding missing');
