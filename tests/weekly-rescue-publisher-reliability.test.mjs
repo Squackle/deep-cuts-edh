@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import publisher,{jsonFromModel,localReleaseWindow,publish,scheduledRun} from '../workers/weekly-rescue-publisher.js';
+import publisher,{jsonFromModel,localReleaseWindow,publish,scheduledRun,verifiedCardImageUrl} from '../workers/weekly-rescue-publisher.js';
 
 function memoryKV(seed={}){
  const m=new Map(Object.entries(seed).map(([key,value])=>[key,typeof value==='string'?value:JSON.stringify(value)]));
@@ -53,6 +53,7 @@ test('Validated research commits one real report with an index and a published s
   name:'Test Commander '+(i+1),lang:'en',legalities:{commander:'legal'},games:['paper'],color_identity:['B'],
   oracle_text:'This is a fictional candidate test Oracle text long enough to pass the input validation rule. Card '+i,
   type_line:'Legendary Creature',scryfall_uri:'https://scryfall.com/cards/test/'+i,edhrec_rank:8000+i,
+  image_uris:{normal:'https://cards.scryfall.io/normal/front/1/1/11111111-1111-4111-8111-111111111111.jpg?1700000000'},
   prices:{usd:'0.25'}
  }));
  const supports=Array.from({length:10},(_,i)=>({
@@ -86,9 +87,20 @@ test('Validated research commits one real report with an index and a published s
   assert.equal(calls,2);
   const article=JSON.parse(REPORTS.m.get('article:2026-11-06'));
   assert.equal(article.synergies.length,6);
+  assert.equal(article.commander.imageUrl,'https://cards.scryfall.io/normal/front/1/1/11111111-1111-4111-8111-111111111111.jpg?1700000000');
+  assert.equal(JSON.parse(REPORTS.m.get('index'))[0].imageUrl,article.commander.imageUrl);
   assert.equal(article.status,'AI-assisted and source-checked; not independently playtested');
   assert.equal(JSON.parse(REPORTS.m.get('index')).length,1);
   assert.equal(JSON.parse(REPORTS.m.get('last-status')).status,'published');
   assert.equal(JSON.parse(REPORTS.m.get('last-run')).status,'published');
  }finally{globalThis.fetch=oldFetch}
+});
+
+test('Source card image URLs must be complete Scryfall CDN records, not arbitrary links',()=>{
+ const valid='https://cards.scryfall.io/normal/front/1/1/11111111-1111-4111-8111-111111111111.jpg?1700000000';
+ assert.equal(verifiedCardImageUrl({image_uris:{normal:valid}}),valid);
+ assert.equal(verifiedCardImageUrl({card_faces:[{image_uris:{normal:valid}}]}),valid);
+ assert.equal(verifiedCardImageUrl({image_uris:{normal:'https://evil.test/card.jpg'}}),null);
+ assert.equal(verifiedCardImageUrl({image_uris:{normal:'https://cards.scryfall.io.evil.test/normal/front/1/1/11111111-1111-4111-8111-111111111111.jpg'}}),null);
+ assert.equal(verifiedCardImageUrl({}),null);
 });
