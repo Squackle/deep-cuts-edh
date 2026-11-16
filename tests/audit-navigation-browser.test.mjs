@@ -1,23 +1,57 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {readFileSync,statSync} from 'node:fs';
-import {resolve,extname,sep} from 'node:path';
+import {readFileSync,readdirSync} from 'node:fs';
+import {join,extname} from 'node:path';
 import {launchBrowser} from './helpers/browser.mjs';
 
 const pages=['/','/library','/deck','/deep-cut-finder','/combos','/set-watch','/games','/community','/profile','/members','/supporters','/nominations','/reports/chainer-dementia-master','/reports/commander-mustard','/privacy'];
+
+const PUBLIC_DIRS=new Set(['assets','games','reports','images','fonts','media','data']);
+const PUBLIC_EXT=new Set(['.html','.js','.css','.svg','.json','.webp','.png','.jpg','.jpeg','.gif','.ico','.woff','.woff2','.ttf','.avif','.webmanifest']);
+const TYPES={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.webp':'image/webp','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.ico':'image/x-icon','.woff':'font/woff','.woff2':'font/woff2','.ttf':'font/ttf','.avif':'image/avif','.webmanifest':'application/manifest+json'};
+
+// Preload a finite public-only snapshot before accepting any HTTP requests.
+// Never pass request paths to fs: URL normalization alone cannot block
+// symlinks or satisfy the test server's path-injection security contract.
+function snapshotPublicAssets(){
+ const assets=new Map(),root=process.cwd();
+ const walk=(dir,prefix='')=>{
+  for(const entry of readdirSync(dir,{withFileTypes:true})){
+   if(entry.isSymbolicLink()||entry.name.startsWith('.'))continue;
+   const rel=prefix?prefix+'/'+entry.name:entry.name;
+   if(entry.isDirectory()){
+    if(!prefix&&!PUBLIC_DIRS.has(entry.name))continue;
+    walk(join(dir,entry.name),rel);
+   }else if(entry.isFile()){
+    const extension=extname(entry.name).toLowerCase();
+    if(!PUBLIC_EXT.has(extension)||(!prefix&&extension==='.json'))continue;
+    assets.set('/'+rel,readFileSync(join(dir,entry.name)));
+   }
+  }
+ };
+ walk(root);
+ return assets;
+}
+test('browser fixture serves public assets only, never internal app code or private files',()=>{
+ const assets=snapshotPublicAssets();
+ assert.ok(assets.has('/index.html'));
+ for(const secret of ['/functions/api/decks.js','/src/member-auth.js','/.git/config','/tests/audit-navigation-browser.test.mjs','/package.json'])
+  assert.equal(assets.has(secret),false,secret);
+});
+
 test('Core pages render without script errors, missing assets or mobile overflow during API outages',{timeout:90000},async t=>{
- const root=process.cwd();
+ const assets=snapshotPublicAssets();
  const server=createServer((req,res)=>{
-  let pathname=decodeURIComponent(new URL(req.url,'http://local').pathname);
-  if(pathname==='/')pathname='/index.html';else if(!extname(pathname))pathname+='.html';
-  const filename=resolve(root,'.'+pathname);
-  if(!filename.startsWith(root+sep))return res.writeHead(403).end();
-  try{
-   if(!statSync(filename).isFile())throw Error('Not a file');
-   const type={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.webp':'image/webp','.png':'image/png'}[extname(filename)]||'application/octet-stream';
-   res.writeHead(200,{'Content-Type':type}).end(readFileSync(filename));
-  }catch{res.writeHead(404).end('Missing fixture asset')}
+  let pathname;
+  try{pathname=new URL(req.url,'http://local').pathname}
+  catch{return res.writeHead(400).end('Invalid fixture URL')}
+  if(pathname==='/')pathname='/index.html';
+  else if(!extname(pathname))pathname+='.html';
+  const bytes=assets.get(pathname);
+  if(!bytes)return res.writeHead(404).end('Missing fixture asset');
+  const type=TYPES[extname(pathname).toLowerCase()]||'application/octet-stream';
+  res.writeHead(200,{'Content-Type':type}).end(bytes);
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const base='http://127.0.0.1:'+server.address().port;
