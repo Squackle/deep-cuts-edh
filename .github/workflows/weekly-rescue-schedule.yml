@@ -1,0 +1,34 @@
+name: Weekly Rescue schedule regression
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'workers/weekly-rescue-schedule.json'
+      - 'workers/weekly-rescue-publisher.js'
+      - 'tests/weekly-rescue-schedule.test.mjs'
+      - 'tests/weekly-rescue-publisher-reliability.test.mjs'
+      - '.github/workflows/weekly-rescue-schedule.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'workers/weekly-rescue-schedule.json'
+      - 'workers/weekly-rescue-publisher.js'
+      - 'tests/weekly-rescue-schedule.test.mjs'
+      - 'tests/weekly-rescue-publisher-reliability.test.mjs'
+      - '.github/workflows/weekly-rescue-schedule.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  weekly-rescue-schedule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Cloudflare Friday Cron schedules and publisher reliability
+        run: |
+          node --test tests/weekly-rescue-schedule.test.mjs tests/weekly-rescue-publisher-reliability.test.mjs
+          node --check workers/weekly-rescue-publisher.js
