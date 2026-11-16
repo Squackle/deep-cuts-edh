@@ -8,8 +8,8 @@ import {launchBrowser} from './helpers/browser.mjs';
 const pages=['/','/library','/deck','/deep-cut-finder','/combos','/set-watch','/games','/community','/profile','/members','/supporters','/nominations','/reports/chainer-dementia-master','/reports/commander-mustard','/privacy'];
 
 const PUBLIC_DIRS=new Set(['assets','games','reports','images','fonts','media','data']);
-const PUBLIC_EXT=new Set(['.html','.js','.css','.svg','.json','.webp','.png','.jpg','.jpeg','.gif','.ico','.woff','.woff2','.ttf','.avif','.webmanifest']);
-const TYPES={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.webp':'image/webp','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.ico':'image/x-icon','.woff':'font/woff','.woff2':'font/woff2','.ttf':'font/ttf','.avif':'image/avif','.webmanifest':'application/manifest+json'};
+const PUBLIC_EXT=new Set(['.html','.js','.mjs','.css','.svg','.json','.webp','.png','.jpg','.jpeg','.gif','.ico','.woff','.woff2','.ttf','.avif','.webmanifest']);
+const TYPES={'.html':'text/html','.js':'application/javascript','.mjs':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.webp':'image/webp','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.gif':'image/gif','.ico':'image/x-icon','.woff':'font/woff','.woff2':'font/woff2','.ttf':'font/ttf','.avif':'image/avif','.webmanifest':'application/manifest+json'};
 
 // Preload a finite public-only snapshot before accepting any HTTP requests.
 // Never pass request paths to fs: URL normalization alone cannot block
@@ -31,6 +31,10 @@ function snapshotPublicAssets(){
   }
  };
  walk(root);
+ // This single shared URL helper is a public browser import, but src/** as a
+ // directory must never become a freely browsable test fixture.
+ const publicModule='src/challenge-source-url.js';
+ assets.set('/'+publicModule,readFileSync(join(root,publicModule)));
  return assets;
 }
 test('browser fixture serves public assets only, never internal app code or private files',()=>{
