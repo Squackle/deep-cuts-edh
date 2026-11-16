@@ -3,11 +3,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import {execFileSync} from "node:child_process";
-import {chromium} from "playwright-core";
+import {launchBrowser} from "./helpers/browser.mjs";
 import {IDEAS} from "../matchmaker-core.js";
 const types={".html":"text/html",".css":"text/css",".js":"application/javascript",".svg":"image/svg+xml",".png":"image/png"};
-function chrome(){for(const x of ["google-chrome","google-chrome-stable","chromium","chromium-browser"]){try{const p=execFileSync("which",[x],{encoding:"utf8"}).trim();if(p)return p}catch{}}throw Error("Chromium unavailable")}
+
 function serve(){
  const root=process.cwd();
  const server=http.createServer((req,res)=>{
@@ -32,7 +31,7 @@ test("Commander Matchmaker renders five server-verified ideas with no account, a
  const {server,url}=await serve();
  let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const width of [320,390,1280]){
    const context=await browser.newContext({viewport:{width,height:840}});
    const page=await context.newPage();

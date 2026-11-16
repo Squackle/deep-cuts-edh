@@ -21,9 +21,14 @@ export async function gamesWrite(db,a,d){
   if(!old||old.owner_id!==a.id)return fail("Only the owner can update this deck.",403);
   if(old.version>=50)return fail("Version history is full.",409);
   const v=old.version+1;
-  const result=await db.prepare("UPDATE community_decks SET content=?,commander=?,version=version+1,updated_at=datetime('now') WHERE id=? AND owner_id=? AND version=?").bind(JSON.stringify(deck),deck.commanders.join(" & "),id,a.id,old.version).run();
-  if(!result.meta?.changes)return fail("Deck changed; reload and try again.",409);
-  await db.prepare("INSERT INTO community_deck_versions(deck_id,version,content,note) VALUES(?,?,?,?)").bind(id,v,JSON.stringify(deck),note).run();
+  // D1 batches are atomic: a failed snapshot must also undo the deck update.
+  // changes() refers to the immediately preceding UPDATE on this connection,
+  // so a stale writer cannot append history for another request's version.
+  const results=await db.batch([
+   db.prepare("UPDATE community_decks SET content=?,commander=?,version=version+1,updated_at=datetime('now') WHERE id=? AND owner_id=? AND version=?").bind(JSON.stringify(deck),deck.commanders.join(" & "),id,a.id,old.version),
+   db.prepare("INSERT INTO community_deck_versions(deck_id,version,content,note) SELECT ?,?,?,? WHERE changes()=1").bind(id,v,JSON.stringify(deck),note)
+  ]);
+  if(!results[0].meta?.changes)return fail("Deck changed; reload and try again.",409);
   return send({ok:true,version:v});
  }
  if(action==="playtest"){

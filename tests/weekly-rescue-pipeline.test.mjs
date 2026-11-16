@@ -34,7 +34,7 @@ test('AI invalid candidate holds publication rather than inventing a report',asy
 test('HTML output escapes report text; archive empty has no fabricated reports',()=>{assert.equal(escaped('<script>"'), '&lt;script&gt;&quot;');const s=listHtml([]);assert.ok(s.includes('No autonomous weekly report'));assert.ok(s.includes('class="site-header"'));assert.ok(s.includes('weekly-index')===false)});
 
 
-test('An editorial backfill is visibly labeled without claiming direct Scryfall API validation',()=>{
+test('Weekly case pages omit evidence and editorial disclosure sections while retaining report content',()=>{
  const sample={
   date:'2026-10-30',createdAt:'2026-11-04T16:32:24.424Z',
   status:'AI-assisted source-checked editorial backfill; not independently playtested',
@@ -49,11 +49,12 @@ test('An editorial backfill is visibly labeled without claiming direct Scryfall 
  assert.match(html,/EDITORIAL BACKFILL/);
  assert.match(html,/November 4, 2026/);
  assert.match(html,/not published on its original scheduled date/);
- assert.match(html,/source-checked using the method described in the editorial disclosure/);
- assert.doesNotMatch(html,/verified Scryfall card sources|Every linked card is an actual Scryfall record/);
- assert.match(html,/Backfilled from independent public card records/);
+ assert.doesNotMatch(html,/04 \/ Evidence cards|Editorial disclosure &amp; evidence|class="weekly-disclosure"|class="weekly-evidence"/);
+ assert.doesNotMatch(html,/Backfilled from independent public card records|Card lookup:|source-checked using the method described in the editorial disclosure/);
+ assert.match(html,/04 \/ What could go wrong/);
+ assert.match(html,/05 \/ Our provisional verdict/);
+ assert.match(html,/VIEW COMMANDER ORACLE/);
  assert.match(html,/source-checked card research/);
- assert.match(html,/Card lookup:.*Commander on Scryfall/);
  const regular=reportHtml({...sample,status:'AI-assisted and source-checked; not independently playtested'});
  assert.doesNotMatch(regular,/EDITORIAL BACKFILL/);
 });

@@ -3,14 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import {execFileSync} from "node:child_process";
-import {chromium} from "playwright-core";
-function chrome(){
- for(const cmd of ["google-chrome","google-chrome-stable","chromium","chromium-browser"]){
-  try{let p=execFileSync("which",[cmd],{encoding:"utf8"}).trim();if(p)return p}catch{}
- }
- throw Error("Chromium unavailable");
-}
+import {launchBrowser} from "./helpers/browser.mjs";
+
 async function host(){
  const root=process.cwd();
  const srv=http.createServer((req,res)=>{
@@ -31,7 +25,7 @@ const result=(view)=>{
 test("Command Center 2.0 home, sections, real-form preservation, owner API actions, lock, mobile layout",{timeout:75000},async()=>{
  const {srv,url}=await host();let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const width of [320,390,768,1280]){
    const ctx=await browser.newContext({viewport:{width,height:870}});
    const page=await ctx.newPage(),errors=[],requests=[];
