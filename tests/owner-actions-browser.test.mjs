@@ -3,15 +3,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import {execFileSync} from "node:child_process";
-import {chromium} from "playwright-core";
+import {launchBrowser} from "./helpers/browser.mjs";
 
-function chrome(){
- for(const bin of ["google-chrome","google-chrome-stable","chromium","chromium-browser"]){
-  try{const p=execFileSync("which",[bin],{encoding:"utf8"}).trim();if(p)return p}catch{}
- }
- throw Error("Chromium unavailable");
-}
+
 async function server(){
  const root=process.cwd();
  const server=http.createServer((req,res)=>{
@@ -31,7 +25,7 @@ const stats={community_profiles:2,verified_recovery_emails:1,pending_recovery_em
 test("owner command center: each workspace operates, grant success and errors visible, no real credentials issued",{timeout:60000},async()=>{
  const {server:httpServer,url}=await server();let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   const ctx=await browser.newContext({viewport:{width:390,height:860}});
   const page=await ctx.newPage(),errors=[],calls=[];
   let grantMode="deny";

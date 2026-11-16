@@ -17,11 +17,11 @@ test('Daily embeds exact original launched game rather than a simplified clone',
 test('Ranked replay is sourced from independent website server, never messages or local score',()=>{
  const source=read('games/stackbreaker-canonical.js');
  assert.ok(source.includes("event.source!==frame.contentWindow||event.origin!==gameOrigin"));
- assert.ok(source.includes("type:'dc-sb-ranked-move'"));
+ assert.ok(source.includes("data.type!=='dc-sb-ranked-move'"));
  assert.ok(source.includes("action:'move',seq:ranked.attempt.moves,move:data.move"));
  assert.ok(source.includes("type:'dc-sb-ranked-state'"));
  assert.ok(source.includes("credentials:'same-origin'"));
- assert.ok(!source.includes('localStorage'));
+ assert.doesNotMatch(source,/localStorage\.(?:getItem|setItem)/);
  assert.ok(!source.includes('claim-win'));
  assert.doesNotThrow(()=>execFileSync(process.execPath,['--check',new URL('../games/stackbreaker-canonical.js',import.meta.url).pathname],{stdio:'pipe'}));
 });

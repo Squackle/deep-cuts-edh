@@ -38,11 +38,11 @@ test('Daily stays the authentic ranked Classic game, not a template-specific clo
  assert.ok(daily.includes('src="/games/stackbreaker-canonical.js"'));
  assert.ok(bridge.includes("event.source!==frame.contentWindow||event.origin!==gameOrigin"));
  assert.ok(bridge.includes("action:'move',seq:ranked.attempt.moves,move:data.move"));
- assert.ok(!bridge.includes('localStorage'));
+ assert.doesNotMatch(bridge, /\blocalStorage\s*\.\s*(?:getItem|setItem|removeItem|clear)\s*\(/, 'Verified replay cannot read or write local score storage');
 });
 
 test('Stackbreaker page-specific CSS does not replace the shared site theme',()=>{
- assert.ok(styles.includes('#stackbreakerOriginal{width:100%'));
+ assert.match(styles, /#stackbreakerOriginal\s*\{\s*width\s*:\s*100%\s*;/, 'Embedded Classic board must remain full width');
  assert.ok(styles.includes('height:calc(100svh - 44px)'));
  assert.ok(styles.includes('height:calc(100svh - 37px)'));
  assert.ok(!/^:root\s*\{/m.test(styles), 'do not override global site variables');

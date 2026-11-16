@@ -7,8 +7,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import {execFileSync} from "node:child_process";
-import {chromium} from "playwright-core";
+import {launchBrowser} from "./helpers/browser.mjs";
 import {onRequestGet as dailyGet,onRequestPost as dailyPost} from "../functions/api/daily-games.js";
 import {onRequestGet as arcaneGet,onRequestPost as arcanePost} from "../functions/api/arcane-games.js";
 import {getPuzzle} from "../src/automated-games.js";
@@ -31,13 +30,7 @@ function fixture(){
  }}};
  return{env:{DB:db,TURNSTILE_SECRET:"fixture"},writes};
 }
-function browserBinary(){
- if(process.env.CHROME_BIN&&fs.existsSync(process.env.CHROME_BIN))return process.env.CHROME_BIN;
- for(const bin of ["google-chrome","google-chrome-stable","chromium","chromium-browser"]){
-  try{const found=execFileSync("which",[bin],{encoding:"utf8"}).trim();if(found)return found}catch{}
- }
- throw Error("Chrome/Chromium unavailable on CI runner");
-}
+
 async function staticServer(){
  const server=http.createServer((req,res)=>{
   const parsed=new URL(req.url,"http://localhost");
@@ -62,7 +55,7 @@ test("all four practice UIs: clicking, refresh and session privacy (guest and si
  const {server,origin}=await staticServer();
  let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:browserBinary(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const signed of [false,true])for(const game of Object.keys(games)){
    await t.test((signed?"signed-in":"guest")+" "+game,{timeout:17000},async()=>{
     const fx=fixture(),seed=475319;
