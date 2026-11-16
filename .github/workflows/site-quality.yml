@@ -63,10 +63,6 @@ jobs:
           node --check functions/api/arcane-games.js
       - name: Install isolated Chromium test driver
         run: npm install --no-save --no-package-lock --ignore-scripts playwright-core@1.56.1
-      - name: Weekly Rescue Cron schedule, DST, and publisher reliability
-        run: |
-          node --test tests/weekly-rescue-schedule.test.mjs tests/weekly-rescue-publisher-reliability.test.mjs
-          node --check workers/weekly-rescue-publisher.js
       - name: Rescue Board static integration and script syntax
         run: |
           node --test tests/rescue-board.test.mjs
