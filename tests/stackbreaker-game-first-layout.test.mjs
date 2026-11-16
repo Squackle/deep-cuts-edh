@@ -15,7 +15,7 @@ test('Daily is a full-width real original game, not a nested mini-game',()=>{
  assert.ok(!page.includes('sb-canonical-intro'),'No redundant game hero');
  assert.equal((page.match(/class="primary-nav"/g)||[]).length,1,'Exactly one site navigation; Lab iframe masthead hidden');
  assert.ok(!page.includes('LOCAL GAME LAB PREVIEW'),'No ranked screen claiming local-only gameplay');
- assert.match(css,/#stackbreakerOriginal\{width:100%;/);
+ assert.match(css, /#stackbreakerOriginal\s*\{\s*width\s*:\s*100%\s*;/, 'Original game must retain full-width frame');
  assert.match(css,/\.sb-ranking-list\{[^}]*grid-template-columns/);
 });
 test('Only original embedded frame can request safe height changes',()=>{
