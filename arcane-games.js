@@ -11,13 +11,45 @@
  const node=(tag,cls="",text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e};
  const link=(name,url,cls="")=>{const a=node("a",cls,name);a.href=url;a.target="_blank";a.rel="noopener noreferrer";return a};
  const exactCard=name=>"https://scryfall.com/search?q="+encodeURIComponent('!"'+name+'"');
- const centralDay=()=>{const d=new Intl.DateTimeFormat("en-US",{timeZone:"America/Chicago",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const part=k=>d.find(p=>p.type===k)?.value||"";return part("year")+"-"+part("month")+"-"+part("day")};
+ const centralDay=(at=new Date())=>{const d=new Intl.DateTimeFormat("en-US",{timeZone:"America/Chicago",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(at);const part=k=>d.find(p=>p.type===k)?.value||"";return part("year")+"-"+part("month")+"-"+part("day")};
  // Oct 22 launches a fresh Conspiracy Board edition. Do not replay an
  // anonymous visitor's moves from the retired same-day board into new tiles.
  const boardEdition=game==="board"&&!practice?"v2:":"";
  const memoryKey=day=>"deepcuts:arcane:"+game+":"+(practice?"practice:"+seed:boardEdition+day);
  const readLocal=day=>{try{const x=JSON.parse(localStorage.getItem(memoryKey(day))||"[]");return Array.isArray(x)?x:[]}catch{return []}};
  const writeLocal=(day,history)=>{try{localStorage.setItem(memoryKey(day),JSON.stringify(history))}catch{}};
+ /* The answer and score stay server-authoritative; the 16 *positions* are
+    local display-only state. A new daily date or practice seed gets a fresh
+    cryptographically shuffled layout, retained on refresh in this tab. */
+ const boardLayoutKey=day=>"deepcuts:arcane:board-layout:v1:"+(practice?"practice:"+seed:"daily:"+day);
+ const randomIndex=max=>{try{const out=new Uint32Array(1);crypto.getRandomValues(out);return out[0]%max}catch{return Math.floor(Math.random()*max)}};
+ const reshuffle=items=>{
+  const a=[...items];
+  for(let i=a.length-1;i>0;i--){const j=randomIndex(i+1);[a[i],a[j]]=[a[j],a[i]]}
+  if(a.length>1&&a.every((value,i)=>value===items[i]))[a[0],a[1]]=[a[1],a[0]];
+  return a;
+ };
+ const validLayout=(candidate,tiles)=>Array.isArray(candidate)&&candidate.length===tiles.length&&
+  new Set(candidate).size===tiles.length&&candidate.every(x=>tiles.includes(x));
+ const saveBoardLayout=(day,order)=>{try{sessionStorage.setItem(boardLayoutKey(day),JSON.stringify(order))}catch{}};
+ const initialBoardLayout=data=>{
+  const tiles=[...(data.tiles||[])];
+  if(!tiles.length)return tiles;
+  try{
+   const prior=JSON.parse(sessionStorage.getItem(boardLayoutKey(data.day))||"null");
+   if(validLayout(prior,tiles))return prior;
+  }catch{}
+  const fresh=reshuffle(tiles);saveBoardLayout(data.day,fresh);return fresh;
+ };
+ const msToCentralMidnight=()=>{
+  const today=centralDay(),now=Date.now();
+  let low=now,high=now+27*60*60*1000; // Covers 23-, 24-, and 25-hour DST days.
+  while(high-low>1000){
+   const mid=Math.floor((high+low)/2);
+   if(centralDay(new Date(mid))===today)low=mid;else high=mid;
+  }
+  return Math.max(1000,high-Date.now()+30);
+ };
  const status=(text,bad=false)=>{const e=$("arcaneMessage");e.textContent=text;e.dataset.kind=bad?"error":"info"};
  const setBusy=busy=>{working=busy;const t=$("arcaneGame");if(t)t.setAttribute("aria-busy",String(busy))};
  function profileKey(){try{const c=sessionStorage.getItem("dc-profile-key")||localStorage.getItem("dc-profile-key")||"";return /^dcprofile1_[a-f0-9]{32}_[a-f0-9]{64}$/.test(c)?c:""}catch{return ""}}
@@ -153,8 +185,9 @@
    const send=node("button","arcane-action primary","SUBMIT GROUP · "+selected.size+"/4");send.type="button";send.disabled=selected.size!==4||working;
    send.addEventListener("click",submitBoard);actions.append(send);
    const shuffle=node("button","arcane-action secondary","SHUFFLE");shuffle.type="button";shuffle.addEventListener("click",()=>{
-    const list=[...remain];for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]];}
-    displayOrder=[...state.tiles.filter(n=>solvedNames.has(n)),...list];render();
+    const list=reshuffle(remain);
+    displayOrder=[...state.tiles.filter(n=>solvedNames.has(n)),...list];
+    saveBoardLayout(state.day,displayOrder);render();
    });actions.append(shuffle);
    const clear=node("button","arcane-action secondary","CLEAR");clear.type="button";clear.disabled=!selected.size;
    clear.addEventListener("click",()=>{selected.clear();render()});actions.append(clear);root.append(actions);
@@ -266,7 +299,7 @@
   try{
    const history=(practice||!profileKey())?readLocal(centralDay()):[];
    const data=await request("GET","state",{history});
-   state=data;entry="";selected.clear();displayOrder=[...(data.tiles||[])];render();updateArcadeJourney();
+   state=data;entry="";selected.clear();displayOrder=game==="board"?initialBoardLayout(data):[...(data.tiles||[])];render();updateArcadeJourney();
    setBusy(false); // The puzzle is playable even if leaderboard retrieval is slow.
    await loadLeaderboard();
   }catch(e){status(e.message,true);host.replaceChildren(node("p","games-muted","The case cannot be opened yet. Please try again shortly."))}
@@ -285,7 +318,17 @@
  function copyFallback(text){
   const area=node("textarea");area.value=text;area.style.width="100%";area.rows=5;$("arcaneAwards").replaceChildren(area);area.select();status("Select and copy the result shown below.");
  }
- function beginPractice(){
+ async function beginPractice(){
+  if(working)return;
+  if(game==="board"){
+   setBusy(true);const button=$("arcanePractice");button.disabled=true;
+   try{
+    const answer=await request("GET","new-practice",{previousTiles:state?.tiles||[]});
+    if(!Number.isSafeInteger(answer.seed)||answer.seed<1||answer.seed>999999999)throw Error("Practice generator returned an invalid round.");
+    location.href=location.pathname+"?practice="+answer.seed;
+   }catch(e){status(e.message||"Could not start a fresh practice round.",true);button.disabled=false;setBusy(false)}
+   return;
+  }
   let n;try{const x=new Uint32Array(1);crypto.getRandomValues(x);n=(x[0]%999999998)+1}catch{n=(Math.floor(Math.random()*999999998)+1)}
   location.href=location.pathname+"?practice="+n;
  }
@@ -301,7 +344,12 @@
   document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!practice&&state&&centralDay()!==state.day)load()});
   // A tab left open overnight must switch to the new daily case even if the
   // visitor never hides the tab or refreshes it.
-  if(!practice)window.setInterval(()=>{if(!document.hidden&&!working&&state&&centralDay()!==state.day)load()},60000);
+  if(!practice){
+   const refreshDay=()=>{if(!document.hidden&&!working&&state&&centralDay()!==state.day)load()};
+   const scheduleMidnight=()=>window.setTimeout(()=>{refreshDay();scheduleMidnight()},msToCentralMidnight());
+   scheduleMidnight();
+   window.setInterval(refreshDay,60000); // Sleep/wake and system-clock-change fallback.
+  }
   window.addEventListener("deepcuts:profile-change",()=>{if(!practice&&!working)load()});
   load();
  }

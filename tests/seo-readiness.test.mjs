@@ -52,7 +52,7 @@ test("Sitemap passes a strict XML parser and contains no stray text or escape se
  for(const [uri,date] of entries){
   const u=new URL(uri);assert.equal(u.origin,origin);assert.equal(u.search,"");assert.equal(u.hash,"");
   assert.equal(u.href,origin+u.pathname);
-  assert.match(date,/^2026-10-(?:13|14|15|16|19|20|26)$/);
+  assert.match(date,/^2026-10-(?:13|14|15|16|19|20|26|27)$/);
   assert.ok(Date.parse(date+"T00:00:00Z")<=Date.now(),"Future sitemap lastmod");
   assert.ok(!/\/(?:api|admin|diagnostics|member-operations|members|profile)(?:\/|$)/.test(u.pathname));
   assert.ok(!u.pathname.endsWith(".html"));
@@ -64,7 +64,7 @@ test("Sitemap dates reflect source-verified, substantive page changes rather tha
  const expected={
   "/":"2026-10-19", // Matchmaker discovery link and follow.it homepage signup launched
   "/games/hive-run/":"2026-10-19", // Dominion 2.0 launch
-  "/games":"2026-10-26", // Mana Heist first-party Arcade entry
+  "/games":"2026-10-27", // New verified Arcade Daily/Classic choices, game discoverability and accurate descriptors
   "/games/mana-heist/":"2026-10-26", // Owner-authorized unranked beta
   "/games/stackbreaker":"2026-10-20", // Daily board and rankings overhaul (#93)
   "/binder-to-brew":"2026-10-16", // Specialist deckbuilding resource changes
