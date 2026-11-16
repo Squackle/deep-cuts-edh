@@ -1,0 +1,39 @@
+name: First-party Mana Heist verification
+on:
+  push:
+    paths:
+      - 'games/mana-heist/**'
+      - 'tests/mana-heist-promotion.test.mjs'
+      - 'docs/MANA-HEIST-PROMOTION-20261026.json'
+      - '.github/workflows/mana-heist-promotion.yml'
+  pull_request:
+    paths:
+      - 'games/mana-heist/**'
+      - 'tests/mana-heist-promotion.test.mjs'
+      - 'docs/MANA-HEIST-PROMOTION-20261026.json'
+      - '.github/workflows/mana-heist-promotion.yml'
+permissions:
+  contents: read
+jobs:
+  mana-heist-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Verify runtime provenance and production navigation
+        run: node --test tests/mana-heist-promotion.test.mjs
+      - name: Verify all promoted gameplay, saves and audit regressions
+        run: node --test games/mana-heist/tests/*.test.mjs
+      - name: Install isolated browser driver
+        run: npm ci --prefix games/mana-heist --ignore-scripts
+      - name: Real-browser practice progression and save isolation
+        run: |
+          export PLAYWRIGHT_EXECUTABLE_PATH="$(command -v google-chrome || command -v chromium)"
+          npm --prefix games/mana-heist run test:browser
+      - name: Check production script syntax
+        run: |
+          node --check games/mana-heist/src/main.js
+          node --check games/mana-heist/src/engine.js
+          node --check games/mana-heist/scripts/audit-campaign-decisions.mjs

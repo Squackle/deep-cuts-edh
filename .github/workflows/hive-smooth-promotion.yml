@@ -1,0 +1,45 @@
+name: Hive Run Lab rendering promotion
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'games/hive-run/src/main.js'
+      - 'games/hive-run/src/render-motion.js'
+      - 'games/hive-run/src/level-background.js'
+      - 'games/hive-run/src/engine.js'
+      - 'src/hive-server/leaderboard.js'
+      - 'tests/hive-smooth-promotion.test.mjs'
+      - '.github/workflows/hive-smooth-promotion.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'games/hive-run/src/main.js'
+      - 'games/hive-run/src/render-motion.js'
+      - 'games/hive-run/src/level-background.js'
+      - 'tests/hive-smooth-promotion.test.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hive-smooth-promotion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Client render and server replay syntax checks
+        run: |
+          node --check games/hive-run/src/main.js
+          node --check games/hive-run/src/render-motion.js
+          node --check games/hive-run/src/level-background.js
+          node --check games/hive-run/src/engine.js
+          node --check src/hive-server/leaderboard.js
+      - name: Both-mode interpolation, orb pickup, production integration and replay safeguards
+        run: |
+          node --experimental-default-type=module --test tests/hive-smooth-promotion.test.mjs
+          node --experimental-default-type=module --test tests/hive-main-integration.test.mjs
+          node --experimental-default-type=module --test tests/hive-beacon-promotion.test.mjs

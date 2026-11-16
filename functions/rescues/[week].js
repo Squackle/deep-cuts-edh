@@ -1,0 +1,2 @@
+import {remoteJson,reportHtml,htmlResponse} from '../../src/weekly-rescues-html.js';
+export async function onRequestGet({params}){const date=String(params.week||'');if(!/^20\d\d-\d\d-\d\d$/.test(date))return htmlResponse('<h1>Not found</h1>',404);try{const data=await remoteJson('/v1/report?date='+encodeURIComponent(date));return htmlResponse(reportHtml(data.report))}catch(error){console.error('Weekly Rescue read failed',String(error));return htmlResponse('<h1>Rescue Report unavailable</h1><p><a href="/rescues">Back to weekly archive</a></p>',503)}}

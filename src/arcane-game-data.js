@@ -37,8 +37,54 @@ export function buildArcanePuzzle(game,day,mode="daily",seed=0){
   const [word,definition]=catalog[index];
   return {word,definition,edition:"creature-types-v3"};
  }
- const chosen=gameShuffle(BOARD_CATEGORIES,gameHash(id+":board:groups")).slice(0,4);
- return {groups:chosen.map(([title,description,cards])=>({title,description,cards})),tiles:gameShuffle(chosen.flatMap(g=>g[2]),gameHash(id+":board:tiles")),edition:"hand-curated-v1"};
+ // Conspiracy Board daily v2 begins October 22, 2026. Older daily editions
+ // remain deterministic so existing historical snapshots/runs are replayable.
+ // Partition 16 curated categories into 4 nonoverlapping days, reshuffle the
+ // next cycle with a new seed, and avoid repeats across cycle boundaries.
+ // This is deterministic for every visitor and never depends on their account.
+ const BOARD_V2_START="2026-10-22";
+ const legacyBoard=()=>gameShuffle(BOARD_CATEGORIES,gameHash(id+":board:groups")).slice(0,4);
+ let chosen;
+ if(mode==="daily"&&day>=BOARD_V2_START){
+  const dayNumber=Math.floor(Date.parse(day+"T00:00:00Z")/86400000);
+  const startNumber=Math.floor(Date.parse(BOARD_V2_START+"T00:00:00Z")/86400000);
+  const index=dayNumber-startNumber,cycle=Math.floor(index/4),slot=index%4;
+  let previousLast=null,categories=null;
+  for(let i=0;i<=cycle;i++){
+   categories=null;
+   // Editorial seed 5 ensures today's first case is entirely new relative
+   // to the already published original October 22 daily board.
+   for(let attempt=i===0?5:0;attempt<256;attempt++){
+    const next=gameShuffle(BOARD_CATEGORIES,gameHash("conspiracy-board-v2:cycle:"+i+":attempt:"+attempt));
+    if(!previousLast||next.slice(0,4).every(g=>!previousLast.has(g[0]))){
+     categories=next;break;
+    }
+   }
+   if(!categories)throw Error("Could not build fresh category rotation");
+   previousLast=new Set(categories.slice(12,16).map(g=>g[0]));
+  }
+  chosen=categories.slice(slot*4,slot*4+4);
+ }else chosen=legacyBoard();
+ return {groups:chosen.map(([title,description,cards])=>({title,description,cards})),
+  tiles:gameShuffle(chosen.flatMap(g=>g[2]),gameHash(id+":board:tiles"+(mode==="daily"&&day>=BOARD_V2_START?":v2":""))),
+  edition:mode==="daily"&&day>=BOARD_V2_START?"hand-curated-v2":"hand-curated-v1"};
+}
+/* Generate a new practice *puzzle*, not merely a tile rearrangement.
+ * The old seeded practice generator and published daily snapshots remain
+ * unchanged, so old practice URLs and all daily records still replay.
+ * Every category has unique card names: no shared tiles guarantees all four
+ * categories differ from the preceding practice/daily round. */
+export function nextBoardPracticeSeed(previousTiles=[],previousSeed=0,random=()=>Math.floor(Math.random()*999999999)+1){
+ const names=new Set(Array.isArray(previousTiles)?previousTiles:[]);
+ const start=Number(random());
+ if(!Number.isSafeInteger(start)||start<1||start>999999999)throw new RangeError("Practice seed must be in range");
+ for(let offset=0;offset<4096;offset++){
+  const seed=((start+offset-1)%999999999)+1;
+  if(seed===previousSeed)continue;
+  const puzzle=buildArcanePuzzle("board","practice","practice",seed);
+  if(!puzzle.tiles.some(name=>names.has(name)))return seed;
+ }
+ throw Error("No distinct practice category set found");
 }
 export function cipherFeedback(guess,answer){
  const target=cipherLetters(answer),attempt=cipherLetters(guess);

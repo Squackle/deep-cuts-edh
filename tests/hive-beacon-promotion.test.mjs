@@ -11,7 +11,7 @@ test("Dominion promotes versioned simulation while retaining Beacon feedback",()
  const engine=readFileSync("games/hive-run/src/engine.js","utf8");
  const server=readFileSync("src/hive-server/leaderboard.js","utf8");
  const main=readFileSync("games/hive-run/src/main.js","utf8");
- assert.match(engine,/RULES_VERSION="hive-1\\.5\\.4"/);
+ assert.match(engine,/RULES_VERSION="hive-1\.5\.4"/);
  assert.match(server,/replayScore\(record\.seed,events,summary,record\.mode\)/);
  assert.match(server,/profile_verified/);
  assert.match(main,/captureFlash\(removed\.pos,state\.run\.score-prevScore,performance\.now\(\)\)/);

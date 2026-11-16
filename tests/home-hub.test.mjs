@@ -1,5 +1,8 @@
 import test from 'node:test';
 import "./guest-session.test.mjs";
+import "./budget-commander-seo.test.mjs";
+import "./weekly-rescue-publisher-reliability.test.mjs";
+import "./home-weekly-feature.test.mjs";
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 const html=readFileSync('index.html','utf8');
@@ -66,7 +69,7 @@ test('The homepage explains the full site and enlarges the featured card without
  assert.match(css,/\.hub-feature-main\{[^\n]*grid-template-columns:154px minmax\(0,1fr\)/);
  assert.match(css,/\.hub-feature-portrait\{[^\n]*width:154px;height:215px/);
  assert.match(css,/@media\(max-width:430px\)\{\.hub-feature-main\{grid-template-columns:110px/);
- assert.match(html,/href="\/reports\/commander-mustard" aria-label="Read the featured Commander Mustard rescue report"/);
+ assert.match(html,/id="homeWeeklyFeature" data-weekly-date="2026-10-30" href="\/rescues\/2026-10-30"/);
 });
 
 test('Desktop feature expands only into the right gutter without shifting its grid origin',()=>{
@@ -87,7 +90,7 @@ test("PageSpeed changes stabilize homepage layout without touching AdSense or au
  assert.match(stability,/header-inner:not\(\.header-profile-enabled\)/);
  assert.match(stability,/hub-card-top\{color:#435b47\}/);
  assert.match(stability,/hub-card-desc.*#455c49/);
- assert.match(html,/Commander%20Mustard&amp;format=image&amp;version=small/);
+ assert.ok(html.includes('src="https://cards.scryfall.io/normal/front/a/8/a8564611-b678-4336-87e0-5a00a930de48.jpg?1783938448"'),'Featured card image must use exact trusted Scryfall CDN URL');
  assert.match(html,/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js/);
  assert.match(html,/name="google-site-verification"/);
  assert.match(html,/name="follow.it-verification-code"/);
@@ -153,4 +156,56 @@ test("Homepage public-presence badge ships CSS only once and preserves security 
  assert.match(headers,/\/\n  Cross-Origin-Opener-Policy: same-origin-allow-popups/);
  assert.match(headers,/Strict-Transport-Security: max-age=31536000/);
  assert.match(headers,/Content-Security-Policy: frame-ancestors/);
+});
+
+test('Brand-search copy describes the actual Commander site without losing its identity',()=>{
+ const title=html.match(/<title>([^<]+)<\/title>/)?.[1]||'';
+ const desc=html.match(/<meta name="description" content="([^"]+)"/)?.[1]||'';
+ const ogTitle=html.match(/<meta property="og:title" content="([^"]+)"/)?.[1]||'';
+ const ogDesc=html.match(/<meta property="og:description" content="([^"]+)"/)?.[1]||'';
+ assert.match(title,/^Deep Cuts EDH \| Underplayed &amp; Budget Commander Ideas$/);
+ assert.ok(title.length<65,'Brand title must remain concise');
+ assert.ok(desc.length>=100&&desc.length<=160,'Search snippet must be clear, not bloated');
+ assert.match(desc,/underplayed MTG commanders/i);
+ assert.match(desc,/budget-friendly commander ideas/i);
+ assert.match(desc,/Rescue Reports/);
+ assert.match(ogTitle,/Deep Cuts EDH/);
+ assert.match(ogDesc,/overlooked commanders/i);
+ const schema=html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)?.[1];
+ assert.ok(schema,'Provide a structured WebSite identity');
+ const data=JSON.parse(schema);
+ assert.equal(data['@type'],'WebSite');
+ assert.equal(data.name,'Deep Cuts EDH');
+ assert.equal(data.url,'https://deep-cuts-edh.pages.dev/');
+ assert.match(data.description,/Underplayed Commander ideas/);
+ assert.match(html,/DEEP CUTS EDH \/ UNDERPLAYED COMMANDERS/);
+ assert.match(html,/<h1 id="hubTitle">Old legends\.<br><em>New purpose\.<\/em><\/h1>/);
+ assert.match(html,/<a href="\/matchmaker">FIND BUDGET-FRIENDLY COMMANDERS ↗<\/a>/);
+ const matchmaker=readFileSync('matchmaker.html','utf8');
+ assert.match(matchmaker,/COMMANDER CARD PRICE/);
+ assert.match(matchmaker,/not an entire deck/,'Never imply the Matchmaker prices complete decklists');
+ const inputs=[title,desc,ogTitle,ogDesc];
+ for(const input of inputs)assert.ok((input.toLowerCase().match(/deep cuts edh/g)||[]).length<=1,'No brand keyword stuffing');
+ assert.ok(!html.includes('href="/underplayed-commanders"'),'Future hub navigation waits until Step 08');
+ assert.ok(!html.includes('href="/budget-commanders"'),'Budget hub waits for reviewed complete decklists');
+ assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22500,'Preserve strict combined homepage performance budget');
+ assert.match(html,/name="google-site-verification"/);
+ assert.match(html,/name="follow.it-verification-code"/);
+ assert.match(html,/pagead2\.googlesyndication\.com/);
+});
+
+test("The official source link and brand directory are public, accurate and safe",()=>{
+ const source='https://github.com/Squackle/deep-cuts-edh';
+ assert.match(html,/<a class="dc-footer-subscribe" style="margin-left:12px" href="https:\/\/github\.com\/Squackle\/deep-cuts-edh" target="_blank" rel="noopener noreferrer">GITHUB SOURCE ↗<\/a>/);
+ const notes=readFileSync('docs/BRAND-AND-OFFICIAL-LINKS.md','utf8');
+ assert.match(notes,/Official live website:\*\* https:\/\/deep-cuts-edh\.pages\.dev\//);
+ assert.ok(notes.includes(source),'Link directory identifies the same repository as the footer');
+ assert.match(notes,/no homepage URL, no description, and no topics/i);
+ assert.match(notes,/PR #96/,'Root README must wait for active older PR');
+ assert.match(notes,/commander-card price filter/i,'Brand copy must not imply verified full-deck budgets');
+ assert.equal((html.match(/href="https:\/\/github\.com\/Squackle\/deep-cuts-edh"/g)||[]).length,1);
+ assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22500,'Official link must preserve page-performance byte cap');
+ assert.ok(!html.includes('href="/about"'),'Never link an About page that does not exist');
+ assert.equal((html.match(/class="footer-links"/g)||[]).length,1);
+ assert.equal((html.match(/class="dc-footer-subscribe"/g)||[]).length,2,'Preserve the email and official source links together');
 });

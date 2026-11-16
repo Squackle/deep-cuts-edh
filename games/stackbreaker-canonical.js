@@ -9,7 +9,7 @@ const loaded=document.getElementById('frameStatus');
 const rankedButton=document.getElementById('rankedRun');
 const rankedState=document.getElementById('rankedRunState');
 const gameOrigin=new URL(frame.src).origin;
-let active=false,server=null,frameReady=false,inFlight=false,ranked=null;
+let active=false,server=null,frameReady=false,inFlight=false,ranked=null,layoutGrowthUsed=false;
 const setRunLabel=(value)=>{rankedState.textContent=value;};
 async function api(payload){
  const response=await fetch('/api/stackbreaker',{cache:'no-store',credentials:'same-origin',
@@ -72,9 +72,13 @@ window.addEventListener('message',async event=>{
  const data=event.data;
  if(!data||typeof data!=='object')return;
  if(data.type==='dc-sb-ranked-layout'){
-  // Layout metadata only, not score or authentication evidence.
+  // Classic game height uses viewport units. Its measured height usually equals
+  // the iframe viewport, so never shrink it or continuously resize to itself.
+  // Permit at most one emergency expansion for genuinely overflowing content.
   const height=data.height;
-  if(Number.isInteger(height)&&height>=500&&height<=3000){
+  if(!layoutGrowthUsed&&Number.isInteger(height)&&height>=500&&height<=3000
+   &&height>frame.clientHeight+96){
+   layoutGrowthUsed=true;
    frame.style.height=(height+2)+'px';
   }
   return;

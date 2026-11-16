@@ -1,0 +1,35 @@
+name: Rescue Report deck-shop safeguards
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'reports/premade-decks.mjs'
+      - 'reports/premade-decks.json'
+      - 'reports/premade-decks.test.mjs'
+      - 'reports/deck-shop.mjs'
+      - 'reports/deck-shop-config.json'
+      - 'reports/deck-shop.test.mjs'
+      - 'reports/guide.js'
+      - 'reports/guide.css'
+      - '.github/workflows/rescue-deck-shop.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deck-shop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Shared Rescue Report component contracts
+        run: node --test reports/deck-shop.test.mjs reports/premade-decks.test.mjs
+      - name: Storefront module and guide syntax
+        run: |
+          node --check reports/deck-shop.mjs
+          node --check reports/premade-decks.mjs
+          node --check reports/guide.js

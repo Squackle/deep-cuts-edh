@@ -1,0 +1,6 @@
+/* Fallback for static deployments; SSR /rescues is preferred where available. */
+(()=>{'use strict';const el=document.getElementById('weeklyReportList');if(!el)return;
+const para=s=>{const p=document.createElement('p');p.textContent=s;return p};
+const build=report=>{if(!/^20\d\d-\d\d-\d\d$/.test(report?.date||''))return null;const a=document.createElement('a');a.className='weekly-index-card';a.href='/rescues/'+encodeURIComponent(report.date);for(const [tag,text] of [['span','CASE FILE · '+report.date],['strong',report.commander||'Untitled commander'],['small',report.theme||'Alternative strategy'],['b','READ THE REPORT ↗']]){const n=document.createElement(tag);n.textContent=String(text).slice(0,180);a.append(n)}return a};
+fetch('https://deep-cuts-weekly-publisher.logan-ottfamily.workers.dev/v1/index',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Archive unavailable');return r.json()}).then(data=>{const cards=Array.isArray(data.reports)?data.reports.map(build).filter(Boolean):[];el.replaceChildren(...(cards.length?cards:[para('No automated reports have been published yet. The first edition is scheduled for Friday, October 30, 2026 at 10:00 AM Central, provided quality checks pass.')]))}).catch(()=>el.replaceChildren(para('The archive is temporarily unavailable; existing Rescue Reports remain accessible from the homepage.')));
+})();

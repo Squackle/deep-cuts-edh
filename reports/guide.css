@@ -111,3 +111,139 @@
 .report-community-actions a{display:inline-flex;align-items:center;min-height:42px;border:1px solid #b6ceb7;border-radius:7px;padding:9px 12px;color:#316443;font-size:11px;font-weight:800;text-decoration:none;background:#fffefa}
 .report-community-actions a:hover,.report-community-actions a:focus-visible{background:#e3f0e0}
 @media(max-width:620px){.report-community-fold>summary{font-size:11px;padding:13px}.report-community-content{padding:0 13px 13px}.report-community-actions a{flex:1;justify-content:center;text-align:center}}
+
+
+/* Subtle, optional zero-inventory deck-shopping panel shared by every Rescue Report.
+   Its presence does not imply a complete deck, a quote, or affiliate approval. */
+.report-side .report-shop{
+ margin-top:22px;padding:14px 12px 12px;border:1px solid #58705c;border-radius:8px;
+ background:#20362c;color:#f4f0e6;box-shadow:inset 0 1px #ffffff10;
+}
+.report-shop-header{font:750 10px/1.5 ui-sans-serif,system-ui,sans-serif;
+ letter-spacing:.13em;color:#c7d5c4}
+.report-shop-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:13px 0 10px}
+.report-shop-tab{
+ min-width:0;min-height:36px;padding:8px 2px;border:1px solid #6d7e67;
+ border-radius:5px;background:#314a3b;color:#e2e8dd;font:750 11px ui-sans-serif,system-ui,sans-serif;
+ cursor:pointer;transition:background .12s ease;
+}
+.report-shop-tab:hover{background:#44624b}
+.report-shop-tab[aria-pressed="true"]{background:#dfbb7e;border-color:#dfbb7e;color:#203126}
+.report-shop-tab:focus-visible,.report-shop a:focus-visible,.report-shop button:focus-visible,
+.report-shop summary:focus-visible{outline:2px solid #ffdb95;outline-offset:3px}
+.report-shop-price{display:flex;flex-direction:column;gap:3px;margin:0 0 9px}
+.report-shop-price span{font-size:10px;color:#b9cbb8}
+.report-shop-price strong{font:700 20px Georgia,serif;color:#f6d99d}
+.report-shop-description{font-size:11px;line-height:1.55;color:#d6e2d4;margin:0 0 12px}
+.report-side .report-shop-buy{
+ display:flex;align-items:center;justify-content:center;width:100%;min-height:40px;
+ margin:0;padding:10px;border:1px solid #b68b50;border-radius:6px;
+ background:#62471f;color:#ffdda2;font:750 12px ui-sans-serif,system-ui,sans-serif;
+ text-decoration:none;cursor:pointer;text-align:center;
+}
+.report-side .report-shop-buy:hover:not(:disabled){background:#79552a;color:#ffe6b5}
+.report-shop-buy:disabled{opacity:.65;cursor:not-allowed}
+.report-shop-status{font-size:10px;line-height:1.5;color:#c0cbbd;margin:9px 0 0}
+.report-side .report-shop-source{
+ display:block;margin:10px 0 0;font-size:11px;text-align:center;font-weight:700;
+ color:#f1d6aa;text-decoration:underline;text-underline-offset:3px
+}
+.report-shop-decklist{margin:12px 0 0;border:1px solid #73806f;border-radius:5px;padding:9px}
+.report-shop-decklist summary{cursor:pointer;font-size:11px;font-weight:700;color:#f3d8a7}
+.report-shop-decklist pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;
+ font:11px/1.5 ui-monospace,monospace;color:#e9eee6}
+.report-shop-copy{padding:7px 9px;border-radius:5px;border:1px solid #9aa993;
+ background:#3f5e49;color:white;cursor:pointer;font-size:11px}
+.report-shop-copy-status{font-size:11px;color:#dbe5d5;margin-left:7px}
+.report-shop-disclosure{border-top:1px solid #627367;padding-top:11px;margin:12px 0 0;
+ font-size:9px;line-height:1.55;color:#c1ccbe}
+@media(prefers-reduced-motion:reduce){.report-shop-tab{transition:none}}
+
+
+/* DeepCuts premade Commander builds: tucked away under one calm disclosure. */
+.premade-decklists{margin:22px 0 26px;border:1px solid #c6d7c5;border-radius:10px;background:#f6faf2;overflow:hidden}
+.premade-summary{position:relative;cursor:pointer;list-style:none;padding:17px 45px 17px 18px;
+ background:#eef4e9;color:#365943;font-size:12px;font-weight:800;letter-spacing:.075em;line-height:1.6}
+.premade-summary::-webkit-details-marker,.premade-tier-summary::-webkit-details-marker{display:none}
+.premade-summary:after{content:"⌄";position:absolute;right:18px;top:13px;font-size:20px;color:#688774}
+.premade-decklists[open]>.premade-summary:after{content:"⌃"}
+.premade-content{padding:16px 18px 18px}
+.report-content .premade-intro{font-size:12px;line-height:1.65;color:#617367;margin:0 0 13px}
+.premade-tiers{display:grid;gap:8px}
+.premade-tier{border:1px solid #cdd8cb;background:#fffefb;border-radius:7px;overflow:hidden}
+.premade-tier-summary{position:relative;cursor:pointer;list-style:none;padding:13px 37px 13px 13px;
+ color:#365943;font-size:13px;font-weight:750}
+.premade-tier-summary:after{position:absolute;right:13px;content:"+";font-size:18px;color:#55765b;top:9px}
+.premade-tier[open]>.premade-tier-summary{background:#e6efe1;border-bottom:1px solid #ccd9c8}
+.premade-tier[open]>.premade-tier-summary:after{content:"−"}
+.premade-tier-body{padding:12px 13px 15px}
+.report-content .premade-unverified{font-size:11px;line-height:1.6;color:#80683a;margin:2px 0 15px}
+.premade-role-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px}
+.premade-role{min-width:0}
+.report-content .premade-role-title{font:750 12px ui-sans-serif,system-ui,sans-serif;
+ letter-spacing:.03em;color:#2c5a3c;margin:0 0 6px;padding-bottom:6px;border-bottom:1px solid #dde5d9}
+.premade-card-lines{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+.premade-card-lines li{font-size:11px;line-height:1.5;color:#526853;overflow-wrap:anywhere;padding:0}
+.premade-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:19px;padding-top:13px;border-top:1px solid #dde6d8}
+.premade-copy{min-height:39px;padding:9px 14px;background:#356547;color:#fff;
+ border:1px solid #356547;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer}
+.premade-copy:hover{background:#274f36}
+.premade-copy-status{font-size:11px;color:#395943}
+.premade-summary:focus-visible,.premade-tier-summary:focus-visible,.premade-copy:focus-visible{outline:2px solid #ac833a;outline-offset:-3px}
+@media(max-width:650px){.premade-role-list{grid-template-columns:1fr;gap:15px}.premade-content{padding:12px}.premade-summary{padding-left:14px}.premade-tier-body{padding:11px}}
+
+
+/* Future approved TCGplayer purchasing stays collapsed in the editorial
+   sidebar; before approval the shopping module renders nothing. */
+.report-side details.report-shop{margin-top:15px;padding:0;overflow:hidden}
+.report-side details.report-shop>.report-shop-header{
+ display:block;cursor:pointer;list-style:none;padding:13px 14px;
+ color:#e7d4a9;background:#20362c;font-size:10px;line-height:1.5
+}
+.report-side details.report-shop>.report-shop-header::-webkit-details-marker{display:none}
+.report-side details.report-shop>.report-shop-header:after{content:'⌄';float:right}
+.report-side details.report-shop[open]>.report-shop-header:after{content:'⌃'}
+.report-shop-details-body{padding:0 12px 12px}
+
+
+/* On-demand, readable desktop Scryfall card previews for premade lists.
+   The preview is mounted on document.body to escape collapsed-article overflow. */
+.premade-card-lines .premade-card-link{
+ color:#2f6849;text-decoration:underline;text-decoration-color:#b8cbbb;
+ text-decoration-thickness:1px;text-underline-offset:3px;
+ border-radius:2px;cursor:pointer;
+}
+.premade-card-lines .premade-card-link:hover{
+ color:#194b30;text-decoration-color:#3b7950;
+}
+.premade-card-lines .premade-card-link:focus-visible{
+ outline:2px solid #b68a40;outline-offset:3px;
+}
+.premade-card-preview{
+ position:fixed;z-index:2147483000;pointer-events:none;
+ width:min(380px,calc(100vw - 24px));
+ max-height:calc(100vh - 24px);overflow:hidden;
+ padding:11px;background:#192d23;color:#f5f1e7;
+ border:1px solid #c4a978;border-radius:11px;
+ box-shadow:0 16px 48px #0a2018a8,0 2px 8px #0b1718a8;
+}
+.premade-card-preview[hidden]{display:none!important}
+.premade-preview-name{
+ display:block;margin:0 0 9px;font:700 13px/1.4 ui-sans-serif,system-ui,sans-serif;
+ color:#f4e1b7;overflow-wrap:anywhere;
+}
+.premade-card-preview .premade-preview-image{
+ display:block;width:auto;max-width:100%;height:auto;
+ max-height:calc(100vh - 130px);margin:0 auto;
+ border-radius:8px;object-fit:contain;background:#203329;
+}
+.premade-card-preview .premade-preview-loading{
+ color:#e2e7dd;font:12px/1.6 ui-sans-serif,system-ui,sans-serif;margin:8px 0;
+}
+.premade-preview-hint{
+ display:block;color:#c9d5c9;margin-top:9px;
+ font:11px/1.45 ui-sans-serif,system-ui,sans-serif;
+}
+@media(hover:none),(pointer:coarse){
+ .premade-card-preview{display:none!important}
+}

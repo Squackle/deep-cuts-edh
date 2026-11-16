@@ -1,2 +1,5 @@
 # Canonical Arcade hub: legacy /games/index.html is not a physical page.
 /games/index.html /games 301
+
+/games/mana-heist /games/mana-heist/ 301
+/games/mana-heist/index.html /games/mana-heist/ 301

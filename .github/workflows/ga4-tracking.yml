@@ -1,0 +1,31 @@
+name: Google Analytics tracking safeguards
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'site-analytics.js'
+      - 'header-profile.js'
+      - 'games/stackbreaker.html'
+      - 'privacy.html'
+      - 'sitemap.xml'
+      - 'scripts/ga4-tracking.test.mjs'
+      - '.github/workflows/ga4-tracking.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ga4-tracking:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify GA4 public-site coverage and privacy guards
+        run: |
+          node --check site-analytics.js
+          node --check header-profile.js
+          node --test scripts/ga4-tracking.test.mjs

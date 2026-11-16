@@ -30,6 +30,17 @@
  const dataEl=document.getElementById("rescue-data");
  if(!dataEl)return;
  let data;try{data=JSON.parse(dataEl.textContent)}catch{return}
+ // Every Rescue Report that uses this guide automatically gets the same
+ // opt-in deck-shop widget. The manifest holds future lists and affiliate links.
+ const guideScript=document.currentScript?.src;
+ if(guideScript){
+  import(new URL('deck-shop.mjs',guideScript).href)
+   .then(({mountDeckShop})=>mountDeckShop(data))
+   .catch(()=>{/* Shopping is optional; never break the editorial report. */});
+  import(new URL('premade-decks.mjs',guideScript).href)
+   .then(({mountPremadeDecks})=>mountPremadeDecks(data))
+   .catch(()=>{/* Keep case content usable if editorial lists cannot load. */});
+ }
  // Real community evidence is already moderated and tied to published case slugs.
  // Place it near the end, collapsed by default. Never request the full evidence
  // list until the visitor explicitly opens the disclosure.
