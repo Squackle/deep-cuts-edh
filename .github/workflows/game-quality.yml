@@ -1,0 +1,34 @@
+name: Game quality audit reproducibility
+on:
+  pull_request:
+    paths:
+      - 'scripts/game-quality/**'
+      - 'tests/game-quality/**'
+      - 'docs/game-quality/**'
+      - '.github/workflows/game-quality.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Analyzer invariants
+        run: node --test tests/game-quality/*.test.mjs
+      - uses: actions/checkout@v4
+        with:
+          repository: Squackle/deep-cuts-game-lab-
+          ref: 3d634002b46a957f34fe6009c4a268a0001b1868
+          path: .quality-lab
+          persist-credentials: false
+      - name: Real engine regressions at recorded source SHA
+        run: node scripts/game-quality/integration.mjs .quality-lab
+      - name: Reproduce evidence (does not certify campaign difficulty)
+        run: |
+          node scripts/game-quality/run.mjs .quality-lab "$RUNNER_TEMP/evidence.json" 1500
+          cmp docs/game-quality/difficulty-evidence.json "$RUNNER_TEMP/evidence.json"
