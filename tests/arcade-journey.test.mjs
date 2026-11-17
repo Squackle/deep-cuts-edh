@@ -121,6 +121,7 @@ test('Arcade links resolve to real first-party routes; unrelated game pages rema
   '/games/hive-run/':'games/hive-run/index.html',
   '/games/mana-heist/':'games/mana-heist/index.html',
   '/games/stackbreaker':'games/stackbreaker.html',
+  '/games/stackbreaker/classic/':'games/stackbreaker/classic/index.html',
   '/games/cold-case':'games/cold-case.html',
   '/games/obscurity-ladder':'games/obscurity-ladder.html',
   '/games/arcane-cipher':'games/arcane-cipher.html',
@@ -145,13 +146,13 @@ test('Arcade metadata accurately exposes shipped destinations and does not index
   ['Daily Stackbreaker','https://deep-cuts-edh.pages.dev/games/stackbreaker'],
   ['Mana Heist','https://deep-cuts-edh.pages.dev/games/mana-heist/'],
   ['Hive Run','https://deep-cuts-edh.pages.dev/games/hive-run/'],
-  ['Classic Stackbreaker (Game Lab)','https://deep-cuts-game-lab.pages.dev/stackbreaker/']
+  ['Classic Stackbreaker','https://deep-cuts-edh.pages.dev/games/stackbreaker/classic/']
  ])assert.ok(schema.hasPart.some(x=>x.name===name&&x.url===url),'Invalid discovery entry for '+name);
- for(const path of ['/games','/games/stackbreaker','/games/mana-heist/','/games/hive-run/']){
+ for(const path of ['/games','/games/stackbreaker','/games/stackbreaker/classic/','/games/mana-heist/','/games/hive-run/']){
   assert.ok(sitemap.includes('<loc>https://deep-cuts-edh.pages.dev'+path+'</loc>'),'Missing first-party sitemap route '+path);
  }
  assert.ok(!sitemap.includes('deep-cuts-game-lab.pages.dev'),'Lab remains a separate host, not a main-site canonical');
- assert.ok(!sitemap.includes('/games/stackbreaker/classic/'),'An unshipped first-party route must not appear in sitemap');
+ assert.ok(sitemap.includes('<loc>https://deep-cuts-edh.pages.dev/games/stackbreaker/classic/</loc>'),'Published Classic campaign must be indexed');
  assert.match(html,/CREATURE TYPES · VARIABLE LENGTH/,'Arcane Cipher supports variable-length creature types');
  assert.doesNotMatch(html,/chase daily or arcade records/i,'Do not resurrect retired Hive Run daily rankings');
 });
