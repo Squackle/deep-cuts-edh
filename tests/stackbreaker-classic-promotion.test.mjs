@@ -32,6 +32,8 @@ test('Frame policy is narrowly scoped and Daily server-ranked mode is untouched'
  assert.match(headers,/\/games\/stackbreaker\/classic\/play\.html[\s\S]*X-Frame-Options: SAMEORIGIN/);
  assert.match(headers,/\/games\/stackbreaker\/classic\/play\.html[\s\S]*frame-ancestors 'self'/);
  assert.ok(headers.includes("X-Frame-Options: DENY"));
- assert.ok(daily.includes('deep-cuts-game-lab.pages.dev/stackbreaker/?daily=1&amp;siteRanked=1'));
+ assert.ok(daily.includes('src="/games/stackbreaker-play/?daily=1&amp;siteRanked=1"'),'Daily keeps its first-party playfield');
+ assert.ok(daily.includes('src="/games/stackbreaker-canonical.js"'),'Daily keeps the independent authenticated server replay bridge');
+ assert.ok(!daily.includes('deep-cuts-game-lab.pages.dev/stackbreaker/?daily=1&amp;siteRanked=1'),'Daily must not regress to cross-origin gameplay');
  assert.ok(!page.includes('rankedRun')&&!game.includes('src="/games/stackbreaker-canonical.js"'));
 });
