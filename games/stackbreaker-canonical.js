@@ -1,6 +1,6 @@
-// Canonical daily front end deliberately embeds the original Game Lab game.
+// Canonical daily front end runs a pinned first-party copy of the Classic game.
 // This module only presents authenticated server-replayed rankings.
-// It never trusts localStorage, screenshots, query parameters, or Lab messages
+// It never trusts browser-saved scores, screenshots, query parameters, or game messages
 // as proof of a win. Only same-origin server-replayed daily moves qualify for ranked scoring.
 const frame=document.getElementById('stackbreakerOriginal');
 const status=document.getElementById('rankedStatus');
@@ -9,6 +9,7 @@ const loaded=document.getElementById('frameStatus');
 const rankedButton=document.getElementById('rankedRun');
 const rankedState=document.getElementById('rankedRunState');
 const gameOrigin=new URL(frame.src).origin;
+if(gameOrigin!==window.location.origin)throw Error("Daily Stackbreaker must be served from this site");
 let active=false,server=null,frameReady=false,inFlight=false,ranked=null,layoutGrowthUsed=false;
 const setRunLabel=(value)=>{rankedState.textContent=value;};
 async function api(payload){
@@ -107,7 +108,7 @@ window.addEventListener('message',async event=>{
 });
 function info(message){status.textContent=message;}
 frame.addEventListener('load',()=>{
- if(!frameReady){loaded.hidden=false;loaded.textContent='Loading the original game…';}
+ if(!frameReady){loaded.hidden=false;loaded.textContent='Loading the on-site Stackbreaker game…';}
 });
 frame.addEventListener('error',()=>{loaded.hidden=false;loaded.textContent='Unable to load Stackbreaker. You can still play unlimited Classic from the link above.';});
 async function board(){
@@ -133,7 +134,7 @@ async function board(){
    empty.textContent=active?'No verified wins yet today.':'No ranked attempts are being accepted yet.';
    list.append(empty);
   }
- }catch(e){info('Verified rankings temporarily unavailable. Original Game Lab practice still works.');}
+ }catch(e){info('Verified rankings temporarily unavailable. Local first-party practice still works.');}
 }
 document.getElementById('refreshLeaderboard').addEventListener('click',board);
 board();checkRanked();

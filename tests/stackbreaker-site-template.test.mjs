@@ -31,18 +31,18 @@ test('Daily Stackbreaker inherits the same site shell as Cold Case',()=>{
 
 test('Daily stays the authentic ranked Classic game, not a template-specific clone',()=>{
  assert.ok(daily.includes('id="stackbreakerOriginal"'));
- assert.ok(daily.includes('deep-cuts-game-lab.pages.dev/stackbreaker/?daily=1&amp;siteRanked=1'));
+ assert.ok(daily.includes('/games/stackbreaker-play/?daily=1&amp;siteRanked=1'));
  for(const id of ['rankedRun','rankedRunState','rankedStatus','rankings','refreshLeaderboard','boardTitle','runRule','frameStatus']){
   assert.ok(daily.includes('id="'+id+'"'), 'ranked UI required by canonical bridge: '+id);
  }
  assert.ok(daily.includes('src="/games/stackbreaker-canonical.js"'));
  assert.ok(bridge.includes("event.source!==frame.contentWindow||event.origin!==gameOrigin"));
  assert.ok(bridge.includes("action:'move',seq:ranked.attempt.moves,move:data.move"));
- assert.doesNotMatch(bridge, /\blocalStorage\s*\.\s*(?:getItem|setItem|removeItem|clear)\s*\(/, 'Verified replay cannot read or write local score storage');
+ assert.ok(!bridge.includes('localStorage'));
 });
 
 test('Stackbreaker page-specific CSS does not replace the shared site theme',()=>{
- assert.match(styles, /#stackbreakerOriginal\s*\{\s*width\s*:\s*100%\s*;/, 'Embedded Classic board must remain full width');
+ assert.match(styles,/#stackbreakerOriginal\s*\{\s*width:100%/);
  assert.ok(styles.includes('height:calc(100svh - 44px)'));
  assert.ok(styles.includes('height:calc(100svh - 37px)'));
  assert.ok(!/^:root\s*\{/m.test(styles), 'do not override global site variables');
