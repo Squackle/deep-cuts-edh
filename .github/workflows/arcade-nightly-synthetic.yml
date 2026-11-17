@@ -1,0 +1,55 @@
+name: Arcade nightly synthetic regression
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'games/**'
+      - 'functions/api/stackbreaker.js'
+      - 'functions/api/daily-games.js'
+      - 'functions/api/arcane-games.js'
+      - 'src/stackbreaker-verify/**'
+      - 'tests/stackbreaker-*.test.mjs'
+      - 'tests/arcane-daily.test.mjs'
+      - 'tests/conspiracy-board-variety.test.mjs'
+      - 'tests/hive-*.test.mjs'
+      - 'tests/mana-heist-promotion.test.mjs'
+      - 'tests/arcade-*.test.mjs'
+      - '.github/workflows/arcade-nightly-synthetic.yml'
+  schedule:
+    - cron: '17 10 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: arcade-synthetic-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  arcade-synthetic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Exercise all live Arcade engines and synthetic score ownership
+        run: |
+          node --test \
+            tests/arcane-daily.test.mjs \
+            tests/conspiracy-board-variety.test.mjs \
+            tests/arcade-journey.test.mjs \
+            tests/arcade-crossgame-nav.test.mjs \
+            tests/hive-main-integration.test.mjs \
+            tests/hive-smooth-promotion.test.mjs \
+            tests/mana-heist-promotion.test.mjs \
+            tests/stackbreaker-server-replay.test.mjs \
+            tests/stackbreaker-api-integration.test.mjs \
+            tests/stackbreaker-classic-promotion.test.mjs
+      - name: Record no-live-write guarantee
+        run: |
+          echo 'All game/API tests use local fixtures and synthetic, in-memory D1.'
+          echo 'This workflow has no Cloudflare credentials or access to production scores.'
