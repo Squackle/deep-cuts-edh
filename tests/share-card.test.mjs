@@ -1,15 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cleanText,wrapText,rescueCardModel,cardSvg,shareMetaTags,sharePanelHtml} from '../src/share-card.js';
+import {cleanText,wrapText,rescueCardModel,cardSvg,shareMetaTags,sharePanelHtml,fetchCardArt} from '../src/share-card.js';
 import {reportHtml} from '../src/weekly-rescues-html.js';
 import {onRequestGet} from '../functions/share/rescues/[card].js';
 import {svgToPng,SHARE_FONT_PATHS} from '../src/share-card-png.js';
 import fs from 'node:fs';
 const root=new URL('../',import.meta.url);
 
+const ART='https://cards.scryfall.io/normal/front/a/8/a8564611-b678-4336-87e0-5a00a930de48.jpg?1783938448';
 const report={
  date:'2026-10-30',status:'AI-assisted and source-checked; not independently playtested',
- commander:{name:'Vhati il-Dal',scryfall:'https://scryfall.com/card/tpr/214/vhati-il-dal',edhrecCardUseRank:null},
+ commander:{name:'Vhati il-Dal',scryfall:'https://scryfall.com/card/tpr/214/vhati-il-dal',edhrecCardUseRank:null,imageUrl:ART},
  theme:'One-Toughness Control',hook:'A careful source-checked hypothesis.',usualBuild:'Approximate control',selectionReason:'Qualified.',
  sections:{headline:'One point',diagnosis:'d',prescription:'p',earlyGame:'e',midGame:'m',lateGame:'l',risks:'r',verdict:'v'},
  synergies:[],
@@ -35,7 +36,8 @@ test('card model reads only public report fields',()=>{
  const all=JSON.stringify(m)+cardSvg(m)+sharePanelHtml(m);
  for(const secret of ['INTERNAL','secret@example.com','UNPUBLISHED'])assert.ok(!all.includes(secret),secret);
  assert.equal(m.url,'https://deep-cuts-edh.pages.dev/rescues/2026-10-30');
- assert.equal(m.imagePath,'/share/rescues/2026-10-30.svg');
+ assert.equal(m.imagePath,'/share/rescues/2026-10-30.svg?v=2');
+ assert.equal(m.pngPath,'/share/rescues/2026-10-30.png?v=2');
  assert.throws(()=>rescueCardModel({...report,date:'../../x'}));
  assert.throws(()=>rescueCardModel(null));
 });
@@ -57,7 +59,7 @@ test('hostile titles cannot inject markup into SVG, meta or panel',()=>{
 
 test('report page carries Open Graph tags and the share panel',()=>{
  const html=reportHtml(report);
- assert.match(html,/<meta property="og:image" content="https:\/\/deep-cuts-edh\.pages\.dev\/share\/rescues\/2026-10-30\.png">/);
+ assert.match(html,/<meta property="og:image" content="https:\/\/deep-cuts-edh\.pages\.dev\/share\/rescues\/2026-10-30\.png\?v=2">/);
  assert.match(html,/<meta property="og:image:type" content="image\/png">/);
  assert.match(html,/<meta name="twitter:card" content="summary_large_image">/);
  assert.match(html,/<meta property="og:url" content="https:\/\/deep-cuts-edh\.pages\.dev\/rescues\/2026-10-30">/);
@@ -68,13 +70,15 @@ test('report page carries Open Graph tags and the share panel',()=>{
 
 test('share route serves only published reports and refuses forged dates',async()=>{
  const realFetch=globalThis.fetch;const seen=[];
- globalThis.fetch=async url=>{seen.push(String(url));const d=new URL(url).searchParams.get('date');
+ globalThis.fetch=async url=>{const u=new URL(url);
+  if(u.hostname==='cards.scryfall.io')return new Response(fs.readFileSync(new URL('tests/fixtures/synthetic-card.jpg',root)),{headers:{'Content-Type':'image/jpeg'}});
+  seen.push(String(url));const d=u.searchParams.get('date');
   return d==='2026-10-30'?Response.json({report}):new Response('{}',{status:404})};
  try{
   const ok=await onRequestGet({params:{card:'2026-10-30.svg'}});
   assert.equal(ok.status,200);assert.match(ok.headers.get('Content-Type'),/image\/svg\+xml/);
   assert.match(ok.headers.get('Content-Security-Policy'),/default-src 'none'/);
-  assert.match(await ok.text(),/Vhati il-Dal/);
+  const okSvg=await ok.text();assert.match(okSvg,/Vhati il-Dal/);assert.match(okSvg,/<image [^>]*href="data:image\/jpeg;base64,/,'commander card embedded');
   assert.equal((await onRequestGet({params:{card:'2026-11-06.svg'}})).status,404,'unpublished date is not a card');
   for(const bad of ['../x.svg','2026-10-30','2026-10-30.svg/../','2026-10-30.jpg','2026-10-30.png.svg'])
    assert.equal((await onRequestGet({params:{card:bad}})).status,404,bad);
@@ -94,4 +98,26 @@ test('server PNG renders the card at 1200x630 with bundled fonts only',async()=>
  for(const p of SHARE_FONT_PATHS)assert.ok(p.startsWith('/assets/share-fonts/')&&p.endsWith('.ttf'));
  assert.ok(fs.existsSync(new URL('assets/share-fonts/LICENSE-OFL-1.1.txt',root)));
  assert.ok(fs.existsSync(new URL('src/vendor/resvg-wasm/LICENSE-MPL-2.0.txt',root)));
+});
+
+test('card art: only verified Scryfall images, embedded as data URIs',async()=>{
+ const jpg=fs.readFileSync(new URL('tests/fixtures/synthetic-card.jpg',root));
+ const calls=[];
+ const ok=async(url,init)=>{calls.push([url,init?.redirect]);return new Response(jpg,{headers:{'Content-Type':'image/jpeg'}})};
+ const art=await fetchCardArt(ART,{fetchImpl:ok});
+ assert.match(art,/^data:image\/jpeg;base64,/);assert.equal(calls[0][1],'manual','redirects not followed');
+ for(const bad of ['https://evil.test/x.jpg','http://cards.scryfall.io/x.jpg','javascript:alert(1)',null])
+  assert.equal(await fetchCardArt(bad,{fetchImpl:ok}),null,String(bad));
+ assert.equal(await fetchCardArt(ART,{fetchImpl:async()=>new Response('<svg onload=alert(1)>',{headers:{'Content-Type':'image/jpeg'}})}),null,'magic bytes checked');
+ assert.equal(await fetchCardArt(ART,{fetchImpl:async()=>new Response(jpg,{headers:{'Content-Type':'text/html'}})}),null);
+ assert.equal(await fetchCardArt(ART,{fetchImpl:async()=>new Response(new Uint8Array(700_000).fill(0xff),{headers:{'Content-Type':'image/jpeg'}})}),null,'size bounded');
+ assert.equal(await fetchCardArt(ART,{fetchImpl:async()=>{throw Error('down')}}),null);
+ const m=rescueCardModel(report);
+ const withArt=cardSvg(m,{art});
+ assert.match(withArt,/<image [^>]*href="data:image\/jpeg;base64,/);
+ for(const bad of ['https://evil.test/x.png','data:image/svg+xml;base64,PHN2Zz4=','data:image/jpeg;base64,AA"/><script>'])
+  assert.doesNotMatch(cardSvg(m,{art:bad}),/<image /,bad);
+ const opts={wasm:fs.readFileSync(new URL('src/vendor/resvg-wasm/index_bg.wasm',root)),loadFont:async p=>fs.readFileSync(new URL('.'+p,root))};
+ const [a,b]=[await svgToPng(withArt,opts),await svgToPng(cardSvg(m),opts)];
+ assert.ok(Math.abs(a.length-b.length)>b.length*0.05,'card image changes the rendered PNG ('+a.length+' vs '+b.length+' bytes)');
 });

@@ -2,9 +2,10 @@
  * PUBLISHED Weekly Rescue Report. Reads the same public report API as
  * /rescues/<date>; an unknown or unpublished date returns 404, so no card can
  * be forged. The PNG (used for og:image) is rendered server-side from the SVG
- * and cached at the edge. */
-import {remoteJson} from '../../../src/weekly-rescues-html.js';
-import {rescueCardModel,cardSvg,svgResponse,pngResponse} from '../../../src/share-card.js';
+ * and cached at the edge. The commander's card image is fetched server-side
+ * from Scryfall's CDN (verified URL only) and embedded as a data URI. */
+import {remoteJson,commanderArt} from '../../../src/weekly-rescues-html.js';
+import {rescueCardModel,cardSvg,fetchCardArt,svgResponse,pngResponse,CARD_VERSION} from '../../../src/share-card.js';
 const text=(body,status,extra={})=>new Response(body,{status,headers:{'Content-Type':'text/plain; charset=utf-8','X-Content-Type-Options':'nosniff',...extra}});
 const notFound=()=>text('Not found',404);
 
@@ -23,8 +24,8 @@ export async function onRequestGet({request,env,params,waitUntil}){
  const match=/^(20\d\d-\d\d-\d\d)\.(svg|png)$/.exec(String(params.card||''));
  if(!match)return notFound();
  const [,date,format]=match;
- const cache=format==='png'&&typeof caches!=='undefined'?caches.default:null;
- const cacheKey=cache?new Request(new URL(`/share/rescues/${date}.png`,request.url)):null;
+ const cache=typeof caches!=='undefined'?caches.default:null;
+ const cacheKey=cache?new Request(new URL(`/share/rescues/${date}.${format}?v=${CARD_VERSION}`,request.url)):null;
  if(cache){try{const hit=await cache.match(cacheKey);if(hit)return hit}catch{}}
  let data;
  try{data=await remoteJson('/v1/report?date='+encodeURIComponent(date))}
@@ -33,13 +34,19 @@ export async function onRequestGet({request,env,params,waitUntil}){
   console.error('Share card report read failed',String(error));return text('Card temporarily unavailable',503,{'Retry-After':'300'})
  }
  if(!data?.report||data.report.date!==date)return notFound();
- let svg;
- try{svg=cardSvg(rescueCardModel(data.report))}catch{return notFound()}
- if(format==='svg')return svgResponse(svg);
- try{
-  const response=pngResponse(await renderPng(svg,env,request));
-  if(cache){const put=cache.put(cacheKey,response.clone()).catch(()=>{});waitUntil?waitUntil(put):await put}
+ let model;
+ try{model=rescueCardModel(data.report)}catch{return notFound()}
+ // commanderArt() only returns Scryfall CDN card URLs (safeCardImage).
+ const art=await fetchCardArt(commanderArt(data.report));
+ const svg=cardSvg(model,{art});
+ const store=response=>{
+  // Cards without art (Scryfall hiccup) are not cached, so they self-heal.
+  if(cache&&art){const put=cache.put(cacheKey,response.clone()).catch(()=>{});waitUntil?waitUntil(put):put}
   return response;
+ };
+ if(format==='svg')return store(svgResponse(svg));
+ try{
+  return store(pngResponse(await renderPng(svg,env,request)));
  }catch(error){
   console.error('Share card PNG render failed',String(error));
   return text('Card image temporarily unavailable',503,{'Retry-After':'300'});
