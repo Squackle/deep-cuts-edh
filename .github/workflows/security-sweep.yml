@@ -83,11 +83,6 @@ jobs:
         with:
           languages: javascript-typescript
           queries: security-extended
-          # Third-party code copied in unmodified (see src/vendor/*/README.md)
-          # is reviewed when vendored, not scanned as first-party source.
-          config: |
-            paths-ignore:
-              - src/vendor/**
       - uses: github/codeql-action/analyze@v4
         with:
           category: "/language:javascript-typescript"
