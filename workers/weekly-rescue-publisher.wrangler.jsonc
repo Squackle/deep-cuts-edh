@@ -1,0 +1,16 @@
+// Deploy config for the Friday Weekly Rescue publisher Worker.
+// Used by Cloudflare Workers Builds (root: repo, deploy command:
+// npx wrangler deploy --config workers/weekly-rescue-publisher.wrangler.jsonc).
+// Bindings and crons must match workers/weekly-rescue-schedule.json.
+{
+  "name": "deep-cuts-weekly-publisher",
+  "main": "weekly-rescue-publisher.js",
+  "compatibility_date": "2026-10-26",
+  "workers_dev": true,
+  "observability": { "enabled": true, "logs": { "enabled": true, "invocation_logs": true } },
+  "ai": { "binding": "AI" },
+  "kv_namespaces": [
+    { "binding": "REPORTS", "id": "06e0f4985b2645ec9df5f61e3be15a72" }
+  ],
+  "triggers": { "crons": ["0,15,30,45 15 * * FRI", "0,15,30,45 16 * * FRI"] }
+}

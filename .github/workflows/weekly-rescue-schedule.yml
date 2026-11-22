@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'workers/weekly-rescue-schedule.json'
+      - 'workers/weekly-rescue-publisher.wrangler.jsonc'
       - 'src/weekly-rescue*.js'
       - 'src/home-weekly-ssr.js'
       - 'functions/index.js'
@@ -19,6 +20,7 @@ on:
     branches: [main]
     paths:
       - 'workers/weekly-rescue-schedule.json'
+      - 'workers/weekly-rescue-publisher.wrangler.jsonc'
       - 'src/weekly-rescue*.js'
       - 'src/home-weekly-ssr.js'
       - 'functions/index.js'
