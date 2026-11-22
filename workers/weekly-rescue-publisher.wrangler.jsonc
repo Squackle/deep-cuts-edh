@@ -1,6 +1,8 @@
 // Deploy config for the Friday Weekly Rescue publisher Worker.
 // Used by Cloudflare Workers Builds (root: repo, deploy command:
 // npx wrangler deploy --config workers/weekly-rescue-publisher.wrangler.jsonc).
+// Builds run only when workers/weekly-rescue-* changes on main (watch path).
+// Preview builds are off, so pull requests never deploy this Worker.
 // Bindings and crons must match workers/weekly-rescue-schedule.json.
 {
   "name": "deep-cuts-weekly-publisher",
