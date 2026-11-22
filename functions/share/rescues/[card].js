@@ -1,16 +1,47 @@
-/* GET /share/rescues/<YYYY-MM-DD>.svg — branded social card for a PUBLISHED
- * Weekly Rescue Report. Reads the same public report API as /rescues/<date>;
- * an unknown or unpublished date returns 404, so no card can be forged. */
+/* GET /share/rescues/<YYYY-MM-DD>.svg|.png — branded social card for a
+ * PUBLISHED Weekly Rescue Report. Reads the same public report API as
+ * /rescues/<date>; an unknown or unpublished date returns 404, so no card can
+ * be forged. The PNG (used for og:image) is rendered server-side from the SVG
+ * and cached at the edge. */
 import {remoteJson} from '../../../src/weekly-rescues-html.js';
-import {rescueCardModel,cardSvg,svgResponse} from '../../../src/share-card.js';
-const notFound=()=>new Response('Not found',{status:404,headers:{'Content-Type':'text/plain; charset=utf-8','X-Content-Type-Options':'nosniff'}});
-export async function onRequestGet({params}){
- const match=/^(20\d\d-\d\d-\d\d)\.svg$/.exec(String(params.card||''));
+import {rescueCardModel,cardSvg,svgResponse,pngResponse} from '../../../src/share-card.js';
+const text=(body,status,extra={})=>new Response(body,{status,headers:{'Content-Type':'text/plain; charset=utf-8','X-Content-Type-Options':'nosniff',...extra}});
+const notFound=()=>text('Not found',404);
+
+async function renderPng(svg,env,request){
+ // Loaded lazily so the SVG path never pays for WebAssembly start-up.
+ const {renderCardPng}=await import('../../../src/share-card-png-worker.js');
+ const loadFont=async path=>{
+  const res=await env.ASSETS.fetch(new Request(new URL(path,request.url)));
+  if(!res.ok)throw Error('Font unavailable '+res.status);
+  return res.arrayBuffer();
+ };
+ return renderCardPng(svg,loadFont);
+}
+
+export async function onRequestGet({request,env,params,waitUntil}){
+ const match=/^(20\d\d-\d\d-\d\d)\.(svg|png)$/.exec(String(params.card||''));
  if(!match)return notFound();
+ const [,date,format]=match;
+ const cache=format==='png'&&typeof caches!=='undefined'?caches.default:null;
+ const cacheKey=cache?new Request(new URL(`/share/rescues/${date}.png`,request.url)):null;
+ if(cache){try{const hit=await cache.match(cacheKey);if(hit)return hit}catch{}}
  let data;
- try{data=await remoteJson('/v1/report?date='+encodeURIComponent(match[1]))}
- catch(error){console.error('Share card report read failed',String(error));return new Response('Card temporarily unavailable',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8','Retry-After':'300'}})}
- if(!data?.report||data.report.date!==match[1])return notFound();
- try{return svgResponse(cardSvg(rescueCardModel(data.report)))}
- catch{return notFound()}
+ try{data=await remoteJson('/v1/report?date='+encodeURIComponent(date))}
+ catch(error){
+  if(/\(404\)/.test(String(error?.message)))return notFound();
+  console.error('Share card report read failed',String(error));return text('Card temporarily unavailable',503,{'Retry-After':'300'})
+ }
+ if(!data?.report||data.report.date!==date)return notFound();
+ let svg;
+ try{svg=cardSvg(rescueCardModel(data.report))}catch{return notFound()}
+ if(format==='svg')return svgResponse(svg);
+ try{
+  const response=pngResponse(await renderPng(svg,env,request));
+  if(cache){const put=cache.put(cacheKey,response.clone()).catch(()=>{});waitUntil?waitUntil(put):await put}
+  return response;
+ }catch(error){
+  console.error('Share card PNG render failed',String(error));
+  return text('Card image temporarily unavailable',503,{'Retry-After':'300'});
+ }
 }

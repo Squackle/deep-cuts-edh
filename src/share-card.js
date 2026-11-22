@@ -66,6 +66,7 @@ export function rescueCardModel(report){
   path,
   url:SITE_ORIGIN+path,
   imagePath:`/share/rescues/${date}.svg`,
+ pngPath:`/share/rescues/${date}.png`,
   alt:`Deep Cuts EDH case file card: ${cleanText(report.commander.name,60)}, ${cleanText(report.theme,70)}`
  };
 }
@@ -90,24 +91,25 @@ export function cardSvg(model){
 <rect x="40" y="40" width="1120" height="550" fill="none" stroke="#c9a85a" stroke-opacity=".35" stroke-width="1"/>
 <rect x="72" y="84" width="1056" height="462" rx="4" fill="#f6efdf"/>
 <rect x="72" y="84" width="14" height="462" fill="#c9a85a"/>
-<text x="120" y="134" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="22" font-weight="800" letter-spacing="3" fill="#805f35">${xml(model.kicker)}</text>
+<text x="120" y="134" font-family="ui-monospace,Menlo,Consolas,'Liberation Mono',monospace" font-size="22" font-weight="800" letter-spacing="3" fill="#805f35">${xml(model.kicker)}</text>
 <line x1="120" y1="154" x2="1090" y2="154" stroke="#c7b488" stroke-width="2"/>
-<text y="${titleY}" font-family="Georgia,'Times New Roman',serif" font-size="${titleSize}" font-weight="700" fill="#1f3d2f">${tspans(titleLines,120,titleSize+8)}</text>
-<text y="${subY}" font-family="Georgia,'Times New Roman',serif" font-size="38" font-style="italic" fill="#8a6a2f">${tspans(subLines,120,46)}</text>
-<text y="${blurbY}" font-family="system-ui,-apple-system,'Segoe UI',Arial,sans-serif" font-size="25" fill="#43584a">${tspans(blurbLines,120,34)}</text>
-<text x="120" y="584" font-family="Georgia,'Times New Roman',serif" font-size="26" font-weight="700" letter-spacing="2" fill="#f6efdf">DEEP CUTS <tspan fill="#c9a85a" font-style="italic">EDH</tspan></text>
-<text x="1080" y="584" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="17" font-weight="700" letter-spacing="2" fill="#c9a85a">${xml(model.footer)} · deep-cuts-edh.pages.dev</text>
+<text y="${titleY}" font-family="Georgia,'Times New Roman','Liberation Serif',serif" font-size="${titleSize}" font-weight="700" fill="#1f3d2f">${tspans(titleLines,120,titleSize+8)}</text>
+<text y="${subY}" font-family="Georgia,'Times New Roman','Liberation Serif',serif" font-size="38" font-style="italic" fill="#8a6a2f">${tspans(subLines,120,46)}</text>
+<text y="${blurbY}" font-family="system-ui,-apple-system,'Segoe UI',Arial,'Liberation Sans',sans-serif" font-size="25" fill="#43584a">${tspans(blurbLines,120,34)}</text>
+<text x="120" y="584" font-family="Georgia,'Times New Roman','Liberation Serif',serif" font-size="26" font-weight="700" letter-spacing="2" fill="#f6efdf">DEEP CUTS <tspan fill="#c9a85a" font-style="italic">EDH</tspan></text>
+<text x="1080" y="584" text-anchor="end" font-family="ui-monospace,Menlo,Consolas,'Liberation Mono',monospace" font-size="17" font-weight="700" letter-spacing="2" fill="#c9a85a">${xml(model.footer)} · deep-cuts-edh.pages.dev</text>
 </svg>`;
 }
 
 // Open Graph + Twitter metadata for the public page. All values escaped.
 export function shareMetaTags(model,{title,description}){
- const image=SITE_ORIGIN+model.imagePath;
+ // Social platforms need a raster image; the PNG is rendered server-side.
+ const image=SITE_ORIGIN+model.pngPath;
  const tags=[
   ['property','og:type','article'],['property','og:site_name','Deep Cuts EDH'],
   ['property','og:title',cleanText(title,110)],['property','og:description',cleanText(description,200)],
   ['property','og:url',model.url],['property','og:image',image],
-  ['property','og:image:type','image/svg+xml'],['property','og:image:width',String(CARD_WIDTH)],['property','og:image:height',String(CARD_HEIGHT)],
+  ['property','og:image:type','image/png'],['property','og:image:width',String(CARD_WIDTH)],['property','og:image:height',String(CARD_HEIGHT)],
   ['property','og:image:alt',model.alt],
   ['name','twitter:card','summary_large_image'],['name','twitter:title',cleanText(title,70)],
   ['name','twitter:description',cleanText(description,200)],['name','twitter:image',image],['name','twitter:image:alt',model.alt]
@@ -139,5 +141,12 @@ export const svgResponse=(svg,status=200)=>new Response(svg,{status,headers:{
  'X-Content-Type-Options':'nosniff',
  // Opened directly, the SVG may not run script or load anything external.
  'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'",
+ 'Access-Control-Allow-Origin':'*'
+}});
+
+export const pngResponse=(bytes,status=200)=>new Response(bytes,{status,headers:{
+ 'Content-Type':'image/png',
+ 'Cache-Control':'public, max-age=86400, s-maxage=86400',
+ 'X-Content-Type-Options':'nosniff',
  'Access-Control-Allow-Origin':'*'
 }});
