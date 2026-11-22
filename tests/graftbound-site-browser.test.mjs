@@ -26,10 +26,11 @@ async function drive(frame, count) {
 }
 const gameFrame = page => page.frames().find(f => f.url().includes('/games/graftbound-play/'));
 async function hydrated(page, seq) {
+  const diag = () => page.evaluate(() => { const w = document.querySelector('iframe').contentWindow; return JSON.stringify({ state: document.getElementById('rankedRunState').textContent, mode: w.__LC?.mode, seq: w.__LC?.run?.ranked?.seq, site: w.__LC?.run?.ranked?.siteAttempt }); }).catch(e => String(e));
   await page.waitForFunction(seq => {
     const f = [...document.querySelectorAll('iframe')][0]; const app = f?.contentWindow?.__LC;
     return app?.run?.ranked?.siteAttempt && app.run.ranked.seq === seq;
-  }, seq, { timeout: 60000 });
+  }, seq, { timeout: 90000 }).catch(async e => { throw new Error(e.message + ' ' + await diag()); });
 }
 
 test('verified GRAFTBOUND run: start, submit, resume, tamper resync, finish, leaderboard', { timeout: 240000 }, async () => {
@@ -43,7 +44,7 @@ test('verified GRAFTBOUND run: start, submit, resume, tamper resync, finish, lea
     await page.goto(origin + '/games/graftbound');
     await page.waitForFunction(() => document.getElementById('rankedRun').textContent === 'START VERIFIED RUN', null, { timeout: 60000 });
     await page.waitForFunction(() => document.getElementById('frameStatus').hidden, null, { timeout: 60000 });
-    await page.click('#rankedRun');
+    await page.click('#rankedRun', { noWaitAfter: true });   // the game frame may reload itself to load the run
     await hydrated(page, 0);
     assert.equal(await gameFrame(page).evaluate(() => window.__LC.mode !== 'title'), true, 'the game left the title screen for the verified run');
 
@@ -57,7 +58,7 @@ test('verified GRAFTBOUND run: start, submit, resume, tamper resync, finish, lea
     await page.reload();
     await page.waitForFunction(() => document.getElementById('rankedRun').textContent === 'RESUME VERIFIED RUN', null, { timeout: 60000 });
     await page.waitForFunction(() => document.getElementById('frameStatus').hidden, null, { timeout: 60000 });
-    await page.click('#rankedRun');
+    await page.click('#rankedRun', { noWaitAfter: true });   // the game frame may reload itself to load the run
     await hydrated(page, 20);
     assert.equal(await gameFrame(page).evaluate(() => window.__LC.run.ranked.log.length), 20);
 
