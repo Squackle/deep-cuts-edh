@@ -47,3 +47,17 @@ test('historically misconfigured Thursday triggers cannot publish',()=>{
  assert.equal(localReleaseWindow(new Date('2026-11-06T16:00:00Z')),true);
  assert.equal(localReleaseWindow(new Date('2026-10-30T15:00:00Z')),true);
 });
+
+test('Auto-deploy config keeps the publisher bindings, schedule and compatibility date',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const raw=readFileSync(new URL('../workers/weekly-rescue-publisher.wrangler.jsonc',import.meta.url),'utf8').replace(/^\s*\/\/.*$/gm,'');
+ const cfg=JSON.parse(raw);
+ const schedule=JSON.parse(readFileSync(new URL('../workers/weekly-rescue-schedule.json',import.meta.url),'utf8'));
+ const assert=(await import('node:assert/strict')).default;
+ assert.equal(cfg.name,schedule.worker);
+ assert.equal(cfg.main,'weekly-rescue-publisher.js');
+ assert.deepEqual(cfg.triggers.crons,schedule.crons);
+ assert.equal(cfg.ai.binding,'AI');
+ assert.deepEqual(cfg.kv_namespaces,[{binding:'REPORTS',id:'06e0f4985b2645ec9df5f61e3be15a72'}]);
+ assert.equal(cfg.workers_dev,true,'public read API stays on workers.dev');
+});
