@@ -11,7 +11,25 @@ Secrets required for production Pages Functions:
 
 Frontend's public Turnstile **site key** is in `index.html`. The private Turnstile secret must **never** be committed to GitHub.
 
-Configured in Cloudflare Pages on October 12, 2026: production and preview environments have an encrypted `TURNSTILE_SECRET`, and the `DB` binding points to the initialized D1 database. Never commit the secret to this repository. If you change the Turnstile widget secret, update the Cloudflare environment secret and redeploy.
+Configured in Cloudflare Pages on October 12, 2026: the production environment has an encrypted `TURNSTILE_SECRET`, and the `DB` binding points to the initialized D1 database. Never commit the secret to this repository. If you change the Turnstile widget secret, update the Cloudflare environment secret and redeploy.
+
+## Preview environment (isolated from production)
+
+Since November 17, 2026 ([issue #74](https://github.com/Squackle/deep-cuts-edh/issues/74)), the Pages **Preview** environment no longer shares production storage. Bindings live in the Cloudflare dashboard (there is no `wrangler.toml`):
+
+| Binding | Production | Preview |
+| --- | --- | --- |
+| `DB` | `deep-cuts-nominations` (`5f870895-4281-45d2-b331-45c8182e1079`) | `deepcuts-preview-isolated-community-20261117` (`e122f76d-0a5a-437c-81ae-0438d85ac41f`) |
+| `HIVE_DB` | `deep-cuts-hive-leaderboard` (`47254394-3679-43f3-9ca3-9a14155d5a17`) | `deepcuts-preview-isolated-hive-20261117` (`371455da-6fc9-498d-8e05-d944c5d0d584`) |
+| `SITE_PRESENCE` (KV) | `2eef4f0809514ef0a50d5a4e4a817106` | `deepcuts-preview-isolated-presence-20261117` (`1236d2a2d1954cdaa313d84bd5d32837`) |
+| `TURNSTILE_SECRET` | live secret | test-only secret |
+
+The preview databases were created from schema only and contain no real user, payment or score data. Rules:
+
+- **Preview deployments built before November 17, 2026 may still use production bindings**, because each Pages deployment keeps the settings it was built with. Never run mutation, signup or score tests against an old preview URL; rebuild the branch first.
+- Never point a Preview binding back at a production ID, and never copy production rows into the preview databases.
+- When a schema migration ships to production, apply the same DDL to the preview databases so previews keep working.
+- The separate `deepcuts-edh-security-staging` Pages project (Access-protected) has its own `deepcuts-security-staging-*` databases for security acceptance tests.
 Turnstile widget is restricted to `deep-cuts-edh.pages.dev`. Add any custom domains in Turnstile settings before switching to them.
 
 ## Moderator workflow
