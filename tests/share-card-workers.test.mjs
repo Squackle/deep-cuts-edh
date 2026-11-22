@@ -38,7 +38,7 @@ export default {fetch(request,env,ctx){const card=new URL(request.url).pathname.
  const svg=await mf.dispatchFetch('https://site.invalid/share/rescues/2026-10-30.svg');
  assert.equal(svg.status,200);assert.match(svg.headers.get('Content-Type'),/image\/svg\+xml/);assert.match(await svg.text(),/<image [^>]*href="data:image\/jpeg;base64,/,'commander card embedded in workerd');
  assert.ok(upstream.some(u=>u.startsWith(ART.split('?')[0])),'art fetched from Scryfall CDN');
- const missing=await mf.dispatchFetch('https://site.invalid/share/rescues/2026-11-06.png');
+ const missing=await mf.dispatchFetch('https://site.invalid/share/rescues/2026-12-04.png');
  assert.equal(missing.status,404,'unpublished dates never get a card');await missing.text();
  const bad=await mf.dispatchFetch('https://site.invalid/share/rescues/evil.png');
  assert.equal(bad.status,404);await bad.text();

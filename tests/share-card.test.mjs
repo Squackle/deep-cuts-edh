@@ -36,8 +36,8 @@ test('card model reads only public report fields',()=>{
  const all=JSON.stringify(m)+cardSvg(m)+sharePanelHtml(m);
  for(const secret of ['INTERNAL','secret@example.com','UNPUBLISHED'])assert.ok(!all.includes(secret),secret);
  assert.equal(m.url,'https://deep-cuts-edh.pages.dev/rescues/2026-10-30');
- assert.equal(m.imagePath,'/share/rescues/2026-10-30.svg?v=2');
- assert.equal(m.pngPath,'/share/rescues/2026-10-30.png?v=2');
+ assert.equal(m.imagePath,'/share/rescues/2026-10-30.svg?v=3');
+ assert.equal(m.pngPath,'/share/rescues/2026-10-30.png?v=3');
  assert.throws(()=>rescueCardModel({...report,date:'../../x'}));
  assert.throws(()=>rescueCardModel(null));
 });
@@ -59,7 +59,7 @@ test('hostile titles cannot inject markup into SVG, meta or panel',()=>{
 
 test('report page carries Open Graph tags and the share panel',()=>{
  const html=reportHtml(report);
- assert.match(html,/<meta property="og:image" content="https:\/\/deep-cuts-edh\.pages\.dev\/share\/rescues\/2026-10-30\.png\?v=2">/);
+ assert.match(html,/<meta property="og:image" content="https:\/\/deep-cuts-edh\.pages\.dev\/share\/rescues\/2026-10-30\.png\?v=3">/);
  assert.match(html,/<meta property="og:image:type" content="image\/png">/);
  assert.match(html,/<meta name="twitter:card" content="summary_large_image">/);
  assert.match(html,/<meta property="og:url" content="https:\/\/deep-cuts-edh\.pages\.dev\/rescues\/2026-10-30">/);
@@ -79,7 +79,7 @@ test('share route serves only published reports and refuses forged dates',async(
   assert.equal(ok.status,200);assert.match(ok.headers.get('Content-Type'),/image\/svg\+xml/);
   assert.match(ok.headers.get('Content-Security-Policy'),/default-src 'none'/);
   const okSvg=await ok.text();assert.match(okSvg,/Vhati il-Dal/);assert.match(okSvg,/<image [^>]*href="data:image\/jpeg;base64,/,'commander card embedded');
-  assert.equal((await onRequestGet({params:{card:'2026-11-06.svg'}})).status,404,'unpublished date is not a card');
+  assert.equal((await onRequestGet({params:{card:'2026-12-04.svg'}})).status,404,'unpublished date is not a card');
   for(const bad of ['../x.svg','2026-10-30','2026-10-30.svg/../','2026-10-30.jpg','2026-10-30.png.svg'])
    assert.equal((await onRequestGet({params:{card:bad}})).status,404,bad);
   assert.equal(seen.length,2,'malformed ids never reach upstream');
