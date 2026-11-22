@@ -90,7 +90,12 @@ export async function onRequestPost({ request, env }) {
     await ensureChallenge(db);
     const open = await db.prepare("SELECT * FROM graftbound_attempts_v1 WHERE profile_id=? AND challenge_id=? AND challenge_revision=? AND status='started'").bind(a.id, c.id, c.revision).first();
     if (action === 'start') {
-      if (open && !d.restart) return send({ ok: true, resumed: true, attempt: publicAttempt(open), checkpoint: JSON.parse(open.checkpoint), challenge: pinned() });
+      if (open && !d.restart) {
+        // The accepted decisions let the on-site game rebuild its local replay log; the checkpoint stays authoritative.
+        const segs = await db.prepare('SELECT decisions FROM graftbound_segments_v1 WHERE attempt_id=? ORDER BY seq_start').bind(open.id).all();
+        const decisions = (segs.results || []).flatMap(s => JSON.parse(s.decisions));
+        return send({ ok: true, resumed: true, attempt: publicAttempt(open), checkpoint: JSON.parse(open.checkpoint), decisions, challenge: pinned() });
+      }
       const stmts = [];
       if (open) stmts.push(db.prepare("UPDATE graftbound_attempts_v1 SET status='abandoned', updated_at=unixepoch(), finished_at=unixepoch() WHERE id=? AND status='started'").bind(open.id));
       const id = rnd(16), cp = newCheckpoint(c.id);

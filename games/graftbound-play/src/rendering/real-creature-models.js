@@ -1,0 +1,318 @@
+// Original animated pixel-silhouettes for real Magic creature encounters. The old
+// sprite atlas is never relabeled: each identity receives a different visible model.
+// Generated once at asset load; no Magic card art, network requests or gameplay RNG.
+// Canvas-only: engine, simulation and ranked replay remain entirely DOM-free.
+import { CREATURE_MOTION_FAMILIES, creaturePose, materialLightDelta, finishCreatureCell } from './creature-motion.js';
+/** Toggle exists only for before/after QA (dev/creature-gallery.html?finish=0). */
+export const NATIVE_STUDY_DENSITY = 0.42;
+export let FINISH = true; export const setCreatureFinish = v => { FINISH = !!v; };
+import { SPECIES_FRAME, SPECIES_STUDY_FEATURES, drawSpeciesStudyFrame } from './detailed-species-art.js';
+import { HUMANOID_FRAME, HUMANOID_STUDY_FEATURES, drawHumanoidStudyFrame } from './detailed-humanoid-art.js';
+import { BEAST_FRAME, BEAST_STUDY_FEATURES, drawBeastStudyFrame } from './detailed-beast-art.js';
+import { TOKEN_FRAME, TOKEN_STUDY_FEATURES, drawTokenStudyFrame } from './detailed-token-art.js';
+import { MAGIC_FRAME, MAGIC_STUDY_FEATURES, drawMagicStudyFrame } from './detailed-magic-art.js';
+import { MONSTER_FRAME, MONSTER_STUDY_FEATURES, drawMonsterStudyFrame } from './detailed-monster-art.js';
+import { FOLK_FRAME, FOLK_STUDY_FEATURES, drawFolkStudyFrame } from './detailed-folk-art.js';
+
+// Canonical model metadata is shared with the DOM-free enemy rule definitions.
+import { REAL_CREATURE_MODELS } from '../data/creature-models.js';
+export { REAL_CREATURE_MODELS };
+
+const rgb = hex => [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
+const mix = (a,b,k) => a.map((v,i)=>Math.round(v*(1-k)+b[i]*k));
+function recolor(frame, config) {
+  const g=frame.getContext('2d',{willReadFrequently:true}),img=g.getImageData(0,0,frame.width,frame.height);
+  const lo=rgb(config.dark),mid=rgb(config.mid),hi=rgb(config.light),d=img.data;
+  for(let i=0;i<d.length;i+=4){if(!d[i+3])continue;
+    const l=(d[i]*0.29+d[i+1]*0.58+d[i+2]*0.13)/255;
+    const col=l<0.49?mix(lo,mid,l/0.49):mix(mid,hi,(l-0.49)/0.51);
+    d[i]=col[0];d[i+1]=col[1];d[i+2]=col[2];
+  }
+  g.putImageData(img,0,0);
+}
+function overlay(g,w,h,{feature,dark,mid,light},view,anim,frame) {
+  const back=view===1,attack=anim===2,walk=anim===1,cast=anim===3;
+  const c=Math.min(w/80,h/88),motion=creaturePose(feature,anim,frame,back);
+  const bob=motion?motion.bob:walk?(frame%2?1:-1):anim===0?(frame%2?0:1):0;
+  g.save();g.translate(w/2,h*0.63+bob);g.scale(c,c);
+  g.lineJoin='round';g.lineCap='round';
+  const poly=(pts,fill=mid,stroke=dark,thick=2)=>{g.beginPath();g.moveTo(...pts[0]);for(const p of pts.slice(1))g.lineTo(...p);g.closePath();g.fillStyle=fill;g.fill();if(stroke){g.strokeStyle=stroke;g.lineWidth=thick;g.stroke();}};
+  const ell=(x,y,rx,ry,fill=mid,stroke=dark,lw=2)=>{g.beginPath();g.ellipse(x,y,rx,ry,0,0,Math.PI*2);g.fillStyle=fill;g.fill();if(stroke){g.lineWidth=lw;g.strokeStyle=stroke;g.stroke();}};
+  const line=(a,b,col=light,lw=3)=>{g.beginPath();g.moveTo(...a);g.lineTo(...b);g.lineWidth=lw;g.strokeStyle=col;g.stroke()};
+  const eye=(x,y,col=light)=>{if(!back)ell(x,y,1.5,1.5,col,null)};
+  const lightLine=(a,b)=>line(a,b,light,2);
+  const ears=()=>{poly([[-17,-17],[-22,-31],[-8,-21]],mid);poly([[16,-17],[22,-31],[8,-21]],mid)};
+  const horns=()=>{poly([[-11,-17],[-25,-32],[-20,-20],[-14,-16]],light);poly([[11,-17],[25,-32],[20,-20],[14,-16]],light)};
+  const body=()=>{poly([[-14,-17],[-17,13],[-10,22],[11,22],[17,13],[12,-17]],mid);poly([[-12,-16],[-9,1],[8,1],[12,-16]],dark,null);ell(0,-22,11,11,mid);eye(-5,-23);eye(5,-23)};
+  const limb=(x,y,dx,dy)=>line([x,y],[x+dx,y+dy],dark,7);
+  switch(feature){
+    case 'friendlySoldier':
+      poly([[-12,-9],[-16,13],[-8,23],[8,23],[16,13],[12,-9]],mid);ell(0,-23,12,13,light);
+      poly([[-14,-30],[0,-40],[14,-30],[12,-23],[-12,-23]],dark);line([-8,-3],[-25,15],light,5);
+      ell(-23,10,9,14,mid,light,3);line([16,14],[21,-39],light,4);poly([[21,-48],[16,-36],[26,-36]],light);
+      eye(-5,-21,dark);eye(5,-21,dark);break;
+    case 'friendlyElemental':
+      for(let i=-3;i<=3;i++){poly([[i*7,-2],[(i-1)*8,-29-(i%3)*7],[(i+1)*8,-17],[i*7,23]],i%2?mid:light,dark,2);}
+      ell(0,0,16,22,mid,dark,2);poly([[-17,6],[-5,-29],[2,-6],[9,-39],[17,0]],light);
+      eye(-5,-4,'#401c18');eye(6,-4,'#401c18');break;
+    case 'friendlyDrake': {
+      const m=motion;
+      g.save();g.translate(m.advance*.55,m.bob*.25+m.collapse*.3);g.scale(1,1-m.collapse*.04);
+      // Two independently articulated wings remain rooted at the shoulder.
+      for(const side of [-1,1]){
+        const spread=28+m.wing*.6,top=-37-m.wing;
+        poly([[side*7,-10],[side*spread,top],[side*(spread+5),-8-m.wing*.15],[side*15,15]],light);
+        line([side*7,-10],[side*spread,top],dark,2.5);
+        line([side*11,-7],[side*(spread+2),-6-m.wing*.2],mid,2);
+      }
+      // A supported hind-body, moving legs and a tapered tail.
+      poly([[-8,5],[-19,12],[-21-m.nearStep,27],[-13,25],[-5,12]],mid);
+      for(const [x,step] of [[-8,m.farStep],[8,m.nearStep]]){
+        line([x,11],[x+step*2,27],dark,5);ell(x+step*2,29,5,3,light);
+      }
+      ell(0,4,12,16,mid);
+      line([1,-5],[9+m.strike*.25,-26+m.head],mid,9);
+      poly([[6,-29+m.head],[19,-34+m.head],[30,-23+m.head],[15,-20+m.head]],light);
+      poly([[22,-25+m.head],[32,-21+m.head],[27,-18+m.head],[20,-18+m.head]],dark);
+      if(!back)eye(18,-29+m.head,dark);
+      for(let i=0;i<4;i++)poly([[-2+i*4,-9+i*5],[1+i*4,-14+i*5],[4+i*4,-8+i*5]],light,null);
+      if(cast){ell(27,-17+m.head,3+m.strike*.45,2+m.strike*.2,'#f1c16b',null);}
+      g.restore();break;
+    }
+    case 'friendlyBirdIllusion':
+      poly([[-5,-10],[-33,-37],[-26,3],[-10,13]],light);poly([[5,-10],[33,-37],[26,3],[10,13]],light);
+      ell(0,-12,8,16,mid,dark,1);ell(0,-28,9,8,light,dark,1);poly([[0,6],[-9,27],[9,20]],mid);eye(-4,-29,dark);eye(4,-29,dark);break;
+    case 'friendlyTentacle':
+      ell(0,10,16,9,mid);for(let j=-2;j<=2;j++){
+       const x=j*9;line([x,10],[x+(j%2?8:-8),-7-j*2],mid,7);line([x+(j%2?8:-8),-7-j*2],[x+j*3,-33],light,4);
+      }ell(0,7,5,4,light);eye(-3,2,dark);eye(4,2,dark);break;
+    case 'friendlySkeleton':
+      ell(0,-24,12,11,light);ell(-5,-25,3,3,dark,null);ell(5,-25,3,3,dark,null);
+      for(let j=-1;j<=1;j++)line([-9,j*6-7],[9,j*6-7],light,3);
+      line([0,-14],[0,18],light,5);line([-3,10],[-16,25],light,4);line([4,10],[18,25],light,4);
+      line([-9,-8],[-22,9],light,4);line([9,-8],[20,8],light,4);break;
+    case 'friendlySnake':
+      ell(-9,13,18,10,mid);ell(10,8,15,11,mid);
+      line([14,2],[15,-24],mid,9);ell(15,-28,12,8,light);eye(18,-31,dark);line([26,-26],[34,-24],'#d85b5b',2);break;
+    case 'friendlyGoblin': {
+      const m=motion;
+      g.save();g.translate(m.advance*.25,m.collapse*.35);g.scale(1,1-m.collapse*.04);
+      for(const [x,step] of [[-7,m.farStep],[7,m.nearStep]]){
+        line([x,11],[x+step*4,25],dark,6);ell(x+step*4,26,5,3,mid);
+      }
+      poly([[-11,-8],[11,-8],[15,15],[-15,15]],dark);
+      poly([[-10,-4],[-8,6],[8,6],[11,-4]],mid,null);
+      ell(0,-21+m.head,12,11,mid);
+      poly([[-9,-21+m.head],[-27,-28+m.head],[-19,-14+m.head]],light);
+      poly([[9,-21+m.head],[27,-28+m.head],[19,-14+m.head]],light);
+      eye(-5,-22+m.head,light);eye(5,-22+m.head,light);
+      const wrist=[18+m.strike*.45,5-m.strike*.4],tip=[25+m.strike, -34-m.strike*.6];
+      line([12,1],wrist,mid,6);line(wrist,tip,dark,4);
+      poly([[tip[0],tip[1]-7],[tip[0]-4,tip[1]+5],[tip[0]+4,tip[1]+5]],light);
+      line([-12,0],[-19+m.farStep*2,7],mid,6);
+      g.restore();break;
+    }
+    case 'friendlyHornet':
+      ell(0,1,8,20,mid);for(let i=-1;i<=1;i++)ell(0,-12+i*13,8,3,i%2?dark:light);
+      poly([[-7,-15],[-30,-36],[-23,-3]],light);poly([[7,-15],[30,-36],[23,-3]],light);
+      line([-8,0],[-23,10],light,2);line([8,0],[23,10],light,2);poly([[-4,20],[0,37],[4,20]],light);eye(-3,-21,dark);eye(3,-21,dark);break;
+    case 'friendlySquirrel':
+      ell(0,8,12,16,mid);ell(0,-17,12,11,light);poly([[-13,-21],[-20,-38],[-7,-28]],mid);poly([[13,-21],[20,-38],[7,-28]],mid);
+      ell(21,1,12,21,mid);ell(25,-14,10,11,light);eye(-4,-18,dark);eye(4,-18,dark);break;
+    case 'friendlyCatSoldier':
+      body();ears();poly([[-14,-31],[-25,-44],[-22,-19]],light);poly([[14,-31],[25,-44],[22,-19]],light);
+      line([15,-10],[25,-35],light,4);poly([[25,-42],[19,-32],[30,-32]],light);eye(-5,-23,dark);eye(5,-23,dark);break;
+    case 'caterpillar': for(let i=-2;i<=2;i++)ell(i*8,2+Math.sin(i)*2,6,9,i%2?mid:light);poly([[20,0],[31,-8],[27,4]],light);eye(18,-4);break;
+    case 'wolf':case 'direwolf': {
+      const m=motion;
+      g.save();g.translate(m.advance*.38,m.bob*.4+m.collapse*.3);g.scale(1,1-m.collapse*.04);
+      // Four separate hips, hocks, paws and alternating diagonals. No sliding quadruped rig.
+      poly([[-22,-8],[-29,-14-m.tail],[-34,-23-m.tail],[-30,-26-m.tail],[-15,-13]],mid);
+      for(const [i,x] of [-17,-7,13,23].entries()){
+        const step=i===0||i===3?m.nearStep:m.farStep;
+        const hockY=15-Math.abs(step)*2;
+        line([x,3],[x+step*3,hockY],dark,6);
+        line([x+step*3,hockY],[x+step*4,24-Math.abs(step)*2],mid,4.8);
+        ell(x+step*4,25-Math.abs(step)*2,5,2.7,light);
+        for(let toe=-1;toe<=1;toe++)line([x+step*4+toe*2,26-Math.abs(step)*2],[x+step*4+toe*2+1,28-Math.abs(step)*2],dark,1);
+      }
+      ell(-3,-5,26,14,mid);
+      ell(-10,-9,16,10,light,null);
+      for(let i=0;i<6;i++)line([-21+i*5,-12-i%2],[-18+i*5,-17-i%3],i%2?mid:light,1.6);
+      poly([[11,-12],[18,-29+m.head],[22,-15+m.head],[27,-25+m.head],[29,-8]],dark);
+      ell(18,-12+m.head*.6,13,12,mid);
+      poly([[21,-9+m.head],[40,-5+m.head],[43,1+m.head],[24,2+m.head]],light);
+      // Distinct mouth opening on the strike, with eyes and muzzle anchored to the skull.
+      if(attack&&frame>=1&&frame<=2){
+        poly([[25,0+m.head],[41,1+m.head],[39,7+m.head],[30,5+m.head]],dark);
+        line([29,1+m.head],[38,2+m.head],'#f7e4c4',1.5);
+      }
+      ell(40,1+m.head,3,2,dark,null);
+      if(!back)eye(22,-15+m.head,feature==='direwolf'?'#f0b36c':'#ebdb9a');
+      g.restore();break;
+    }
+    case 'spiderling':
+      // Tiny eight-legged ground spider, never a floating moth rig.
+      for(let i=0;i<4;i++){const y=-8+i*4;line([-5,y],[-12-i*2,-14+i*3],dark,3);line([-12-i*2,-14+i*3],[-22-i,8+i*3],mid,2);line([5,y],[12+i*2,-14+i*3],dark,3);line([12+i*2,-14+i*3],[22+i,8+i*3],mid,2);}
+      ell(-4,0,15,11,mid);ell(12,-6,10,9,dark);eye(11,-9,'#e5bc78');eye(17,-9,'#e5bc78');break;
+    case 'bow': ears();line([-20,-26],[-25,14],light,3);line([-25,14],[-17,24],light,3);line([-20,-26],[-17,24],dark,1);poly([[8,-8],[27,-9],[30,-5],[6,-3]],light);eye(2,-23);break;
+    case 'rhino': horns();poly([[-3,-26],[5,-41],[9,-24]],light);ell(0,-12,17,9,mid);poly([[-20,-6],[-28,4],[-18,13]],light);lightLine([-10,0],[10,4]);break;
+    case 'stinger': poly([[-25,-22],[-32,-7],[-12,-9]],light);poly([[25,-22],[32,-7],[12,-9]],light);line([12,6],[25,22],mid,4);poly([[25,22],[29,30],[20,26]],light);eye(3,-18);break;
+    case 'blightcaster': line([18,-28],[20,19],light,3);ell(18,-31,5,5,'#bd79e5');poly([[-17,-3],[18,-3],[15,22],[-18,22]],dark);poly([[-13,-10],[12,-10],[7,-1],[-8,-1]],mid);eye(4,-21);break;
+    case 'torchgoblin': {
+      const m=motion;
+      g.save();g.translate(m.advance*.2,m.collapse*.35);g.scale(1,1-m.collapse*.04);
+      for(const [x,step] of [[-7,m.farStep],[7,m.nearStep]]){
+        line([x,10],[x+step*3,25],mid,6);ell(x+step*3,27,5,3,dark);
+      }
+      ell(0,-20+m.head,12,11,mid);
+      poly([[-10,-20+m.head],[-28,-28+m.head],[-19,-13+m.head]],light);
+      poly([[10,-20+m.head],[28,-28+m.head],[19,-13+m.head]],light);
+      poly([[-11,-6],[11,-6],[15,16],[-15,16]],dark);
+      line([-11,-1],[-18+m.farStep*2,10],mid,5);
+      const hand=[18+m.strike*.4,5-m.strike*.5],torch=[23+m.strike*.7,-25-m.strike*.6];
+      line([12,-2],hand,mid,6);line(hand,torch,'#5a3929',4);
+      ell(torch[0],torch[1]-4,5,8,'#faaf4c');
+      poly([[torch[0]-1,torch[1]-13],[torch[0]+4,torch[1]-5],[torch[0]-3,torch[1]-3]],'#ffee80');
+      if(!back){eye(-5,-21+m.head);eye(5,-21+m.head);}
+      g.restore();break;
+    }
+    case 'minotaur': horns();ell(0,-13,16,15,mid);poly([[-18,-12],[-8,6],[8,6],[19,-12]],dark);line([-10,9],[-18,24],mid,7);line([10,9],[17,24],mid,7);eye(-4,-18);eye(5,-18);break;
+    case 'spikeshot': ears();ell(0,-20,11,11,mid);line([12,-1],[26,-10],dark,6);line([14,-5],[29,-17],light,3);poly([[26,-17],[35,-22],[27,-12]],light);poly([[12,-12],[20,-10],[14,-4]],'#d78f61');eye(-4,-21);eye(4,-21);break;
+    case 'alchemist': body();line([14,2],[22,-16],dark,4);ell(22,-19,5,7,'#f5bd65');ell(22,-26,3,7,'#f8e87d');poly([[-13,0],[-21,18],[17,18],[12,0]],dark);break;
+    case 'wurm': body();ell(-13,0,13,8,light);ell(7,-7,15,10,dark);ell(11,-10,7,5,light);ell(-22,4,7,6,dark);line([-28,6],[-15,6],light,3);break;
+    case 'gearhulk':case 'golem': body();ell(-15,-6,9,10,light);ell(15,-6,9,10,light);ell(0,-10,7,7,'#ff9f57');line([-7,-10],[7,-10],dark,2);break;
+    case 'shinobi':body();poly([[-12,-26],[11,-26],[12,-17],[-10,-17]],dark);line([-23,-27],[20,18],light,3);line([-20,20],[27,-23],light,2);break;
+    case 'duelist': poly([[-15,-18],[-29,-35],[-23,-4]],light);poly([[15,-18],[29,-35],[23,-4]],light);body();line([12,-4],[31,-19],light,2);break;
+    case 'titan': poly([[-12,-8],[-32,-28],[-26,10]],light);poly([[12,-8],[32,-28],[26,10]],light);body();ell(0,-12,6,7,'#f5cb7b');break;
+    case 'nemata': for(let i=-2;i<=2;i++){ell(i*9,-39+Math.abs(i)*6,14,12,i%2?mid:light);line([i*5,-12],[i*9,-26],dark,4)};poly([[-15,-7],[15,-7],[12,20],[-12,20]],mid);line([-10,12],[-23,24],dark,5);line([10,12],[23,24],dark,5);eye(-4,-6,'#e7f0a2');eye(4,-6,'#e7f0a2');break;
+    case 'spiderboss':
+      for(let i=-3;i<=3;i++){const y=-16+i*5;line([-8,y],[-28,-26+i*8],mid,5);line([-28,-26+i*8],[-32,9+i*3],light,3);line([8,y],[28,-26+i*8],mid,5);line([28,-26+i*8],[32,9+i*3],light,3)}
+      ell(0,0,21,18,mid);ell(0,-23,14,12,dark);ell(-5,-26,3,3,'#f5b7e6',null);ell(5,-26,3,3,'#f5b7e6',null);ell(0,3,5,6,light);break;
+    case 'dragon':
+      poly([[-11,-11],[-36,-38],[-34,-3],[-15,1]],mid);poly([[11,-11],[36,-38],[34,-3],[15,1]],mid);
+      line([-4,18],[-27,30],mid,6);poly([[-27,30],[-33,19],[-21,22]],light);
+      poly([[-12,-19],[12,-19],[18,12],[0,24],[-18,12]],mid);ell(0,-27,14,10,mid);poly([[11,-30],[30,-28],[35,-20],[12,-20]],light);
+      horns();eye(15,-28,'#ffe37f');
+      if(cast||attack){poly([[32,-23],[39,-19],[34,-15],[40,-9],[27,-17]],'#f48a45');}
+      break;
+    case 'krenko':
+      body();ears();poly([[-11,-37],[-4,-45],[6,-45],[14,-37],[10,-30],[-8,-30]],'#e2b46c');
+      line([20,-9],[24,-46],dark,4);poly([[24,-44],[37,-38],[25,-25]],'#c56b4a');
+      line([-13,7],[-25,19],light,3);break;
+    case 'scarabgod':
+      poly([[-13,-19],[-26,-33],[-21,5]],mid);poly([[13,-19],[26,-33],[21,5]],mid);
+      body();ell(0,-28,15,13,dark);poly([[-14,-33],[-22,-43],[-15,-42],[-8,-29]],light);poly([[14,-33],[22,-43],[15,-42],[8,-29]],light);
+      ell(0,-27,6,7,'#52c9d5');ell(-5,-32,2,2,light,null);ell(5,-32,2,2,light,null);break;
+    case 'tox rill':case 'toxrill':
+      ell(-7,8,29,16,mid);poly([[-28,12],[23,16],[32,25],[-25,25]],dark);ell(14,-2,12,14,mid);
+      line([14,-12],[9,-33],mid,5);line([22,-12],[28,-37],mid,5);ell(9,-36,5,5,light);ell(28,-38,5,5,light);
+      eye(9,-36,dark);eye(28,-38,dark);
+      for(let i=0;i<4;i++)ell(-25+i*11,20,3,2,'#ade38a',null);break;
+    case 'angel': poly([[-12,-4],[-31,-32],[-24,15]],light);poly([[12,-4],[31,-32],[24,15]],light);body();ell(0,-43,12,2,'#f7e49f');break;
+    case 'saproling': {
+      const m=motion;
+      g.save();g.translate(m.advance*.16,m.bob*.45+m.collapse*.35);g.scale(1,1-m.collapse*.04);
+      // Rooted feet flex through the walk rather than sliding a mushroom icon.
+      for(const [x,step] of [[-8,m.nearStep],[8,m.farStep]]){
+        line([x,12],[x+step*3,27],dark,6);
+        line([x+step*3,27],[x+step*4-5,29],mid,2);
+        line([x+step*3,27],[x+step*4+4,29],mid,2);
+      }
+      ell(0,4,13,14,mid);
+      poly([[-18,3],[-10,12],[10,12],[18,3]],dark,null);
+      // Tilt the cap around the stalk; underside folds and fungal texture stay attached.
+      g.save();g.translate(0,-14);g.rotate(m.tilt*Math.PI/360);
+      poly([[-22,7],[-14,-12],[-4,-23],[8,-24],[21,-10],[24,7]],light);
+      ell(0,6,23,4,mid,dark,1.2);
+      for(let i=-2;i<=2;i++){ell(i*8,-8-((i+2)%3)*3,2.3,1.5,mid,null);}
+      for(let i=-2;i<=2;i++)line([i*6,6],[i*7,9],dark,1.1);
+      g.restore();
+      if(!back){eye(-5,-3,light);eye(5,-3,light);}
+      if(cast)for(let i=0;i<3;i++){ell(-15+i*14,-23-m.strike,2.2,2.2,light,null);}
+      g.restore();break;
+    }
+  }
+  if(!back && ['bow','spikeshot','alchemist','minotaur','gearhulk'].includes(feature))ell(0,0,2,2,light,null);
+  g.restore();
+}
+/** v1.3 shared material finish for summons, elites and ordinary enemies.
+ * Low-amplitude authored pixel variation with edge-aware shading; original character
+ * silhouettes and separate identity overlays stay intact. No gameplay RNG. */
+function polishMaterial(cell, material) {
+  const c=cell.getContext('2d',{willReadFrequently:true});
+  const img=c.getImageData(0,0,cell.width,cell.height),data=img.data,w=cell.width,h=cell.height;
+  const alpha=(x,y)=>x<0||y<0||x>=w||y>=h?0:data[(y*w+x)*4+3];
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const i=(y*w+x)*4;if(data[i+3]<128)continue;
+    const edge=(alpha(x-1,y)<128?1:0)+(alpha(x+1,y)<128?1:0)+(alpha(x,y-1)<128?1:0)+(alpha(x,y+1)<128?1:0);
+    const delta=materialLightDelta(x,y,w,h,material,edge);
+    for(let k=0;k<3;k++)data[i+k]=Math.max(0,Math.min(255,data[i+k]+delta));
+  }
+  c.putImageData(img,0,0);
+}
+/** Append new namespaced sprite sheets and metadata to the loaded, original atlas. */
+export function installRealCreatureModels(images,manifest) {
+  if (typeof document === 'undefined') return 0;
+  const baseRows=Object.keys(manifest.anims).length, views=manifest.views.length, cols=manifest.cols;
+  for(const [name,config] of Object.entries(REAL_CREATURE_MODELS)) {
+    const key='mtg_'+name,base=manifest.sprites[config.base],source=images[config.base];
+    if(!base||!source)throw new Error('Missing original animation rig '+config.base+' for '+key);
+    // A native 96px identity-specific rendering rig replaces Hound/Moth borrowed art
+    // while retaining the original one-tile gameplay and apparent world height.
+    const humanoid=HUMANOID_STUDY_FEATURES.includes(config.feature);
+    const species=SPECIES_STUDY_FEATURES.includes(config.feature);
+    const beast=BEAST_STUDY_FEATURES.includes(config.feature);
+    const token=TOKEN_STUDY_FEATURES.includes(config.feature);
+    const magic=MAGIC_STUDY_FEATURES.includes(config.feature);
+    const monster=MONSTER_STUDY_FEATURES.includes(config.feature);
+    const folk=FOLK_STUDY_FEATURES.includes(config.feature);
+    const detailed=species||humanoid||beast||token||magic||monster||folk;
+    const nativeFrame=folk?FOLK_FRAME:humanoid?HUMANOID_FRAME:beast?BEAST_FRAME:token?TOKEN_FRAME:magic?MAGIC_FRAME:monster?MONSTER_FRAME:SPECIES_FRAME;
+    const width=detailed?nativeFrame:config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.w;
+    const height=detailed?nativeFrame:config.custom && ['arasta','drakuseth','krenko','scarab','toxrill'].includes(name)?96:base.h;
+    // Species-specific defeat poses retain the old simulation death timing.
+    // The additional row belongs to these identities only; never move shared atlas rows.
+    const authored=Boolean(CREATURE_MOTION_FAMILIES[config.feature]);
+    const anims=authored ? {...manifest.anims,defeat:{row:baseRows,frames:4,fps:7,loop:false}} : manifest.anims;
+    const rows=Object.keys(anims).length;
+    const sheet=document.createElement('canvas');sheet.width=width*cols;sheet.height=height*rows*views;
+    const sctx=sheet.getContext('2d');sctx.imageSmoothingEnabled=false;
+    for(let view=0;view<views;view++)for(const anim of Object.values(anims))for(let frame=0;frame<cols;frame++){
+      const cell=document.createElement('canvas');cell.width=width;cell.height=height;
+      const cctx=cell.getContext('2d',{willReadFrequently:true});cctx.imageSmoothingEnabled=false; // v1.4.0: cells are read back by recolor/polishMaterial
+      const srcX=frame*base.w,srcY=(view*baseRows+Math.min(anim.row,baseRows-1))*base.h;
+      // Death frames are drawn as a collapsing animal/body, never a still-living
+      // borrowed base sprite with a pasted effect on top.
+      if(!detailed && !config.custom && anim.row!==baseRows) {
+        cctx.drawImage(source,srcX,srcY,base.w,base.h,0,0,width,height);
+        recolor(cell,config);
+      }
+      if(humanoid)drawHumanoidStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      else if(species)drawSpeciesStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      else if(beast)drawBeastStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      else if(token)drawTokenStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      else if(magic)drawMagicStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      else if(monster)drawMonsterStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      else if(folk)drawFolkStudyFrame(cctx,config.feature,view,anim.row,frame,config);
+      else overlay(cctx,width,height,config,view,anim.row,frame);
+      polishMaterial(cell,config.feature);
+      if(detailed&&FINISH){const fc=cell.getContext('2d',{willReadFrequently:true}),im=fc.getImageData(0,0,width,height);finishCreatureCell(im.data,width,height);fc.putImageData(im,0,0);}   // v1.6.0 roster finish
+      sctx.drawImage(cell,frame*width,(view*rows+anim.row)*height);
+    }
+    images[key]=sheet;
+    manifest.sprites[key]={w:width,h:height,pivotY:detailed?87:height-3,
+      hover:(name==='spider'||name==='friendlySpider'||name==='hound'||name==='wolf'||name==='alpha'?0:(base.hover||0)),
+      artWidth:Math.max(0,width-4),bleedX:2,generated:true,
+      ...(detailed?{
+        // v1.6.0: ONE pixel density for every native study (matches the painted hero/Soldier); size comes from the art,
+        // no longer from the height of the retired placeholder rig (which ranged 28–68 px and varied density ~3x).
+        pixelScale:NATIVE_STUDY_DENSITY,
+        artPack:folk?'folk-anatomy-study-v1':humanoid?'humanoid-anatomy-study-v1':beast?'beast-anatomy-study-v1':token?'token-anatomy-study-v1':magic?'magic-anatomy-study-v1':monster?'monster-anatomy-study-v1':'species-anatomy-study-v1'
+      }:{}),
+      ...(authored?{anims,views:manifest.views,cols}:{}),
+      qualityStatus:detailed?'native source anatomy study; final painted HD-2D acceptance pending':
+        authored?'species-specific motion study; original HD-2D art still required':undefined};
+  }
+  return Object.keys(REAL_CREATURE_MODELS).length;
+}

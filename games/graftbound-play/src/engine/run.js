@@ -1,0 +1,285 @@
+// Run lifecycle (v0.5): three acts, persistent wounds between battles, Wayshrine offerings, real-card rewards.
+import { newEvolution, absorb, deriveStats, rebuild, STARTING_NAME } from './evolution.js';
+import { generateMap, nodeById, availableNodes, ACT_COUNT } from './campaign.js';
+import { buildEncounter, templateFor, reinforcements, bossAdaptation, REINFORCE_CAP, COUNTERS, buildFocus } from './encounters.js';
+import { strengthOf, expectedStrength } from './strength.js';
+import { createBattle } from './combat.js';
+import { generatePack, MAX_SPELL_LEVEL, primerPack } from './rewards.js';
+import { resolveCard } from '../cards/catalog.js';
+import { isBossCard } from '../data/legendary.js';
+import { stepOf } from './power.js';
+import { SHRINES, rollShrine, offeringCost, penanceCost, PENANCE_REDUCTION, MAX_SPARK_FONTS, MAX_MANA_FONTS } from './shrines.js';
+import { encounterBenchmarks, recordEncounter, newScoring } from './scoring.js';
+import { journalNote, newJournal } from './journal.js';
+import { rollEvent, EVENTS, resolveEvent } from './events.js';
+import { newClock } from './clock.js';
+import { combatSpellbook, refreshLoadout, BASE_HAND_CAPACITY } from './loadout.js';
+import { newWorldThreat, settleWorldThreat, applyWorldThreat, effectiveThreatLevel, threatModifiers, reduceWorldThreat, threatTactics } from './world-threat.js';
+import { giveEquipment, attachRunEquipment } from './attachments.js';
+import { skinToneForSeed, skinPatternForSeed } from './visual-identity.js';
+
+export const RUN_VERSION = 9;
+export const TUTORIAL_CARD = 'mtg:typhoid-rats';  // real 1/1 Deathtouch: Blank 1/1 -> 2/2 Deathtouch
+export const CHALLENGES = {
+  paperThin: { name: 'Paper Thin', text: 'Your Maximum Health is 2 instead of 6.' },
+  pauper:    { name: 'Pauper\u2019s Pack', text: 'Boosters never contain Rare or Mythic cards.' },
+  feral:     { name: 'Feral Wilds', text: 'Every foe has +1 power.' },
+};
+/** Fraction of missing health recovered after a victory. The rest stays as Wounds until a Restoration or act end. */
+export const RECOVERY = 0.5;
+/** Graft capacity per act (explicit v0.5 rule). When full, grafting a new creature requires releasing one. */
+export const GRAFT_CAPACITY = [4, 6, 8];
+export const graftCapacity = run => GRAFT_CAPACITY[Math.min(run.act || 0, GRAFT_CAPACITY.length - 1)];
+export const graftsFull = run => run.evo.absorbed.length >= graftCapacity(run);
+
+export function newRun({ seed, unlocks = {}, challenges = [], tutorial = false }) {
+  const run = {
+    v: RUN_VERSION, seed: seed >>> 0, name: STARTING_NAME, visual: {skinTone: skinToneForSeed(seed), skinPattern: skinPatternForSeed(seed)}, evo: newEvolution(), spellbook: [], equipmentInventory:[],equippedEquipment:[null,null], handCapacity: BASE_HAND_CAPACITY, equippedSpellIds: [], sparkBonus: 0, manaBonus: 0, sparkFonts: 0,
+    act: 0, map: generateMap(seed, { act: 0, tutorial }), current: null, visited: [], phase: 'map', battle: null, pending: null, shrine: null,
+    unlocks: { ...unlocks }, challenges: challenges.slice(), tutorial, hp: null, wardNext: 0, actHistory: [], event: null, eventsSeen: [],
+    scoring: newScoring(), journal: newJournal(), clock: newClock(false), worldThreat: newWorldThreat(),
+    stats: { battlesWon: 0, kills: 0, damageDealt: 0, damageTaken: 0, spellsCast: 0, turns: 0, cardsAbsorbed: 0, spellsLearned: 0, elitesDefeated: 0, bossesDefeated: 0, flawless: 0 },
+    startedAt: Date.now(),
+  };
+  run.hp = runStats(run).maxHealth;
+  return run;
+}
+export const runStats = run => deriveStats(run.evo, { sparkBonus: run.sparkBonus, baseSpark: run.challenges.includes('paperThin') ? 2 : 6, manaBonus: run.manaBonus || 0, spellCount: run.spellbook.length });
+export const maxHpOf = run => runStats(run).maxHealth;
+export const woundsOf = run => Math.max(0, maxHpOf(run) - (run.hp == null ? maxHpOf(run) : run.hp));
+export const stepOfRun = run => stepOf(run.act, run.current != null ? nodeById(run.map, run.current).depth : 0);
+const packOpts = run => ({ spellbook: run.spellbook, noRares: run.challenges.includes('pauper'), evo: run.evo, step: stepOfRun(run), minSpells: run.spellbook.length < 2 && (run.act || 0) === 0 ? 2 : 1 });
+function setHp(run, hp) { run.hp = Math.max(1, Math.min(maxHpOf(run), hp)); }
+
+export function enterNode(run, nodeId) {
+  if (run.phase !== 'map') throw new Error('Not on map');
+  if (!availableNodes(run.map, run.current).some(n => n.id === nodeId)) throw new Error('Node not reachable');
+  const node = nodeById(run.map, nodeId);
+  run.current = nodeId; run.visited.push(nodeId);
+  if (node.type === 'shrine') { run.phase = 'shrine'; run.shrine = { options: rollShrine(shrineView(run), node.seed), node: nodeId }; return run; }
+  if (node.type === 'event') { run.phase = 'event'; run.event = { id: rollEvent(eventView(run), node.seed), node: nodeId }; return run; }
+  const base = templateFor(run.act, node.type, node.depth, node.seed);
+  const strength = strengthOf(run.evo, { spellbook: run.spellbook, stats: runStats(run) });
+  const activeThreat = effectiveThreatLevel(run.worldThreat, {
+    strength: strength.score, expected: expectedStrength(stepOf(run.act, node.depth))
+  });
+  const extra = reinforcements(run.act, node.type, node.depth, run.evo, node.seed, { spellbook: run.spellbook, stats: runStats(run) });
+  // Threat counters the actual build: at high pressure up to two extra foes,
+  // bounded by the SAME act cap as the existing strength-based reinforcements.
+  if (!['tutorial','boss'].includes(node.type) && !(run.act===0&&node.depth<2)) {
+    const allowance = Math.min(threatModifiers({ level: activeThreat }).reinforcement,
+      Math.max(0, REINFORCE_CAP[run.act] - extra.length));
+    const choices = COUNTERS[run.act][buildFocus(strength.profile)];
+    for (let i = 0; i < allowance; i++)
+      extra.push(choices[((node.seed>>>0)+i)%Math.min(2,choices.length)]);
+  }
+  const tac = threatTactics(activeThreat, { nodeType: node.type, streak: run.worldThreat?.strongStreak || 0 });
+  if (node.type === 'boss' && tac.bossEscorts) { const choices = COUNTERS[run.act][buildFocus(strength.profile)]; for (let i = 0; i < tac.bossEscorts; i++) extra.push(choices[((node.seed >>> 0) + i) % choices.length]); }
+  const tpl0 = extra.length ? { ...base, enemies: [...base.enemies, ...extra] } : base;
+  const tpl = tac.ambush && !(run.act === 0 && node.depth < 2) ? { ...tpl0, ambush: tac.ambush } : tpl0;
+  const enc = buildEncounter(tpl, node.seed, node.type);
+  const ambush = !!run.ambushNext && !['tutorial', 'boss'].includes(node.type); if (ambush) run.ambushNext = false;
+  const battle = createBattle({ ambush, evo: run.evo, stats: runStats(run), spellbook: run.spellbook.map(e=>({...e})), deckMode:true, handCapacity:run.handCapacity, encounter: enc, seed: node.seed, heroName: run.name, startHp: run.hp, act: run.act });
+  attachRunEquipment(run,battle.units.find(u=>u.hero));
+  battle.equipmentInventory=[...(run.equipmentInventory||[])];
+  battle.heroEquipmentSlots=[...(run.equippedEquipment||[null,null])];
+  if (run.wardNext) { const h = battle.units.find(u => u.hero); h.statuses.shield = (h.statuses.shield || 0) + run.wardNext; run.wardNext = 0; }
+  if (run.challenges.includes('feral')) for (const u of battle.units) if (u.side === 'enemy') u.power += 1;
+  battle.nodeType = node.type; battle.reinforced = extra.length; battle.nodeId = nodeId;
+  // Snapshot the applied pressure for the battle UI and save. Never mutate the
+  // run's stored baseline by merely inspecting a stronger character.
+  battle.worldThreatBase = run.worldThreat?.level || 0;
+  battle.worldThreatAdaptive = Math.max(0, activeThreat - battle.worldThreatBase);
+  battle.threatAtStart = node.type === 'tutorial' ? 0 : activeThreat;   // v1.7.0 immutable snapshot for the score bonus
+  applyWorldThreat(battle, { level: activeThreat });
+  if (node.type === 'boss') battle.adapt = bossAdaptation(run.act, run.evo, { spellbook: run.spellbook, stats: runStats(run) });
+  battle.bench = encounterBenchmarks(node.type, run.act, enc.enemies.length);
+  run.battle = battle; run.phase = 'battle';
+  return run;
+}
+const shrineView = run => ({ ...run, wounds: woundsOf(run), maxHp: maxHpOf(run) });
+
+export function concludeBattle(run) {
+  const b = run.battle; if (!b) throw new Error('No battle');
+  for (const k of ['kills', 'damageDealt', 'damageTaken', 'spellsCast', 'turns']) run.stats[k] += b.stats[k];
+  recordEncounter(run, b, run.act + ':' + run.current);
+  if (b.phase === 'lost') { run.phase = 'lost'; run.hp = 0; run.lastBattle = summarize(b); run.battle = null; return { outcome: 'lost' }; }
+  if (b.phase !== 'won') throw new Error('Battle not finished');
+  const hero = b.units.find(u => u.hero); const max = maxHpOf(run);
+  run.stats.battlesWon++;
+  if (b.stats.damageTaken === 0) run.stats.flawless++;
+  { const report = {}; run.worldThreat = settleWorldThreat(run.worldThreat, { victory: true, tutorial: b.nodeType === 'tutorial', enemyDamage: b.stats.enemyHealthDamage || 0, maxHealth: b.units.find(u=>u.hero)?.maxHp || 1, turns: b.turn, boss: b.nodeType === 'boss' }, report);
+    run.lastThreat = { ...report, kind: 'battle', nodeType: b.nodeType, seen: false };
+    const rec = run.scoring?.encounters?.at(-1); if (rec && rec.key === run.act + ':' + run.current) rec.threatAfter = report.after; }   // v1.5.0 authoritative source for the Threat dial
+  if (b.nodeType === 'elite') run.stats.elitesDefeated++;
+  const isBoss = b.nodeType === 'boss';
+  if (isBoss) { run.stats.bossesDefeated++; setHp(run, max); journalNote(run, 'boss', { name: b.name }); }                 // act boss: full recovery
+  else setHp(run, hero.hp + Math.ceil((max - hero.hp) * RECOVERY));          // otherwise: half the missing health returns
+  // A recorded paid Equip action persists the hero's selected inventory slots.
+  if(b.heroEquipmentSlots)run.equippedEquipment=b.heroEquipmentSlots.map(id=>id&&(b.destroyedEquipment||[]).includes(id)?null:id);
+  // An enemy with an actual destroy-artifact ability can remove persistent Gear.
+  if(b.destroyedEquipment?.length){
+    const lost=new Set(b.destroyedEquipment);
+    run.equipmentInventory=(run.equipmentInventory||[]).filter(id=>!lost.has(id));
+    run.equippedEquipment=(run.equippedEquipment||[]).map(id=>lost.has(id)?null:id);
+  }
+  // Single-level Auras are consumed whether or not drawn. All ordinary learned spells persist.
+  const consumedAuras=run.spellbook.filter(x=>resolveCard(x.id)?.kind==='aura').map(x=>x.id);
+  if(consumedAuras.length) {run.spellbook=run.spellbook.filter(x=>!consumedAuras.includes(x.id));run.equippedSpellIds=(run.equippedSpellIds||[]).filter(id=>!consumedAuras.includes(id));setHp(run,run.hp);}
+  // The final defeated guardian IS the reward. Keep its score/achievement outcome, no pack or skip-Maximum Health.
+  if(isBoss && run.act+1>=ACT_COUNT){
+    run.actHistory.push({act:run.act,visited:run.visited.slice()});
+    run.lastBattle=summarize(b);run.battle=null;run.pending=null;run.phase='won';
+    run.victoryScene='pending';
+    return {outcome:'won',boss:true,final:true,elite:false,battleStats:b.stats};
+  }
+  const tier = isBoss ? 'boss' : b.nodeType === 'elite' || b.ambushed ? 'elite' : 'battle';   // v1.7.0: surviving an ambush pays an elite pack
+  const forced = b.nodeType === 'tutorial' ? [TUTORIAL_CARD] : [];
+  run.pending = { cards: generatePack(b.rng.s ^ 0x5eed, { tier, forced, ...packOpts(run) }), tier, boss: isBoss };
+  // The first level grants three reward choices, each its own pack.
+  if (run.stats.battlesWon === 1 && run.act === 0 && !run.primerDone)
+    run.pending.firstVictoryPacks = { index: 1, total: 3, seed: (b.rng.s ^ 0x5eed) >>> 0 };
+  run.lastBattle = summarize(b);
+  run.battle = null; run.phase = 'reward';
+  return { outcome: 'won', boss: isBoss, elite: b.nodeType === 'elite', battleStats: b.stats };
+}
+const summarize = b => ({ name: b.name, nodeType: b.nodeType, stats: { ...b.stats } });
+
+/** Choose a reward. For a creature while grafts are full, `releaseIndex` names the graft to release first. */
+export function chooseReward(run, cardId, releaseIndex) {
+  if (run.phase !== 'reward' || !run.pending || !run.pending.cards.includes(cardId)) throw new Error('Invalid reward choice');
+  if (isBossCard(cardId)) throw new Error('Boss creatures are encounter-only and cannot be chosen as rewards');
+  const card = resolveCard(cardId); if (!card || !card.reference) throw new Error('Unknown card ' + cardId);
+  if (isBossCard(card)) throw new Error('Boss creatures are encounter-only and cannot be chosen as rewards');
+  let change;
+  const maxBefore = maxHpOf(run);
+  if (card.kind === 'creature') {
+    if (run.pending.tier === 'archivist' || run.pending.tier === 'primer') throw new Error('This offering holds spells only');
+    let released = null;
+    if (graftsFull(run)) {
+      const idx = Number(releaseIndex);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= run.evo.absorbed.length) throw new Error('Your grafts are full — choose one to release');
+      released = run.evo.absorbed[idx].name;
+      const keep = run.evo.absorbed.filter((_, i) => i !== idx).map(a => resolveCard(a.cardId));
+      run.evo = rebuild(keep);
+    }
+    const res = absorb(run.evo, card); const stageBefore = run.evo.absorbed.length;
+    run.evo = res.evo; change = { kind: 'absorb', ...res.change, released };
+    journalNote(run, 'graft', { cardId: card.id, name: card.name, power: card.power, toughness: card.toughness, gained: res.change.gained, released, firstGraft: stageBefore === 0 && !released });
+    run.stats.cardsAbsorbed++;
+    setHp(run, run.hp + (maxHpOf(run) - maxBefore));   // new toughness/Maximum Health arrives as fresh health
+  } else if(card.kind==='equipment'){
+    if(run.pending.tier==='primer'||run.pending.tier==='archivist') throw new Error('This offering holds spells only');
+    giveEquipment(run,cardId);change={kind:'equipment',cardId,slots:run.equippedEquipment.slice()};
+    journalNote(run,'spell',{cardId,name:card.name,level:1});
+  } else {
+    if (run.pending.tier === 'graftsmith') throw new Error('The Graftsmith offers creatures only');
+    const e = run.spellbook.find(s => s.id === cardId); const wardBefore = maxHpOf(run);
+    if (e) { e.level = Math.min(MAX_SPELL_LEVEL, e.level + 1); change = { kind: 'empower', cardId, level: e.level }; }
+    else { run.spellbook.push({ id: cardId, level: 1 }); if ((run.equippedSpellIds || []).length < (run.handCapacity || BASE_HAND_CAPACITY)) (run.equippedSpellIds ||= []).push(cardId); change = { kind: 'learn', cardId, level: 1 }; }
+    if (maxHpOf(run) > wardBefore) setHp(run, run.hp + (maxHpOf(run) - wardBefore));   // v1.4.0 Spellward arrives as fresh health
+    journalNote(run, 'spell', { cardId, name: card.name, level: change.level });
+    run.stats.spellsLearned++;
+  }
+  refreshLoadout(run);
+  finishReward(run);
+  return change;
+}
+export const SKIP_THREAT_REDUCTION = 1;
+/** mode 'spark' (default, unchanged): +1 Maximum Health. mode 'threat' (v1.5.0): Global Threat -1 instead. */
+export function skipReward(run, mode = 'spark') {
+  if (run.phase !== 'reward') throw new Error('No reward pending');
+  if (mode === 'threat') {
+    if (!(run.worldThreat?.level > 0)) throw new Error('Global Threat is already at its minimum');
+    const before = run.worldThreat.level; const r = reduceWorldThreat(run.worldThreat, SKIP_THREAT_REDUCTION); run.worldThreat = r.state;
+    run.lastThreat = { before, after: r.state.level, delta: -r.removed, reasons: ['You left a pack behind to calm the world.'], kind: 'skip', seen: true };
+    finishReward(run); return { kind: 'threat', amount: -r.removed };
+  }
+  run.sparkBonus += 1; setHp(run, run.hp + 1); finishReward(run);
+  return { kind: 'spark', amount: 1 };
+}
+function finishReward(run) {
+  const boss = run.pending && run.pending.boss; const tier = run.pending && run.pending.tier;
+  const sequence = run.pending?.firstVictoryPacks;
+  run.pending = null;
+  if (sequence && sequence.index < sequence.total) {
+    const next = { ...sequence, index: sequence.index + 1 };
+    if (next.index === 2 && !run.primerDone) {
+      run.primerDone = true;
+      const cards = primerPack(run.seed, { spellbook: run.spellbook });
+      if (cards.length) { run.pending = { cards, tier: 'primer', boss, firstVictoryPacks: next }; run.phase = 'reward'; return; }
+    }
+    const seed = (sequence.seed ^ Math.imul(next.index, 0x9e3779b1)) >>> 0;
+    const cards = generatePack(seed, { tier: 'battle', ...packOpts(run) });
+    run.pending = { cards, tier: 'battle', boss, firstVictoryPacks: next };
+    run.phase = 'reward'; return;
+  }
+  // v0.8 Spell Primer: after the FIRST victory reward of an adventure, a free, separate spells-only choice
+  // (3 affordable spells from different tactical roles). Skippable for +1 Maximum Health like any pack. Once per adventure.
+  if (!run.primerDone && tier !== 'primer' && (run.stats.battlesWon || 0) >= 1 && (run.act || 0) === 0) {
+    run.primerDone = true; const cards = primerPack(run.seed, { spellbook: run.spellbook });
+    if (cards.length) { run.pending = { cards, tier: 'primer' }; run.phase = 'reward'; return; }
+  }
+  if (!boss) { run.phase = 'map'; return; }
+  run.actHistory.push({ act: run.act, visited: run.visited.slice() });
+  if (run.act + 1 >= ACT_COUNT) { run.phase = 'won'; return; }
+  run.act++; run.map = generateMap(run.seed, { act: run.act }); run.current = null; run.visited = []; run.phase = 'map'; run.actIntro = run.act;
+  journalNote(run, 'act', { act: run.act });
+}
+
+/** Wayshrine choice. `arg`: for 'inscribe' the spell id; for 'graftsmith' the absorbed index to sever. */
+export function shrineChoice(run, choice, arg) {
+  if (run.phase !== 'shrine' || !run.shrine) throw new Error('Not at a shrine');
+  if (!run.shrine.options.includes(choice)) throw new Error('That offering is not available here');
+  if (!SHRINES[choice].when(shrineView(run))) throw new Error('That offering cannot be used right now');
+  const node = nodeById(run.map, run.current);
+  const done = res => { run.shrine = null; return res; };
+  switch (choice) {
+    case 'restoration': setHp(run, maxHpOf(run)); run.wardNext = 3; run.phase = 'map'; return done({ kind: 'restoration' });
+    case 'spark': run.sparkBonus += 3; run.sparkFonts = (run.sparkFonts || 0) + 1; setHp(run, run.hp + 3); run.phase = 'map'; return done({ kind: 'spark', amount: 3 });
+    case 'arcane': run.manaBonus = Math.min(MAX_MANA_FONTS, (run.manaBonus || 0) + 1); run.phase = 'map'; return done({ kind: 'arcane' });
+    case 'inscribe': {
+      const e = run.spellbook.find(s => s.id === arg && s.level < MAX_SPELL_LEVEL); if (!e) throw new Error('Choose a spell that can be empowered');
+      e.level++; run.phase = 'map'; return done({ kind: 'inscribe', cardId: e.id, level: e.level });
+    }
+    case 'penance': {
+      const cost = penanceCost(shrineView(run)); if (run.hp <= cost) throw new Error('Penance would cost your last health');
+      setHp(run, run.hp - cost); const before = run.worldThreat?.level || 0; const r = reduceWorldThreat(run.worldThreat, PENANCE_REDUCTION); run.worldThreat = r.state;
+      run.lastThreat = { before, after: r.state.level, delta: -r.removed, reasons: [`Penance: ${cost} health offered at the Wayshrine.`], kind: 'penance', seen: true };
+      run.phase = 'map'; return done({ kind: 'penance', cost, amount: -r.removed });
+    }
+    case 'offering': {
+      setHp(run, run.hp - offeringCost(shrineView(run)));
+      run.pending = { cards: generatePack(node.seed ^ 0xa11ce, { tier: 'shrine', ...packOpts(run) }), tier: 'shrine' };
+      run.phase = 'reward'; return done({ kind: 'pack' });
+    }
+    case 'graftsmith': {
+      const idx = Number(arg); const list = run.evo.absorbed;
+      if (!Number.isInteger(idx) || idx < 0 || idx >= list.length) throw new Error('Choose a graft to sever');
+      const keep = list.filter((_, i) => i !== idx).map(a => resolveCard(a.cardId));
+      if (keep.some(c => !c)) throw new Error('A graft could not be resolved');
+      const severed = list[idx]; journalNote(run, 'release', { cardId: severed.cardId, name: severed.name, by: 'graftsmith' });
+      const maxBefore = maxHpOf(run);
+      const rebuilt = rebuild(keep); run.evo = { ...rebuilt, colors: rebuilt.colors };
+      setHp(run, run.hp - (maxBefore - maxHpOf(run)));
+      run.pending = { cards: generatePack(node.seed ^ 0x6a5f, { tier: 'elite', ...packOpts(run), creaturesOnly: true }), tier: 'graftsmith', severed: severed.name };
+      run.pending.cards = run.pending.cards.length ? run.pending.cards : [];
+      run.phase = 'reward'; return done({ kind: 'graftsmith', severed: severed.name });
+    }
+  }
+  throw new Error('Unknown shrine choice');
+}
+const eventView = run => ({ ...run, wounds: woundsOf(run), maxHp: maxHpOf(run) });
+
+/** v0.6 special encounter choice. Deterministic, explicit costs, one-time. */
+export function eventChoice(run, choice, arg) {
+  if (run.phase !== 'event' || !run.event) throw new Error('No event here');
+  const node = nodeById(run.map, run.current);
+  const res = resolveEvent(run, run.event.id, choice, arg, { seed: node.seed, packOpts: packOpts(run), setHp: hp => setHp(run, hp), maxHp: () => maxHpOf(run) });
+  run.eventsSeen.push(run.event.id); journalNote(run, 'event', { id: run.event.id, choice });
+  run.event = null;
+  if (!run.pending) run.phase = 'map'; else run.phase = 'reward';
+  return res;
+}
+
+export { availableNodes, MAX_SPARK_FONTS, EVENTS };

@@ -43,6 +43,11 @@ test('PIN: verifier copy matches the Game Lab source manifest byte for byte, at 
   for (const f of m.files) assert.equal(createHash('sha256').update(readFileSync(fileUrl(f.path))).digest('hex'), f.sha256, f.path);
   const challenge = challengeFor(m.challenge.id); assert.equal(challenge.revision, m.challenge.revision); assert.equal(challenge.scoringVersion, m.scoringVersion);
 });
+test('on-site game client: every rules file is byte-identical to the pinned Game Lab manifest', () => {
+  const m = JSON.parse(readFileSync(new URL('../src/graftbound-verify/lab-source-manifest.json', import.meta.url), 'utf8'));
+  for (const f of m.files) assert.equal(createHash('sha256').update(readFileSync(new URL('../games/graftbound-play/' + f.path, import.meta.url))).digest('hex'), f.sha256, 'games/graftbound-play/' + f.path);
+  assert.match(readFileSync(new URL('../games/graftbound-play/src/config.js', import.meta.url), 'utf8'), new RegExp("version: '" + m.gameVersion.replace(/\./g, '\\.') + "'"));
+});
 test('migration applies cleanly on the existing community schema, is idempotent, defaults OFF, and rolls back', () => {
   const db = d1(SCHEMA); db.raw.exec(readFileSync(new URL('../db/graftbound-ranked-v1.sql', import.meta.url), 'utf8'));
   assert.equal(db.raw.prepare("SELECT enabled FROM graftbound_launch_v1").get().enabled, 0);
@@ -87,6 +92,7 @@ test('profile identity comes only from the session: another player cannot use yo
   const cookie = await deviceFor(db, a);
   const r = await API.onRequestPost({ request: req('POST', '/api/graftbound', { cookie, body: { action: 'start', rulesVersion: RULES_VERSION, buildId: BUILD_ID } }), env: env(db) });
   const j = await r.json(); assert.equal(j.resumed, true); assert.equal(j.attempt.attemptId, id); assert.equal(j.checkpoint.ranked.seq, 10, 'resume from the authoritative server state');
+  assert.deepEqual(j.decisions, LOG.slice(0, 10), 'resume returns the accepted decisions so the on-site game can rebuild its replay log');
   const fresh = await post(db, a, { action: 'start', restart: true }); assert.equal(fresh.status, 201); assert.notEqual(fresh.json.attempt.attemptId, id);
   assert.equal(db.raw.prepare('SELECT status FROM graftbound_attempts_v1 WHERE id=?').get(id).status, 'abandoned');
 });
