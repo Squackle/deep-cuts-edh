@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 import {Miniflare} from 'miniflare';
 import {build} from 'esbuild';
 const root=new URL('../',import.meta.url);
-const report={date:'2026-10-30',commander:{name:'Vhati il-Dal',scryfall:'https://scryfall.com/card/tpr/214/vhati-il-dal'},theme:'One-Toughness Control',hook:'A careful source-checked hypothesis.',usualBuild:'x',selectionReason:'x',sections:{headline:'h',diagnosis:'d',prescription:'p',earlyGame:'e',midGame:'m',lateGame:'l',risks:'r',verdict:'v'},synergies:[]};
+const ART='https://cards.scryfall.io/normal/front/a/8/a8564611-b678-4336-87e0-5a00a930de48.jpg?1783938448';
+const report={date:'2026-10-30',commander:{name:'Vhati il-Dal',scryfall:'https://scryfall.com/card/tpr/214/vhati-il-dal',imageUrl:ART},theme:'One-Toughness Control',hook:'A careful source-checked hypothesis.',usualBuild:'x',selectionReason:'x',sections:{headline:'h',diagnosis:'d',prescription:'p',earlyGame:'e',midGame:'m',lateGame:'l',risks:'r',verdict:'v'},synergies:[]};
 
 // Mirrors the Pages Functions bundle: the .wasm import stays a separate
 // CompiledWasm module (Workers forbid compiling WebAssembly from bytes).
@@ -22,6 +23,7 @@ export default {fetch(request,env,ctx){const card=new URL(request.url).pathname.
    if(!/^\/assets\/share-fonts\/[A-Za-z-]+\.ttf$/.test(p))return new Response('nope',{status:404});
    return new Response(readFileSync(new URL('.'+p,root)))}},
   outboundService:async request=>{const u=new URL(request.url);upstream.push(u.href);
+   if(u.hostname==='cards.scryfall.io')return new Response(readFileSync(new URL('tests/fixtures/synthetic-card.jpg',root)),{headers:{'Content-Type':'image/jpeg'}});
    if(u.hostname!=='deep-cuts-weekly-publisher.logan-ottfamily.workers.dev')throw Error('blocked '+u.hostname);
    return u.searchParams.get('date')==='2026-10-30'?Response.json({report}):new Response('{}',{status:404})}
  });
@@ -34,7 +36,8 @@ export default {fetch(request,env,ctx){const card=new URL(request.url).pathname.
  const view=new DataView(bytes.buffer);assert.equal(view.getUint32(16),1200);assert.equal(view.getUint32(20),630);
  assert.equal(assets.length,4,'four bundled fonts fetched from same-origin assets');
  const svg=await mf.dispatchFetch('https://site.invalid/share/rescues/2026-10-30.svg');
- assert.equal(svg.status,200);assert.match(svg.headers.get('Content-Type'),/image\/svg\+xml/);await svg.text();
+ assert.equal(svg.status,200);assert.match(svg.headers.get('Content-Type'),/image\/svg\+xml/);assert.match(await svg.text(),/<image [^>]*href="data:image\/jpeg;base64,/,'commander card embedded in workerd');
+ assert.ok(upstream.some(u=>u.startsWith(ART.split('?')[0])),'art fetched from Scryfall CDN');
  const missing=await mf.dispatchFetch('https://site.invalid/share/rescues/2026-11-06.png');
  assert.equal(missing.status,404,'unpublished dates never get a card');await missing.text();
  const bad=await mf.dispatchFetch('https://site.invalid/share/rescues/evil.png');
