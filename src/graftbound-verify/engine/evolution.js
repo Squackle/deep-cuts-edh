@@ -20,7 +20,9 @@ export function newEvolution() {
 }
 
 export function absorb(evoIn, cardOrId) {
+  if (isBossCard(cardOrId)) throw new Error('Boss creatures are encounter-only and cannot be grafted');
   const card = typeof cardOrId === 'string' ? resolveCard(cardOrId) : cardOrId;
+  if (isBossCard(card)) throw new Error('Boss creatures are encounter-only and cannot be grafted');
   if (!card || card.kind !== 'creature') throw new Error('Not a creature card: ' + (card ? card.id : cardOrId));
   const evo = structuredClone(evoIn);
   const change = { cardId: card.id, power: card.power, toughness: card.toughness, gained: [], raised: [], resonance: 0 };
@@ -47,15 +49,18 @@ export function absorb(evoIn, cardOrId) {
 }
 import { KEYWORDS as KEYWORDS_REF } from '../data/keywords.js';
 import { resolveCard } from '../cards/catalog.js';
+import { isBossCard } from '../data/legendary.js';
 
 /** Rebuild an evolution from a list of card objects (used by the Graftsmith's Sever). */
 export function rebuild(cards) { let e = newEvolution(); for (const c of cards) e = absorb(e, c).evo; return e; }
 
-/** Spellbook focus (v0.5): every 3 spells in your spellbook grant +1 max mana and +1 mana per turn. */
+/** Spellbook focus (v0.5): every 3 spells in your spellbook grant +1 max mana and +1 mana per turn (v1.4.0: plus Spellward). */
+/** v1.4.0 Spellward: each focus tier also grants +FOCUS_WARD max health and +1 Arcane, so spell-led builds can survive. */
+export const FOCUS_WARD = 3;
 export const spellFocus = spellCount => Math.floor((spellCount || 0) / 3);
 export function deriveStats(evo, { sparkBonus = 0, baseSpark = BASE_SPARK, manaBonus = 0, spellCount = 0 } = {}) {
   const k = evo.keywords; const focus = spellFocus(spellCount);
-  const spark = baseSpark + sparkBonus + RESONANCE_SPARK * (evo.resonance || 0);
+  const spark = baseSpark + sparkBonus + RESONANCE_SPARK * (evo.resonance || 0) + FOCUS_WARD * focus;
   return {
     power: evo.power, toughness: evo.toughness, spark,
     maxHealth: spark + evo.toughness,
@@ -63,6 +68,6 @@ export function deriveStats(evo, { sparkBonus = 0, baseSpark = BASE_SPARK, manaB
     maxMana: BASE_MANA + (k.attuned || 0) + manaBonus + focus,
     startMana: 1 + (k.attuned || 0) + Math.min(1, manaBonus),
     manaRegen: 1 + (k.attuned || 0) + focus,
-    arcane: k.arcane || 0,
+    arcane: (k.arcane || 0) + focus,
   };
 }

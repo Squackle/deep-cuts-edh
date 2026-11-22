@@ -43,8 +43,8 @@ Every POST must also send `rulesVersion` and `buildId`.
 ## Launch checklist (each item needs explicit owner approval)
 
 1. **Pin the source.**
-   - Set `LAB_SOURCE_SHA` in `src/graftbound-verify/pinned.js` to the tested v0.6 Game Lab commit.
-   - Re-copy the rules files from it and run `node scripts/graftbound-pin.mjs --write`. The launch-gate test blocks a placeholder.
+   - **Done for 1.8.3-beta:** pinned to Game Lab `367c15af26231b0ea707bd5d3e4ca75d78f32bfa` (rules `graftbound-rules-1.8.3-beta`, pool `real-pool-133-v7`, scoring `gb-score-2`, challenge `gb-expedition-01` revision 30, digest `6ddba82f…c51e`). The 47 files come from that commit's `graftbound/tools/integration-manifest.mjs`, saved as `src/graftbound-verify/lab-source-manifest.json`; the PIN test checks every file hash and the digest against it.
+   - **Re-pin after any Game Lab rules, card-pool or challenge change** (for example the 12-card pilot, Game Lab #204): run `node tools/integration-manifest.mjs --source-sha=<merged main SHA>` in the Game Lab, copy exactly the listed `src/**` files into `src/graftbound-verify/` (dropping the `src/` prefix, deleting files no longer listed), replace `lab-source-manifest.json`, regenerate `rules-files.mjs`, update `LAB_SOURCE_SHA` and `BUILD_ID`, run `node scripts/graftbound-pin.mjs --write`, re-copy `tests/ranked-bot.mjs` and `src/engine/legal.js` into `tests/helpers/`, and rerun the tests. Records verified under an older revision stay on that revision's leaderboard.
 2. **Build the ranked page.** It must live on **this** origin, using the mandatory site header and Arcade template. **NOT BUILT YET.** It needs the Game Lab client to send decision segments to this API instead of recording locally.
 3. **Run the security review.** That includes a staging deployment with a **real signed-in browser**, Workers CPU timing on full replays, and rate-limit tuning.
 4. **Back up D1, then migrate.**

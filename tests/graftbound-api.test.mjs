@@ -6,14 +6,11 @@ import { d1 } from './helpers/d1-sqlite.mjs';
 import { hash } from '../src/community-core.js';
 import * as API from '../functions/api/graftbound.js';
 import { RULES_DIGEST, LAB_SOURCE_SHA, BUILD_ID, RULES_VERSION } from '../src/graftbound-verify/server-replay.js';
-import { startRanked, applyDecision } from '../src/graftbound-verify/engine/ranked.js';
-import { availableNodes } from '../src/graftbound-verify/engine/campaign.js';
-import { moveOptions, attackTargets, castOptions, enemies, player, interactOptions } from '../src/graftbound-verify/engine/combat.js';
-import { resolveCard } from '../src/graftbound-verify/cards/catalog.js';
-import { graftsFull } from '../src/graftbound-verify/engine/run.js';
-import { eventChoices } from '../src/graftbound-verify/engine/events.js';
-import { manhattan } from '../src/graftbound-verify/core/grid.js';
-import { rulesDigest } from '../scripts/graftbound-pin.mjs';
+import { playRanked } from './helpers/graftbound-ranked-bot.mjs';
+import { rulesDigest, fileUrl } from '../scripts/graftbound-pin.mjs';
+import { RULES_FILES } from '../src/graftbound-verify/rules-files.mjs';
+import { createHash } from 'node:crypto';
+import { challengeFor } from '../src/graftbound-verify/engine/ranked.js';
 
 const SCHEMA = ['db/community.sql', 'db/community-avatar-focus.sql', 'db/community-bio-emoji.sql', 'db/portrait-and-device-sessions.sql', 'db/graftbound-ranked-v1.sql'];
 const ORIGIN = 'https://deep-cuts-edh.pages.dev';
@@ -26,22 +23,8 @@ const post = async (db, who, b, extra = {}) => { const r = await API.onRequestPo
 const get = async (db, q, who) => { const r = await API.onRequestGet({ request: req('GET', '/api/graftbound?' + q, { key: who && who.key }), env: env(db) }); return { status: r.status, json: await r.json() }; };
 const enable = db => db.raw.exec("UPDATE graftbound_launch_v1 SET enabled=1");
 
-// Decision bot (server-side copy of the Game Lab test bot, using the pinned engine).
-function next(run) {
-  if (run.phase === 'map') { const o = availableNodes(run.map, run.current); return { type: 'node', node: (o.find(n => n.type === 'shrine') || o[0]).id }; }
-  if (run.phase === 'shrine') { const o = run.shrine.options; const k = ['spark', 'restoration', 'arcane', 'offering'].find(x => o.includes(x)) || o[0]; return { type: 'shrine', choice: k, ...(k === 'inscribe' ? { arg: run.spellbook.find(s => s.level < 3).id } : k === 'graftsmith' ? { arg: 0 } : {}) }; }
-  if (run.phase === 'event') return { type: 'event', choice: 'leave' };
-  if (run.phase === 'reward') { const id = run.pending.cards.find(c => !(run.pending.tier === 'graftsmith' && resolveCard(c).kind !== 'creature') && !(run.pending.tier === 'archivist' && resolveCard(c).kind !== 'spell')); if (!id) return { type: 'skip' }; return { type: 'reward', card: id, ...(resolveCard(id).kind === 'creature' && graftsFull(run) ? { release: 0 } : {}) }; }
-  const s = run.battle, p = player(s);
-  for (const sp of s.spellbook) { const c = resolveCard(sp.id), o = castOptions(s, sp.id); if (!o.length || c.target === 'empty' || (c.category === 'healing' && p.hp > p.maxHp * 0.6)) continue; return { type: 'cast', id: sp.id, x: o[0].x, y: o[0].y }; }
-  const at = attackTargets(s); if (at.length) return { type: 'attack', uid: at[0].uid };
-  const near = o => Math.min(...enemies(s).map(e => manhattan(o, e)));
-  const mv = moveOptions(s).sort((a, b) => near(a) - near(b) || a.cost - b.cost || a.y - b.y || a.x - b.x)[0];
-  if (mv && near(mv) < near(p)) return { type: 'move', x: mv.x, y: mv.y };
-  return { type: 'end' };
-}
-function fullLog(limit = 3000) { const run = startRanked(); const log = []; while (!['won', 'lost'].includes(run.phase) && log.length < limit) { const d = { seq: run.ranked.seq, ...next(run) }; applyDecision(run, d); log.push(d); } return { run, log }; }
-const { run: REF, log: LOG } = fullLog();
+// Decision bot: the Game Lab's own ranked test bot, driving the pinned engine copy.
+const { run: REF, log: LOG } = playRanked();
 
 test('pinned rules: digest matches the copied engine; verifier imports no DOM/rendering code', () => {
   assert.equal(rulesDigest(), RULES_DIGEST);
@@ -51,8 +34,14 @@ test('pinned rules: digest matches the copied engine; verifier imports no DOM/re
   for (const f of ['engine/combat.js', 'engine/ranked.js', 'engine/ai.js']) assert.ok(!/document\.|window\.|getContext\(/.test(readFileSync(new URL('../src/graftbound-verify/' + f, import.meta.url), 'utf8')), f);
   if (process.env.GRAFTBOUND_LAB_SRC) for (const f of ['engine/ranked.js', 'engine/combat.js', 'data/scoring.js']) assert.equal(readFileSync(new URL('../src/graftbound-verify/' + f, import.meta.url), 'utf8'), readFileSync(process.env.GRAFTBOUND_LAB_SRC + '/' + f, 'utf8'), f);
 });
-test('LAUNCH GATE: production stays blocked until LAB_SOURCE_SHA is a real 40-char Game Lab commit', () => {
-  assert.equal(/^[0-9a-f]{40}$/.test(LAB_SOURCE_SHA), false, 'expected to be PENDING in this review PR — replace before enabling the flag');
+test('PIN: verifier copy matches the Game Lab source manifest byte for byte, at a real commit', () => {
+  const m = JSON.parse(readFileSync(new URL('../src/graftbound-verify/lab-source-manifest.json', import.meta.url), 'utf8'));
+  assert.match(LAB_SOURCE_SHA, /^[0-9a-f]{40}$/); assert.equal(m.sourceCommit, LAB_SOURCE_SHA);
+  assert.equal(m.rulesVersion, RULES_VERSION); assert.equal(BUILD_ID, 'graftbound-' + m.gameVersion);
+  assert.equal(m.rulesDigestSha256, RULES_DIGEST, 'site digest is computed exactly like the Game Lab manifest');
+  assert.deepEqual(RULES_FILES, m.files.map(f => f.path));
+  for (const f of m.files) assert.equal(createHash('sha256').update(readFileSync(fileUrl(f.path))).digest('hex'), f.sha256, f.path);
+  const challenge = challengeFor(m.challenge.id); assert.equal(challenge.revision, m.challenge.revision); assert.equal(challenge.scoringVersion, m.scoringVersion);
 });
 test('migration applies cleanly on the existing community schema, is idempotent, defaults OFF, and rolls back', () => {
   const db = d1(SCHEMA); db.raw.exec(readFileSync(new URL('../db/graftbound-ranked-v1.sql', import.meta.url), 'utf8'));

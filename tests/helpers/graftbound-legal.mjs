@@ -1,0 +1,39 @@
+// Test-only copy of Game Lab graftbound/src/engine/legal.js at the pinned LAB_SOURCE_SHA (used by the ranked bot only;
+// it is not part of the server verifier's rules closure). Imports point at the site's pinned verifier copy.
+// v0.6 centralized legal-action evaluator (v0.8: + tactical stances). Pure: reuses the combat engine's own rules,
+// so "is anything left to do?" can never disagree with what the engine would accept.
+import { moveOptions, attackTargets, castOptions, interactOptions, equipmentOptions, stanceBlockReason, intents, player } from '../../src/graftbound-verify/engine/combat.js';
+import { spellCost } from '../../src/graftbound-verify/engine/spells.js';
+import { availableMana } from '../../src/graftbound-verify/engine/mana.js';
+import { resolveCard } from '../../src/graftbound-verify/cards/catalog.js';
+import { hasComboChoices, comboActiveOptions } from '../../src/graftbound-verify/engine/combo-triggers.js';
+
+/** Guard is worth offering only when a foe actually threatens you; Channel only when +1 mana unlocks a cast. */
+export function usefulStances(s) {
+  const out = [];
+  if (!stanceBlockReason(s, 'guard')) {
+    const p = player(s); const its = intents(s);
+    const threatened = its.some(i => (i.damage > 0 && i.target === p.uid) || ((i.kind === 'slam' || i.kind === 'fire') && (i.tiles || []).some(t => t.x === p.x && t.y === p.y)));
+    if (threatened) out.push('guard');
+  }
+  if (!stanceBlockReason(s, 'channel')) {
+    const unlock = s.spellbook.some(e => !s.p.cast[e.id] && availableMana(s) < spellCost(s, e.id) && availableMana(s) + 1 >= spellCost(s, e.id) && resolveCard(e.id).target !== 'empty');
+    if (unlock) out.push('channel');
+  }
+  return out;
+}
+
+export function getLegalPlayerActions(s) {
+  if (!s || s.phase !== 'player') return { move: [], attack: [], spells: [], interact: [], stances: [], any: false };
+  if(hasComboChoices(s))return {move:[],attack:[],spells:[],interact:[],stances:[],equipment:[],combo:[],any:true};
+  const move = moveOptions(s), attack = attackTargets(s).map(u => u.uid), interact = interactOptions(s);
+  const spells = s.spellbook.map(e => e.id).filter(id => castOptions(s, id).length > 0);
+  const stances = usefulStances(s);
+  const equipment=equipmentOptions(s);const combo=comboActiveOptions(s);
+  return { move, attack, spells, interact, stances, equipment, combo, any: move.length + attack.length + spells.length + interact.length + stances.length + equipment.length + combo.length > 0 };
+}
+export const hasLegalPlayerAction = s => getLegalPlayerActions(s).any;
+/** Auto-end gate: only during an idle player phase (never mid-animation, mid-targeting or after victory). */
+export function shouldAutoEnd(s, { busy = false, targeting = false, enabled = true } = {}) {
+  return !!(enabled && s && s.phase === 'player' && !busy && !targeting && !hasLegalPlayerAction(s));
+}

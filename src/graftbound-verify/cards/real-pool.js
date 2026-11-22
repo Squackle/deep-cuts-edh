@@ -1,7 +1,7 @@
 // Curated pool of REAL Magic: The Gathering cards — the ONLY source of GRAFTBOUND rewards (v0.5).
 // Inclusion rule: every relevant effect must be modeled by this engine.
-//   • creatures: no rules text except keywords this game models (Deathtouch, Flying, Trample, First strike,
-//     Double strike, Lifelink, Vigilance, Haste), or vanilla;
+//   • creatures: modeled evergreen keywords, vanilla, or one of the explicitly tested, disclosed
+//     GRAFTBOUND hero-graft trigger adaptations in trait-registry.js;
 //   • spells: an explicit, reviewed adaptation in compatibility.js SPELL_ADAPTATIONS (labeled in the UI).
 // Bundled: card FACTS only (name, mana cost, mana value, type line, P/T, keywords, color identity, a typical
 // printing's rarity). Images and Oracle text are fetched read-only from Scryfall at runtime and cross-checked.
@@ -9,6 +9,7 @@
 // `node tools/verify-real-pool.mjs` (needs network) before release. Never add a card you have not confirmed exists.
 const C = (name, mana_cost, cmc, type_line, power, toughness, keywords, color_identity, rarity) =>
   ({ name, mana_cost, cmc, type_line, power: String(power), toughness: String(toughness), keywords, color_identity, rarity });
+import { traitOf } from './trait-registry.js';
 const S = (name, mana_cost, cmc, type_line, color_identity, rarity) => ({ name, mana_cost, cmc, type_line, keywords: [], color_identity, rarity, spell: true });
 
 export const REAL_CREATURES = [
@@ -25,6 +26,16 @@ export const REAL_CREATURES = [
   C('Knight of Meadowgrain', '{W}{W}', 2, 'Creature — Kithkin Knight', 2, 2, ['First strike', 'Lifelink'], ['W'], 'uncommon'),
   C('Pillarfield Ox', '{3}{W}', 4, 'Creature — Ox', 2, 4, [], ['W'], 'common'),
   C('Serra Angel', '{3}{W}{W}', 5, 'Creature — Angel', 4, 4, ['Flying', 'Vigilance'], ['W'], 'uncommon'),
+  C('Eager Cadet', '{W}', 1, 'Creature — Human Soldier', 1, 1, [], ['W'], 'common'),
+  C('Daybreak Chaplain', '{1}{W}', 2, 'Creature — Human Cleric', 1, 3, ['Lifelink'], ['W'], 'common'),
+  C('Concordia Pegasus', '{1}{W}', 2, 'Creature — Pegasus', 1, 3, ['Flying'], ['W'], 'common'),
+  C('Armored Warhorse', '{W}{W}', 2, 'Creature — Horse', 2, 3, [], ['W'], 'common'),
+  C('Serra Ascendant', '{W}', 1, 'Creature — Human Monk', 1, 1, ['Lifelink'], ['W'], 'rare'),
+  C('Brimaz, King of Oreskos', '{1}{W}{W}', 3, 'Legendary Creature — Cat Soldier', 3, 4, ['Vigilance'], ['W'], 'mythic'),
+  // v1.2.8 owner-selected white combo grafts
+  C('Soul Warden', '{W}', 1, 'Creature — Human Cleric', 1, 1, [], ['W'], 'common'),
+  C("Ajani's Pridemate", '{1}{W}', 2, 'Creature — Cat Soldier', 2, 2, [], ['W'], 'uncommon'),
+  C('Mentor of the Meek', '{2}{W}', 3, 'Creature — Human Soldier', 2, 2, [], ['W'], 'rare'),
   // Blue
   C('Fugitive Wizard', '{U}', 1, 'Creature — Human Wizard', 1, 1, [], ['U'], 'common'),
   C('Coral Merfolk', '{1}{U}', 2, 'Creature — Merfolk', 2, 1, [], ['U'], 'common'),
@@ -33,6 +44,17 @@ export const REAL_CREATURES = [
   C('Snapping Drake', '{3}{U}', 4, 'Creature — Drake', 3, 2, ['Flying'], ['U'], 'common'),
   C('Air Elemental', '{3}{U}{U}', 5, 'Creature — Elemental', 4, 4, ['Flying'], ['U'], 'uncommon'),
   C('Mahamoti Djinn', '{4}{U}{U}', 6, 'Creature — Djinn', 5, 6, ['Flying'], ['U'], 'rare'),
+  C('Tolarian Scholar', '{2}{U}', 3, 'Creature — Human Wizard', 2, 3, [], ['U'], 'common'),
+  C('Phantom Monster', '{3}{U}', 4, 'Creature — Illusion', 3, 3, ['Flying'], ['U'], 'common'),
+  C('Archmage Emeritus', '{2}{U}{U}', 4, 'Creature — Human Wizard', 2, 2, ['Magecraft'], ['U'], 'rare'),
+  C('Talrand, Sky Summoner', '{2}{U}{U}', 4, 'Legendary Creature — Merfolk Wizard', 2, 2, [], ['U'], 'rare'),
+  C('Archaeomancer', '{2}{U}{U}', 4, 'Creature — Human Wizard', 1, 2, [], ['U'], 'common'),
+  // v1.2.8 owner-selected blue combo grafts
+  C('Mulldrifter', '{4}{U}', 5, 'Creature — Elemental', 2, 2, ['Flying', 'Evoke'], ['U'], 'uncommon'),
+  C('Murmuring Mystic', '{3}{U}', 4, 'Creature — Human Wizard', 1, 5, [], ['U'], 'uncommon'),
+  C('Nadir Kraken', '{1}{U}{U}', 3, 'Creature — Kraken', 2, 3, [], ['U'], 'rare'),
+  C('Sea Gate Oracle', '{2}{U}', 3, 'Creature — Human Wizard', 1, 3, [], ['U'], 'common'),
+  C('Dungeon Geists', '{2}{U}{U}', 4, 'Creature — Spirit', 3, 3, ['Flying'], ['U'], 'rare'),
   // Black
   C('Typhoid Rats', '{B}', 1, 'Creature — Rat', 1, 1, ['Deathtouch'], ['B'], 'common'),
   C("Pharika's Chosen", '{B}', 1, 'Creature — Snake', 1, 1, ['Deathtouch'], ['B'], 'common'),
@@ -41,6 +63,19 @@ export const REAL_CREATURES = [
   C('Gifted Aetherborn', '{B}{B}', 2, 'Creature — Aetherborn Vampire', 2, 3, ['Deathtouch', 'Lifelink'], ['B'], 'uncommon'),
   C('Vampire Nighthawk', '{1}{B}{B}', 3, 'Creature — Vampire Shaman', 2, 3, ['Flying', 'Deathtouch', 'Lifelink'], ['B'], 'uncommon'),
   C('Feral Abomination', '{5}{B}', 6, 'Creature — Thrull', 5, 5, ['Deathtouch'], ['B'], 'common'),
+  C('Scathe Zombies', '{2}{B}', 3, 'Creature — Zombie', 2, 2, [], ['B'], 'common'),
+  C('Dross Crocodile', '{3}{B}', 4, 'Creature — Zombie Crocodile', 5, 1, [], ['B'], 'common'),
+  C('Giant Scorpion', '{2}{B}', 3, 'Creature — Scorpion', 1, 3, ['Deathtouch'], ['B'], 'common'),
+  C('Zombie Goliath', '{4}{B}', 5, 'Creature — Zombie Giant', 4, 3, [], ['B'], 'common'),
+  C('Blood Artist', '{1}{B}', 2, 'Creature — Vampire', 0, 1, [], ['B'], 'uncommon'),
+  C('Vito, Thorn of the Dusk Rose', '{2}{B}', 3, 'Legendary Creature — Vampire Cleric', 1, 3, [], ['B'], 'rare'),
+  C('Sheoldred, the Apocalypse', '{2}{B}{B}', 4, 'Legendary Creature — Phyrexian Praetor', 4, 5, ['Deathtouch'], ['B'], 'mythic'),
+  // v1.2.8 owner-selected black combo grafts
+  C('Zulaport Cutthroat', '{1}{B}', 2, 'Creature — Human Rogue Ally', 1, 1, [], ['B'], 'uncommon'),
+  C('Ayara, First of Locthwain', '{B}{B}{B}', 3, 'Legendary Creature — Elf Noble', 2, 3, [], ['B'], 'rare'),
+  C('Reassembling Skeleton', '{1}{B}', 2, 'Creature — Skeleton Warrior', 1, 1, [], ['B'], 'uncommon'),
+  C('Morbid Opportunist', '{2}{B}', 3, 'Creature — Human Rogue', 1, 3, [], ['B'], 'uncommon'),
+  C('Ophiomancer', '{2}{B}', 3, 'Creature — Human Shaman', 2, 2, [], ['B'], 'rare'),
   // Red
   C('Raging Goblin', '{R}', 1, 'Creature — Goblin Berserker', 1, 1, ['Haste'], ['R'], 'common'),
   C('Gray Ogre', '{2}{R}', 3, 'Creature — Ogre', 2, 2, [], ['R'], 'common'),
@@ -49,6 +84,16 @@ export const REAL_CREATURES = [
   C('Fire Elemental', '{3}{R}{R}', 5, 'Creature — Elemental', 5, 4, [], ['R'], 'common'),
   C('Charging Monstrosaur', '{4}{R}', 5, 'Creature — Dinosaur', 5, 5, ['Trample', 'Haste'], ['R'], 'uncommon'),
   C('Volcanic Dragon', '{4}{R}{R}', 6, 'Creature — Dragon', 4, 4, ['Flying', 'Haste'], ['R'], 'uncommon'),
+  C('Goblin Piker', '{1}{R}', 2, 'Creature — Goblin Warrior', 2, 1, [], ['R'], 'common'),
+  C('Canyon Minotaur', '{3}{R}', 4, 'Creature — Minotaur Warrior', 3, 3, [], ['R'], 'common'),
+  C('Ogre Resister', '{2}{R}{R}', 4, 'Creature — Ogre', 4, 3, [], ['R'], 'common'),
+  C('Young Pyromancer', '{1}{R}', 2, 'Creature — Human Shaman', 2, 1, [], ['R'], 'uncommon'),
+  // v1.2.8 owner-selected red combo grafts
+  C('Guttersnipe', '{2}{R}', 3, 'Creature — Goblin Shaman', 2, 2, [], ['R'], 'uncommon'),
+  C('Electrostatic Field', '{1}{R}', 2, 'Creature — Wall', 0, 4, ['Defender'], ['R'], 'uncommon'),
+  C('Goblin Rabblemaster', '{2}{R}', 3, 'Creature — Goblin Warrior', 2, 2, [], ['R'], 'rare'),
+  C('Storm-Kiln Artist', '{3}{R}', 4, 'Creature — Dwarf Shaman', 2, 2, ['Treasure', 'Magecraft'], ['R'], 'uncommon'),
+  C("Chandra's Spitfire", '{2}{R}', 3, 'Creature — Elemental', 1, 3, ['Flying'], ['R'], 'uncommon'),
   // Green
   C('Grizzly Bears', '{1}{G}', 2, 'Creature — Bear', 2, 2, [], ['G'], 'common'),
   C('Runeclaw Bear', '{1}{G}', 2, 'Creature — Bear', 2, 2, [], ['G'], 'common'),
@@ -62,11 +107,25 @@ export const REAL_CREATURES = [
   C('Craw Wurm', '{4}{G}{G}', 6, 'Creature — Wurm', 6, 4, [], ['G'], 'common'),
   C('Colossal Dreadmaw', '{4}{G}{G}', 6, 'Creature — Dinosaur', 6, 6, ['Trample'], ['G'], 'common'),
   C('Ancient Brontodon', '{6}{G}{G}', 8, 'Creature — Dinosaur', 9, 9, [], ['G'], 'common'),
+  C('Kalonian Tusker', '{G}{G}', 2, 'Creature — Beast', 3, 3, [], ['G'], 'uncommon'),
+  C('Trained Armodon', '{1}{G}{G}', 3, 'Creature — Elephant', 3, 3, [], ['G'], 'common'),
+  C('Vastwood Gorger', '{5}{G}', 6, 'Creature — Wurm', 5, 6, [], ['G'], 'common'),
+  C('Leatherback Baloth', '{G}{G}{G}', 3, 'Creature — Beast', 4, 5, [], ['G'], 'uncommon'),
+  C('Elvish Visionary', '{1}{G}', 2, 'Creature — Elf Shaman', 1, 1, [], ['G'], 'common'),
+  // v1.2.8 owner-selected green combo grafts
+  C('Ivy Lane Denizen', '{3}{G}', 4, 'Creature — Elf Warrior', 2, 3, [], ['G'], 'common'),
+  C('Champion of Lambholt', '{1}{G}{G}', 3, 'Creature — Human Warrior', 1, 1, [], ['G'], 'rare'),
+  C('Eternal Witness', '{1}{G}{G}', 3, 'Creature — Human Shaman', 2, 1, [], ['G'], 'uncommon'),
+  C('Hornet Queen', '{4}{G}{G}{G}', 7, 'Creature — Insect', 2, 2, ['Flying', 'Deathtouch'], ['G'], 'rare'),
+  C('Deep Forest Hermit', '{3}{G}{G}', 5, 'Creature — Elf Druid', 1, 1, ['Vanishing'], ['G'], 'rare'),
   // Multicolor & colorless
-  C('Boros Swiftblade', '{R}{W}', 2, 'Creature — Human Soldier', 1, 2, ['Double strike'], ['R', 'W'], 'uncommon'),
+  C('Watchwolf', '{G}{W}', 2, 'Creature — Wolf', 3, 3, [], ['G', 'W'], 'uncommon'),
+  C('Woolly Thoctar', '{R}{G}{W}', 3, 'Creature — Beast', 5, 4, [], ['R', 'G', 'W'], 'uncommon'),
+  C('Boros Swiftblade' , '{R}{W}', 2, 'Creature — Human Soldier', 1, 2, ['Double strike'], ['R', 'W'], 'uncommon'),
   C('Skyknight Legionnaire', '{1}{R}{W}', 3, 'Creature — Human Knight', 2, 2, ['Flying', 'Haste'], ['R', 'W'], 'common'),
+  C('Wurmcoil Engine', '{6}', 6, 'Artifact Creature — Phyrexian Wurm', 6, 6, ['Deathtouch', 'Lifelink'], [], 'mythic'),
   C('Ornithopter', '{0}', 0, 'Artifact Creature — Thopter', 0, 2, ['Flying'], [], 'common'),
-  C('Bronze Sable', '{3}', 3, 'Artifact Creature — Sable', 2, 1, [], [], 'common'),
+  C('Bronze Sable', '{2}', 2, 'Artifact Creature — Sable', 2, 1, [], [], 'common'),
 ];
 export const REAL_SPELLS = [
   S('Shock', '{R}', 1, 'Instant', ['R'], 'common'),
@@ -75,20 +134,29 @@ export const REAL_SPELLS = [
   S('Arc Lightning', '{2}{R}', 3, 'Sorcery', ['R'], 'uncommon'),
   S('Fireball', '{X}{R}', 1, 'Sorcery', ['R'], 'uncommon'),
   S('Giant Growth', '{G}', 1, 'Instant', ['G'], 'common'),
-  S('Drain Life', '{1}{B}', 2, 'Sorcery', ['B'], 'common'),
+  S('Drain Life', '{X}{1}{B}', 2, 'Sorcery', ['B'], 'common'),
   S('Infest', '{1}{B}{B}', 3, 'Sorcery', ['B'], 'uncommon'),
   S('Raise the Alarm', '{1}{W}', 2, 'Instant', ['W'], 'common'),
   S('Healing Hands', '{2}{W}', 3, 'Sorcery', ['W'], 'common'),
   S('Healing Salve', '{W}', 1, 'Instant', ['W'], 'common'),
   S('Feat of Resistance', '{1}{W}', 2, 'Instant', ['W'], 'common'),
   S('Frost Breath', '{2}{U}', 3, 'Instant', ['U'], 'common'),
+  // v0.8 additions (new tactical roles: weakening, burst empowerment, board-wide area control).
+  S('Disfigure', '{B}', 1, 'Instant', ['B'], 'uncommon'),
+  S('Titanic Growth', '{1}{G}', 2, 'Instant', ['G'], 'common'),
+  S('Snakeskin Veil', '{G}', 1, 'Instant', ['G'], 'common'),
+  S('Pyroclasm', '{1}{R}', 2, 'Sorcery', ['R'], 'uncommon'),
+  S('Lightning Strike', '{1}{R}', 2, 'Instant', ['R'], 'common'),
+  S('Murder', '{1}{B}{B}', 3, 'Instant', ['B'], 'common'),
+  S('Revitalize', '{1}{W}', 2, 'Instant', ['W'], 'common'),
+  S('Divination', '{2}{U}', 3, 'Sorcery', ['U'], 'common'),
 ];
 
 /** Turn a pool entry into the same normalized record shape scryfall-adapter.normalizeCard() produces. */
 export function poolRecord(e) {
   const keywordLine = e.spell ? '' : e.keywords.join(', ').replace(/(^|, )([A-Z])/g, (m, a, b) => a + (a ? b.toLowerCase() : b));
   return { source: 'scryfall', bundled: true, id: '', oracleId: '', name: e.name, manaCost: e.mana_cost, cmc: e.cmc, colors: e.color_identity.slice(),
-    typeLine: e.type_line, power: e.spell ? null : e.power, toughness: e.spell ? null : e.toughness, keywords: e.keywords.slice(),
-    oracleText: e.spell ? null : keywordLine, set: '', setName: '', rarity: e.rarity, artist: '', image: { normal: null, artCrop: null },
+    typeLine: e.type_line, power: e.spell ? null : e.power, toughness: e.spell ? null : e.toughness, keywords: e.kind ? [] : e.keywords.slice(),
+    oracleText: e.spell ? null : (traitOf(e.name)?.note || keywordLine), set: '', setName: '', rarity: e.rarity, artist: '', image: { normal: null, artCrop: null },
     scryfallUri: null, rulingsUri: null };
 }

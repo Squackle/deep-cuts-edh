@@ -33,17 +33,21 @@ export const CREATURES = [
 // (movement / summon placement). v0.5: offensive and area spells reach the whole battlefield, no line of sight.
 export const SPELLS = [
   { id: 'ember_dart',     name: 'Ember Dart',     rarity: 'common',   color: 'ember',   cost: 1, target: 'enemy', art: 'flame',  category: 'damage',     text: 'Deal {2} damage to a foe anywhere on the battlefield.' },
-  { id: 'barkskin',       name: 'Barkskin',       rarity: 'common',   color: 'verdant', cost: 1, target: 'self',  art: 'shield', category: 'protection', text: 'Gain {3} shield for this battle.' },
-  { id: 'sap_surge',      name: 'Sap Surge',      rarity: 'common',   color: 'verdant', cost: 1, target: 'self',  art: 'sap',    category: 'enhance',    text: '+{3} power until end of turn.' },
+  { id: 'barkskin',       name: 'Barkskin',       rarity: 'common',   color: 'verdant', cost: 1, target: 'ally',  art: 'shield', category: 'protection', text: 'Give a friendly creature {3} shield for this battle.' },
+  { id: 'sap_surge',      name: 'Sap Surge',      rarity: 'common',   color: 'verdant', cost: 1, target: 'ally',  art: 'sap',    category: 'enhance',    text: 'Give a friendly creature +{3} power until end of turn.' },
   { id: 'gale_push',      name: 'Gale Push',      rarity: 'common',   color: 'tide',    cost: 1, target: 'enemy', art: 'wind',   category: 'control',    text: 'Push a foe 2 tiles away from you. If it collides, it and what it hits take {2}.' },
   { id: 'blink_step',     name: 'Blink Step',     rarity: 'uncommon', color: 'tide',    cost: 1, target: 'empty', range: 3, art: 'swirl',  category: 'movement',   text: 'Teleport to an empty tile up to {3} away.' },
   { id: 'rootsnare',      name: 'Rootsnare',      rarity: 'uncommon', color: 'verdant', cost: 2, target: 'enemy', art: 'root',   category: 'disable',    text: 'Deal {1} and Stun a foe: it loses its next action.' },
-  { id: 'venom_mist',     name: 'Venom Mist',     rarity: 'uncommon', color: 'umbral',  cost: 2, target: 'tile',  art: 'mist',   category: 'area',       text: 'Poison {2} to foes in a 3×3 area.' },
+  { id: 'venom_mist',     name: 'Venom Mist',     rarity: 'uncommon', color: 'umbral',  cost: 2, target: 'tile',  art: 'mist',   category: 'area',       text: 'Poison {2} to all creatures in a 3×3 area.' },
   { id: 'mending_rain',   name: 'Mending Rain',   rarity: 'uncommon', color: 'tide',    cost: 2, target: 'self',  art: 'rain',   category: 'healing',    text: 'Heal {4} and cleanse poison and weakness.' },
   { id: 'soul_siphon',    name: 'Soul Siphon',    rarity: 'uncommon', color: 'umbral',  cost: 2, target: 'enemy', art: 'siphon', category: 'damage',     text: 'Deal {2} damage and heal that much.' },
   { id: 'call_sproutling',name: 'Call Sproutling',rarity: 'uncommon', color: 'verdant', cost: 2, target: 'empty', range: 2, art: 'sprout', category: 'summon',     text: 'Summon a {2}/{2} ally beside you for this battle. It fights foes on its own.' },
   { id: 'chain_lightning',name: 'Chain Lightning',rarity: 'rare',     color: 'ember',   cost: 3, target: 'enemy', art: 'bolt',   category: 'damage',     text: 'Deal {3}, then {2} leaps to up to two nearby foes.' },
-  { id: 'starfall',       name: 'Starfall',       rarity: 'rare',     color: 'radiant', cost: 4, target: 'tile',  art: 'star',   category: 'area',       text: 'Deal {4} to a tile and {2} to adjacent foes.' },
+  // v0.8 effect templates (used only by reviewed real-card adaptations; never offered on their own)
+  { id: 'wither', name: 'Wither', rarity: 'uncommon', color: 'umbral', cost: 1, target: 'enemy', art: 'siphon', category: 'weaken', text: 'Deal {1} to a foe and Weaken it by {2}: it strikes for {2} less on its next action.' },
+  { id: 'firestorm', name: 'Firestorm', rarity: 'uncommon', color: 'ember', cost: 3, target: 'self', art: 'flame', category: 'area', text: 'Deal {2} to EVERY creature on the battlefield, including you and your summons.' },
+  { id: 'page_draw', name: 'Inscribed Insight', rarity: 'common', color: 'tide', cost: 3, target: 'self', art: 'swirl', category: 'draw', text: 'Draw 2 cards from your battle deck.' },
+  { id: 'starfall',       name: 'Starfall',       rarity: 'rare',     color: 'radiant', cost: 4, target: 'tile',  art: 'star',   category: 'area',       text: 'Deal {4} to a target tile and {2} to orthogonally adjacent creatures, friend or foe.' },
 ].map(c => ({ ...c, ...L }));
 
 export const ALL_CARDS = [...CREATURES.map(c => ({ ...c, kind: 'creature' })), ...SPELLS.map(s => ({ ...s, kind: 'spell' }))];

@@ -1,11 +1,14 @@
-// Computes the SHA-256 digest of the pinned GRAFTBOUND rules files. Usage: node scripts/graftbound-pin.mjs [--write]
+// Computes the SHA-256 digest of the pinned GRAFTBOUND rules files, byte-compatible with the Game Lab's
+// tools/integration-manifest.mjs. Usage: node scripts/graftbound-pin.mjs [--write]
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { RULES_FILES } from '../src/graftbound-verify/rules-files.mjs';
 const root = new URL('../src/graftbound-verify/', import.meta.url);
+/** Site location of a Game Lab path such as 'src/engine/ranked.js'. */
+export const fileUrl = (labPath, base = root) => new URL(labPath.replace(/^src\//, ''), base);
 export function rulesDigest(base = root) {
   const h = createHash('sha256');
-  for (const f of RULES_FILES) { h.update(f + '\n'); h.update(readFileSync(new URL(f, base))); h.update('\n'); }
+  for (const f of RULES_FILES) { h.update(f + '\n'); h.update(readFileSync(fileUrl(f, base))); h.update('\n'); }
   return h.digest('hex');
 }
 if (import.meta.url === `file://${process.argv[1]}`) {
