@@ -152,3 +152,11 @@ test('GET / serves the homepage with the latest weekly report and survives an ou
   assert.equal(asset.status,404);
  }finally{globalThis.fetch=old}
 });
+
+test('The archive page script never replaces the server-rendered archive',()=>{
+ const source=readFileSync('weekly-rescues.js','utf8');
+ assert.match(source,/if\(!el\|\|!el\.textContent\.includes\('Checking the weekly archive'\)\)return;/);
+ const page=readFileSync('rescues.html','utf8');
+ const rendered=staticArchiveHtml(page,mergeIndex(workerRows));
+ assert.doesNotMatch(rendered,/Checking the weekly archive/,'SSR output carries no placeholder, so the client script stays idle');
+});
