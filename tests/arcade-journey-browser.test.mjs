@@ -4,18 +4,12 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import {execFileSync} from "node:child_process";
-import {chromium} from "playwright-core";
+import {launchBrowser} from "./helpers/browser.mjs";
 // Also run Hive Run click-through/startup coverage in this existing Chromium CI step.
 import "./hive-run-browser.test.mjs";
 import {onRequestGet as dailyGet,onRequestPost as dailyPost} from "../functions/api/daily-games.js";
 import {getPuzzle} from "../src/automated-games.js";
-function chrome(){
- for(const name of ["google-chrome","chromium","google-chrome-stable","chromium-browser"]){
-  try{return execFileSync("which",[name],{encoding:"utf8"}).trim()}catch{}
- }
- throw Error("Chrome unavailable");
-}
+
 async function serve(){
  const root=process.cwd();
  const server=http.createServer((req,res)=>{
@@ -47,7 +41,7 @@ test("Arcade keeps compact resume navigation and truthful device-only progress o
  const {server,origin}=await serve();
  let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const width of [390,1280]){
    const ctx=await browser.newContext({viewport:{width,height:850}});
    const page=await ctx.newPage(),errors=[],fx=fixture(),seed=475319;

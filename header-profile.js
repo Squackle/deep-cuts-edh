@@ -4,6 +4,19 @@
    temporary profile key. No secrets are persisted or exposed in the header. */
 (() => {
  "use strict";
+ // Every main-site game already loads this shared header. Install the lightweight
+ // game switcher only on these seven playable routes; no game engine is altered.
+ const gameRoute=location.pathname.replace(/\/index\.html$/i,"/").replace(/\.html$/i,"").replace(/\/+$/,"");
+ if(/^\/games\/(?:cold-case|obscurity-ladder|arcane-cipher|conspiracy-board|hive-run|mana-heist|stackbreaker)$/.test(gameRoute)){
+  const gameStyles=document.createElement("link");
+  gameStyles.rel="stylesheet";
+  gameStyles.href="/arcade-crossgame.css";
+  document.head.append(gameStyles);
+  const gameNavigation=document.createElement("script");
+  gameNavigation.src="/arcade-crossgame.js";
+  gameNavigation.async=true;
+  document.head.append(gameNavigation);
+ }
  // Public pages share this header, so one analytics entrypoint covers
  // current and future standard pages without duplicating the GA4 snippet.
  const analyticsExcluded=["/profile","/members","/member-operations","/diagnostics","/api"]

@@ -1,18 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {chromium} from "playwright-core";
-import {execFileSync} from "node:child_process";
+import {launchBrowser} from "./helpers/browser.mjs";
 
 const source=(f)=>readFileSync(new URL("../"+f,import.meta.url),"utf8");
-function binary(){
- for(const x of ["google-chrome","google-chrome-stable","chromium","chromium-browser"]){
-  try{const v=execFileSync("which",[x],{encoding:"utf8"}).trim();if(v)return v}catch{}
- }
- throw Error("Chromium not available");
-}
+
 test("security Issue #38: archive data rendered as inert text, no injected markup or script",{timeout:20000},async()=>{
- const browser=await chromium.launch({executablePath:binary(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+ const browser=await launchBrowser();
  try{
   const page=await browser.newPage();
   const payload='<img src=x onerror="window.__xss=1">';
@@ -33,7 +27,7 @@ test("security Issue #38: archive data rendered as inert text, no injected marku
  }finally{await browser.close()}
 });
 test("security Issue #38: report table values cannot insert HTML elements",{timeout:20000},async()=>{
- const browser=await chromium.launch({executablePath:binary(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+ const browser=await launchBrowser();
  try{
   const page=await browser.newPage();
   const payload='<svg onload="window.__xss=1"></svg>';
