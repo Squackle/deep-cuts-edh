@@ -21,6 +21,8 @@
 .weekly-prose h2,.weekly-disclosure h2{font:700 25px Georgia,serif;color:#244332;border-bottom:1px solid #c9bba1;padding-bottom:10px}
 .weekly-prose h3{font:700 18px Georgia,serif;margin:18px 0 0}
 .weekly-prose p,.weekly-disclosure p{font-size:15px;line-height:1.8;color:#45584a}
+.weekly-card-link{color:#244332;font-weight:700;text-decoration:underline;text-decoration-color:#b48a3c;text-underline-offset:3px}
+.weekly-card-link:hover,.weekly-card-link:focus-visible{color:#8a5a14}
 .weekly-evidence{padding-left:22px;display:grid;gap:16px}
 .weekly-evidence li{padding:12px 15px;background:#f6efe1;border-left:3px solid #a18350}
 .weekly-evidence li strong{font:700 17px Georgia,serif}

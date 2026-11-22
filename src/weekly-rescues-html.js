@@ -13,7 +13,8 @@ export const safeCardImage=url=>{
 const VHATI_IMAGE='https://cards.scryfall.io/normal/front/a/8/a8564611-b678-4336-87e0-5a00a930de48.jpg?1783938448';
 export const commanderArt=item=>safeCardImage(item?.commander?.imageUrl)||
  (item?.date==='2026-10-30'&&item?.commander?.name==='Vhati il-Dal'?VHATI_IMAGE:null);
-const safeLink=url=>typeof url==='string'&&/^https:\/\/scryfall\.com\//.test(url)?url:'https://scryfall.com/';
+const safeLink=url=>{if(typeof url!=='string'||!/^https:\/\/scryfall\.com\//.test(url))return 'https://scryfall.com/';try{const u=new URL(url);u.searchParams.delete('utm_source');return u.href}catch{return 'https://scryfall.com/'}};
+export {safeLink as scryfallLink};
 export async function remoteJson(path){const r=await fetch(BASE+path,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(9000)});if(!r.ok)throw Error('Weekly report service unavailable ('+r.status+')');return r.json()}
 const header=`<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="/" aria-label="Deep Cuts EDH home"><span class="wordmark-symbol" aria-hidden="true"><img src="/assets/deep-cuts-mark.svg" width="46" height="56" alt=""></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>ODD STRATEGIES. NEW PURPOSE.</small></span></a><nav class="primary-nav" aria-label="Main navigation"><a href="/#latest">RESCUE REPORT</a><a href="/#archive">COMMANDERS</a><a href="/library">CARD LIBRARY</a><a href="/deck">TOOLS &amp; RESOURCES</a><a class="daily-games-nav-link" href="/games">ARCADE</a><a href="/nominations">NOMINATIONS</a><a href="/community">COMMUNITY</a><a class="member-nav-link" href="/members">MEMBERS' LOUNGE</a></nav></div></header>`;
 const footer=`<footer class="site-footer"><div class="wrap footer-content"><div><strong>DEEP CUTS <span>EDH</span></strong><p>Bad commanders. Good decks. No excuses.</p></div><div class="footer-links"><a href="/privacy">PRIVACY &amp; ADS</a><a href="/library">CARD LIBRARY ↗</a><a href="/deck">TOOLS &amp; RESOURCES ↗</a><a href="/games">ARCADE ↗</a><a href="/supporters">SUPPORT</a><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">CARD DATA: SCRYFALL ↗</a><a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener noreferrer">FAN CONTENT POLICY ↗</a></div></div><div class="wrap fine-print">Deep Cuts EDH is unofficial Magic: The Gathering fan content permitted under the Fan Content Policy, not approved or endorsed by Wizards of the Coast. Portions of these materials are property of Wizards of the Coast LLC. Card data and images via Scryfall. We are not affiliated with Scryfall or EDHREC. Community posts and gameplay results are user-submitted; card prices, rankings and legality can change.</div></footer>`;
@@ -29,21 +30,48 @@ export function staticArchiveHtml(html,rows,{unavailable=false}={}){
   throw Error('Canonical Rescue Report asset missing expected editorial sections');
  const reports=Array.isArray(rows)?rows.filter(x=>x&&typeof x.date==='string'&&/^20\d\d-\d\d-\d\d$/.test(x.date)): [];
  const list=unavailable
-  ?'<p class="weekly-empty">The weekly archive is temporarily unavailable; the original Rescue Reports and budget guide remain available.</p>'
+  ?(reports.length
+   ?'<p class="weekly-empty">Some newer weekly reports may be missing while the archive service is unavailable.</p>'+reports.map(row).join('')
+   :'<p class="weekly-empty">The weekly archive is temporarily unavailable; the original Rescue Reports and budget guide remain available.</p>')
   :reports.length
    ?reports.map(row).join('')
    :'<p class="weekly-empty">No autonomous weekly report has been released yet. The first scheduled edition is Friday, October 30, 2026 at 10:00 AM Central, subject to passing source and quality checks.</p>';
  return html.replace(WEEKLY_PLACEHOLDER,list);
 }
 const p=(val)=>`<p>${escaped(val)}</p>`;
-const section=(i,title,content)=>`<section class="weekly-prose"><h2>${i} / ${escaped(title)}</h2>${p(content)}</section>`;
+// Link the first mention of each named key card to its Scryfall page. Names are
+// matched on the escaped text, so no report text can inject markup.
+export function linkCards(text,cards){
+ let html=escaped(text);const used=new Set();
+ const list=(Array.isArray(cards)?cards:[]).filter(x=>x&&typeof x.name==='string'&&x.name.length>2).sort((a,b)=>b.name.length-a.name.length);
+ for(const card of list){
+  const name=escaped(card.name);if(used.has(name))continue;
+  const at=html.indexOf(name);if(at<0)continue;
+  // Skip a match inside an existing link.
+  const before=html.slice(0,at);if(before.lastIndexOf('<a ')>before.lastIndexOf('</a>'))continue;
+  html=before+`<a class="weekly-card-link" href="${escaped(safeLink(card.url))}" target="_blank" rel="noopener noreferrer">${name}</a>`+html.slice(at+name.length);
+  used.add(name);
+ }
+ return html;
+}
+// Generic automated headlines ("Kruphix Rescue Report") read as placeholders.
+export const genericHeadline=(headline,commander)=>{
+ const h=String(headline||'').trim().toLowerCase(),first=String(commander||'').split(',')[0].trim().toLowerCase();
+ return !h||/rescue report$/.test(h)||h===first||h===String(commander||'').trim().toLowerCase();
+};
 export function reportHtml(item){if(!item||!item.commander||!item.sections||!Array.isArray(item.synergies))throw Error('Invalid published report');const c=item.commander,s=item.sections;const cardHref=safeLink(c.scryfall);const preparedAt=Date.parse(item.createdAt||'');
+const cards=item.synergies;const lp=val=>`<p>${linkCards(val,cards)}</p>`;
+const section=(i,title,content)=>`<section class="weekly-prose"><h2>${i} / ${escaped(title)}</h2>${lp(content)}</section>`;
+const headline=genericHeadline(s.headline,c.name)?`${c.name}: ${item.theme}`:s.headline;
+const revisedAt=Date.parse(item.revisedAt||'');
+const longDate=t=>new Date(t).toLocaleDateString('en-US',{timeZone:'America/Chicago',month:'long',day:'numeric',year:'numeric'});
+const revisedNote=Number.isFinite(revisedAt)?`<p class="weekly-note"><strong>EDITOR'S REVISION:</strong> Updated ${escaped(longDate(revisedAt))}. The card notes were rewritten and rechecked against Scryfall.</p>`:'';
 const image=commanderArt(item);
 const art=image?`<img data-weekly-card-img src="${escaped(image)}" width="220" height="307" alt="Full Magic: The Gathering Commander card: ${escaped(c.name)}" decoding="async" loading="eager">`:'';
 const cardArt=`<figure class="weekly-commander-art" data-weekly-art-state="${image?'loading':'unavailable'}">${art}<span class="weekly-art-fallback">Card artwork is unavailable here. View the original card on Scryfall.</span><figcaption><a href="${escaped(cardHref)}" target="_blank" rel="noopener noreferrer">VIEW FULL CARD ON SCRYFALL ↗</a></figcaption></figure>`;
 const backfillNote=/editorial backfill/i.test(String(item.status||''))?
- `<p class="weekly-note"><strong>EDITORIAL BACKFILL:</strong> Prepared ${escaped(Number.isFinite(preparedAt)?new Date(preparedAt).toLocaleDateString('en-US',{timeZone:'America/Chicago',month:'long',day:'numeric',year:'numeric'}):'after the scheduled release')} for the ${escaped(item.date)} issue. This article was not published on its original scheduled date.</p>`:'';
-const body=`<section class="games-masthead weekly-report-hero"><div class="weekly-report-copy"><span class="games-kicker">WEEKLY RESCUE · ${escaped(item.date)}</span><h1>${escaped(c.name)}: <em>${escaped(item.theme)}</em></h1><p>${escaped(item.hook)}</p><div class="games-page-links"><a href="/rescues">← ALL WEEKLY RESCUES</a><a href="${escaped(cardHref)}" target="_blank" rel="noopener noreferrer">VIEW COMMANDER ORACLE ↗</a></div></div>${cardArt}</section><article class="weekly-paper"><div class="weekly-status"><span>AI-ASSISTED · SOURCE-CHECKED</span><span>${escaped(item.date)}</span></div>${backfillNote}<h2 class="weekly-title">${escaped(s.headline)}</h2><p class="weekly-lead">${escaped(item.selectionReason)}</p><div class="weekly-facts"><div><small>COMMANDER</small><strong>${escaped(c.name)}</strong></div><div><small>PROPOSED ANGLE</small><strong>${escaped(item.theme)}</strong></div><div><small>CONVENTIONAL BUILD (APPROXIMATE)</small><strong>${escaped(item.usualBuild)}</strong></div><div><small>EDHREC CARD-USE RANK</small><strong>${c.edhrecCardUseRank||'Unavailable'} · NOT leader deck count</strong></div></div>${section('01','The diagnosis',s.diagnosis)}${section('02','The prescription',s.prescription)}<section class="weekly-prose"><h2>03 / Pilot the deck</h2><h3>Early game</h3>${p(s.earlyGame)}<h3>Midgame</h3>${p(s.midGame)}<h3>Late game</h3>${p(s.lateGame)}</section>${section('04','What could go wrong',s.risks)}${section('05','Our provisional verdict',s.verdict)}</article>`;const title=`${c.name} — Weekly Rescue ${item.date}`,description=`Unusual Commander strategy: ${item.theme}. AI-assisted, source-checked card research.`;
+ `<p class="weekly-note"><strong>EDITORIAL BACKFILL:</strong> Prepared ${escaped(Number.isFinite(preparedAt)?longDate(preparedAt):'after the scheduled release')} for the ${escaped(item.date)} issue. This article was not published on its original scheduled date.</p>`:'';
+const body=`<section class="games-masthead weekly-report-hero"><div class="weekly-report-copy"><span class="games-kicker">WEEKLY RESCUE · ${escaped(item.date)}</span><h1>${escaped(c.name)}: <em>${escaped(item.theme)}</em></h1><p>${escaped(item.hook)}</p><div class="games-page-links"><a href="/rescues">← ALL WEEKLY RESCUES</a><a href="${escaped(cardHref)}" target="_blank" rel="noopener noreferrer">VIEW COMMANDER ORACLE ↗</a></div></div>${cardArt}</section><article class="weekly-paper"><div class="weekly-status"><span>AI-ASSISTED · SOURCE-CHECKED</span><span>${escaped(item.date)}</span></div>${backfillNote}${revisedNote}<h2 class="weekly-title">${escaped(headline)}</h2><p class="weekly-lead">${escaped(item.selectionReason)}</p><div class="weekly-facts"><div><small>COMMANDER</small><strong>${escaped(c.name)}</strong></div><div><small>PROPOSED ANGLE</small><strong>${escaped(item.theme)}</strong></div><div><small>CONVENTIONAL BUILD (APPROXIMATE)</small><strong>${escaped(item.usualBuild)}</strong></div><div><small>EDHREC CARD-USE RANK</small><strong>${c.edhrecCardUseRank||'Unavailable'} · NOT leader deck count</strong></div></div>${section('01','The diagnosis',s.diagnosis)}${section('02','The prescription',s.prescription)}<section class="weekly-prose"><h2>03 / Pilot the deck</h2><h3>Early game</h3>${lp(s.earlyGame)}<h3>Midgame</h3>${lp(s.midGame)}<h3>Late game</h3>${lp(s.lateGame)}</section>${section('04','What could go wrong',s.risks)}${section('05','Our provisional verdict',s.verdict)}</article>`;const title=`${c.name} — Weekly Rescue ${item.date}`,description=`Unusual Commander strategy: ${item.theme}. AI-assisted, source-checked card research.`;
 // Share card + Open Graph only for a well-formed published report date.
 let share=null;try{share=rescueCardModel(item)}catch{}
 return page(title,description,`/rescues/${encodeURIComponent(item.date)}`,share?body+sharePanelHtml(share):body,share?shareMetaTags(share,{title,description}):'')}

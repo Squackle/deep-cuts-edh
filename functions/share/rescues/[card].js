@@ -4,7 +4,8 @@
  * be forged. The PNG (used for og:image) is rendered server-side from the SVG
  * and cached at the edge. The commander's card image is fetched server-side
  * from Scryfall's CDN (verified URL only) and embedded as a data URI. */
-import {remoteJson,commanderArt} from '../../../src/weekly-rescues-html.js';
+import {commanderArt} from '../../../src/weekly-rescues-html.js';
+import {loadReport} from '../../../src/weekly-rescue-archive.js';
 import {rescueCardModel,cardSvg,fetchCardArt,svgResponse,pngResponse,CARD_VERSION} from '../../../src/share-card.js';
 const text=(body,status,extra={})=>new Response(body,{status,headers:{'Content-Type':'text/plain; charset=utf-8','X-Content-Type-Options':'nosniff',...extra}});
 const notFound=()=>text('Not found',404);
@@ -27,17 +28,16 @@ export async function onRequestGet({request,env,params,waitUntil}){
  const cache=typeof caches!=='undefined'?caches.default:null;
  const cacheKey=cache?new Request(new URL(`/share/rescues/${date}.${format}?v=${CARD_VERSION}`,request.url)):null;
  if(cache){try{const hit=await cache.match(cacheKey);if(hit)return hit}catch{}}
- let data;
- try{data=await remoteJson('/v1/report?date='+encodeURIComponent(date))}
+ let report;
+ try{report=await loadReport(date)}
  catch(error){
-  if(/\(404\)/.test(String(error?.message)))return notFound();
   console.error('Share card report read failed',String(error));return text('Card temporarily unavailable',503,{'Retry-After':'300'})
  }
- if(!data?.report||data.report.date!==date)return notFound();
+ if(!report||report.date!==date)return notFound();
  let model;
- try{model=rescueCardModel(data.report)}catch{return notFound()}
+ try{model=rescueCardModel(report)}catch{return notFound()}
  // commanderArt() only returns Scryfall CDN card URLs (safeCardImage).
- const art=await fetchCardArt(commanderArt(data.report));
+ const art=await fetchCardArt(commanderArt(report));
  const svg=cardSvg(model,{art});
  const store=response=>{
   // Cards without art (Scryfall hiccup) are not cached, so they self-heal.

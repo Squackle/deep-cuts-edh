@@ -12,7 +12,7 @@ export const CARD_WIDTH=1200;
 export const CARD_HEIGHT=630;
 // Bump when the card design changes: it is part of the image URLs and the edge
 // cache key, so social platforms and caches fetch the new design.
-export const CARD_VERSION='2';
+export const CARD_VERSION='3';
 const DATE=/^20\d\d-\d\d-\d\d$/;
 
 const XML_ESCAPES={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};

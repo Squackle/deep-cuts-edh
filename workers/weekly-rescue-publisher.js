@@ -32,8 +32,9 @@ export const verifiedCardImageUrl=card=>{
  try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='cards.scryfall.io'&&/^\/normal\/(?:front|back)\/[a-f0-9]\/[a-f0-9]\/[a-f0-9-]{36}\.jpg$/.test(u.pathname)?u.href:null}
  catch{return null}
 };
+const scryfallLink=url=>{try{const u=new URL(String(url||''));u.searchParams.delete('utm_source');return u.href}catch{return null}};
 const eligible=x=>x&&x.lang==='en'&&x.legalities?.commander==='legal'&&x.games?.includes('paper')&&Array.isArray(x.color_identity)&&x.color_identity.length<=5&&!!(x.oracle_text||x.card_faces?.[0]?.oracle_text);
-const cardMini=x=>({name:x.name,oracle:clean(x.oracle_text||x.card_faces?.map(f=>f.oracle_text).join(' // ')||'',1100),type:clean(x.type_line,120),colors:x.color_identity,rank:Number.isInteger(x.edhrec_rank)?x.edhrec_rank:null,scryfall:x.scryfall_uri,price:Number.isFinite(Number(x.prices?.usd))?Number(x.prices.usd):null,imageUrl:verifiedCardImageUrl(x)});
+const cardMini=x=>({name:x.name,oracle:clean(x.oracle_text||x.card_faces?.map(f=>f.oracle_text).join(' // ')||'',1100),type:clean(x.type_line,120),colors:x.color_identity,rank:Number.isInteger(x.edhrec_rank)?x.edhrec_rank:null,scryfall:scryfallLink(x.scryfall_uri),price:Number.isFinite(Number(x.prices?.usd))?Number(x.prices.usd):null,imageUrl:verifiedCardImageUrl(x)});
 const numericHash=s=>{let n=2166136261;for(const c of s){n^=c.charCodeAt(0);n=Math.imul(n,16777619)}return n>>>0};
 const pickPages=date=>{const week=Math.floor(Date.parse(date+'T00:00:00Z')/604800000);return week%4===0?[3,4,5]:week%4===1?[5,7,9]:week%4===2?[2,6,10]:[4,8,10]};
 async function fromScryfall(url){const response=await fetch(url,{headers,signal:AbortSignal.timeout(16000)});if(!response.ok)fail('Scryfall request failed '+response.status);return response.json()}
@@ -55,20 +56,53 @@ async function verifyCards(names,commander){
 }
 async function think(env,messages,max_tokens){if(!env.AI)fail('Workers AI binding missing');const response=await env.AI.run(MODEL,{messages,max_tokens,temperature:0.35});return jsonFromModel(response)}
 const editorialSystem=`You are a careful Magic: The Gathering Commander researcher. Use ONLY supplied Scryfall Oracle descriptions and candidate data as established facts. Do not invent EDHREC commander deck counts, adoption rates, test results, prices, unsupported rules, or citations. Avoid definitive combo or infinite-loop claims. Distinguish original strategic hypotheses from verified Oracle text. Return a single valid JSON object and no markdown.`;
+// House style for the published article. Learned from weak automated drafts:
+// vague verbs, a placeholder headline, and card notes that misread Oracle text.
+const STYLE=`House style: write like a sharp Commander columnist talking to a friend. Short, concrete sentences. Every claim about a card must follow directly from its supplied Oracle text; never say a card makes a type or color of mana its text does not mention. Explain HOW each card connects to the commander's own text, naming the exact words that make it work. Never use the words utilize, leverage, synergy, synergize, advantage, unique, or "game-changing". The headline is a punchy full sentence about the strategy (not "<Commander> Rescue Report", not just the commander's name). The theme is 2 to 6 words and never promises infinite mana or combos.`;
+// Measurable editorial floor. A report that fails is rewritten, never published.
+const VAGUE=/\b(utiliz\w*|leverag\w*|synerg\w*|game-changing)\b/i;
+export function qualityIssues(report){
+ const issues=[];const s=report?.sections||{};const name=String(report?.commander?.name||'');
+ const first=name.split(',')[0].trim().toLowerCase();const headline=String(s.headline||'').trim().toLowerCase();
+ if(!headline||/rescue report$/.test(headline)||headline===first||headline===name.toLowerCase())issues.push('headline is a placeholder; write a full sentence about the strategy');
+ if(/\binfinite\b/i.test(String(report?.theme||'')+' '+String(report?.hook||'')))issues.push('theme or hook promises infinite effects');
+ const words=String(report?.theme||'').trim().split(/\s+/).filter(Boolean).length;if(words<2||words>7)issues.push('theme must be 2 to 6 words');
+ const minimum={diagnosis:220,prescription:300,earlyGame:140,midGame:140,lateGame:140,risks:180,verdict:150};
+ for(const [key,min] of Object.entries(minimum))if(String(s[key]||'').length<min)issues.push(key+' is too thin (at least '+min+' characters)');
+ const syn=Array.isArray(report?.synergies)?report.synergies:[];
+ if(syn.length<6)issues.push('at least six key cards need explanations');
+ for(const x of syn)if(String(x?.why||'').length<70)issues.push('the note for '+x?.name+' is too short; explain how it works with the commander');
+ const prose=Object.values(s).join(' ');
+ const cited=syn.filter(x=>x?.name&&prose.includes(x.name)).length;if(cited<3)issues.push('the strategy sections must name at least three of the key cards');
+ if(VAGUE.test(prose+' '+syn.map(x=>x?.why).join(' ')+' '+String(report?.hook||'')))issues.push('replace vague words (utilize, leverage, synergy) with what the cards actually do');
+ return issues;
+}
 async function research(env,date){
  const pool=await candidates(date);
- const proposal=await think(env,[{role:'system',content:editorialSystem},{role:'user',content:`For these three Commander-legal cards, choose the strongest UNUSUAL but strategically plausible alternative to a conventional build. A moderately popular commander with a genuinely different strategy is good. This week's candidate set is ordered across Scryfall EDHREC card-use rank bands, NOT commander deck popularity. Never claim numeric theme adoption. Propose 10-13 EXISTING exact English Magic card names whose effects could support the theme; they will be checked against Scryfall. Return JSON with: "commander" (exact candidate name), "usualBuild" (max 70 chars; label as approximate), "theme" (max 80 chars), "hook" (max 210 chars), "supportCards" (array of 10-13 exact names), "selectionReason" (max 220 chars). Candidates: ${JSON.stringify(pool)}` }],1550);
+ const proposal=await think(env,[{role:'system',content:editorialSystem},{role:'user',content:`For these three Commander-legal cards, choose the strongest UNUSUAL but strategically plausible alternative to a conventional build. A moderately popular commander with a genuinely different strategy is good. This week's candidate set is ordered across Scryfall EDHREC card-use rank bands, NOT commander deck popularity. Never claim numeric theme adoption. Propose 10-13 EXISTING exact English Magic card names whose effects could support the theme; they will be checked against Scryfall. Return JSON with: "commander" (exact candidate name), "usualBuild" (max 70 chars; label as approximate), "theme" (max 80 chars), "hook" (max 210 chars), "supportCards" (array of 10-13 exact names), "selectionReason" (max 220 chars). ${STYLE} Candidates: ${JSON.stringify(pool)}` }],1550);
  const commander=pool.find(x=>x.name===proposal.commander);if(!commander)fail('Model selected nonexistent candidate');
  if(!Array.isArray(proposal.supportCards))fail('Missing evidence card list');
  await sleep(220);const verified=await verifyCards(proposal.supportCards,commander);
- const article=await think(env,[{role:'system',content:editorialSystem},{role:'user',content:`Write an honest original Commander Rescue Report for an unusual strategic hypothesis, anchored STRICTLY to these verified English Scryfall Oracle texts. Only cite names supplied here and do not state a precise rule interaction without direct support. No deck is playtested; do not claim verified combos, a 100-card list, prices for full decks or measured archetype adoption. Return JSON ONLY with string fields: "headline" (max 95 chars), "diagnosis" (max 500 chars), "prescription" (max 650 chars), "earlyGame" (max 360 chars), "midGame" (max 360 chars), "lateGame" (max 360 chars), "risks" (max 450 chars), "verdict" (max 380 chars), and "synergies" array of at least FIVE objects {"name":"exact evidence card name", "why":"explanation up to 240 chars"}. Commander: ${JSON.stringify(commander)}. Hypothesis: ${JSON.stringify({usualBuild:proposal.usualBuild,theme:proposal.theme,hook:proposal.hook,selectionReason:proposal.selectionReason})}. Verified evidence cards: ${JSON.stringify(verified.map(x=>({name:x.name,oracle:x.oracle,type:x.type,colors:x.colors})))}` }],2750);
+ const articlePrompt=`Write an honest original Commander Rescue Report for an unusual strategic hypothesis, anchored STRICTLY to these verified English Scryfall Oracle texts. Only cite names supplied here and do not state a precise rule interaction without direct support. No deck is playtested; do not claim verified combos, a 100-card list, prices for full decks or measured archetype adoption. Return JSON ONLY with string fields: "headline" (max 95 chars), "diagnosis" (max 500 chars), "prescription" (max 650 chars), "earlyGame" (max 360 chars), "midGame" (max 360 chars), "lateGame" (max 360 chars), "risks" (max 450 chars), "verdict" (max 380 chars), and "synergies" array of at least FIVE objects {"name":"exact evidence card name", "why":"explanation up to 240 chars"}. Commander: ${JSON.stringify(commander)}. Hypothesis: ${JSON.stringify({usualBuild:proposal.usualBuild,theme:proposal.theme,hook:proposal.hook,selectionReason:proposal.selectionReason})}. Verified evidence cards: ${JSON.stringify(verified.map(x=>({name:x.name,oracle:x.oracle,type:x.type,colors:x.colors})))}\n${STYLE}`;
  const validByName=new Map(verified.map(x=>[x.name.toLowerCase(),x]));
+ let feedback='';let lastIssues=[];
+ for(let attempt=0;attempt<3;attempt++){
+  const article=await think(env,[{role:'system',content:editorialSystem},{role:'user',content:articlePrompt+feedback}],2750);
+  let item;try{item=assemble(article)}catch(e){lastIssues=[clean(e?.message,140)];feedback=`\nYour previous draft was rejected: ${lastIssues.join('; ')}. Fix every point.`;continue}
+  lastIssues=qualityIssues(item);
+  if(!lastIssues.length)return item;
+  feedback=`\nYour previous draft was rejected by the editor: ${lastIssues.slice(0,6).join('; ')}. Rewrite the whole report and fix every point.`;
+  await sleep(300);
+ }
+ fail('Editorial quality floor not met: '+lastIssues.slice(0,3).join('; '));
+ function assemble(article){
  if(!Array.isArray(article.synergies))fail('No synergies');let examples=[];for(const row of article.synergies){const v=validByName.get(clean(row.name,130).toLowerCase());if(v&&!examples.some(x=>x.name===v.name)&&clean(row.why).length>=25)examples.push({name:v.name,why:clean(row.why,240),oracle:v.oracle,url:v.scryfall})}
  if(examples.length<5)fail('Not enough verified named synergy cards');
  const keys=['headline','diagnosis','prescription','earlyGame','midGame','lateGame','risks','verdict'];const sections={};for(const key of keys){sections[key]=clean(article[key],key==='prescription'?650:500);if(sections[key].length<(key==='headline'?18:55))fail('Incomplete researched section '+key)}
  const banned=/\b(infinite combo|guaranteed (?:win|kill)|always win|100%|according to EDHREC|\d+% of (?:decks|players)|playtested|proven in testing)\b/i;
  if([Object.values(sections).join(' '),examples.map(x=>x.why).join(' ')].some(x=>banned.test(x)))fail('Unsafe or unsupported editorial certainty');
  return {version:1,date,createdAt:new Date().toISOString(),commander:{name:commander.name,identity:commander.colors,oracle:commander.oracle,scryfall:commander.scryfall,edhrecCardUseRank:commander.rank,imageUrl:commander.imageUrl},theme:clean(proposal.theme,80),usualBuild:clean(proposal.usualBuild,70),hook:clean(proposal.hook,210),selectionReason:clean(proposal.selectionReason,220),sections,synergies:examples.slice(0,8),methodology:'AI-assisted editorial strategy hypothesis using live Scryfall Oracle text and card-legality checks. The EDHREC card-use rank is NOT the commander-as-leader deck count. Strategy adoption was not independently measured; interaction interpretations and playtesting have not been judge-certified.',status:'AI-assisted and source-checked; not independently playtested'};
+ }
 }
 export const localReleaseWindow=now=>{const p=chicago(now);return p.weekday==='Fri'&&Number(p.hour)===10};
 const asJSON=(value,fallback)=>{try{return JSON.parse(value??'null')??fallback}catch{return fallback}};
