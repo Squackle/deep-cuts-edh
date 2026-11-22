@@ -12,6 +12,7 @@ Secrets required for production Pages Functions:
 Frontend's public Turnstile **site key** is in `index.html`. The private Turnstile secret must **never** be committed to GitHub.
 
 Configured in Cloudflare Pages on October 12, 2026: the production environment has an encrypted `TURNSTILE_SECRET`, and the `DB` binding points to the initialized D1 database. Never commit the secret to this repository. If you change the Turnstile widget secret, update the Cloudflare environment secret and redeploy.
+Turnstile widget is restricted to `deep-cuts-edh.pages.dev`. Add any custom domains in Turnstile settings before switching to them.
 
 ## Preview environment (isolated from production)
 
@@ -26,11 +27,11 @@ Since November 17, 2026 ([issue #74](https://github.com/Squackle/deep-cuts-edh/i
 
 The preview databases were created from schema only and contain no real user, payment or score data. Rules:
 
-- **Preview deployments built before November 17, 2026 may still use production bindings**, because each Pages deployment keeps the settings it was built with. Never run mutation, signup or score tests against an old preview URL; rebuild the branch first.
+- Each Pages deployment keeps the bindings it was built with. The only 7 preview deployments that ever built (October 19, 2026, from `site/stackbreaker-step9-authenticated-replay-20261019` and `game/dominion-2-0-promotion-20261019`) still used production storage, so they were deleted on November 22, 2026 with owner approval. A dashboard readback afterwards showed 0 built preview deployments.
+- Automatic preview builds are currently **off** (Pages → Settings → Builds → Preview deployments: *None*). A branch push only creates a skipped placeholder, not a live preview URL. If previews are turned on later, new previews use the isolated bindings above.
 - Never point a Preview binding back at a production ID, and never copy production rows into the preview databases.
 - When a schema migration ships to production, apply the same DDL to the preview databases so previews keep working.
 - The separate `deepcuts-edh-security-staging` Pages project (Access-protected) has its own `deepcuts-security-staging-*` databases for security acceptance tests.
-Turnstile widget is restricted to `deep-cuts-edh.pages.dev`. Add any custom domains in Turnstile settings before switching to them.
 
 ## Moderator workflow
 
