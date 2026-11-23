@@ -367,3 +367,6 @@
  }
  .arcade-hub-masthead .arcade-hero-how span{transition:none}
 }
+/* Ladder reveal: show which rungs the player placed correctly. */
+.games-rank-reveal.games-rank-hit{box-shadow:inset 4px 0 0 #3fae6a}
+.games-rank-reveal.games-rank-miss{box-shadow:inset 4px 0 0 #b54a4a}

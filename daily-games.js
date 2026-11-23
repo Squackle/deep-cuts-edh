@@ -203,11 +203,18 @@ function dateChicago(){
  const find=k=>parts.find(p=>p.type===k)?.value||"";
  return find("year")+"-"+find("month")+"-"+find("day");
 }
+// Spoiler-free per-rung row when this browser knows the submitted order.
+function ladderShareRow(){
+ const pairs="🪜 "+Math.round((state.score||0)/10)+"/10";
+ const answer=(state.solution||[]).map(c=>c.name),mine=(state.submittedOrder||list.map(x=>x.name));
+ if(answer.length!==5||mine.length!==5)return pairs;
+ return pairs+"\n"+mine.map((name,i)=>answer[i]===name?"🟩":"⬛").join("");
+}
 function shareText(){
  const name=gameNames[game],done=state.finished;
  if(!done)return "";
  const score=game==="cold"?(state.won?(state.attempts||[]).length+"/5":"X/5"):(state.score||0)+"/100";
- const icons=game==="cold"?(state.attempts||[]).map(n=>state.solution?.name===n?"🟩":"🟨").join(""):"🪜 "+Math.round((state.score||0)/10)+"/10";
+ const icons=game==="cold"?(state.attempts||[]).map(n=>state.solution?.name===n?"🟩":"🟥").join(""):ladderShareRow();
  return "Deep Cuts EDH — "+name+"\n"+(practice?"PRACTICE · ":"")+state.day+" · "+score+"\n"+icons+"\n"+fullUrl();
 }
 function resultActions(){
@@ -327,12 +334,27 @@ function renderCold(){
  }
  choose.append(grid);host.append(choose);
 }
+const ladderDraftKey=()=>"deepcuts:ladder-draft:"+(state?.day||"")+(practice?":p"+seed:"");
+function saveLadderDraft(){
+ try{sessionStorage.setItem(ladderDraftKey(),JSON.stringify(list.map(x=>x.name)))}catch{}
+}
+function loadLadderDraft(){
+ try{
+  const names=JSON.parse(sessionStorage.getItem(ladderDraftKey())||"null");
+  const byName=new Map((state.cards||[]).map(x=>[x.name,x]));
+  if(Array.isArray(names)&&names.length===5&&names.every(n=>byName.has(n)))return names.map(n=>byName.get(n));
+ }catch{}
+ return null;
+}
 function move(listIndex,change){
  const other=listIndex+change;
  if(other<0||other>=list.length)return;
  [list[listIndex],list[other]]=[list[other],list[listIndex]];
- renderLadder();const row=$("ladderRow"+other);
- row?.querySelector("button")?.focus();
+ saveLadderDraft();renderLadder();
+ const buttons=$("ladderRow"+other)?.querySelectorAll(".games-move")||[];
+ const same=buttons[change<0?0:1];
+ (same&&!same.disabled?same:[...buttons].find(b=>!b.disabled))?.focus();
+ announce(list[other].name+" moved to position "+(other+1)+" of 5.");
 }
 function renderLadder(){
  const host=$("gameArea");host.replaceChildren();
@@ -352,8 +374,11 @@ function renderLadder(){
     " of 10 pairs in the correct order. "+(state.sourceExplanation||"")+
     " Data snapshot: "+state.snapshot+"; rankings are not live."));
   const ordered=el("ol","games-reveal-order");
-  for(const c of state.solution||[]){
-   const row=el("li","games-rank-reveal");
+  const mine=state.submittedOrder||[];
+  for(const [pos,c] of (state.solution||[]).entries()){
+   const hit=mine.length===5?mine[pos]===c.name:null;
+   const row=el("li","games-rank-reveal"+(hit===true?" games-rank-hit":hit===false?" games-rank-miss":""));
+   if(hit!==null)row.title=hit?"You placed this rung correctly":"You placed "+mine[pos]+" here";
    const frame=el("span","games-small-art");frame.append(image(c.name));
    const text=el("div");
    const metric=byRank?"Scryfall EDHREC card rank #"+Number(c.rank).toLocaleString():Number(c.decks).toLocaleString()+" EDHREC commander decks";
@@ -364,7 +389,7 @@ function renderLadder(){
   }
   result.append(ordered,resultActions());host.append(result);revealBadges(host);return;
  }
- if(!list.length)list=[...(state.cards||[])];
+ if(!list.length)list=loadLadderDraft()||[...(state.cards||[])];
  const current=new Map((state.cards||[]).map(x=>[x.name,x]));
  list=list.filter(x=>current.has(x.name));
  if(list.length!==5)list=[...(state.cards||[])];
@@ -391,7 +416,8 @@ function renderLadder(){
   if(working)return;working=true;submit.disabled=true;
   try{
    const r=await request("POST","submit",{order:list.map(x=>x.name)});
-   state={...state,...r};
+   state={...state,...r,submittedOrder:list.map(x=>x.name)};
+   try{sessionStorage.removeItem(ladderDraftKey())}catch{}
    if(!practice&&!state.authenticated)saveStorage(storageKey("ladder",state.day),state);
    announce(state.won?"Perfect line-up! You're a true investigator.":"Verdict filed. Check the official popularity order below.");
    renderLadder();updateArcadeJourney();await loadBoard();
