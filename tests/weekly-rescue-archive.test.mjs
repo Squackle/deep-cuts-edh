@@ -6,7 +6,7 @@ import {mergeIndex,loadArchive,loadReport,loadLatest,editionFor} from '../src/we
 import {reportHtml,linkCards,genericHeadline,staticArchiveHtml} from '../src/weekly-rescues-html.js';
 import {applyLatestToHomeHtml,homeFeatureModel} from '../src/home-weekly-ssr.js';
 import {qualityIssues,publish} from '../workers/weekly-rescue-publisher.js';
-import {trustedCardImage} from '../home-weekly-feature.mjs';
+import {trustedCardImage,validWeeklyDate,newerWeeklyReport,preloadCardImage} from '../home-weekly-feature.mjs';
 import {onRequestGet as homepage} from '../functions/index.js';
 import {strongArticle} from './helpers/strong-article.mjs';
 
@@ -196,4 +196,36 @@ test('Resolved SSR homepage does not perform a duplicate client fetch, but stati
   if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;
   if(oldFetch)Object.defineProperty(globalThis,'fetch',oldFetch);else globalThis.fetch=originalFetch;
  }
+});
+
+test('All feature entry points reject non-calendar dates including normalized February overflow',()=>{
+ const row={...workerRows[0],date:'2027-02-31'};
+ assert.equal(validWeeklyDate(row.date),false);
+ assert.equal(validWeeklyDate('2028-02-29'),true);
+ assert.equal(homeFeatureModel(row),null);
+ assert.equal(newerWeeklyReport({report:row},'2026-11-20'),null);
+ assert.equal(applyLatestToHomeHtml(homeHtml,row),homeHtml);
+ assert.deepEqual(mergeIndex([row],[]),[]);
+});
+test('Unresponsive card artwork times out without changing the featured report',async()=>{
+ const image={complete:false,naturalWidth:0,src:''};
+ const pending=preloadCardImage('https://example.test/never.jpg',()=>image,5);
+ assert.equal(await pending,false);
+ assert.equal(image.onload,null);assert.equal(image.onerror,null);
+ const cached={complete:true,naturalWidth:488,src:''};
+ assert.equal(await preloadCardImage('https://example.test/cached.jpg',()=>cached,50),true);
+});
+test('Publisher repairs an existing article index without repeating generation or rewriting its article',async()=>{
+ const date='2026-10-30',raw=JSON.stringify(vhati),store=new Map([['article:'+date,raw],['index',JSON.stringify([workerRows[0]])]]),writes=[];
+ const env={AI:{run:async()=>{throw Error('Generation must not run for existing article')}},REPORTS:{
+  get:async(k,t)=>{const v=store.get(k);return t==='json'&&v?JSON.parse(v):v??null},
+  put:async(k,v)=>{writes.push(k);store.set(k,v)}
+ }};
+ const now=new Date('2026-10-30T15:00:00Z');
+ await publish(env,now);await publish(env,now);
+ assert.equal(store.get('article:'+date),raw);
+ assert.ok(!writes.includes('article:'+date));
+ const index=JSON.parse(store.get('index'));
+ assert.equal(index.filter(r=>r.date===date).length,1);
+ assert.ok(index.some(r=>r.date===workerRows[0].date));
 });
