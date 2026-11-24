@@ -30,6 +30,14 @@
   Content-Security-Policy: frame-ancestors 'self'; base-uri 'self'; object-src 'none'
   X-Robots-Tag: noindex, nofollow
 
+# Only the noindex GRAFTBOUND game document may be embedded by the same-origin /games/graftbound page.
+/games/graftbound-play/*
+  ! X-Frame-Options
+  ! Content-Security-Policy
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: frame-ancestors 'self'; base-uri 'self'; object-src 'none'
+  X-Robots-Tag: noindex, nofollow
+
 # Internal-only Classic game document; parent renders the full site template.
 /games/stackbreaker/classic/play.html
   ! X-Frame-Options

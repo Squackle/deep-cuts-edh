@@ -5,7 +5,7 @@ import {execFileSync} from 'node:child_process';
 
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const expectedLabels=['RESCUE REPORT','COMMANDERS','CARD LIBRARY','TOOLS & RESOURCES','ARCADE','NOMINATIONS','COMMUNITY',"MEMBERS' LOUNGE"];
-const pagePaths=['index.html','games.html','games/cold-case.html','games/stackbreaker.html','games/mana-heist/index.html'];
+const pagePaths=['index.html','games.html','games/cold-case.html','games/stackbreaker.html','games/mana-heist/index.html','games/graftbound.html'];
 function audit(path){
  const html=read(path);
  for(const css of (path==='index.html'?['/home-styles.css']:['/styles.css','/retro.css','/theme-v2.css','/header-profile.css'])){

@@ -1,0 +1,55 @@
+// Enemy definitions (v0.5, three acts). Health = toughness. Difficulty comes from tactics, not inflated pools.
+// role: the tactical identity shown to the player. counters: which build it is designed to pressure.
+import { LEGENDARY_BOSSES } from './legendary.js';
+import { ENEMY_FACTS } from '../cards/enemy-facts.js';
+import { REAL_CREATURE_MODELS } from './creature-models.js';
+const LEGACY_ENEMIES = {
+  angel: {act:1,name:'Angel',role:'Token',power:4,toughness:4,move:3,ai:'melee',sprite:'moth',keywords:{flying:1},token:true},
+  saproling: { act:0,name:'Saproling',role:'Token',power:1,toughness:1,move:2,ai:'melee',sprite:'grub',token:true },
+  spider: { act:0,name:'Spider',role:'Token',power:1,toughness:2,move:2,ai:'melee',sprite:'moth',keywords:{reach:1},token:true },
+  goblin: { act:1,name:'Goblin',tribe:'Goblin',role:'Token',power:1,toughness:1,move:3,ai:'melee',sprite:'cinderling',token:true },
+  zombie: { act:2,name:'Zombie',role:'Token',power:4,toughness:4,move:2,ai:'melee',sprite:'riftstalker',token:true },
+  slug: { act:2,name:'Slug',role:'Token',power:1,toughness:1,move:1,ai:'melee',sprite:'grub',token:true },
+  wolf: {act:0,name:'Wolf',role:'Token',power:2,toughness:2,move:3,ai:'melee',sprite:'hound',tribe:'Wolf',token:true},
+  golemFly: {act:2,name:'Golem',role:'Token',power:3,toughness:3,move:2,ai:'melee',sprite:'sentinel',keywords:{flying:1},token:true},
+  golemVigilance: {act:2,name:'Golem',role:'Token',power:3,toughness:3,move:2,ai:'melee',sprite:'sentinel',keywords:{vigilance:1},token:true},
+  golemTrample: {act:2,name:'Golem',role:'Token',power:3,toughness:3,move:2,ai:'melee',sprite:'sentinel',keywords:{trample:1},token:true},
+
+  // ── Act I · The Forgotten Hollow ─────────────────────────────────────────
+  grub:     { act: 0, name: 'Mire Grub',        role: 'Brute',      power: 1, toughness: 2, move: 2, ai: 'melee',      sprite: 'grub',     blurb: 'Slow. Bites anything adjacent.' },
+  hound:    { act: 0, name: 'Bramble Hound',    role: 'Skirmisher', power: 2, toughness: 2, move: 3, ai: 'flanker',    sprite: 'hound',    pack: true, blurb: 'Pack hunter: +1 power when another foe is beside its target. Circles to the side opposite its packmates.' },
+  archer:   { act: 0, name: 'Thornbow Sentry',  role: 'Marksman',   power: 1, toughness: 2, move: 2, ai: 'archer',     sprite: 'archer',   aimDamage: 3, aimRange: 6, blurb: 'Aims along a line, fires next turn. Arrows hit fliers too. Step out of the red.' },
+  tortoise: { act: 0, name: 'Cairnback Warden', role: 'Guardian',   power: 1, toughness: 5, move: 1, ai: 'guardian',   sprite: 'warden',   guard: 2, blurb: 'Shields adjacent allies each turn. Kill what it protects first — or go around.' },
+  moth:     { act: 0, name: 'Hexwing Moth',     role: 'Caster',     power: 1, toughness: 1, move: 3, ai: 'skirmisher', sprite: 'moth',     keywords: { flying: 1 }, poison: 2, spitRange: 3, blurb: 'Flies. Spits poison from range 3 and keeps its distance.' },
+  hexer:    { act: 0, name: 'Briar Hexer',      role: 'Caster',     power: 1, toughness: 3, move: 2, ai: 'hexer',      sprite: 'hexer',    hexRange: 4, weaken: 2, affinity: { resist: 'nature', weak: 'fire' }, blurb: 'Curses from range 4: deals 1 and Weakens you (−2 power during your next turn).' },
+  alpha:    { act: 0, name: 'Gloamfang Alpha',  role: 'Assassin',   power: 4, toughness: 7, move: 3, ai: 'melee',      sprite: 'alpha',    keywords: { firstStrike: 1, doubleStrike: 1 }, elite: true, blurb: 'Elite. First Strike and Double Strike — it bites twice before you land a blow. Spells and fliers avoid its fangs.' },
+  thornmother: { act: 0, name: 'The Thornmother', role: 'Summoner', power: 3, toughness: 18, move: 1, ai: 'thornmother', sprite: 'thornmother', legendary: true, boss: true, keywords: { spines: 2 },
+    slamDamage: 4, strikeCap: 5, affinity: { resist: 'nature', weak: 'fire' }, blurb: 'Legendary. Ancient Heartwood: no single strike deals more than 5. Spines 2. Lashes anything beside her, telegraphs Root Slams, calls hounds and grows bark below half health. Bosses never strike back.' },
+  // ── Act II · The Ashen Warrens ───────────────────────────────────────────
+  cinderling: { act: 1, name: 'Cinderling',      role: 'Bomber',     power: 2, toughness: 2, move: 3, ai: 'melee',      sprite: 'cinderling', burst: 2, affinity: { resist: 'fire', weak: 'frost' }, blurb: 'Bursts when it dies: 2 damage to everything adjacent. Resists fire magic (−1); vulnerable to frost (+1). Kill it from range or with spells.' },
+  ashbrute:   { act: 1, name: 'Ashbound Brute',  role: 'Bulwark',    power: 3, toughness: 6, move: 2, ai: 'melee',      sprite: 'ashbrute',   keywords: { armor: 1 }, rally: 1, blurb: 'Armor 1: each strike against it deals 1 less. Spells ignore armor. Rallies: foes beside it strike for +1 on their next action. Kill or separate it first.' },
+  harpooner:  { act: 1, name: 'Skyhook Harpooner', role: 'Anti-air', power: 2, toughness: 3, move: 2, ai: 'harpooner',  sprite: 'harpooner',  harpoonRange: 5, blurb: 'Harpoons from range 5 with sight. Double damage to fliers and Grounds them for a turn.' },
+  emberseer:  { act: 1, name: 'Emberseer',       role: 'Artillery',  power: 1, toughness: 4, move: 2, ai: 'seer',       sprite: 'emberseer',  blastDamage: 3, affinity: { resist: 'fire', weak: 'frost' }, blurb: 'Marks a 3×3 area around you, then rains fire on it next turn. Keep moving.' },
+  wurmTouch: { act:1,name:'Wurmcoil Wurm (Deathtouch)',role:'Token',power:3,toughness:3,move:2,ai:'melee',sprite:'mtg_champion',token:true,keywords:{deathtouch:1} },
+  wurmLife: { act:1,name:'Wurmcoil Wurm (Lifelink)',role:'Token',power:3,toughness:3,move:2,ai:'melee',sprite:'mtg_champion',token:true,keywords:{lifelink:1} },
+  champion:   { act: 1, name: 'Obsidian Champion', role: 'Duelist',  power: 5, toughness: 12, move: 2, ai: 'melee',      sprite: 'champion',   keywords: { firstStrike: 1, armor: 1 }, elite: true, blurb: 'Elite. First Strike and Armor 1. Punishes careless melee; burn it down with spells.' },
+  matron:     { act: 1, name: 'The Pyre Matron', role: 'Tyrant',     power: 4, toughness: 28, move: 1, ai: 'matron',    sprite: 'matron',     legendary: true, boss: true, keywords: { armor: 1 }, strikeCap: 6,
+    blurb: 'Legendary. Armor 1; no strike deals more than 6. Breathes fire down a row and a column (telegraphed), births Cinderlings and turns the ground near you to lava.' },
+  // ── Act III · The Fractured Nexus ────────────────────────────────────────
+  riftstalker:{ act: 2, name: 'Rift Stalker',    role: 'Assassin',   power: 3, toughness: 4, move: 0, ai: 'stalker',    sprite: 'riftstalker', blurb: 'Steps through the rift to the tile behind you every turn, then strikes. Positioning does not save you — killing it does.' },
+  nullwarden: { act: 2, name: 'Null Warden',     role: 'Silencer',   power: 2, toughness: 7, move: 1, ai: 'guardian',   sprite: 'nullwarden',  guard: 2, spellTax: 1, affinity: { resist: 'void', weak: 'lightning' }, blurb: 'While it stands, your spells cost 1 more mana. Shields allies.' },
+  shardling:  { act: 2, name: 'Shardling',       role: 'Harrier',    power: 2, toughness: 2, move: 3, ai: 'hexer',      sprite: 'shardling',   affinity: { resist: 'lightning', weak: 'fire' }, keywords: { flying: 1 }, hexRange: 4, weaken: 2, blurb: 'Flies. Fires shards from range 4: 1 damage and −2 power on your next turn. Resists lightning magic (−1); vulnerable to fire (+1).' },
+  sentinel:   { act: 2, name: 'Nexus Sentinel',  role: 'Juggernaut', power: 6, toughness: 15, move: 3, ai: 'melee',     sprite: 'sentinel',    keywords: { armor: 2, firstStrike: 1 }, elite: true, blurb: 'Elite. Armor 2 and First Strike — small strikes barely scratch it and it hits first. Spells, Deathtouch and fliers get around it.' },
+  unwritten:  { act: 2, name: 'The Unwritten',   role: 'Mirror',     power: 5, toughness: 36, move: 2, ai: 'unwritten', sprite: 'unwritten',   legendary: true, boss: true, strikeCap: 7,
+    blurb: 'Legendary. No strike deals more than 7. Copies one of your abilities each cycle, telegraphs Erasure along your row and column, and calls Rift Stalkers.' },
+  ...Object.fromEntries(LEGENDARY_BOSSES.flat().map(b=>[b.id,{act:LEGENDARY_BOSSES.findIndex(a=>a.includes(b)),...b,legendary:true,boss:true,printedPower:b.power,printedToughness:b.toughness,encounterHealth:b.vitality,sprite:REAL_CREATURE_MODELS[b.id]?'mtg_'+b.id:b.sprite,blurb:b.ability}])),
+};
+
+/** Real-card enemy facts override only identity and printed card abilities. Existing IDs keep old saves compatible. */
+export const ENEMIES = Object.fromEntries(Object.entries(LEGACY_ENEMIES).map(([id,d])=>{
+ const f=ENEMY_FACTS[id]; if(!f) return [id,REAL_CREATURE_MODELS[id]?{...d,sprite:'mtg_'+id}:d];
+ return [id,{...d,...f, mtgName:f.name,printedPower:f.power,printedToughness:f.toughness,
+    burst:undefined,pack:undefined,guard:undefined,rally:undefined,spellTax:id==='nullwarden'?1:undefined,
+    aimDamage:id==='archer'?2:undefined,quickShot:id==='archer'?{damage:1,range:4}:undefined,poison:undefined,spitRange:undefined,hexRange:undefined,weaken:undefined,blastDamage:undefined,
+    strikeCap:undefined,affinity:undefined,role:d.role, sprite:REAL_CREATURE_MODELS[id]?'mtg_'+id:d.sprite, oldEncounterName:d.name, blurb:f.oracle}];
+}));

@@ -1,0 +1,99 @@
+/* GRAFTBOUND belongs to the shared Deep Cuts EDH daily-games template.
+   The parent page uses styles/retro/theme-v2/header-profile/games.css;
+   this file styles ONLY the GRAFTBOUND panel, iframe and ranking content. */
+.gb-games-main .gb-hero:after{content:"DCE · GRAFT OPERATIONS"}
+.gb-games-main .gb-wide-stage{
+ width:min(1500px,calc(100vw - 32px));max-width:1600px;
+ position:relative;left:50%;transform:translateX(-50%);
+ margin-top:25px;min-width:0
+}
+.gb-games-main .gb-runbar{
+ display:grid;grid-template-columns:minmax(200px,1fr) minmax(190px,.9fr) auto;
+ align-items:center;gap:12px 20px;padding:20px clamp(16px,2vw,26px);
+ background:#fffbf1;border:1px solid #c5b79a;color:#263a30;
+ box-shadow:0 9px 22px #44341a11
+}
+.gb-games-main .gb-runbar-heading{min-width:0}
+.gb-games-main .gb-runbar-heading .games-kicker{color:#8d6c40;margin:0 0 5px}
+.gb-games-main .gb-runbar-heading h2{font:700 clamp(21px,2.3vw,28px)/1.15 Georgia,serif;color:#263e30;margin:0 0 5px}
+.gb-games-main .gb-runbar-heading p{font-size:12px;line-height:1.55;color:#5d675a;margin:0}
+.gb-games-main .gb-run-message{font-size:13px;line-height:1.5;color:#42574a;margin:0;max-width:460px}
+.gb-games-main #rankedRun{
+ white-space:normal;min-height:48px;max-width:240px;line-height:1.4;
+ background:#294d3d;border:1px solid #294d3d;color:#fff6e5
+}
+.gb-games-main #rankedRun:hover:not(:disabled){background:#346850}
+.gb-games-main #rankedRun:disabled{opacity:.75;cursor:not-allowed}
+.gb-games-main .gb-canonical-play{
+ width:100%;min-width:0;background:#071214;
+ border:1px solid #b9aa87;border-top:0;
+ box-shadow:0 12px 24px #332c201d;
+ position:relative;padding:7px
+}
+#graftboundGame{
+ width:100%;height:calc(100svh - 44px);min-height:470px;
+ display:block;background:#071214;border:0;overflow:hidden
+}
+.gb-games-main .gb-runtime-warning{
+ margin:0;padding:8px 11px;color:#f2e7d0;font-size:12px;
+ border-top:1px solid #42675e;background:#18342f
+}
+.gb-games-main .gb-board-section{
+ margin:17px 0 0;background:#fffbf1;
+ border:1px solid #c5b79a;box-shadow:0 9px 22px #44341a11;
+ padding:22px clamp(16px,2vw,28px);min-width:0;color:#263a30
+}
+.gb-games-main .gb-board-top{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.gb-games-main .gb-board-top .games-kicker{color:#8d6c40;margin-bottom:4px}
+.gb-games-main .gb-board-top h2{font:700 clamp(23px,2.5vw,31px)/1.15 Georgia,serif;color:#254332;margin:0 0 6px}
+.gb-games-main #rankedStatus{margin:0;color:#5b675c;font-size:13px;line-height:1.5}
+.gb-games-main #refreshLeaderboard{flex-shrink:0;min-height:42px}
+.gb-games-main .gb-ranking-list{
+ list-style:none;padding:0;margin:18px 0 14px;
+ display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px
+}
+.gb-games-main .gb-ranking-list li{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ padding:12px 14px;border:1px solid #d1c4a9;background:#f6f0e1;color:#2f4939;font-size:13px;
+ min-width:0
+}
+.gb-games-main .gb-ranking-list li strong{color:#68502c}
+.gb-games-main .gb-ranking-list a{color:#245c42;text-decoration:underline;overflow-wrap:anywhere}
+.gb-games-main .gb-board-foot{
+ display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+ gap:10px;color:#5d675a;font-size:12px;line-height:1.5
+}
+.gb-games-main .gb-board-foot a{color:#245c42;font-weight:800;text-decoration:underline}
+.gb-games-main .gb-ranked-disclosure{color:#69786e;font-size:11px;line-height:1.6;margin:14px 0 0}
+.gb-games-main .games-disclosure{margin-top:25px}
+.gb-games-main :is(a,button):focus-visible{outline:3px solid #ac7533;outline-offset:3px}
+@media(max-width:900px){
+ .gb-games-main .gb-runbar{grid-template-columns:minmax(0,1fr) auto}
+ .gb-games-main .gb-runbar-heading{grid-column:1}
+ .gb-games-main .gb-run-message{grid-column:1 / -1;grid-row:2}
+ .gb-games-main .gb-run-actions{grid-column:2;grid-row:1}
+}
+@media(max-width:640px){
+ .gb-games-main .gb-wide-stage{width:calc(100vw - 22px)}
+ .gb-games-main .gb-runbar{padding:16px 13px;gap:12px}
+ .gb-games-main .gb-runbar-heading h2{font-size:22px}
+ .gb-games-main #rankedRun{font-size:11px;padding:9px;max-width:140px}
+ .gb-games-main .gb-canonical-play{padding:3px}
+ .gb-games-main .gb-board-section{padding:18px 12px}
+ .gb-games-main .gb-ranking-list{grid-template-columns:1fr}
+}
+@media(max-width:500px){
+ #graftboundGame{height:calc(100svh - 37px)}
+}
+@media(max-width:380px){
+ .gb-games-main .gb-runbar{grid-template-columns:1fr}
+ .gb-games-main .gb-run-actions{grid-column:1;grid-row:auto;max-width:none;width:100%}
+ .gb-games-main .gb-run-message{grid-column:1;grid-row:auto}
+}
+@media(prefers-reduced-motion:reduce){.gb-games-main *{scroll-behavior:auto}}
+.gb-games-main .gb-run-actions{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.gb-games-main #restartRun{min-height:38px;font-size:11px}
+.gb-games-main .gb-verified{margin:12px 0 0;padding:12px 14px;border:1px solid #9fb59a;background:#eef5e8;color:#24402f;font-size:13px;line-height:1.5}
+.gb-games-main .gb-verified[hidden]{display:none}
+#graftboundGame{min-height:560px}
+.gb-games-main [hidden]{display:none!important}

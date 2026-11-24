@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d1a14">
+<title>GRAFTBOUND — Ranked Expedition | Deep Cuts EDH</title>
+<meta name="description" content="Play GRAFTBOUND, a free tactics RPG where you graft real Magic: The Gathering creatures into yourself. Ranked Expedition scores are verified by server replay.">
+<!-- Pre-launch: noindex until the owner approves turning on ranked scoring. The full site template still applies (tests/public-page-template.test.mjs). -->
+<meta name="robots" content="noindex,follow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GRAFTBOUND — Begin as nothing. Become everything. | Deep Cuts EDH">
+<meta property="og:description" content="A creature-grafting tactics RPG with a shared, server-verified Ranked Expedition.">
+<meta property="og:url" content="https://deep-cuts-edh.pages.dev/games/graftbound">
+<link rel="canonical" href="https://deep-cuts-edh.pages.dev/games/graftbound">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/retro.css"><link rel="stylesheet" href="/theme-v2.css">
+<link rel="stylesheet" href="/header-profile.css"><link rel="stylesheet" href="/games.css">
+<link rel="stylesheet" href="/release-polish.css"><link rel="stylesheet" href="/games/graftbound.css">
+<script defer src="/header-profile.js"></script>
+<script defer src="/arcade-journey.js"></script>
+<script type="module" src="/games/graftbound.js"></script>
+</head><body class="gb-canonical-page">
+<a class="skip-link" href="#main">Skip to GRAFTBOUND</a>
+<header class="site-header"><div class="wrap header-inner"><a class="wordmark" href="/" aria-label="Deep Cuts EDH home"><span class="wordmark-symbol" aria-hidden="true"><img src="/assets/deep-cuts-mark.svg" width="46" height="56" alt=""></span><span class="wordmark-copy">DEEP CUTS <em>EDH</em><small>BEGIN AS NOTHING.</small></span></a><nav class="primary-nav" aria-label="Main navigation"><a href="/#latest">RESCUE REPORT</a><a href="/#archive">COMMANDERS</a><a href="/library">CARD LIBRARY</a><a href="/deck">TOOLS & RESOURCES</a><a class="workshop-link daily-games-nav-link" href="/games" aria-current="page">ARCADE</a><a href="/nominations">NOMINATIONS</a><a href="/community">COMMUNITY</a><a class="member-nav-link" href="/members">MEMBERS' LOUNGE</a></nav></div></header>
+<main class="games-main gb-games-main" id="main"><div class="games-wrap">
+<nav class="games-breadcrumbs" aria-label="Breadcrumbs"><a href="/">HOME</a><span aria-hidden="true">/</span><a href="/games">ARCADE</a><span aria-hidden="true">/</span><span>GRAFTBOUND</span></nav>
+<section class="games-masthead gb-hero" aria-labelledby="gb-title">
+ <span class="games-kicker">TACTICS RPG / THE GRAFTING TABLE</span>
+ <h1 id="gb-title">GRAFTBOUND: <em>Begin as nothing.</em></h1>
+ <p>Start as a blank 1/1 creature. Win battles, open boosters of real Magic cards, and graft creatures into yourself across three acts.</p>
+ <div class="games-page-links"><a href="/games">← ALL GAMES</a><a href="/profile">MY PROFILE ↗</a></div>
+</section>
+<div class="gb-wide-stage">
+ <section class="gb-runbar" aria-label="Ranked Expedition controls">
+  <div class="gb-runbar-heading">
+   <span class="games-kicker">RANKED EXPEDITION · SAME SEED FOR EVERYONE</span>
+   <h2>The First Expedition</h2>
+   <p>Adventure mode is free practice. A verified run sends every move to Deep Cuts EDH, which replays it with the same rules to score it.</p>
+  </div>
+  <p id="rankedRunState" class="gb-run-message" role="status" aria-live="polite">Checking Ranked Expedition…</p>
+  <div class="gb-run-actions">
+   <button type="button" class="games-button games-button-primary" id="rankedRun" disabled>CHECKING…</button>
+   <button type="button" class="games-button games-button-quiet" id="restartRun" hidden>START OVER</button>
+  </div>
+ </section>
+ <section class="gb-canonical-play" aria-label="Play GRAFTBOUND">
+  <iframe id="graftboundGame" title="GRAFTBOUND — first-party game"
+    src="/games/graftbound-play/?siteRanked=1"
+    loading="eager" referrerpolicy="strict-origin-when-cross-origin" allow="fullscreen"></iframe>
+  <p class="gb-runtime-warning" id="frameStatus" role="status">Loading GRAFTBOUND…</p>
+ </section>
+ <section class="gb-board-section" aria-label="Verified Ranked Expedition leaderboard">
+  <div class="gb-board-top">
+   <div><span class="games-kicker">VERIFIED / SERVER REPLAY</span><h2 id="boardTitle">Ranked Expedition leaderboard</h2>
+    <p id="rankedStatus" role="status">Checking verified rankings…</p></div>
+   <button type="button" class="games-button games-button-quiet" id="refreshLeaderboard">REFRESH ↻</button>
+  </div>
+  <p class="gb-verified" id="verifiedResult" role="status" aria-live="polite" hidden></p>
+  <ol id="rankings" class="gb-ranking-list" aria-label="Verified GRAFTBOUND leaderboard"></ol>
+  <div class="gb-board-foot">
+   <span>Your best verified expedition counts. Ties break on fewer actions, then less damage, then fewer turns.</span>
+   <a href="/profile">SIGN IN / MY PROFILE ↗</a>
+  </div>
+  <p class="gb-ranked-disclosure">Rankings come only from moves the website server replayed with the pinned GRAFTBOUND rules. Scores, damage and random results are never accepted from the browser. Adventure and Game Lab results cannot be submitted.</p>
+ </section>
+</div>
+<section class="games-disclosure"><h2>How to play GRAFTBOUND</h2>
+ <p>Move, attack and cast spells on the battlefield, then choose one card from each booster. Creature cards become grafts that change your stats, keywords and body. Rewards are real Magic: The Gathering cards adapted to GRAFTBOUND's own tactical rules.</p>
+ <p>The Ranked Expedition uses one fixed seed and challenge for every player. Sign in to your Community profile, press START VERIFIED RUN, and play inside the game window. If your connection drops, resume from the last move the server accepted.</p>
+</section>
+</div></main>
+<footer class="site-footer"><div class="wrap footer-content"><div><strong>DEEP CUTS <span>EDH</span></strong><p>Bad commanders. Good decks. No excuses.</p></div><div class="footer-links"><a href="/privacy">PRIVACY &amp; ADS</a><a href="/library">CARD LIBRARY ↗</a><a href="/deck">TOOLS & RESOURCES ↗</a><a href="/games">ARCADE ↗</a><a href="/supporters">SUPPORT</a><a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">CARD DATA: SCRYFALL ↗</a><a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener noreferrer">FAN CONTENT POLICY ↗</a></div></div><div class="wrap fine-print">Deep Cuts EDH is unofficial Magic: The Gathering fan content permitted under the Fan Content Policy, not approved or endorsed by Wizards of the Coast. Portions of these materials are property of Wizards of the Coast LLC. Card data and images via Scryfall. We are not affiliated with Scryfall or EDHREC. Community posts and gameplay results are user-submitted; card prices, rankings and legality can change.</div></footer>
+</body></html>

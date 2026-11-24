@@ -1,0 +1,31 @@
+/** Printed real Magic creature identity and separately labeled GRAFTBOUND encounter health.
+ * Original M:TG power and toughness are NEVER replaced by encounter HP. */
+export const LEGENDARY_BOSSES = Object.freeze([
+  [
+    { id: 'nemata', tribe:'Treefolk', name: 'Nemata, Grove Guardian', power:4,toughness:5, vitality:22, sprite:'thornmother', ai:'legendary', theme:'hollow', ability:'{2}{G}: Create a 1/1 green Saproling. Sacrifice a Saproling: Saprolings you control get +1/+1 until end of turn.' },
+    { id: 'arasta', tribe:'Spider', name:'Arasta of the Endless Web', power:3,toughness:5,vitality:20,sprite:'thornmother',ai:'legendary',theme:'hollow',keywords:{reach:1},ability:'Whenever an opponent casts an instant or sorcery, create a 1/2 green Spider with reach.' },
+  ],
+  [
+    { id:'drakuseth',tribe:'Dragon',name:'Drakuseth, Maw of Flames',power:7,toughness:7,vitality:32,sprite:'matron',ai:'legendary',theme:'warrens',keywords:{flying:1},ability:'Whenever Drakuseth attacks, deal 4 damage to one target and 3 to each of up to two other targets.' },
+    { id:'krenko',name:'Krenko, Mob Boss',tribe:'Goblin Warrior',power:3,toughness:3,vitality:26,sprite:'matron',ai:'legendary',theme:'warrens',ability:'{T}: Create X 1/1 Goblins, where X is the number of Goblins you control.' },
+  ],
+  [
+    { id:'scarab',tribe:'Zombie God',name:'The Scarab God',power:5,toughness:5,vitality:38,sprite:'unwritten',ai:'legendary',theme:'nexus',ability:'At upkeep, you lose X life and it scries X (X = its Zombies). {2}{U}{B}: exile a creature card from any graveyard to create a 4/4 Zombie token copy. When it dies it returns to its owner\'s hand at the next end step.' },
+    { id:'toxrill',tribe:'Slug Horror',name:'Toxrill, the Corrosive',power:7,toughness:7,vitality:40,sprite:'unwritten',ai:'legendary',theme:'nexus',ability:'At each end step, put a slime counter on each enemy creature. It gets -1/-1 per counter; deaths spawn 1/1 Slugs.' },
+  ],
+]);
+export const BOSS_BY_ID = Object.fromEntries(LEGENDARY_BOSSES.flat().map(b=>[b.id,b]));
+// The encounter roster owns these identities. Bosses can never enter the reward catalog or hero grafts.
+// Derive the denylist from this registry so future added bosses are automatically protected.
+const bossCardId = name => 'mtg:' + String(name).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+export const BOSS_CARD_IDS = Object.freeze(Object.values(BOSS_BY_ID).map(b => bossCardId(b.name)));
+const BOSS_CARD_ID_SET = new Set(BOSS_CARD_IDS);
+const BOSS_CARD_NAMES = new Set(Object.values(BOSS_BY_ID).map(b => b.name.trim().toLowerCase()));
+export function isBossCard(cardOrId) {
+  const id = typeof cardOrId === 'string' ? cardOrId : cardOrId?.id;
+  const name = typeof cardOrId === 'string' ? cardOrId : cardOrId?.name;
+  return BOSS_CARD_ID_SET.has(String(id || '')) ||
+    (typeof name === 'string' && BOSS_CARD_NAMES.has(name.trim().toLowerCase()));
+}
+export const bossForSeed = (act, seed) => LEGENDARY_BOSSES[Math.max(0,Math.min(2,act|0))][((seed>>>0)>>>1)&1];
+export const BOSS_VITALITY = Object.fromEntries(LEGENDARY_BOSSES.flat().map(b=>[b.id,b.vitality]));
