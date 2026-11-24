@@ -84,7 +84,7 @@ export function validPRNumber(value){
 }
 async function githubGet(repo,path,token){
  const response=await fetch(githubRequestURL(repo,path),{
-  redirect:"error",
+  method:"GET",redirect:"error",signal:AbortSignal.timeout(15000),
   headers:{Accept:"application/vnd.github+json",Authorization:"Bearer "+token,
    "X-GitHub-Api-Version":"2022-11-28","User-Agent":"DeepCutsEDH-release-coordination"}
  });
@@ -101,13 +101,21 @@ async function pages(repo,path,token){
  }
  throw new Error("More than 500 records; refusing incomplete collision assessment");
 }
+export function parsePullRequestEvent(raw){
+ const event=JSON.parse(raw);
+ const pr=event?.pull_request;
+ if(!pr||typeof pr!=="object"||Array.isArray(pr))throw new Error("This check requires a pull_request event");
+ const number=validPRNumber(pr.number);
+ if((pr.body!==null&&typeof pr.body!=="string")||typeof pr.head?.ref!=="string"||typeof pr.base?.ref!=="string")
+  throw new Error("Invalid pull request metadata");
+ // Retain only fields needed by local policy; never forward the event object.
+ return {number,body:pr.body,head:{ref:pr.head.ref},base:{ref:pr.base.ref}};
+}
 export async function checkCurrentPullRequest(env=process.env){
  if(!env.GITHUB_EVENT_PATH||!env.GITHUB_REPOSITORY||!env.GITHUB_TOKEN)
   throw new Error("Missing GitHub Actions PR event, repository or read-only API token");
- const event=JSON.parse(fs.readFileSync(env.GITHUB_EVENT_PATH,"utf8"));
- const pr=event.pull_request;
- if(!pr)throw new Error("This check requires a pull_request event");
- const number=validPRNumber(pr.number);
+ const pr=parsePullRequestEvent(fs.readFileSync(env.GITHUB_EVENT_PATH,"utf8"));
+ const number=pr.number;
  const repo=env.GITHUB_REPOSITORY,token=env.GITHUB_TOKEN;
  if(repo!==MAIN&&repo!==LAB)throw new Error("Unknown repository");
  const ours=(await pages(repo,"/pulls/"+number+"/files",token)).map(x=>x.filename);

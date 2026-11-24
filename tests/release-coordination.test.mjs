@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {validatePR,validateIncubatorPR,findOverlaps,githubRequestURL,validPRNumber} from "../scripts/release-coordination.mjs";
+import {mkdtempSync,writeFileSync,rmSync} from "node:fs";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+import {validatePR,validateIncubatorPR,findOverlaps,githubRequestURL,validPRNumber,parsePullRequestEvent,checkCurrentPullRequest} from "../scripts/release-coordination.mjs";
 const main="Squackle/deep-cuts-edh",lab="Squackle/deep-cuts-game-lab-";
 const fields=["Owner authorization: Explicit owner approval October 15","Files/Scope: Docs and workflow only","Concurrent work: no open PRs checked","Test plan: node --test","Rollback: revert release commit"].join("\n");
 test("Coordination touches documentation and CI only; runtime edits blocked",()=>{
@@ -64,4 +67,32 @@ test("API boundary permits only known repositories, read routes and numeric PR i
  assert.equal(validPRNumber(123),123);
  for(const p of ["//evil.invalid","/pulls/1/../../files?per_page=100&page=1","/pulls/1/files?per_page=100&page=1&secret=x","/pulls/1/files?per_page=100&page=6","/pulls/1/files?per_page=100&page=1#x"])assert.throws(()=>githubRequestURL(main,p));
  assert.throws(()=>githubRequestURL("evil.invalid","/pulls?state=open&per_page=100&page=1"));
+});
+
+test("event parsing retains only necessary metadata and rejects invalid shape",()=>{
+ const pr={number:123,body:fields,head:{ref:"coord/test",secret:"synthetic"},base:{ref:"main"},extra:"synthetic"};
+ assert.deepEqual(parsePullRequestEvent(JSON.stringify({pull_request:pr,secret:"synthetic"})),{number:123,body:fields,head:{ref:"coord/test"},base:{ref:"main"}});
+ for(const bad of [null,{}, {pull_request:{...pr,number:"123"}},{pull_request:{...pr,body:{}}},{pull_request:{...pr,head:{}}}])assert.throws(()=>parsePullRequestEvent(JSON.stringify(bad)));
+});
+test("coordination transmits only fixed GET routes and never forwards event content",async()=>{
+ const dir=mkdtempSync(join(tmpdir(),"release-coordination-"));
+ const path=join(dir,"event.json"),original=globalThis.fetch,seen=[];
+ const pr={number:123,body:"Workstream: Coordination\n"+fields,head:{ref:"coord/test"},base:{ref:"main"},secret:"SYNTHETIC_PRIVATE_EVENT"};
+ const env={GITHUB_EVENT_PATH:path,GITHUB_REPOSITORY:main,GITHUB_TOKEN:"synthetic-token"};
+ try{
+  writeFileSync(path,JSON.stringify({pull_request:pr}));
+  globalThis.fetch=async (url,options)=>{
+   seen.push(url.href);
+   assert.equal(url.origin,"https://api.github.com");
+   assert.equal(options.method,"GET");assert.equal(options.redirect,"error");
+   assert.equal(options.body,undefined);assert.equal(options.headers.Authorization,"Bearer synthetic-token");
+   assert.ok(!url.href.includes(pr.secret));
+   return Response.json(url.pathname.endsWith("/files")?[{filename:"scripts/example.mjs"}]:[]);
+  };
+  assert.deepEqual(await checkCurrentPullRequest(env),{files:["scripts/example.mjs"],older:0});
+  assert.deepEqual(seen,["https://api.github.com/repos/"+main+"/pulls/123/files?per_page=100&page=1","https://api.github.com/repos/"+main+"/pulls?state=open&per_page=100&page=1"]);
+  writeFileSync(path,JSON.stringify({pull_request:{...pr,number:"123?secret="+pr.secret}}));
+  await assert.rejects(checkCurrentPullRequest(env),/Invalid pull request number/);
+  assert.equal(seen.length,2);
+ }finally{globalThis.fetch=original;rmSync(dir,{recursive:true,force:true})}
 });
