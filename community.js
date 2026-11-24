@@ -81,8 +81,8 @@ export function card(title,body,meta){
  h.append(heading,metadata);n.append(h,copy);return n;
 }
 export function empty(target,text){clear(target);target.append(el("p",text,"cm-empty"))}
-export let profileReadVersion=0;
-function setTab(tab){
+let profileReadVersion=0;
+export function setTab(tab){
  if(tab!=="network"){
   ++profileReadVersion;
   const profile=$('publicProfile');
