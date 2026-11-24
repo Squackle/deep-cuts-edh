@@ -69,11 +69,20 @@ test('RSS description survives XML decoding as safe HTML text, without recursive
  assert.ok(rss.includes('<description>Gruul partners. Read the published Deep Cuts EDH Commander Rescue Report.</description>'));
 });
 test('invalid XML characters fail closed and valid Unicode survives',async()=>{
- for(const bad of ['\u0000','\u0001','\ud800','\ufffe','&#65535;']){
+ for(const bad of ['\u0000','\u0001','\ud800','\ufffe','&#65535;','&#0;','&#xD800;','&#x110000;','&#1;','\u000b','\u000c']){
   assert.throws(()=>renderRescueReportFeed(html.replace('Boros Soldiers','Boros'+bad+'Soldiers')),/Invalid XML character/);
  }
  assert.ok(renderRescueReportFeed(html.replace('Boros Soldiers','Boros &#x1f600;')).includes('Boros 😀'));
  const response=await onRequestGet({request:new Request(origin+'/feed.xml'),env:{ASSETS:{fetch:async()=>new Response(html.replace('Boros Soldiers','<em>bad</em>'))}}});
  assert.equal(response.status,503);
  assert.equal(response.headers.get('cache-control'),'no-store');
+});
+
+test('invalid numeric entities cannot normalize a malformed link into a valid canonical URL',()=>{
+ for(const suffix of ['&#0;','&#xD800;','&#x110000;','&#1;','&#10;','&#13;','&#9;','\n']){
+  const input=html.replace('/reports/commander-mustard','/reports/commander-mustard'+suffix);
+  assert.throws(()=>renderRescueReportFeed(input),/Invalid (XML character|published case link)/,suffix);
+ }
+ assert.equal(extractPublishedRescueReports(html.replace('commander-mustard','commander&#45;mustard'))[0].path,'/reports/commander-mustard');
+ assert.equal(extractPublishedRescueReports(html.replace('Boros Soldiers','Boros&#9;&#10;Soldiers'))[0].excerpt,'Boros Soldiers');
 });
