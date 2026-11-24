@@ -14,7 +14,7 @@ if (gameOrigin !== location.origin) throw Error('GRAFTBOUND must be served from 
 
 const FLUSH_DELAY = 700, MAX_BATCH = 40;
 let pin = null, enabled = false, frameReady = false, attempt = null, checkpoint = null, decisions = [];
-let accepted = 0, queue = [], flushTimer = 0, flushing = false, resyncing = false, restartArmed = false;
+let accepted = 0, queue = [], flushTimer = 0, flushingAttempt = null, resyncing = false, restartArmed = false;
 const say = text => { runState.textContent = text; };
 const fmt = n => Number(n || 0).toLocaleString();
 
@@ -94,29 +94,41 @@ function schedule() {
   if (queue.length >= MAX_BATCH) flush(); else flushTimer = setTimeout(flush, FLUSH_DELAY);
 }
 async function flush() {
-  if (flushing || resyncing || !queue.length || !attempt) return;
-  flushing = true;
+  if (!attempt || flushingAttempt === attempt || resyncing || !queue.length) return;
+  const currentAttempt = attempt;
+  flushingAttempt = currentAttempt;
   const batch = queue.slice(0, MAX_BATCH);
   try {
-    const res = await api({ action: 'segment', attemptId: attempt.attemptId, fromSeq: accepted, decisions: batch });
+    const res = await api({ action: 'segment', attemptId: currentAttempt.attemptId, fromSeq: accepted, decisions: batch });
+    if (attempt !== currentAttempt) return;
     queue = queue.slice(batch.length); accepted = res.acceptedDecisions; decisions = decisions.concat(batch);
     attempt.status = res.status; attempt.acceptedDecisions = accepted;
     if (res.status === 'won' || res.status === 'lost') finished(res);
     else say(`Verified run in progress · ${fmt(accepted)} moves accepted · ${fmt(res.totals?.total)} points so far.`);
   } catch (e) {
-    await resync(e.status === 422 ? 'The server could not verify a move' : 'The connection was interrupted');
+    if (attempt === currentAttempt) {
+      await resync(e.status === 422 ? 'The server could not verify a move' : 'The connection was interrupted');
+    }
   } finally {
-    flushing = false;
-    if (queue.length) schedule();
+    if (flushingAttempt === currentAttempt) flushingAttempt = null;
+    if (attempt === currentAttempt && queue.length) schedule();
   }
 }
 async function resync(reason) {
   if (resyncing) return;
+  const currentAttempt = attempt;
   resyncing = true; queue = []; clearTimeout(flushTimer);
   say(reason + '. Returning to the last move the server accepted…');
-  try { adopt(await api({ action: 'start' })); }
-  catch (e) { say('Could not reach the server. Reload the page to resume your verified run.'); }
-  finally { resyncing = false; }
+  try {
+    const data = await api({ action: 'start' });
+    if (attempt === currentAttempt) adopt(data);
+  } catch {
+    if (attempt === currentAttempt) say('Could not reach the server. Reload the page to resume your verified run.');
+  }
+  finally {
+    resyncing = false;
+    if (queue.length) schedule();
+  }
 }
 function finished(res) {
   const t = res.totals || {};
@@ -144,7 +156,7 @@ window.addEventListener('message', event => {
   queue.push(d); schedule();
 });
 frame.addEventListener('load', () => { if (!frameReady) { loaded.hidden = false; loaded.textContent = 'Loading GRAFTBOUND…'; } });
-addEventListener('pagehide', () => { if (queue.length && !flushing) flush(); });
+addEventListener('pagehide', flush);
 
 async function board() {
   boardStatus.textContent = 'Checking verified rankings…';

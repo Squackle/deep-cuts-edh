@@ -97,3 +97,63 @@ test('ranked off: the page explains it and the game is still playable as practic
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'no horizontal scroll at phone width');
   } finally { await browser.close(); server.close(); }
 });
+
+test('restarting a verified run ignores a delayed segment from the previous run', { timeout: 150000 }, async () => {
+  const db = d1(SCHEMA); db.raw.exec('UPDATE graftbound_launch_v1 SET enabled=1');
+  const id = hex(16), key = `dcprofile1_${id}_${hex(32)}`;
+  db.raw.prepare('INSERT INTO community_profiles(id,handle,key_hash) VALUES(?,?,?)').run(id, 'Grafter', await hash(key));
+  const { server, origin } = await serve({ db, authorization: 'Bearer ' + key });
+  const browser = await launchBrowser();
+  const oldSegmentAccepted = Promise.withResolvers();
+  const releaseOldResponse = Promise.withResolvers();
+  try {
+    const page = await browser.newPage();
+    await page.goto(origin + '/games/graftbound');
+    await page.waitForFunction(() => document.getElementById('rankedRun').textContent === 'START VERIFIED RUN');
+    await page.waitForFunction(() => document.getElementById('frameStatus').hidden);
+    await page.click('#rankedRun', { noWaitAfter: true });
+    await hydrated(page, 0);
+    const oldAttemptId = await gameFrame(page).evaluate(() => window.__LC.run.ranked.siteAttempt);
+    await page.route('**/api/graftbound', async route => {
+      const request = route.request();
+      const body = request.method() === 'POST' ? request.postDataJSON() : null;
+      if (body?.action !== 'segment' || body.attemptId !== oldAttemptId) return route.continue();
+      const response = await route.fetch();
+      oldSegmentAccepted.resolve(response.ok());
+      await releaseOldResponse.promise;
+      await route.fulfill({ response });
+    });
+    assert.equal((await drive(gameFrame(page), 3)).n, 3);
+    assert.equal(await oldSegmentAccepted.promise, true);
+
+    await page.click('#restartRun');
+    await page.click('#restartRun', { noWaitAfter: true });
+    await page.waitForFunction(oldId => {
+      const attemptId = document.querySelector('iframe').contentWindow?.__LC?.run?.ranked?.siteAttempt;
+      return attemptId && attemptId !== oldId;
+    }, oldAttemptId);
+    await hydrated(page, 0);
+    const newAttemptId = await gameFrame(page).evaluate(() => window.__LC.run.ranked.siteAttempt);
+
+    // The new run can submit while the prior response is still held.
+    assert.equal((await drive(gameFrame(page), 1)).n, 1);
+    await page.waitForFunction(() => /1 moves accepted/.test(document.getElementById('rankedRunState').textContent));
+    const oldResponse = page.waitForResponse(response => {
+      const request = response.request();
+      return request.method() === 'POST' && request.url().endsWith('/api/graftbound')
+        && request.postDataJSON()?.attemptId === oldAttemptId;
+    });
+    releaseOldResponse.resolve();
+    await oldResponse;
+
+    assert.equal((await drive(gameFrame(page), 1)).n, 1);
+    await page.waitForFunction(() => /2 moves accepted/.test(document.getElementById('rankedRunState').textContent));
+    const row = db.raw.prepare('SELECT accepted_decisions, status FROM graftbound_attempts_v1 WHERE id=?').get(newAttemptId);
+    assert.equal(row.accepted_decisions, 2);
+    assert.equal(row.status, 'started');
+  } finally {
+    releaseOldResponse.resolve();
+    await browser.close();
+    server.close();
+  }
+});
