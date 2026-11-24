@@ -60,7 +60,7 @@ test('bounded network JSON checks response type, byte budget and JSON syntax',as
 });
 test('malformed Oracle records and unbounded collections cannot reach classification',()=>{
  const basic={oracle_id:'12345678-abcd-4abc-9abc-123456789abc',name:'Example',
-  type_line:'Artifact',oracle_text:'Add {C}.',card_faces:[{name:'Example',type_line:'Artifact',oracle_text:'Add {C}.'}],
+  type_line:'Artifact',oracle_text:'Add {C}.\nSpend this mana only for spells.',card_faces:[{name:'Example',type_line:'Artifact',oracle_text:'Add {C}.\nSpend this mana only for spells.'}],
   color_identity:['U'],legalities:{commander:'legal'},scryfall_uri:'https://scryfall.com/card/abc/1/example'};
  assert.deepEqual(validateOracleCollection([basic]),[basic]);
  for(const mutation of [
