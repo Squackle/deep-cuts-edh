@@ -145,9 +145,11 @@ test('GET / serves the homepage with the latest weekly report and survives an ou
   assert.equal(res.headers.get('Content-Length'),null);
   const html=await res.text();
   assert.match(html,/data-weekly-name>Future Legend</);
+  assert.match(html,/data-weekly-resolved="true"/);
   globalThis.fetch=async()=>{throw Error('down')};
   const fallback=await (await homepage({next})).text();
   assert.match(fallback,/data-weekly-name>Kruphix, God of Horizons</);
+  assert.doesNotMatch(fallback,/data-weekly-resolved=/);
   const asset=await homepage({next:async()=>new Response('nope',{status:404})});
   assert.equal(asset.status,404);
  }finally{globalThis.fetch=old}
@@ -159,4 +161,39 @@ test('The archive page script never replaces the server-rendered archive',()=>{
  const page=readFileSync('rescues.html','utf8');
  const rendered=staticArchiveHtml(page,mergeIndex(workerRows));
  assert.doesNotMatch(rendered,/Checking the weekly archive/,'SSR output carries no placeholder, so the client script stays idle');
+});
+
+test('A stale upstream feature cannot replace a newer embedded report',()=>{
+ const stale={...workerRows[0],date:'2026-11-06'};
+ assert.equal(applyLatestToHomeHtml(homeHtml,stale),homeHtml);
+});
+test('Malformed archive rows cannot create broken report links or displace valid duplicates',async()=>{
+ const good={date:'2026-12-04',commander:'Valid legend',theme:'Distinct strategy'};
+ const rows=mergeIndex([{...good,commander:''},{...good,date:'2026-02-31'},{...good,theme:42},good],[]);
+ assert.deepEqual(rows,[good]);
+ let called=false;
+ assert.equal(await loadReport('2026-02-31',async()=>{called=true}),null);
+ assert.equal(called,false);
+ const malformed=await loadArchive(async()=>({error:'upstream temporarily unavailable'}));
+ assert.equal(malformed.unavailable,true);
+ assert.deepEqual(malformed.reports.map(row=>row.date),EDITORIAL_EDITIONS.map(row=>row.date).sort().reverse());
+});
+test('Resolved SSR homepage does not perform a duplicate client fetch, but static fallback does',async()=>{
+ const originalDocument=globalThis.document, originalFetch=globalThis.fetch;
+ const oldFetch=Object.getOwnPropertyDescriptor(globalThis,'fetch');
+ let calls=0,watched=0;
+ const image={complete:false,addEventListener(name){if(name==='error')watched++}};
+ const root={dataset:{weeklyResolved:'true',weeklyDate:'2026-11-20'},querySelector:()=>image};
+ try{
+  globalThis.document={getElementById:()=>root};
+  globalThis.fetch=async()=>{calls++;return Response.json({report:null})};
+  await import('../home-weekly-feature.mjs?resolved-test');
+  assert.equal(calls,0);assert.equal(watched,1);
+  delete root.dataset.weeklyResolved;
+  await import('../home-weekly-feature.mjs?static-test');
+  assert.equal(calls,1);assert.equal(watched,2);
+ }finally{
+  if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;
+  if(oldFetch)Object.defineProperty(globalThis,'fetch',oldFetch);else globalThis.fetch=originalFetch;
+ }
 });

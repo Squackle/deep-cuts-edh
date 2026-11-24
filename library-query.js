@@ -54,3 +54,14 @@ export function libraryResultSummary(shown,total){
  const suffix=Number.isInteger(t)&&t>=0?" · "+t+" total "+(t===1?"match":"matches"):"";
  return n+" "+(n===1?"card":"cards")+" loaded"+suffix;
 }
+
+
+/** Scryfall search continuation must remain on the HTTPS search endpoint. */
+export function libraryNextPage(value){
+ if(typeof value!=="string"||!value.trim())return null;
+ try{
+  const url=new URL(value);
+  if(url.origin!=="https://api.scryfall.com"||url.pathname!=="/cards/search"||url.username||url.password||url.hash)return null;
+  return url.href;
+ }catch{return null}
+}

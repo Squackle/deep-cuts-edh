@@ -3,8 +3,13 @@ const $=id=>document.getElementById(id);
 const node=(tag,txt,cls)=>{const el=document.createElement(tag);if(txt!==undefined)el.textContent=String(txt);if(cls)el.className=cls;return el};
 const prep=()=>({theme:$("mmTheme").value,color:$("mmColor").value,max:$("mmBudget").value});
 const freshSeed=()=>crypto.getRandomValues(new Uint32Array(1))[0];
-let cardsPromise=null,busy=false,lastSeed=0,lastPreferences={theme:"any",color:"any",max:"any"};
+let cardsPromise=null,busy=false,requestVersion=0,lastSeed=0,lastPreferences={theme:"any",color:"any",max:"any"};
 function status(text,failed=false){const box=$("mmStatus");box.textContent=text;box.dataset.error=failed?"true":"false"}
+function setBusy(value){
+ busy=value;
+ $("mmMatch").disabled=$("mmSurprise").disabled=$("mmShuffle").disabled=value;
+ $("mmResults").setAttribute("aria-busy",String(value));
+}
 function cardArt(url){
  try{const u=new URL(url);if(u.protocol==="https:"&&(u.hostname==="cards.scryfall.io"||u.hostname.endsWith(".scryfall.io")))return u.href}catch{}
  return "";
@@ -15,11 +20,20 @@ function outbound(href){
 }
 async function fetchVerifiedCards(){
  if(!cardsPromise)cardsPromise=(async()=>{
-  const r=await fetch("/api/tool-cards",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({names:IDEAS.map(x=>x.name)}),credentials:"same-origin",cache:"no-store"});
-  const body=await r.json().catch(()=>null);
-  if(!r.ok||!Array.isArray(body?.cards))throw Error(body?.error||"Card verification is temporarily unavailable. Try again shortly.");
-  return body.cards;
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),18000);
+  try{
+   const r=await fetch("/api/tool-cards",{method:"POST",headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({names:IDEAS.map(x=>x.name)}),credentials:"same-origin",cache:"no-store",signal:controller.signal});
+   const body=await r.json().catch(()=>null);
+   if(!r.ok||!Array.isArray(body?.cards))throw Error(typeof body?.error==="string"?body.error:"Card verification is temporarily unavailable. Try again shortly.");
+   const cards=body.cards.filter(card=>card&&typeof card.name==="string"&&Array.isArray(card.color_identity));
+   if(!cards.length)throw Error("No card records could be verified. Try again shortly.");
+   return cards;
+  }catch(error){
+   if(controller.signal.aborted)throw Error("Card verification timed out. Try again shortly.");
+   throw error;
+  }finally{clearTimeout(timeout)}
  })().catch(error=>{cardsPromise=null;throw error});
  return cardsPromise;
 }
@@ -33,7 +47,7 @@ function resultCard(pick,index){
  const item=node("article",undefined,"mm-card");
  const art=node("div",undefined,"mm-card-art");
  const img=cardArt(card.image);
- if(img){const picture=node("img");picture.src=img;picture.alt=card.name+" card illustration";picture.loading="lazy";picture.decoding="async";art.append(picture)}
+ if(img){const picture=node("img");picture.src=img;picture.alt=card.name+" card illustration";picture.loading="lazy";picture.decoding="async";picture.addEventListener("error",()=>art.replaceChildren(node("span","CARD ART UNAVAILABLE","mm-no-art")),{once:true});art.append(picture)}
  else art.append(node("span","CARD ART UNAVAILABLE","mm-no-art"));
  const info=node("div",undefined,"mm-card-info");
  const line=node("div",undefined,"mm-card-meta");
@@ -44,6 +58,7 @@ function resultCard(pick,index){
  const why=node("p",pick.why,"mm-card-why");
  const footer=node("div",undefined,"mm-card-tags");
  footer.append(node("span",THEMES[pick.theme]||pick.theme));
+ if(!pick.matchedTheme)footer.append(node("span","Alternative playstyle"));
  if(card.prices?.usd!=null&&Number.isFinite(Number(card.prices.usd)))footer.append(node("span","Card from $"+Number(card.prices.usd).toFixed(2)+"*"));
  info.append(line,title,theme,why,footer);
  const buttons=node("div",undefined,"mm-card-links");
@@ -62,12 +77,13 @@ function resultURL(prefs,seed){
 }
 async function find(prefs,seed){
  if(busy)return;
- busy=true;
- $("mmMatch").disabled=$("mmSurprise").disabled=$("mmShuffle").disabled=true;
+ const version=++requestVersion;
+ setBusy(true);
  $("mmResultActions").hidden=true;$("mmResults").replaceChildren();
  status("Checking the archive against current Commander card data…");
  try{
   const cards=await fetchVerifiedCards();
+  if(version!==requestVersion)return;
   const picks=selectIdeas(cards,prefs,seed,5);
   if(!picks.length){
    status("No verified Commanders matched these filters. Try any colors, a higher commander-card price, or another strategy.",true);
@@ -78,18 +94,21 @@ async function find(prefs,seed){
   $("mmResults").append(frag);
   $("mmResultActions").hidden=false;
   lastSeed=seed;lastPreferences={...prefs};
-  status(picks.length+" verified Commander "+(picks.length===1?"idea":"ideas")+" from the Deep Cuts archive. "+(picks.length<5?"Widen your filters to see more.":"Pick one and open its research file."));
+  const matches=picks.filter(pick=>pick.matchedTheme).length;
+  const summary=picks.length+" verified Commander "+(picks.length===1?"idea":"ideas")+" from the Deep Cuts archive. ";
+  status(summary+(matches<picks.length?(matches?matches+" match your playstyle; the rest are alternatives. ":"No exact playstyle matches; these are alternatives. "):"")+(picks.length<5?"Widen your filters to see more.":"Pick one and open its research file."));
   history.replaceState(null,"",new URL(resultURL(prefs,seed)).pathname+new URL(resultURL(prefs,seed)).search);
- }catch(error){status(error?.message||"Sorry, card verification is unavailable.",true)}
- finally{busy=false;$("mmMatch").disabled=$("mmSurprise").disabled=$("mmShuffle").disabled=false}
+ }catch(error){if(version===requestVersion)status(error?.message||"Sorry, card verification is unavailable.",true)}
+ finally{if(version===requestVersion)setBusy(false)}
 }
 $("mmForm").addEventListener("submit",event=>{event.preventDefault();find(prep(),freshSeed())});
 $("mmSurprise").addEventListener("click",()=>{for(const id of ["mmTheme","mmColor","mmBudget"])$(id).value="any";find(prep(),freshSeed())});
 $("mmShuffle").addEventListener("click",()=>find(prep(),freshSeed()));
-$("mmReset").addEventListener("click",()=>{for(const id of ["mmTheme","mmColor","mmBudget"])$(id).value="any";history.replaceState(null,"","/matchmaker");status("Ready to discover something new.");$("mmResults").replaceChildren();$("mmResultActions").hidden=true});
+$("mmReset").addEventListener("click",()=>{requestVersion++;setBusy(false);for(const id of ["mmTheme","mmColor","mmBudget"])$(id).value="any";history.replaceState(null,"","/matchmaker");status("Ready to discover something new.");$("mmResults").replaceChildren();$("mmResultActions").hidden=true});
 $("mmCopy").addEventListener("click",async()=>{
- const link=resultURL(lastPreferences,lastSeed);
- try{await navigator.clipboard.writeText(link);status("Discovery link copied. Share it with another brewer.")}catch{
+ const version=requestVersion,link=resultURL(lastPreferences,lastSeed);
+ try{await navigator.clipboard.writeText(link);if(version===requestVersion)status("Discovery link copied. Share it with another brewer.")}catch{
+  if(version!==requestVersion)return;
   const input=node("input");input.value=link;input.readOnly=true;
   const original=$("mmStatus");original.replaceChildren(node("span","Copy this link: "),input);input.select();
  }
