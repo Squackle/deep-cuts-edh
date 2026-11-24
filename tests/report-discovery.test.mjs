@@ -34,3 +34,30 @@ test('weekly SSR and Arcade expose meaningful reciprocal discovery paths',()=>{
  assert.match(games,/From puzzles to Commander decks/);
  for(const dest of ['/rescues','/matchmaker'])assert.ok(games.includes('href="'+dest+'"'));
 });
+
+test('original report structured data is truthful and points to the existing canonical article',()=>{
+ for(const slug of Object.keys(checks)){
+  const html=read('reports/'+slug+'.html'),canonical='https://deep-cuts-edh.pages.dev/reports/'+slug;
+  const data=JSON.parse(html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)[1]);
+  assert.equal(data['@type'],'Article');assert.equal(data.url,canonical);assert.equal(data.mainEntityOfPage['@id'],canonical);
+  assert.equal(data.publisher.name,'Deep Cuts EDH');assert.ok(data.headline);
+  for(const unsupported of ['aggregateRating','review','datePublished','offers'])assert.ok(!(unsupported in data));
+  assert.ok(html.includes('<meta property="og:url" content="'+canonical+'">'));
+ }
+});
+test('Ekthi historical preview is distinguished from official current eligibility without certifying deck drafts',()=>{
+ const html=read('reports/ekthi-contaminator-priest.html'),archive=read('rescues.html');
+ assert.ok(html.includes('November 13, 2026'));assert.ok(html.includes('https://magic.wizards.com/en/news/feature/whats-inside-mystery-booster-commander-edition'));
+ assert.ok(html.includes('https://magic.wizards.com/en/news/feature/mystery-booster-commander-edition-release-notes'));
+ assert.doesNotMatch(html,/NOT YET COMMANDER-LEGAL|not yet Commander-legal|scheduled for November 9/);
+ assert.equal(JSON.parse(html.match(/<script type="application\/json" id="rescue-data">([^<]+)<\/script>/)[1]).preview,true);
+ assert.match(archive,/not independently verified the complete deck or a budget price/);
+});
+test('evergreen discovery worksheet links to published weekly cases, actual tools and optional signup',()=>{
+ const html=read('rescues.html');
+ const section=html.match(/<section[^>]+id="discovery-method"[\s\S]*?<\/section>/)?.[0];
+ assert.ok(section);
+ for(const date of ['2026-10-30',...EDITORIAL_EDITIONS.map(x=>x.date)])assert.ok(section.includes('href="/rescues/'+date+'"'));
+ for(const href of ['/matchmaker','/deep-cut-finder','/library','/deck','/subscribe','/nominations']){assert.ok(section.includes('href="'+href+'"'));assertDestination(href)}
+ assert.match(section,/not a measured popularity ranking/);
+});
