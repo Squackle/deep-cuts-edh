@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {mkdtempSync,writeFileSync,rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
-import {auditSources,markdownReport,isAccessRedirect,walk,shouldFailSweep} from "../scripts/security-sweep.mjs";
+import {auditSources,markdownReport,isAccessRedirect,walk,inventorySources,shouldFailSweep} from "../scripts/security-sweep.mjs";
 const guarded={
  "functions/api/owner-ops.js":"import {ownerAuth} from '../src/owner-access.js'; export async function onRequestPost() { await ownerAuth(); }",
  "functions/api/owner-members.js":"await ownerAuth(request,env)",
@@ -74,4 +74,32 @@ test("a public outage or failed Access check fails the sweep, not just its repor
  assert.equal(shouldFailSweep([],[{pass:false,check:"Access interception"}]),true);
  assert.equal(shouldFailSweep([{status:"confirmed",severity:"critical"}],[]),true);
  assert.equal(shouldFailSweep([{status:"potential",severity:"high"}],[{pass:true,check:"public GET"}]),false);
+});
+
+test("bounded inventory reports every omission and respects the exact count limit",()=>{
+ const root=mkdtempSync(join(tmpdir(),"dc-security-coverage-"));
+ try{
+  for(const file of ["a.js","b.js","c.js"])writeFileSync(join(root,file),"small");
+  writeFileSync(join(root,"large.js"),"x".repeat(21));
+  const exact=inventorySources(root,{maxFiles:3,maxBytes:20});
+  assert.deepEqual(exact.paths,["a.js","b.js","c.js"]);
+  assert.deepEqual(exact.coverage,{oversized:1,oversizedSample:["large.js"],limitOmitted:0});
+  const capped=inventorySources(root,{maxFiles:2,maxBytes:20});
+  assert.deepEqual(capped.paths,["a.js","b.js"]);
+  assert.equal(capped.coverage.limitOmitted,1);
+  assert.equal(capped.coverage.oversized,1);
+  const report=markdownReport({createdAt:"test",revision:"test",inventory:{sources:2,api:0,workflows:0,coverage:capped.coverage},live:[],findings:[]});
+  assert.match(report,/Eligible files omitted by count limit: 1/);
+  assert.match(report,/Source candidates excluded by size limit: 1/);
+  assert.match(report,/large\.js/);
+ }finally{rmSync(root,{recursive:true,force:true});}
+});
+test("missing expected privileged route is a coverage failure, not a clean audit or confirmed exploit",()=>{
+ const fixture={...guarded};
+ delete fixture["functions/api/owner-ops.js"];
+ const result=audit(fixture);
+ assert.ok(result.findings.some(f=>f.where==="functions/api/owner-ops.js"&&f.status==="incomplete"));
+ assert.equal(shouldFailSweep(result.findings,[]),true);
+ assert.equal(shouldFailSweep([{severity:"medium",status:"incomplete",category:"scan coverage"}],[]),true);
+ assert.equal(shouldFailSweep([{severity:"info",status:"not-tested"}],[]),false);
 });
