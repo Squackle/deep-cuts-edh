@@ -64,7 +64,7 @@ function updateScryfallLink(){
  try{
   const url=new URL("https://scryfall.com/search");
   url.searchParams.set("q",buildQuery());
-  url.searchParams.set("unique",unique);
+  url.searchParams.set("unique",currentUnique());
   const [order,dir]=currentSort();
   url.searchParams.set("order",order);url.searchParams.set("dir",dir);
   out.href=url.toString();
@@ -140,7 +140,7 @@ async function load(clear=false){
  const url=clear?new URL("https://api.scryfall.com/cards/search"):new URL(nextPage);
  if(clear){
   url.searchParams.set("q",builtQuery);
-  url.searchParams.set("unique",currentUnique());
+  url.searchParams.set("unique",unique);
   const [order,dir]=currentSort();
   url.searchParams.set("order",order);url.searchParams.set("dir",dir);
  }
