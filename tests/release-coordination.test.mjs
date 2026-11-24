@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {validatePR,validateIncubatorPR,findOverlaps} from "../scripts/release-coordination.mjs";
+import {validatePR,validateIncubatorPR,findOverlaps,githubRequestURL,validPRNumber} from "../scripts/release-coordination.mjs";
 const main="Squackle/deep-cuts-edh",lab="Squackle/deep-cuts-game-lab-";
 const fields=["Owner authorization: Explicit owner approval October 15","Files/Scope: Docs and workflow only","Concurrent work: no open PRs checked","Test plan: node --test","Rollback: revert release commit"].join("\n");
 test("Coordination touches documentation and CI only; runtime edits blocked",()=>{
@@ -55,4 +55,13 @@ test("Mana Heist agent is symmetric; unrelated Website PR stays unblocked",()=>{
 });
 test("Hive Run game lab protection stays independent",()=>{
  assert.deepEqual(validateIncubatorPR({repo:lab,branch:"game/stackbreaker-test",base:"main",lane:"Game Lab",files:["src/engine.js"]}),[]);
+});
+
+test("API boundary permits only known repositories, read routes and numeric PR identifiers",()=>{
+ assert.equal(githubRequestURL(main,"/pulls/123/files?per_page=100&page=1").href,"https://api.github.com/repos/"+main+"/pulls/123/files?per_page=100&page=1");
+ assert.equal(githubRequestURL(lab,"/pulls?state=open&per_page=100&page=5").hostname,"api.github.com");
+ for(const n of ["123","1/../../",0,-1,1.5,Infinity,Number.MAX_SAFE_INTEGER+1,null,{}])assert.throws(()=>validPRNumber(n));
+ assert.equal(validPRNumber(123),123);
+ for(const p of ["//evil.invalid","/pulls/1/../../files?per_page=100&page=1","/pulls/1/files?per_page=100&page=1&secret=x","/pulls/1/files?per_page=100&page=6","/pulls/1/files?per_page=100&page=1#x"])assert.throws(()=>githubRequestURL(main,p));
+ assert.throws(()=>githubRequestURL("evil.invalid","/pulls?state=open&per_page=100&page=1"));
 });

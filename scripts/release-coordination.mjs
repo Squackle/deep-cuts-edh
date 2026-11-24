@@ -73,8 +73,18 @@ export function findOverlaps(thisFiles,otherPRs,currentNumber){
   .map(p=>({number:p.number,title:p.title||"",shared:p.files.filter(x=>ours.has(x))}))
   .filter(p=>p.shared.length>0);
 }
+export function githubRequestURL(repo,path){
+ if(repo!==MAIN&&repo!==LAB)throw new Error("Unknown repository");
+ if(!/^\/pulls(?:\?state=open&|\/[1-9][0-9]*\/files\?)(?:per_page=100&page=[1-5])$/.test(path))throw new Error("Invalid GitHub API route");
+ return new URL("/repos/"+repo+path,"https://api.github.com");
+}
+export function validPRNumber(value){
+ if(!Number.isSafeInteger(value)||value<=0)throw new Error("Invalid pull request number");
+ return value;
+}
 async function githubGet(repo,path,token){
- const response=await fetch("https://api.github.com/repos/"+repo+path,{
+ const response=await fetch(githubRequestURL(repo,path),{
+  redirect:"error",
   headers:{Accept:"application/vnd.github+json",Authorization:"Bearer "+token,
    "X-GitHub-Api-Version":"2022-11-28","User-Agent":"DeepCutsEDH-release-coordination"}
  });
@@ -96,17 +106,18 @@ export async function checkCurrentPullRequest(env=process.env){
   throw new Error("Missing GitHub Actions PR event, repository or read-only API token");
  const event=JSON.parse(fs.readFileSync(env.GITHUB_EVENT_PATH,"utf8"));
  const pr=event.pull_request;
- if(!pr?.number)throw new Error("This check requires a pull_request event");
+ if(!pr)throw new Error("This check requires a pull_request event");
+ const number=validPRNumber(pr.number);
  const repo=env.GITHUB_REPOSITORY,token=env.GITHUB_TOKEN;
  if(repo!==MAIN&&repo!==LAB)throw new Error("Unknown repository");
- const ours=(await pages(repo,"/pulls/"+pr.number+"/files",token)).map(x=>x.filename);
+ const ours=(await pages(repo,"/pulls/"+number+"/files",token)).map(x=>x.filename);
  const failures=validatePR({repo,body:pr.body,files:ours});
  failures.push(...validateIncubatorPR({repo,branch:pr.head.ref,base:pr.base.ref,files:ours,lane:field(pr.body,"Workstream")}));
  const open=await pages(repo,"/pulls?state=open",token);
  const older=open.filter(p=>p.number<pr.number);
  const peers=await Promise.all(older.map(async p=>({
   number:p.number,title:p.title,
-  files:(await pages(repo,"/pulls/"+p.number+"/files",token)).map(x=>x.filename)
+  files:(await pages(repo,"/pulls/"+validPRNumber(p.number)+"/files",token)).map(x=>x.filename)
  })));
  const collisions=findOverlaps(ours,peers,pr.number);
  for(const c of collisions)

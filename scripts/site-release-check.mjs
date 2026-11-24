@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import {navigationLabel} from './infrastructure-security.mjs';
 const read=p=>fs.readFileSync(p,'utf8'),exists=p=>fs.existsSync(p);
 const root='https://deep-cuts-edh.pages.dev';
 const main=['index.html','games.html','community.html','deck.html','library.html','nominations.html','supporters.html','set-watch.html','privacy.html','deep-cut-finder.html','binder-to-brew.html','combos.html','profile.html'];
@@ -28,7 +29,7 @@ for(const file of menuPages){
  const html=read(file);
  const nav=html.match(/<nav\b[^>]*class="primary-nav"[^>]*>[\s\S]*?<\/nav>/i);
  check(!!nav,file+': primary navigation missing');
- const labels=[...nav[0].matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)].map(x=>x[1].replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim().replaceAll('&amp;','&'));
+ const labels=[...nav[0].matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)].map(x=>navigationLabel(x[1]));
  check(JSON.stringify(labels)===JSON.stringify(expected),file+': inconsistent menu: '+labels.join(' / '));
 }
 const html=read('index.html');
