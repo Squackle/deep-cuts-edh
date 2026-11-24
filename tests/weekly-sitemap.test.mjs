@@ -37,3 +37,14 @@ test('robots advertises both sitemap routes while the static inventory remains s
  assert.ok(!urls(xml).some(u=>/\/rescues\/20\d\d-/.test(u)));
  assert.equal(typeof onRequestGet,'function');assert.equal(typeof onRequestHead,'function');
 });
+
+test('a partially malformed upstream index cannot advertise an incomplete successful sitemap',async()=>{
+ for(const invalid of [null,row('2026-11-31'),row('2026-11-27',{commander:''}),row('2026-11-27',{theme:42})]){
+  const upstream=async()=>({reports:[row('2026-10-30'),invalid]});
+  const get=await serveWeeklySitemap(upstream),head=await serveWeeklySitemap(upstream,{head:true});
+  assert.equal(get.status,503);assert.equal(head.status,503);
+  assert.equal(get.headers.get('cache-control'),'no-store');
+  assert.equal(head.headers.get('retry-after'),'300');
+  assert.equal(await head.text(),'');assert.doesNotMatch(await get.text(),/<loc>/);
+ }
+});
