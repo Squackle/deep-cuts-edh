@@ -42,3 +42,7 @@ Canonical workflow and evidence checklist: [docs/MTG-RULES-VERIFICATION.md](docs
 - A new public page that bypasses these elements must fail the shared-template CI check. Exempt only genuine technical/verification, private/admin, or deliberately embedded/noindex subdocuments, not public features. Document any exception by file path and reason.
 - For new public pages, test the actual rendered desktop and mobile header, including profile and supporter strip, before calling a release complete. Follow the Cold Case/Stackbreaker page layout, not standalone Game Lab navigation.
 
+
+## Security / QA coordination
+
+The dedicated security, QA and reliability workstream owns shared CI, shared QA fixtures and maintenance documentation via `coord/*` PRs (`Workstream: Coordination`). Coordinate with website/game owners before application or game-specific test changes. Start with [docs/RELIABILITY-HANDOFF.md](docs/RELIABILITY-HANDOFF.md), [docs/TESTING.md](docs/TESTING.md), and current Control Room #14. Keep required gates fail-closed; do not mistake a scheduled report, preview, or optional green check for release proof. No production deployment, data mutation or access changes without separate authorization.
