@@ -4,7 +4,7 @@ import {appendFileSync,readFileSync,writeFileSync} from "node:fs";
 import {pathToFileURL} from "node:url";
 import {setTimeout as sleep} from "node:timers/promises";
 export const REPOS=[
- {repo:"Squackle/deep-cuts-edh",project:"deep-cuts-edh",required:["release-coordination","site-quality"],gates:[38,87,95,108,151],audit:true},
+ {repo:"Squackle/deep-cuts-edh",project:"deep-cuts-edh",required:["release-coordination","site-quality"],gates:[38,87,95,108,151,164],audit:true},
  {repo:"Squackle/deep-cuts-game-lab-",project:"deep-cuts-game-lab",required:["release-coordination"],gates:[103,343],audit:false}
 ];
 const MAX_PAGES=5;
@@ -67,6 +67,33 @@ export function previewSafety(project){
  if(src.preview_deployment_setting==="custom"&&(!src.preview_branch_includes?.length||src.preview_branch_includes.some(x=>x.includes("*"))))issues.push("preview branch allowlist is not exact");
  return {mode:src.preview_deployment_setting??"unknown",includes:src.preview_branch_includes??[],excludes:src.preview_branch_excludes??[],shared,extra,issues};
 }
+// The first Lab preview is intentionally storage-free. This is a configuration
+// check only; historical deployment isolation, candidate egress, access policy,
+// exact SHA and owner authorization remain independent acceptance gates.
+export const PILOT_BRANCH="coord/lab-browser-smoke-20261124";
+export function pilotPreflight(project){
+ const issues=[];
+ if(project?.name!=="deep-cuts-game-lab")issues.push("wrong or unverified Pages project");
+ const cfg=project?.source?.config;
+ if(!cfg||cfg.production_branch!=="main"||cfg.production_deployments_enabled!==true)issues.push("production branch/build settings unverified or changed");
+ if(cfg?.preview_deployment_setting!=="custom"||!Array.isArray(cfg?.preview_branch_includes)||cfg.preview_branch_includes.length!==1||cfg.preview_branch_includes[0]!==PILOT_BRANCH||!Array.isArray(cfg?.preview_branch_excludes)||cfg.preview_branch_excludes.length!==0)issues.push("exact single-branch pilot settings not matched");
+ const configs=project?.deployment_configs;
+ const preview=configs?.preview;
+ if(!configs?.production||typeof configs.production!=="object"||!preview||typeof preview!=="object"||Array.isArray(preview))issues.push("deployment configuration missing");
+ else{
+  // Allow only known non-binding configuration fields. Future unknown populated
+  // fields fail closed rather than accidentally treating a new binding as safe.
+  const metadata=new Set(["fail_open","always_use_latest_compatibility_date","compatibility_date","compatibility_flags","build_image_major_version","usage_model"]);
+  for(const [key,value] of Object.entries(preview)){
+   if(metadata.has(key))continue;
+   if(value===null||value===undefined)continue;
+   if(typeof value==="object"&&Object.keys(value).length===0)continue;
+   issues.push("nonempty or unrecognized preview configuration: "+markdown(key));
+  }
+ }
+ return {state:issues.length?"BLOCKED":"CONFIGURATION MATCH ONLY",issues};
+}
+
 async function request(url,headers={},fetcher=fetch){
  let response;
  for(let attempt=0;attempt<2;attempt++){
@@ -166,7 +193,7 @@ export async function collectCloudflare(project,env=process.env,fetcher=fetch){
     if(list.result.length<20){previewInventory="complete within 60-record bound";break;}
    }catch{previewInventory="preview inventory unavailable or partial";break;}
   }
-  return {state:"verified readback",sha:d?.deployment_trigger?.metadata?.commit_hash??null,stage:d?.latest_stage?.name??null,status:d?.latest_stage?.status??null,preview:previewSafety(p),previews,previewInventory};
+  return {state:"verified readback",sha:d?.deployment_trigger?.metadata?.commit_hash??null,stage:d?.latest_stage?.name??null,status:d?.latest_stage?.status??null,preview:previewSafety(p),pilot:project==="deep-cuts-game-lab"?pilotPreflight(p):null,previews,previewInventory};
  }catch(e){return {state:"Cloudflare readback unavailable"};}
 }
 export function renderReport(report){
@@ -175,6 +202,7 @@ export function renderReport(report){
   lines.push("","## "+r.repo,"","Main: "+(r.mainSha??"unknown")+"; required: "+r.requiredNames.join(", ")+" ("+(r.rulesVerified?"rules API":"documented fallback; rules unverified")+"); strict: "+(r.rulesVerified?String(r.strict):"unverified")+".",
    "Canonical Pages: "+markdown(r.cloudflare?.state)+"; "+markdown(r.cloudflare?.sha??"unknown SHA")+"; "+markdown(r.cloudflare?.status??"unknown status")+(r.cloudflare?.sha&&r.mainSha&&r.cloudflare.sha!==r.mainSha?" — SHA MISMATCH":"")+".");
   if(r.cloudflare?.preview)lines.push("Preview: "+markdown(r.cloudflare.preview.mode)+"; "+r.cloudflare.preview.issues.map(markdown).join("; ")+"; "+markdown(r.cloudflare.previewInventory));
+  if(r.cloudflare?.pilot)lines.push("Zero-binding pilot configuration: "+markdown(r.cloudflare.pilot.state)+"; "+r.cloudflare.pilot.issues.map(markdown).join("; ")+"; historical preview, code, access and owner gates still separate.");
   lines.push("GitHub deployment records for main: "+(r.deploymentStates.length?r.deploymentStates.map(d=>markdown(d.environment)+": "+markdown(d.state)).join("; "):"none available; not proof of deployed SHA"),"",
    "| PR | Exact head | Required checks | Exact-head preview | Disposition / next step |","|---|---|---|---|---|");
   for(const p of r.items){
@@ -190,6 +218,8 @@ export function renderReport(report){
   for(const a of r.approvals)lines.push("- [#"+a.number+"]("+a.url+") "+markdown(a.state)+" — "+markdown(a.title));
   if(r.errors.length)lines.push("","### Evidence unavailable","",...r.errors.map(e=>"- "+markdown(e)));
  }
+ const intake=report.repositories.find(r=>r.repo==="Squackle/deep-cuts-edh")?.approvals.find(a=>a.number===164);
+ lines.push("","## Code-scanning release gate","","[Consolidated tracker #164](https://github.com/Squackle/deep-cuts-edh/issues/164): "+(intake?.state==="open"?"OPEN — intake/remediation acceptance still required":intake?.state==="closed"?"CLOSED in tracker — verify default-branch scanner evidence independently":"UNKNOWN — intake/closure not verified")+". This report does not retrieve authenticated alert instances or attest to zero unresolved findings. Green CodeQL and npm audit are not alert closure. No release approval inferred.");
  lines.push("","## Dependency advisory evidence","",report.audit?("Current checked-out lockfile ("+markdown(report.audit.revision)+"): "+markdown(report.audit.state)+(report.audit.counts?" — "+JSON.stringify(report.audit.counts):"")):"No fresh npm audit requested. Use latest dependency-audit workflow and #151; do not interpret an absent audit as zero advisories.","");
  for(const p of report.audit?.packages??[])lines.push("- "+p.name+": "+p.severity+(p.advisories.length?" — "+p.advisories.map(x=>x.title+" ("+x.severity+")").join("; "):" (transitive)"));
  lines.push("","Provider failures and repeated scheduled failures are reported once per check/PR. Inspect exact job logs before changes. No automatic issue creation, retries of red CI, or notifications outside Actions.");

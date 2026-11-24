@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {assessPR,latestChecks,previewSafety,collectRepository,collectCloudflare,githubClient,renderReport} from "../scripts/release-readiness.mjs";
+import {assessPR,latestChecks,previewSafety,collectRepository,collectCloudflare,githubClient,renderReport,pilotPreflight,PILOT_BRANCH} from "../scripts/release-readiness.mjs";
 const sha="a".repeat(40),base="b".repeat(40);
 const pr={number:8,title:"Fixture",head:{sha,ref:"game/test"},base:{sha:base},html_url:"https://github.com/Squackle/deep-cuts-game-lab-/pull/8"};
 const check=(name,id,conclusion="success",status="completed")=>({name,id,conclusion,status,app:{slug:"github-actions"}});
@@ -88,4 +88,25 @@ test("peer fallback never reuses private token for another origin",async()=>{
  assert.equal(calls.length,2);
  assert.equal(calls[1].auth,undefined);
  assert.ok(calls.every(x=>x.url.startsWith("https://api.github.com/repos/Squackle/")));
+});
+
+test("zero-binding pilot preflight rejects absent config, unexpected bindings, unsafe branch controls and secrets",()=>{
+ const valid={name:"deep-cuts-game-lab",source:{config:{production_branch:"main",production_deployments_enabled:true,preview_deployment_setting:"custom",preview_branch_includes:[PILOT_BRANCH],preview_branch_excludes:[]}},deployment_configs:{production:{kv_namespaces:{LAB_PRESENCE:{namespace_id:"production"}}},preview:{env_vars:{},kv_namespaces:{},compatibility_date:"2026-01-01",compatibility_flags:[],fail_open:true}}};
+ assert.deepEqual(pilotPreflight(valid),{state:"CONFIGURATION MATCH ONLY",issues:[]});
+ for(const [key,value] of [["kv_namespaces",{LAB_PRESENCE:{namespace_id:"isolated"}}],["d1_databases",{DB:{id:"live"}}],["env_vars",{SECRET:{value:"never-print-me"}}],["future_resource",{x:"unrecognized"}]]){
+  const changed=structuredClone(valid);changed.deployment_configs.preview[key]=value;
+  const check=pilotPreflight(changed);assert.equal(check.state,"BLOCKED");assert.ok(!JSON.stringify(check).includes("never-print-me"));
+ }
+ const bad=structuredClone(valid);bad.source.config.preview_branch_includes.push("game/*");
+ assert.equal(pilotPreflight(bad).state,"BLOCKED");
+ delete valid.deployment_configs.preview;assert.equal(pilotPreflight(valid).state,"BLOCKED");
+ assert.equal(pilotPreflight({}).state,"BLOCKED");
+});
+test("open code-scanning tracker remains an explicit unresolved release gate despite green checks",()=>{
+ const r={repo:"Squackle/deep-cuts-edh",mainSha:base,requiredNames:["site-quality"],rulesVerified:true,strict:true,items:[],approvals:[{number:164,state:"open",url:"https://github.com/Squackle/deep-cuts-edh/issues/164",title:"Intake blocked"}],scheduled:[],deploymentStates:[],errors:[]};
+ const summary=renderReport({generated:"fixture",repositories:[r]});
+ assert.match(summary,/OPEN — intake\/remediation acceptance still required/);
+ assert.match(summary,/Green CodeQL and npm audit are not alert closure/);
+ r.approvals[0].state="closed";
+ assert.match(renderReport({generated:"fixture",repositories:[r]}),/verify default-branch scanner evidence independently/);
 });
