@@ -9,13 +9,13 @@ const trusted='https://cards.scryfall.io/normal/front/a/8/a8564611-b678-4336-87e
 const newest={report:{date:'2026-11-06',commander:'A Weird & <Unexpected> Commander',theme:'Artifact-control discovery',imageUrl:trusted}};
 
 test('Homepage visibly features latest published weekly report with crawlable static link',()=>{
- assert.match(homepage,/id="homeWeeklyFeature" data-weekly-date="2026-10-30" href="\/rescues\/2026-10-30"/);
- assert.match(homepage,/data-weekly-name>Vhati il-Dal<\/strong>/);
- assert.match(homepage,/data-weekly-theme>One-Toughness Control<\/small>/);
- assert.ok(homepage.includes(trusted.replace(/&/g,'&amp;')),'Static featured card uses direct verified image CDN');
- assert.doesNotMatch(homepage,/api\.scryfall\.com\/cards\/named\?exact=Vhati/);
+ assert.match(homepage,/id="homeWeeklyFeature" data-weekly-date="2026-11-20" href="\/rescues\/2026-11-20"/);
+ assert.match(homepage,/data-weekly-name>Kruphix, God of Horizons<\/strong>/);
+ assert.match(homepage,/data-weekly-theme>Mana Bank Eldrazi<\/small>/);
+ assert.ok(homepage.includes('src="https://cards.scryfall.io/normal/front/2/7/27427233-da58-45af-ade8-e0727929efaa.jpg?1783939404"'),'Static featured card uses direct verified image CDN');
+ assert.doesNotMatch(homepage,/api\.scryfall\.com\/cards\/named\?exact=/);
  assert.match(homepage,/LATEST WEEKLY RESCUE/);
- assert.match(homepage,/id="homeLatestWeeklyText" href="\/rescues\/2026-10-30"/);
+ assert.match(homepage,/id="homeLatestWeeklyText" href="\/rescues\/2026-11-20"/);
  assert.match(homepage,/<script type="module" src="\/home-weekly-feature.mjs"><\/script>/);
  assert.match(homepage,/href="\/reports\/commander-mustard"/,'Original Commander Mustard report is still accessible from the archive');
  assert.equal((homepage.match(/<h1\b/g)||[]).length,1);
@@ -61,7 +61,7 @@ test('Unreachable weekly API cannot remove the featured current report',()=>{
  assert.match(source,/\.catch\(\(\)=>\{ \/\* Keep the fully linked, crawlable featured fallback/);
  assert.match(source,/https:\/\/deep-cuts-weekly-publisher\.logan-ottfamily\.workers\.dev\/v1\/latest/);
  assert.doesNotMatch(source,/api\.scryfall\.com\/cards\/named\?exact=/);
- assert.match(homepage,/data-weekly-name>Vhati il-Dal<\/strong>/);
+ assert.match(homepage,/data-weekly-name>Kruphix, God of Horizons<\/strong>/);
 });
 
 test('A future featured report only promotes after its actual card image loads',async()=>{

@@ -4,6 +4,14 @@ on:
     branches: [main]
     paths:
       - 'workers/weekly-rescue-schedule.json'
+      - 'workers/weekly-rescue-publisher.wrangler.jsonc'
+      - 'src/weekly-rescue*.js'
+      - 'src/home-weekly-ssr.js'
+      - 'functions/index.js'
+      - 'functions/rescues/**'
+      - 'index.html'
+      - 'tests/weekly-rescue-*.test.mjs'
+      - 'tests/helpers/strong-article.mjs'
       - 'workers/weekly-rescue-publisher.js'
       - 'tests/weekly-rescue-schedule.test.mjs'
       - 'tests/weekly-rescue-publisher-reliability.test.mjs'
@@ -12,6 +20,14 @@ on:
     branches: [main]
     paths:
       - 'workers/weekly-rescue-schedule.json'
+      - 'workers/weekly-rescue-publisher.wrangler.jsonc'
+      - 'src/weekly-rescue*.js'
+      - 'src/home-weekly-ssr.js'
+      - 'functions/index.js'
+      - 'functions/rescues/**'
+      - 'index.html'
+      - 'tests/weekly-rescue-*.test.mjs'
+      - 'tests/helpers/strong-article.mjs'
       - 'workers/weekly-rescue-publisher.js'
       - 'tests/weekly-rescue-schedule.test.mjs'
       - 'tests/weekly-rescue-publisher-reliability.test.mjs'
@@ -24,11 +40,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - name: Verify Cloudflare Friday Cron schedules and publisher reliability
+      - name: Verify Friday Cron schedules, publisher quality floor, archive and homepage feature
         run: |
           node --test tests/weekly-rescue-schedule.test.mjs tests/weekly-rescue-publisher-reliability.test.mjs
+          node --import ./tests/helpers/offline.mjs --test tests/weekly-rescue-pipeline.test.mjs tests/weekly-rescue-archive.test.mjs
           node --check workers/weekly-rescue-publisher.js

@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {strongArticle} from './helpers/strong-article.mjs';
 import assert from 'node:assert/strict';
 import publisher,{jsonFromModel,localReleaseWindow,publish,scheduledRun,verifiedCardImageUrl} from '../workers/weekly-rescue-publisher.js';
 
@@ -76,10 +77,7 @@ test('Validated research commits one real report with an index and a published s
    const pool=JSON.parse(raw.slice(raw.indexOf('Candidates: ')+12));
    return {response:{commander:pool[0].name,usualBuild:'Typical creature strategies',theme:'Creature type laboratory experiment',hook:'A practical unusual strategy hypothesis.',selectionReason:'Play a less conventional card engine.',supportCards:supports.map(x=>x.name)}};
   }
-  const section='This is a careful and source-grounded strategic hypothesis, not a tested winning result or a price guarantee.';
-  return {response:{headline:'How a forgotten test creature can anchor an interesting value plan',
-    diagnosis:section,prescription:section,earlyGame:section,midGame:section,lateGame:section,risks:section,verdict:section,
-    synergies:supports.slice(0,6).map(x=>({name:x.name,why:'The supplied Oracle card text fits the proposed strategy carefully.'}))}};
+  return {response:strongArticle(supports.map(x=>x.name),'How a forgotten test creature can anchor an interesting value plan')};
  }};
  try{
   const result=await scheduledRun({scheduledTime:friday.getTime()}, {REPORTS,AI});

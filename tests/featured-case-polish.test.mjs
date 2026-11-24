@@ -27,8 +27,8 @@ async function submit(ch,owned){
 }
 test("Latest weekly homepage feature stays distinct from the current community Rescue Challenge",()=>{
  const homepage=fs.readFileSync("index.html","utf8");
- assert.match(homepage,/class="hub-feature" id="homeWeeklyFeature" data-weekly-date="2026-10-30" href="\/rescues\/2026-10-30"/);
- assert.match(homepage,/data-weekly-name>Vhati il-Dal<\/strong>/);
+ assert.match(homepage,/class="hub-feature" id="homeWeeklyFeature" data-weekly-date="2026-11-20" href="\/rescues\/2026-11-20"/);
+ assert.match(homepage,/data-weekly-name>Kruphix, God of Horizons<\/strong>/);
  assert.match(homepage,/href="\/reports\/commander-mustard"/,'Existing community featured report remains available in archive');
  assert.equal(CURRENT_CASE.commander,"Commander Mustard");
  assert.equal(CURRENT_CASE.slug,"commander-mustard");

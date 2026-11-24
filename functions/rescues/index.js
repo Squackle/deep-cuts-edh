@@ -1,4 +1,5 @@
-import {remoteJson,listHtml,staticArchiveHtml,htmlResponse} from '../../src/weekly-rescues-html.js';
+import {listHtml,staticArchiveHtml,htmlResponse} from '../../src/weekly-rescues-html.js';
+import {loadArchive} from '../../src/weekly-rescue-archive.js';
 
 // /rescues has a published static asset AND a Pages Function; Functions win at
 // routing. Read that asset through the Pages ASSETS binding so on-page budget
@@ -13,11 +14,6 @@ export async function onRequestGet({request,env}){
   console.error('Rescue index static asset unavailable',String(error));
   return htmlResponse(listHtml([]),503);
  }
- try{
-  const data=await remoteJson('/v1/index');
-  return htmlResponse(staticArchiveHtml(staticHtml,data.reports));
- }catch(error){
-  console.error('Rescue index upstream unavailable',String(error));
-  return htmlResponse(staticArchiveHtml(staticHtml,[],{unavailable:true}));
- }
+ const {reports,unavailable}=await loadArchive();
+ return htmlResponse(staticArchiveHtml(staticHtml,reports,{unavailable}));
 }
