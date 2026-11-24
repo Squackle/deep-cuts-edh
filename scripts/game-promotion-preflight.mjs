@@ -60,6 +60,15 @@ function digestFile(root, path) {
   const bytes = readFileSync(within(root, path));
   return {bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex')};
 }
+function verifySiteBaseline(root, expected) {
+  const head = execFileSync('git', ['rev-parse', '--verify', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
+  assert(SHA.test(head), 'Website checkout must have an exact Git HEAD');
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', expected, head], {cwd: root, stdio: 'pipe'});
+  } catch {
+    throw new Error(`Website checkout does not contain declared baseline ${expected}; refresh against current main`);
+  }
+}
 function gitSha(root) {
   const head = execFileSync('git', ['rev-parse', '--verify', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
   assert(SHA.test(head), 'Git checkout must have an exact 40-character HEAD SHA');
@@ -112,6 +121,7 @@ export function auditPromotion(manifest, {labRoot, siteRoot, gate = false, sourc
   if (checkGit) {
     const actual = gitSha(sourceRoot);
     assert(actual === manifest.labSourceSha, `Lab source HEAD mismatch: expected ${manifest.labSourceSha}, got ${actual}`);
+    verifySiteBaseline(destRoot, manifest.websiteBaseSha);
   }
   const differences = [], plan = [];
   for (const item of manifest.files) {
