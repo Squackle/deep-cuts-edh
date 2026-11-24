@@ -105,6 +105,7 @@ export function validateManifest(manifest, {gate = false} = {}) {
 }
 export function auditPromotion(manifest, {labRoot, siteRoot, gate = false, sourceOnly = false, checkGit = true}) {
   validateManifest(manifest, {gate});
+  assert(!(gate && sourceOnly), 'Promotion gate requires actual website parity, not a source-only plan');
   assert(labRoot && siteRoot, 'Both Lab and site checkout roots are required');
   const sourceRoot = realpathSync(labRoot), destRoot = realpathSync(siteRoot);
   assert(sourceRoot !== destRoot, 'Lab and website checkouts must be different');
