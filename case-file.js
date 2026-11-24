@@ -1,6 +1,6 @@
 import {validCommander} from "./deep-tools-core.js";
 const $=id=>document.getElementById(id);
-let busy=false,current=null;
+let busy=false,current=null,revision=0,activeController=null;
 const safe=(value,max)=>String(value||"").trim().slice(0,max);
 const msg=(value,error=false)=>{const el=$("cfStatus");el.textContent=value;el.dataset.error=error?"true":"false"};
 const currentKind=()=>document.querySelector('input[name="kind"]:checked').value;
@@ -11,20 +11,21 @@ function setKind(){
  $("cfQuery").placeholder=deck?"32-character public deck ID":"e.g. Toshiro Umezawa";
  $("cfQuery").value="";
 }
-document.querySelectorAll('input[name="kind"]').forEach(r=>r.addEventListener("change",setKind));
-async function lookupCommander(name){
+document.querySelectorAll('input[name="kind"]').forEach(r=>r.addEventListener("change",()=>{setKind();invalidate()}));
+$("cfQuery").addEventListener("input",invalidate);
+async function lookupCommander(name,signal){
  if(name.length<2||name.length>130)return Promise.reject(Error("Enter a valid Commander card name."));
  const res=await fetch("/api/tool-cards",{method:"POST",headers:{"Content-Type":"application/json"},
- body:JSON.stringify({names:[name]}),credentials:"same-origin",cache:"no-store"});
+ body:JSON.stringify({names:[name]}),credentials:"same-origin",cache:"no-store",signal});
  const data=await res.json().catch(()=>null);
  if(!res.ok||!Array.isArray(data?.cards))throw Error(data?.error||"The public Commander card lookup is unavailable.");
- const c=data.cards.find(c=>c.name?.toLowerCase()===name.toLowerCase());
+ const c=data.cards.find(c=>typeof c?.name==="string"&&c.name.toLowerCase()===name.toLowerCase());
  if(!c||!validCommander(c))throw Error("That exact name is not a verified Commander-legal card. Check the spelling and try again.");
  return {kind:"commander",title:safe(c.name,130),subtitle:"A legendary Commander to investigate",byline:"Legal Commander card · Current card record",source:"Scryfall"};
 }
-async function lookupDeck(id){
+async function lookupDeck(id,signal){
  if(!/^[0-9a-f]{32}$/i.test(id))throw Error("Enter a 32-character public Community deck ID.");
- const res=await fetch("/api/community?action=deck&id="+encodeURIComponent(id),{credentials:"omit",cache:"no-store"});
+ const res=await fetch("/api/community?action=deck&id="+encodeURIComponent(id),{credentials:"omit",cache:"no-store",signal});
  const data=await res.json().catch(()=>null);
  if(!res.ok||!data?.deck)throw Error("Could not find a published public Community deck with that ID.");
  const d=data.deck;
@@ -89,34 +90,69 @@ function linkFor(kind,key){
  const url=new URL("/case-file",location.origin);url.searchParams.set(kind,key);return url.href;
 }
 function filename(data){return "deep-cuts-"+data.title.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,45)+".png"}
+function setBusy(value){
+ busy=value;
+ $("cfGenerate").disabled=value;
+ $("cfForm").setAttribute("aria-busy",String(value));
+}
+function clearPreview(){
+ current=null;
+ canvas.hidden=true;
+ $("cfPlaceholder").hidden=false;
+ $("cfActions").hidden=true;
+}
+function invalidate(){
+ revision++;
+ activeController?.abort();
+ activeController=null;
+ setBusy(false);
+ clearPreview();
+ if(location.search)history.replaceState(null,"","/case-file");
+ msg("Enter a commander name or choose a published deck ID.");
+}
 async function generate(kind,key){
- if(busy)return;busy=true;$("cfGenerate").disabled=true;$("cfActions").hidden=true;
+ if(busy)return;
+ const version=++revision;
+ const controller=new AbortController();
+ activeController=controller;
+ const timer=setTimeout(()=>controller.abort(),18000);
+ setBusy(true);
+ clearPreview();
  msg("Verifying public "+(kind==="deck"?"deck":"Commander card")+" data…");
  try{
-  const data=kind==="deck"?await lookupDeck(key):await lookupCommander(key);
+  const data=kind==="deck"?await lookupDeck(key,controller.signal):await lookupCommander(key,controller.signal);
+  if(version!==revision)return;
   draw(data);
   current={kind,key:kind==="deck"?key:data.title,data};
   $("cfActions").hidden=false;
   msg("Public "+(kind==="deck"?"deck":"Commander")+" case file ready. Download the artwork or copy a link.");
   history.replaceState(null,"",new URL(linkFor(kind,current.key)).pathname+new URL(linkFor(kind,current.key)).search);
- }catch(e){current=null;canvas.hidden=true;$("cfPlaceholder").hidden=false;msg(e?.message||"Couldn't create your case file.",true)}
- finally{busy=false;$("cfGenerate").disabled=false}
+ }catch(e){
+  if(version===revision){clearPreview();msg(controller.signal.aborted?"Verification timed out. Try again.":e?.message||"Couldn't create your case file.",true)}
+ }finally{
+  clearTimeout(timer);
+  if(version===revision){activeController=null;setBusy(false)}
+ }
 }
 $("cfForm").addEventListener("submit",e=>{e.preventDefault();generate(currentKind(),$("cfQuery").value.trim())});
 $("cfDownload").addEventListener("click",()=>{
  if(!current)return;
- canvas.toBlob(blob=>{
-  if(!blob){msg("PNG export is unsupported in this browser.",true);return}
-  const url=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=url;a.download=filename(current.data);document.body.append(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),2000);
- },"image/png");
+ const version=revision,name=filename(current.data);
+ const failed=()=>{if(version===revision)msg("PNG export is unsupported in this browser.",true)};
+ try{
+  canvas.toBlob(blob=>{
+   if(!blob){failed();return}
+   const url=URL.createObjectURL(blob),a=document.createElement("a");
+   try{a.href=url;a.download=name;document.body.append(a);a.click()}
+   finally{a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)}
+  },"image/png");
+ }catch{failed()}
 });
 $("cfCopy").addEventListener("click",async()=>{
  if(!current)return;
- const link=linkFor(current.kind,current.key);
- try{await navigator.clipboard.writeText(link);msg("Case file link copied. Anyone with it can view this public discovery.")}
- catch{$("cfStatus").replaceChildren(document.createTextNode("Copy this link: "));const input=document.createElement("input");input.value=link;input.readOnly=true;$("cfStatus").append(input);input.select();}
+ const version=revision,link=linkFor(current.kind,current.key);
+ try{await navigator.clipboard.writeText(link);if(version===revision)msg("Case file link copied. Anyone with it can view this public discovery.")}
+ catch{if(version!==revision)return;$("cfStatus").replaceChildren(document.createTextNode("Copy this link: "));const input=document.createElement("input");input.value=link;input.readOnly=true;$("cfStatus").append(input);input.select();}
 });
 const params=new URLSearchParams(location.search),commander=params.get("commander"),deck=params.get("deck");
 if(commander&&commander.length<=130){$("cfQuery").value=commander;generate("commander",commander)}
