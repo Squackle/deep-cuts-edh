@@ -68,12 +68,27 @@ test("Card-lookup server rejects requests from another origin and impossible bat
  const huge=await onRequestPost({request:request({names:Array(76).fill("Sol Ring")},"https://deep-cuts-edh.pages.dev"),env});assert.equal(huge.status,400);
 });
 const deckTutorUrl="https://deckstats.net/collection/deck-tutor/";
-const hasDeckTutor=markup=>[...markup.matchAll(/<a\b(?:[^"'<>]|"[^"]*"|'[^']*')*?\s+href="([^"]*)"(?:[^"'<>]|"[^"]*"|'[^']*')*>/g)].some(m=>m[1]===deckTutorUrl);
+// Static source fixture extraction, not a general HTML sanitizer.
+function fixtureTagAttributes(markup,tags,attribute){
+ const results=[];
+ for(const [tag] of markup.matchAll(tags)){
+  if(tag.startsWith("<!--"))continue;
+  const values=[];
+  for(const [,name,double,single,bare] of tag.matchAll(/\s+([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>]+)))?/g)){
+   if(name.toLowerCase()===attribute)values.push(double??single??bare??"");
+  }
+  if(values.length)results.push(values);
+ }
+ return results;
+}
+const hasDeckTutor=markup=>fixtureTagAttributes(markup,/<!--[\s\S]*?-->|<a(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi,"href").some(values=>values.length===1&&values[0]===deckTutorUrl);
 test("Binder's Deckstats destination is an exact anchor URL, not an embedded substring",()=>{
  const anchor=url=>'<a href="'+url+'">Deck Tutor</a>';
  assert.equal(hasDeckTutor(anchor(deckTutorUrl)),true);
  for(const bad of ["https://evil.example/deckstats.net/collection/deck-tutor","https://deckstats.net.evil.example/collection/deck-tutor/","https://deckstatsXnet/collection/deck-tutor/","https://deckstats.net/collection/deck-tutor/extra","https://deckstats.net@evil.example/collection/deck-tutor/",deckTutorUrl+"?next=evil"])assert.equal(hasDeckTutor(anchor(bad)),false);
  assert.equal(hasDeckTutor('<a data-href="'+deckTutorUrl+'">Deck Tutor</a>'),false);
+ assert.equal(hasDeckTutor('<a href="https://evil.example/" href="'+deckTutorUrl+'">Deck Tutor</a>'),false);
+ assert.equal(hasDeckTutor('<!-- <a href="'+deckTutorUrl+'">Deck Tutor</a> -->'),false);
 });
 test("Retired Binder links to specialists, while Finder and combo checker stay functional",()=>{
  for(const p of ["deep-cut-finder.html","binder-to-brew.html","deck.html","combos.html","combo-checker.js","deep-tools.js","deep-tools.css","functions/api/tool-cards.js","deep-tools-core.js","functions/api/external.js"])assert.ok(fs.existsSync(p),p+" missing");

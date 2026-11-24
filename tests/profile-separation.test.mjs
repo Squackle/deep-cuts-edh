@@ -8,20 +8,38 @@ const community=read("community.html"),profile=read("profile.html"),
 const panels=html=>[...html.matchAll(/<section class="cm-panel(?: [^"]+)?" data-panel="([^"]+)"/g)].map(x=>x[1]);
 // Source-contract helpers: extract the actual double-quoted attribute from
 // the audited static tags, then compare the complete URL rather than a substring.
-const scriptSources=html=>[...html.matchAll(/<script\b(?:[^"'<>]|"[^"]*"|'[^']*')*?\s+src="([^"]*)"(?:[^"'<>]|"[^"]*"|'[^']*')*>/g)].map(m=>m[1]);
+// Static source fixture extraction, not a general HTML sanitizer.
+function fixtureTagAttributes(markup,tags,attribute){
+ const results=[];
+ for(const [tag] of markup.matchAll(tags)){
+  if(tag.startsWith("<!--"))continue;
+  const values=[];
+  for(const [,name,double,single,bare] of tag.matchAll(/\s+([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>]+)))?/g)){
+   if(name.toLowerCase()===attribute)values.push(double??single??bare??"");
+  }
+  if(values.length)results.push(values);
+ }
+ return results;
+}
+const scriptSources=html=>fixtureTagAttributes(html,/<!--[\s\S]*?-->|<script(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi,"src").flat();
 function isTurnstileSource(raw){
  try{
   const u=new URL(raw,"https://deep-cuts-edh.pages.dev/");
   return u.hostname==="challenges.cloudflare.com"&&(u.pathname==="/turnstile"||u.pathname.startsWith("/turnstile/"));
  }catch{return false}
 }
-const privateBookmark=html=>[...html.matchAll(/<a\b(?:[^"'<>]|"[^"]*"|'[^']*')*?\s+href="([^"]*)"(?:[^"'<>]|"[^"]*"|'[^']*')*>/g)].some(m=>["/profile#account","profile#account","/profile#collection","profile#collection"].includes(m[1]));
+const privateBookmark=html=>fixtureTagAttributes(html,/<!--[\s\S]*?-->|<a(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi,"href").some(values=>values.length===1&&["/profile#account","profile#account","/profile#collection","profile#collection"].includes(values[0]));
 test("Private navigation contracts distinguish exact routes and real Turnstile sources",()=>{
  assert.equal(isTurnstileSource("https://challenges.cloudflare.com/turnstile/v0/api.js"),true);
  assert.equal(isTurnstileSource("//challenges.cloudflare.com/turnstile/v0/api.js"),true);
  for(const raw of ["https://evil.example/challenges.cloudflare.com/turnstile","https://challenges.cloudflare.com.evil.example/turnstile","https://challenges.cloudflare.com/turnstile-lookalike","not a URL"])assert.equal(isTurnstileSource(raw),false);
  assert.deepEqual(scriptSources('<script data-src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>'),[]);
+ const turnstile="https://challenges.cloudflare.com/turnstile/v0/api.js";
+ for(const markup of ["<SCRIPT SRC='"+turnstile+"'></SCRIPT>","<script src="+turnstile+"></script>",'<script src="other.js" src="'+turnstile+'"></script>'])assert.ok(scriptSources(markup).some(isTurnstileSource));
+ assert.deepEqual(scriptSources('<!-- <script src="'+turnstile+'"></script> -->'),[]);
  assert.equal(privateBookmark('<a href="profile#account">Account</a>'),true);
+ assert.equal(privateBookmark('<a href="/wrong" href="/profile#account">Account</a>'),false);
+ assert.equal(privateBookmark('<!-- <a href="/profile#account">Account</a> -->'),false);
  for(const href of ["https://evil.example/profile#account","/notprofile#account","/profile#account-other","/profile#collection?extra"])assert.equal(privateBookmark('<a href="'+href+'">Account</a>'),false);
 });
 test("Community has only public social features, with no personal forms or private data panels",()=>{

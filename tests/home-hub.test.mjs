@@ -10,8 +10,21 @@ const css=readFileSync('home-hub.css','utf8');
 // This contract identifies the actual script tag and the complete approved
 // AdSense URL, including the existing public publisher ID.
 const approvedAdScript='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1885127351876276';
+// Static source fixture extraction, not a general HTML sanitizer.
+function fixtureTagAttributes(markup,tags,attribute){
+ const results=[];
+ for(const [tag] of markup.matchAll(tags)){
+  if(tag.startsWith("<!--"))continue;
+  const values=[];
+  for(const [,name,double,single,bare] of tag.matchAll(/\s+([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>]+)))?/g)){
+   if(name.toLowerCase()===attribute)values.push(double??single??bare??"");
+  }
+  if(values.length)results.push(values);
+ }
+ return results;
+}
 function hasApprovedAdScript(markup){
- return [...markup.matchAll(/<script\b(?:[^"'<>]|"[^"]*"|'[^']*')*?\s+src="([^"]*)"(?:[^"'<>]|"[^"]*"|'[^']*')*>/g)].some(m=>m[1]===approvedAdScript);
+ return fixtureTagAttributes(markup,/<!--[\s\S]*?-->|<script(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi,"src").some(values=>values.length===1&&values[0]===approvedAdScript);
 }
 const officialSource='https://github.com/Squackle/deep-cuts-edh';
 const officialWebsite='https://deep-cuts-edh.pages.dev/';
@@ -22,6 +35,8 @@ test('Homepage URL contracts reject lookalikes and substring matches',()=>{
   assert.equal(hasApprovedAdScript('<script src="'+src+'"></script>'),false);
  }
  assert.equal(hasApprovedAdScript('<script data-src="'+approvedAdScript+'"></script>'),false);
+ assert.equal(hasApprovedAdScript('<script src="https://evil.example/" src="'+approvedAdScript+'"></script>'),false);
+ assert.equal(hasApprovedAdScript('<!-- <script src="'+approvedAdScript+'"></script> -->'),false);
  const directory=src=>'- **Official live website:** '+officialWebsite+'\n- **Official public source repository:** '+src;
  assert.equal(hasOfficialDirectory(directory(officialSource)),true);
  for(const bad of [officialSource+'-evil',officialSource+'/extra','https://evil.example/?next='+officialSource,officialSource+'?redirect=evil'])assert.equal(hasOfficialDirectory(directory(bad)),false);
