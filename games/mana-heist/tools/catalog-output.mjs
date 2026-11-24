@@ -2,9 +2,12 @@
 import {mkdir,lstat,realpath,open,rm} from 'node:fs/promises';
 import {basename,dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {Readable,Transform} from 'node:stream';
+import {createGunzip} from 'node:zlib';
 
 export const MAX_METADATA_BYTES=128*1024;
 export const MAX_BULK_BYTES=384*1024*1024;
+export const MAX_COMPRESSED_BYTES=96*1024*1024;
 export const MAX_ORACLE_CARDS=100000;
 export const MAX_CANDIDATES=50000;
 export const MAX_SNAPSHOT_BYTES=64*1024*1024;
@@ -42,11 +45,13 @@ export function catalogDestination(name='mana-oracle-candidates.json'){
 }
 export function bulkDownloadUrl(metadata){
  if(!plainObject(metadata)||metadata.type!=='oracle_cards')throw new Error('Unexpected bulk export metadata');
- bounded(metadata.download_uri,'bulk download URL',2048);
+ // Scryfall now also offers compressed JSON Lines; retain the legacy JSON-array fallback.
+ const download=metadata.jsonl_download_uri||metadata.download_uri;
+ bounded(download,'bulk download URL',2048);
  let url;
- try{url=new URL(metadata.download_uri)}catch{throw new Error('Unexpected Scryfall bulk download URL')}
+ try{url=new URL(download)}catch{throw new Error('Unexpected Scryfall bulk download URL')}
  if(url.origin!=='https://data.scryfall.io'||url.username||url.password||url.hash||url.search||
-    !/^\/oracle-cards\/[A-Za-z0-9._-]+\.json$/.test(url.pathname))
+    !/^\/oracle-cards\/[A-Za-z0-9._-]+\.(?:json|jsonl\.gz)$/.test(url.pathname))
   throw new Error('Unexpected Scryfall bulk download URL');
  return url.href;
 }
@@ -108,6 +113,60 @@ export function validateOracleCollection(cards){
  if(!Array.isArray(cards)||cards.length>MAX_ORACLE_CARDS)throw new Error('Unexpected Oracle card collection size');
  for(const card of cards)validateSourceCard(card);
  return cards;
+}
+
+export async function readOracleCards(response,downloadUrl){
+ const url=bulkDownloadUrl({type:'oracle_cards',download_uri:downloadUrl});
+ if(url.endsWith('.json'))return validateOracleCollection(await readLimitedJson(response,MAX_BULK_BYTES,'Oracle cards'));
+ if(!response?.ok||!response.body)throw new Error('Invalid compressed Oracle response');
+ const type=response.headers?.get('content-type')||'';
+ if(!/^(?:application\/(?:gzip|x-gzip|octet-stream)|binary\/octet-stream)(?:\s*;|$)/i.test(type))
+  throw new Error('Unexpected compressed Oracle content type');
+ const declared=response.headers.get('content-length');
+ if(declared!==null&&(!/^\d+$/.test(declared)||Number(declared)>MAX_COMPRESSED_BYTES))
+  throw new Error('Compressed Oracle export exceeds byte limit');
+
+ let compressed=0,uncompressed=0,pending='',count=0;
+ const cards=[],decoder=new TextDecoder('utf-8',{fatal:true});
+ const MAX_LINE_CHARS=256*1024;
+ const input=Readable.fromWeb(response.body);
+ const guard=new Transform({transform(chunk,encoding,callback){
+  compressed+=chunk.byteLength;
+  callback(compressed>MAX_COMPRESSED_BYTES?new Error('Compressed Oracle export exceeds stream limit'):null,chunk);
+ }});
+ const unzip=createGunzip();
+ // Node streams do not forward every upstream error through pipe automatically.
+ input.on('error',error=>unzip.destroy(error));
+ guard.on('error',error=>unzip.destroy(error));
+ input.pipe(guard).pipe(unzip);
+ const pushLine=line=>{
+  if(!line.trim())return;
+  if(line.length>MAX_LINE_CHARS||++count>MAX_ORACLE_CARDS)throw new Error('Oracle JSONL record limit exceeded');
+  let card;
+  try{card=JSON.parse(line)}catch{throw new Error('Invalid Oracle JSONL card')}
+  validateSourceCard(card);
+  cards.push(card);
+ };
+ try{
+  for await(const chunk of unzip){
+   uncompressed+=chunk.byteLength;
+   if(uncompressed>MAX_BULK_BYTES)throw new Error('Oracle export exceeds decompressed byte limit');
+   pending+=decoder.decode(chunk,{stream:true});
+   let end;
+   while((end=pending.indexOf('\n'))>=0){
+    pushLine(pending.slice(0,end).trimEnd());
+    pending=pending.slice(end+1);
+   }
+   if(pending.length>MAX_LINE_CHARS)throw new Error('Oversized Oracle JSONL line');
+  }
+  pending+=decoder.decode();
+  if(pending)pushLine(pending.trimEnd());
+  return cards;
+ }finally{
+  input.destroy();
+  guard.destroy();
+  unzip.destroy();
+ }
 }
 function validateCandidate(card){
  if(!plainObject(card))throw new Error('Invalid candidate');
