@@ -1,13 +1,15 @@
 
 import {cardImage,scryfall} from "./shared.js";
 import {facetTerms,isFaceted,resetFacets,initFacets,shareURL,clearManaChips,selectedArtist} from "./library-facets.js";
-import {compileLibraryQuery,libraryResultSummary,libraryCardIdentity} from "./library-query.js";
+import {compileLibraryQuery,libraryResultSummary,libraryCardIdentity,libraryNextPage} from "./library-query.js";
 import {initArtistAutocomplete} from "./artist-autocomplete.js";
 const $=id=>document.getElementById(id);
 const form=$("librarySearch"),gallery=$("cardGallery"),status=$("libraryStatus"),
   more=$("loadMore"),pageStats=$("pageStats"),detail=$("cardDetail");
 let nextPage=null,loading=false,lastRequest=0,shown=0,searchToken=0,cards=new Map(),controller=null;
 const cache=new Map();
+const visitedPages=new Set();
+let activeUnique="cards";
 const inclusionRequests=new Map();
 let inclusionChain=Promise.resolve();
 // Genuine EDHREC inclusion = number of decks with the card / eligible decks.
@@ -62,7 +64,7 @@ function updateScryfallLink(){
  try{
   const url=new URL("https://scryfall.com/search");
   url.searchParams.set("q",buildQuery());
-  url.searchParams.set("unique",currentUnique());
+  url.searchParams.set("unique",unique);
   const [order,dir]=currentSort();
   url.searchParams.set("order",order);url.searchParams.set("dir",dir);
   out.href=url.toString();
@@ -114,12 +116,12 @@ function showDetail(c){
  detail.showModal();
 }
 async function load(clear=false){
- if(loading&&!clear)return;
+ if(!clear&&(loading||!nextPage))return;
  let builtQuery="";
  if(clear){
   try{builtQuery=buildQuery()}catch(err){
    if(controller)controller.abort();searchToken++;loading=false;nextPage=null;shown=0;
-   cards.clear();gallery.replaceChildren();more.hidden=true;more.disabled=true;
+   cards.clear();visitedPages.clear();gallery.replaceChildren();more.hidden=true;more.disabled=true;
    status.textContent=err.message;pageStats.textContent="Correct the filter values and search again.";
    updateScryfallLink();return;
   }
@@ -129,10 +131,11 @@ async function load(clear=false){
    history.replaceState(null,"",target.pathname+target.search);
   }catch{}
  }
- if(clear){if(controller)controller.abort();searchToken++;nextPage=null;shown=0;cards.clear();gallery.replaceChildren();more.hidden=true;pageStats.textContent="";more.disabled=true}
- controller=new AbortController();
- if(!clear&&!nextPage)return;
- const current=searchToken;loading=true;
+ if(clear){if(controller)controller.abort();searchToken++;nextPage=null;shown=0;cards.clear();visitedPages.clear();activeUnique=currentUnique();gallery.replaceChildren();more.hidden=true;pageStats.textContent="";more.disabled=true}
+ const requestController=new AbortController();
+ controller=requestController;
+ const current=searchToken,unique=activeUnique;
+ loading=true;
  status.textContent="Searching the archive…";more.disabled=true;
  const url=clear?new URL("https://api.scryfall.com/cards/search"):new URL(nextPage);
  if(clear){
@@ -141,20 +144,38 @@ async function load(clear=false){
   const [order,dir]=currentSort();
   url.searchParams.set("order",order);url.searchParams.set("dir",dir);
  }
- // Never request an arbitrary third-party URL from an untrusted next_page value.
- if(url.hostname!=="api.scryfall.com"||url.protocol!=="https:"){loading=false;more.disabled=false;status.textContent="Invalid pagination link. Restart your search.";return}
+ const pageUrl=url.toString();
+ let timeout,timedOut=false;
  try {
-  const elapsed=Date.now()-lastRequest;if(elapsed<160)await new Promise(r=>setTimeout(r,160-elapsed));
-  lastRequest=Date.now();
-  let data=cache.get(url.toString());
-  if(!data){data=await scryfall(url.toString(),{signal:controller.signal});cache.set(url.toString(),data);if(cache.size>8)cache.delete(cache.keys().next().value)}
-  if(current!==searchToken)return;
-  for(const c of data.data||[]){const id=libraryCardIdentity(c,currentUnique());if(!cards.has(id)){cards.set(id,c);const tile=entry(c);gallery.append(tile);if(shown<6)checkInclusion(c,tile);shown++}}
-  nextPage=data.has_more?data.next_page:null;
+  let data=cache.get(pageUrl);
+  if(!data){
+   const elapsed=Date.now()-lastRequest;
+   if(elapsed<160)await new Promise(r=>setTimeout(r,160-elapsed));
+   // A superseded search must not issue another request using the newer controller.
+   if(current!==searchToken||requestController.signal.aborted)return;
+   lastRequest=Date.now();
+   timeout=setTimeout(()=>{timedOut=true;requestController.abort()},15000);
+   data=await scryfall(pageUrl,{signal:requestController.signal});
+   if(!Array.isArray(data?.data))throw Error("Scryfall returned incomplete search results. Try again.");
+   cache.set(pageUrl,data);if(cache.size>8)cache.delete(cache.keys().next().value);
+  }
+  if(current!==searchToken||requestController.signal.aborted)return;
+  visitedPages.add(pageUrl);
+  for(const card of data.data){
+   if(!card||typeof card.name!=="string"||!card.id)continue;
+   const id=libraryCardIdentity(card,unique);
+   if(!cards.has(id)){cards.set(id,card);const tile=entry(card);gallery.append(tile);if(shown<6)checkInclusion(card,tile);shown++}
+  }
+  const continuation=data.has_more?libraryNextPage(data.next_page):null;
+  nextPage=continuation&&!visitedPages.has(continuation)?continuation:null;
   more.hidden=!nextPage;status.textContent=libraryResultSummary(shown,data.total_cards);
-  pageStats.textContent=nextPage?"Load more results for this search.":"End of search results.";
- }catch(err){if(current!==searchToken||err.name==="AbortError")return;status.textContent=err.message;pageStats.textContent="Try a more specific card name or fewer filters."}
- finally{if(current===searchToken){loading=false;more.disabled=false}}
+  pageStats.textContent=nextPage?"Load more results for this search.":data.has_more?"Additional results are unavailable. Restart your search to try again.":"End of search results.";
+ }catch(err){
+  if(current!==searchToken||requestController.signal.aborted&&!timedOut)return;
+  status.textContent=timedOut?"Scryfall search timed out. Try again.":err.message;
+  pageStats.textContent=nextPage?"Your loaded cards are still available. Try Load more again.":"Try a more specific card name or fewer filters.";
+ }
+ finally{clearTimeout(timeout);if(current===searchToken){loading=false;more.disabled=false}}
 }
 // Facets update results automatically, while free-text searches submit on Enter
 // to keep network traffic reasonable for Scryfall.
