@@ -5,6 +5,8 @@ on:
       - 'scripts/release-readiness.mjs'
       - 'tests/release-readiness.test.mjs'
       - '.github/workflows/release-readiness.yml'
+      - 'docs/RELEASE-READINESS.md'
+      - 'docs/INFRASTRUCTURE-APPROVAL-2026-11-24.md'
   schedule:
     - cron: '35 1 * * *'
   workflow_dispatch:
