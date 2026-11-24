@@ -81,7 +81,13 @@ export function card(title,body,meta){
  h.append(heading,metadata);n.append(h,copy);return n;
 }
 export function empty(target,text){clear(target);target.append(el("p",text,"cm-empty"))}
-export function setTab(tab){
+export let profileReadVersion=0;
+function setTab(tab){
+ if(tab!=="network"){
+  ++profileReadVersion;
+  const profile=$('publicProfile');
+  if(profile?.hasAttribute('aria-busy')){profile.removeAttribute('aria-busy');clear(profile);profile.hidden=true;}
+ }
  const subtitles={
   cases:"FIND YOUR FELLOW BREWERS",
   decks:"SHOW YOUR DECK TECH",
@@ -259,15 +265,32 @@ async function loadNetwork(){
  x.activity.forEach(i=>{const n=card("@"+i.handle,i.body,i.created_at);n.append(link("OPEN DISCUSSION ↗",i.topic.startsWith("case:")?"community.html?case="+encodeURIComponent(i.topic.slice(5)):"community.html?deck="+i.topic.slice(5)));$("activityFeed").append(n)})}
 }
 async function showProfile(handle){
- const x=await attempt(()=>api("profile",{handle}));if(!x)return;
- history.replaceState(null,"",location.pathname+"?profile="+encodeURIComponent(x.profile.handle));
- const n=$("publicProfile");n.hidden=false;clear(n);n.append(portrait(x.profile));
- n.append(el("p",x.counts.comments+" findings · "+x.counts.tests+" playtests · "+x.counts.followers+" followers","cm-note"));
- for(const b of x.badges)n.append(badge(b));
- attachProfileReputation(n,x.profile.handle);
- void attachHiveRecords(n,x.profile.handle);
- if(state.me&&state.me.id!==x.profile.id)n.append(button("FOLLOW / UNFOLLOW INVESTIGATOR",async()=>{const r=await attempt(()=>write({action:"follow",type:"profile",target:x.profile.id}));if(r)msg(r.following?"Following investigator.":"Unfollowed investigator.")}));
- x.decks.forEach(d=>n.append(el("p",null),link(d.title+" ↗","community.html?deck="+d.id)));
+ const n=$("publicProfile");if(!n||n.closest("[data-panel]")?.hidden)return;
+ const seq=++profileReadVersion;
+ n.hidden=false;clear(n);n.setAttribute("aria-busy","true");
+ history.replaceState(null,"",location.pathname+"#network");
+ if(!/^[A-Za-z][A-Za-z0-9_]{2,23}$/.test(handle)){
+  n.removeAttribute("aria-busy");n.append(el("p","Enter a valid investigator handle (3–24 letters, numbers or underscores, starting with a letter).","cm-note"));return;
+ }
+ n.append(el("p","Looking up @"+handle+"…","cm-note"));
+ try{
+  const x=await api("profile",{handle});
+  if(seq!==profileReadVersion)return;
+  if(!x?.profile?.handle||!x.counts||!Array.isArray(x.badges)||!Array.isArray(x.decks))throw new Error("Incomplete profile response");
+  history.replaceState(null,"",location.pathname+"?profile="+encodeURIComponent(x.profile.handle));
+  clear(n);n.append(portrait(x.profile));
+  n.append(el("p",x.counts.comments+" findings · "+x.counts.tests+" playtests · "+x.counts.followers+" followers","cm-note"));
+  for(const b of x.badges)n.append(badge(b));
+  attachProfileReputation(n,x.profile.handle);
+  void attachHiveRecords(n,x.profile.handle);
+  if(state.me&&state.me.id!==x.profile.id)n.append(button("FOLLOW / UNFOLLOW INVESTIGATOR",async()=>{const r=await attempt(()=>write({action:"follow",type:"profile",target:x.profile.id}));if(r)msg(r.following?"Following investigator.":"Unfollowed investigator.")}));
+  x.decks.forEach(d=>n.append(el("p",null),link(d.title+" ↗","/community?deck="+encodeURIComponent(d.id))));
+ }catch{
+  if(seq!==profileReadVersion)return;
+  clear(n);n.append(el("p","Could not load that investigator. Check the handle and try again.","cm-note"));
+ }finally{
+  if(seq===profileReadVersion)n.removeAttribute("aria-busy");
+ }
 }
 function formZoom(f){return Number(f.elements.focusZoom?.value)||DEFAULT_ZOOM}
 function makePreviewWindow(form){
