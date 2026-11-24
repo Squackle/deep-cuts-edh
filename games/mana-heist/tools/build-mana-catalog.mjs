@@ -15,13 +15,13 @@
  *
  * Output is data for an offline audit, not automatically playable cards.
  */
-import {catalogDestination,bulkDownloadUrl,writeCatalogSnapshot,readLimitedJson,readOracleCards,MAX_METADATA_BYTES} from "./catalog-output.mjs";
+import {catalogDestination,validateBulkMetadata,writeCatalogSnapshot,readLimitedJson,readOracleCards,MAX_METADATA_BYTES} from "./catalog-output.mjs";
 const ENDPOINT="https://api.scryfall.com/bulk-data/oracle_cards";
 const dest=catalogDestination(process.argv[2]);
 const response=await fetch(ENDPOINT,{redirect:"error",signal:AbortSignal.timeout(30000),headers:{"User-Agent":"DeepCutsEDH-ManaHeist-Research/1.0 (offline catalog build)","Accept":"application/json"}});
 if(!response.ok)throw new Error("Scryfall bulk metadata "+response.status);
 const metadata=await readLimitedJson(response,MAX_METADATA_BYTES,"Scryfall metadata");
-const downloadUrl=bulkDownloadUrl(metadata);
+const downloadUrl=validateBulkMetadata(metadata);
 const cardsResponse=await fetch(downloadUrl,{redirect:"error",signal:AbortSignal.timeout(600000),headers:{"User-Agent":"DeepCutsEDH-ManaHeist-Research/1.0"}});
 if(!cardsResponse.ok)throw new Error("Scryfall oracle data "+cardsResponse.status);
 const source=await readOracleCards(cardsResponse,downloadUrl);

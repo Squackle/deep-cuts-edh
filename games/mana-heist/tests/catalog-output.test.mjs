@@ -9,7 +9,7 @@ import {dirname,join} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {
  catalogDestination,bulkDownloadUrl,writeCatalogSnapshot,
- readLimitedJson,readOracleCards,validateOracleCollection,MAX_ORACLE_CARDS,MAX_COMPRESSED_BYTES
+ readLimitedJson,readOracleCards,validateBulkMetadata,validateOracleCollection,MAX_ORACLE_CARDS,MAX_COMPRESSED_BYTES
 } from '../tools/catalog-output.mjs';
 
 const DOWNLOAD='https://data.scryfall.io/oracle-cards/oracle-cards-20261026.json';
@@ -163,4 +163,27 @@ test('offline catalog generator accepts a valid synthetic Scryfall export end to
   await rm(output,{force:true});
   await rm(temp,{recursive:true,force:true});
  }
+});
+
+test('metadata is validated before downloading and invalid UTF-8 fails closed',async()=>{
+ assert.equal(validateBulkMetadata({type:'oracle_cards',jsonl_download_uri:GZIP_DOWNLOAD,updated_at:'2026-10-26T12:00:00Z'}),GZIP_DOWNLOAD);
+ assert.throws(()=>validateBulkMetadata({type:'oracle_cards',download_uri:DOWNLOAD,updated_at:'invalid'}),/updated_at/);
+ await assert.rejects(readLimitedJson(new Response(Uint8Array.from([34,255,34]),{headers:{'content-type':'application/json'}}),100,'bulk'),/Invalid bulk JSON/);
+});
+test('actual compressed and decompressed stream limits and catalog uniqueness fail closed',async()=>{
+ const card={oracle_id:'12345678-abcd-4abc-9abc-123456789abc',name:'Example',type_line:'Artifact',oracle_text:'Add {C}.'};
+ const line=JSON.stringify(card)+'\n';
+ const zipped=gzipSync(Buffer.from(line));
+ const gz=bytes=>new Response(bytes,{headers:{'content-type':'application/gzip'}});
+ assert.deepEqual(await readOracleCards(gz(zipped),GZIP_DOWNLOAD,{compressedLimit:zipped.length,decompressedLimit:Buffer.byteLength(line)}),[card]);
+ await assert.rejects(readOracleCards(gz(zipped),GZIP_DOWNLOAD,{compressedLimit:zipped.length-1}),/stream limit/);
+ await assert.rejects(readOracleCards(gz(zipped),GZIP_DOWNLOAD,{decompressedLimit:Buffer.byteLength(line)-1}),/decompressed byte limit/);
+ await assert.rejects(readOracleCards(gz(zipped.subarray(0,zipped.length-4)),GZIP_DOWNLOAD));
+ await assert.rejects(readOracleCards(gz(gzipSync(Buffer.from(line+line))),GZIP_DOWNLOAD),/Duplicate Oracle ID/);
+ await assert.rejects(readOracleCards(gz(gzipSync(Buffer.from('\n'))),GZIP_DOWNLOAD),/collection size/);
+ assert.throws(()=>validateOracleCollection([]),/collection size/);
+ assert.throws(()=>validateOracleCollection([card,{...card,oracle_id:card.oracle_id.toUpperCase()}]),/Duplicate Oracle ID/);
+ const data=fixture();
+ data.cards.push({...data.cards[0]});data.count=2;data.counts_by_type.Artifact=2;
+ await assert.rejects(writeCatalogSnapshot(catalogDestination(uniqueName()),data),/Duplicate candidate/);
 });

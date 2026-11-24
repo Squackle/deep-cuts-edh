@@ -55,6 +55,11 @@ export function bulkDownloadUrl(metadata){
   throw new Error('Unexpected Scryfall bulk download URL');
  return url.href;
 }
+export function validateBulkMetadata(metadata){
+ const url=bulkDownloadUrl(metadata);
+ isoDate(metadata.updated_at,'source updated_at');
+ return url;
+}
 // Read bounded JSON in memory: no untrusted bulk data is ever persisted to disk.
 export async function readLimitedJson(response,byteLimit,label){
  if(!response?.ok||!Number.isSafeInteger(byteLimit)||byteLimit<1||!response.body?.getReader)
@@ -81,7 +86,7 @@ export async function readLimitedJson(response,byteLimit,label){
   throw error;
  }finally{reader.releaseLock()}
  if(bytes===0)throw new Error('Empty '+label+' response');
- try{return JSON.parse(Buffer.concat(parts,bytes).toString('utf8'))}
+ try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(parts,bytes)))}
  catch{throw new Error('Invalid '+label+' JSON')}
 }
 function validateSourceCard(card){
@@ -110,20 +115,29 @@ function validateSourceCard(card){
 }
 // Fail rather than generate a partial or unverifiable candidate set.
 export function validateOracleCollection(cards){
- if(!Array.isArray(cards)||cards.length>MAX_ORACLE_CARDS)throw new Error('Unexpected Oracle card collection size');
- for(const card of cards)validateSourceCard(card);
+ if(!Array.isArray(cards)||!cards.length||cards.length>MAX_ORACLE_CARDS)throw new Error('Unexpected Oracle card collection size');
+ const ids=new Set();
+ for(const card of cards){
+  validateSourceCard(card);
+  const id=card.oracle_id.toLowerCase();
+  if(ids.has(id))throw new Error('Duplicate Oracle ID');
+  ids.add(id);
+ }
  return cards;
 }
 
-export async function readOracleCards(response,downloadUrl){
+export async function readOracleCards(response,downloadUrl,{compressedLimit=MAX_COMPRESSED_BYTES,decompressedLimit=MAX_BULK_BYTES}={}){
+ if(!Number.isSafeInteger(compressedLimit)||compressedLimit<1||compressedLimit>MAX_COMPRESSED_BYTES||
+    !Number.isSafeInteger(decompressedLimit)||decompressedLimit<1||decompressedLimit>MAX_BULK_BYTES)
+  throw new Error('Invalid Oracle byte budget');
  const url=bulkDownloadUrl({type:'oracle_cards',download_uri:downloadUrl});
- if(url.endsWith('.json'))return validateOracleCollection(await readLimitedJson(response,MAX_BULK_BYTES,'Oracle cards'));
+ if(url.endsWith('.json'))return validateOracleCollection(await readLimitedJson(response,decompressedLimit,'Oracle cards'));
  if(!response?.ok||!response.body)throw new Error('Invalid compressed Oracle response');
  const type=response.headers?.get('content-type')||'';
  if(!/^(?:application\/(?:gzip|x-gzip|octet-stream)|binary\/octet-stream)(?:\s*;|$)/i.test(type))
   throw new Error('Unexpected compressed Oracle content type');
  const declared=response.headers.get('content-length');
- if(declared!==null&&(!/^\d+$/.test(declared)||Number(declared)>MAX_COMPRESSED_BYTES))
+ if(declared!==null&&(!/^\d+$/.test(declared)||Number(declared)>compressedLimit))
   throw new Error('Compressed Oracle export exceeds byte limit');
 
  let compressed=0,uncompressed=0,pending='',count=0;
@@ -132,7 +146,7 @@ export async function readOracleCards(response,downloadUrl){
  const input=Readable.fromWeb(response.body);
  const guard=new Transform({transform(chunk,encoding,callback){
   compressed+=chunk.byteLength;
-  callback(compressed>MAX_COMPRESSED_BYTES?new Error('Compressed Oracle export exceeds stream limit'):null,chunk);
+  callback(compressed>compressedLimit?new Error('Compressed Oracle export exceeds stream limit'):null,chunk);
  }});
  const unzip=createGunzip();
  // Node streams do not forward every upstream error through pipe automatically.
@@ -150,7 +164,7 @@ export async function readOracleCards(response,downloadUrl){
  try{
   for await(const chunk of unzip){
    uncompressed+=chunk.byteLength;
-   if(uncompressed>MAX_BULK_BYTES)throw new Error('Oracle export exceeds decompressed byte limit');
+   if(uncompressed>decompressedLimit)throw new Error('Oracle export exceeds decompressed byte limit');
    pending+=decoder.decode(chunk,{stream:true});
    let end;
    while((end=pending.indexOf('\n'))>=0){
@@ -161,7 +175,7 @@ export async function readOracleCards(response,downloadUrl){
   }
   pending+=decoder.decode();
   if(pending)pushLine(pending.trimEnd());
-  return cards;
+  return validateOracleCollection(cards);
  }finally{
   input.destroy();
   guard.destroy();
@@ -203,7 +217,13 @@ function validateSnapshot(snapshot){
  bounded(snapshot.scope,'catalog scope',1000);
  bounded(snapshot.caveat,'catalog caveat',1000);
  if(!plainObject(snapshot.counts_by_type))throw new Error('Invalid type counts');
- for(const card of snapshot.cards)validateCandidate(card);
+ const ids=new Set();
+ for(const card of snapshot.cards){
+  validateCandidate(card);
+  const id=card.oracle_id.toLowerCase();
+  if(ids.has(id))throw new Error('Duplicate candidate Oracle ID');
+  ids.add(id);
+ }
  for(const type of TYPES){
   const count=snapshot.cards.filter(c=>c.types.includes(type)).length;
   if(snapshot.counts_by_type[type]!==count)throw new Error('Mismatched catalog type count: '+type);
