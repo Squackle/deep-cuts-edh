@@ -19,7 +19,7 @@ export function latestChecks(checks){
  }
  return [...latest.values()];
 }
-export function assessPR(pr,checks,required,files,peers,{strict=false,mainSha=null,checksKnown=true}={}){
+export function assessPR(pr,checks,required,files,peers,{strict=false,mainSha=null,checksKnown=true,behindBy=null}={}){
  const latest=latestChecks(checks);
  const status=name=>{
   const candidates=latest.filter(x=>x.name===name);
@@ -36,16 +36,18 @@ export function assessPR(pr,checks,required,files,peers,{strict=false,mainSha=nu
  const overlaps=older.filter(p=>Array.isArray(p.files)).map(p=>({number:p.number,paths:p.files.filter(x=>ours.has(x))})).filter(p=>p.paths.length);
  const unknownOverlap=!Array.isArray(files)||older.some(p=>!Array.isArray(p.files));
  const baseStale=!!(mainSha&&pr.base?.sha!==mainSha);
+ const ancestryKnown=Number.isSafeInteger(behindBy)&&behindBy>=0;
  const holds=[];
  if(pr.draft)holds.push("draft");
  if(!checksKnown||!requiredStates.length||requiredStates.some(x=>x.state!=="pass"))holds.push("required checks incomplete");
  if(failures.length)holds.push("other check failures");
  if(pending.length)holds.push("checks running");
  if(overlaps.length||unknownOverlap)holds.push(unknownOverlap?"overlap assessment incomplete":"older PR file overlap");
- if(strict&&baseStale)holds.push("base SHA changed");
+ if(baseStale)holds.push("base snapshot changed during collection");
+ if(strict&&(!ancestryKnown||behindBy>0))holds.push(ancestryKnown?"branch behind main by "+behindBy+" commit(s)":"strict-base ancestry unverified");
  if(pr.mergeable===false)holds.push("not mergeable");
  // Never imply authorization or mergeability from a report.
- return {number:pr.number,title:pr.title,head:pr.head.sha,branch:pr.head.ref,base:pr.base?.sha,url:pr.html_url,requiredStates,failures,pending,overlaps,baseStale,holds,technical:holds.length?"HOLD":"REVIEW",approval:"owner release authorization not inferred"};
+ return {number:pr.number,title:pr.title,head:pr.head.sha,branch:pr.head.ref,base:pr.base?.sha,url:pr.html_url,requiredStates,failures,pending,overlaps,baseStale,behindBy,holds,technical:holds.length?"HOLD":"REVIEW",approval:"owner release authorization not inferred"};
 }
 export function previewSafety(project){
  const p=project.deployment_configs?.production??{},v=project.deployment_configs?.preview??{},src=project.source?.config??{};
@@ -117,9 +119,10 @@ export async function collectRepository(config,client){
  for(const pr of prs){
   const files=await safe(()=>pages(repo,"pulls/"+pr.number+"/files"),errors,"PR "+pr.number+" files");
   const checks=await safe(()=>pages(repo,"commits/"+pr.head.sha+"/check-runs?filter=latest","check_runs"),errors,"PR "+pr.number+" checks");
-  inputs.push({pr,number:pr.number,files:files?.map(x=>x.filename)??null,checks});
+  const ancestry=strict&&mainSha?await safe(()=>get(repo,"compare/"+mainSha+"..."+pr.head.sha+"?per_page=1"),errors,"PR "+pr.number+" ancestry"):null;
+  inputs.push({pr,number:pr.number,files:files?.map(x=>x.filename)??null,checks,behindBy:ancestry?.behind_by??null});
  }
- const items=inputs.map(x=>assessPR(x.pr,x.checks??[],requiredNames,x.files,inputs,{strict,mainSha,checksKnown:!!x.checks}));
+ const items=inputs.map(x=>assessPR(x.pr,x.checks??[],requiredNames,x.files,inputs,{strict,mainSha,checksKnown:!!x.checks,behindBy:x.behindBy}));
  const approvals=[];
  for(const number of gates){
   const issue=await safe(()=>get(repo,"issues/"+number),errors,"issue "+number);
@@ -151,8 +154,17 @@ export async function collectCloudflare(project,env=process.env,fetcher=fetch){
  try{
   const x=await request(url,{Authorization:"Bearer "+env.CF_READ_TOKEN},fetcher);
   if(!x.success||!x.result)return {state:"Cloudflare readback unavailable"};
-  const p=x.result,d=p.canonical_deployment;
-  return {state:"verified readback",sha:d?.deployment_trigger?.metadata?.commit_hash??null,stage:d?.latest_stage?.name??null,status:d?.latest_stage?.status??null,preview:previewSafety(p)};
+  const p=x.result,d=p.canonical_deployment,previews=[];
+  let previewInventory="sampled latest 60 records maximum";
+  for(let page=1;page<=3;page++){
+   try{
+    const list=await request(url+"/deployments?env=preview&per_page=20&page="+page,{Authorization:"Bearer "+env.CF_READ_TOKEN},fetcher);
+    if(!list.success||!Array.isArray(list.result))throw Error("invalid list");
+    previews.push(...list.result.map(item=>({sha:item.deployment_trigger?.metadata?.commit_hash,branch:item.deployment_trigger?.metadata?.branch,stage:item.latest_stage?.name,status:item.latest_stage?.status})));
+    if(list.result.length<20){previewInventory="complete within 60-record bound";break;}
+   }catch{previewInventory="preview inventory unavailable or partial";break;}
+  }
+  return {state:"verified readback",sha:d?.deployment_trigger?.metadata?.commit_hash??null,stage:d?.latest_stage?.name??null,status:d?.latest_stage?.status??null,preview:previewSafety(p),previews,previewInventory};
  }catch(e){return {state:"Cloudflare readback unavailable"};}
 }
 export function renderReport(report){
@@ -160,13 +172,15 @@ export function renderReport(report){
  for(const r of report.repositories){
   lines.push("","## "+r.repo,"","Main: "+(r.mainSha??"unknown")+"; required: "+r.requiredNames.join(", ")+" ("+(r.rulesVerified?"rules API":"documented fallback; rules unverified")+"); strict: "+(r.rulesVerified?String(r.strict):"unverified")+".",
    "Canonical Pages: "+markdown(r.cloudflare?.state)+"; "+markdown(r.cloudflare?.sha??"unknown SHA")+"; "+markdown(r.cloudflare?.status??"unknown status")+(r.cloudflare?.sha&&r.mainSha&&r.cloudflare.sha!==r.mainSha?" — SHA MISMATCH":"")+".");
-  if(r.cloudflare?.preview)lines.push("Preview: "+markdown(r.cloudflare.preview.mode)+"; "+r.cloudflare.preview.issues.map(markdown).join("; "));
+  if(r.cloudflare?.preview)lines.push("Preview: "+markdown(r.cloudflare.preview.mode)+"; "+r.cloudflare.preview.issues.map(markdown).join("; ")+"; "+markdown(r.cloudflare.previewInventory));
   lines.push("GitHub deployment records for main: "+(r.deploymentStates.length?r.deploymentStates.map(d=>markdown(d.environment)+": "+markdown(d.state)).join("; "):"none available; not proof of deployed SHA"),"",
-   "| PR | Exact head | Required checks | Disposition / next step |","|---|---|---|---|");
+   "| PR | Exact head | Required checks | Exact-head preview | Disposition / next step |","|---|---|---|---|---|");
   for(const p of r.items){
    const required=p.requiredStates.map(x=>markdown(x.name)+": "+x.state).join(", ");
    const details=[...p.holds,...p.failures.map(x=>markdown(x.name)+": "+x.conclusion),...p.overlaps.map(x=>"overlap #"+x.number+" ("+x.paths.map(markdown).join(", ")+")")];
-   lines.push("| [#"+p.number+"]("+p.url+") "+markdown(p.title)+" | \`"+p.head+"\` | "+required+" | "+p.technical+": "+(details.join("; ")||"owner approval / verify deployed candidate")+" |");
+   const preview=r.cloudflare?.previews?.find(x=>x.sha===p.head&&x.branch===p.branch);
+   const previewState=preview?markdown(preview.stage)+"/"+markdown(preview.status):r.cloudflare?.preview?.mode==="none"?"automatic previews disabled":r.cloudflare?.preview?"not in observed preview records":"unverified";
+   lines.push("| [#"+p.number+"]("+p.url+") "+markdown(p.title)+" | \`"+p.head+"\` | "+required+" | "+previewState+" | "+p.technical+": "+(details.join("; ")||"owner approval / verify deployed candidate")+" |");
   }
   lines.push("","### Scheduled checks (latest scheduled run)","");
   for(const s of r.scheduled)lines.push("- "+markdown(s.name)+": "+markdown(s.state)+(s.url?" ([run]("+s.url+"))":"")+(s.at?" — "+s.at:""));
