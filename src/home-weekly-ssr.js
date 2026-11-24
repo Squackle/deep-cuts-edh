@@ -20,6 +20,8 @@ export function homeFeatureModel(row){
 export function applyLatestToHomeHtml(html,row){
  const m=homeFeatureModel(row);
  if(typeof html!=='string'||!m)return html;
+ const current=html.match(/id="homeWeeklyFeature" data-weekly-date="(20\d\d-\d\d-\d\d)"/)?.[1];
+ if(!current||m.date<current)return html;
  const name=escaped(m.commander),short=escaped(m.commander.split(',')[0]);
  // Each replacement is a function, so report text is never read as a $-pattern.
  const swaps=[
