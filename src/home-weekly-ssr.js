@@ -4,12 +4,10 @@
  * replacement is exact; if the expected markup is missing, the original HTML
  * is returned unchanged. */
 import {escaped} from './weekly-rescues-html.js';
-import {trustedCardImage} from '../home-weekly-feature.mjs';
-
-const DATE=/^20\d\d-\d\d-\d\d$/;
+import {trustedCardImage,validWeeklyDate} from '../home-weekly-feature.mjs';
 
 export function homeFeatureModel(row){
- if(!row||typeof row!=='object'||!DATE.test(String(row.date||'')))return null;
+ if(!row||typeof row!=='object'||!validWeeklyDate(row.date))return null;
  const commander=typeof row.commander==='string'?row.commander.trim():'';
  const theme=typeof row.theme==='string'?row.theme.trim():'';
  const image=trustedCardImage(row.imageUrl);
