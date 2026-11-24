@@ -10,16 +10,28 @@ const EXCLUDE=new Set([".git","node_modules","security-report-output","dist","bu
 const SOURCE=/\.(?:js|mjs|cjs|ts|jsx|tsx|html|yml|yaml|json|env|sh)$/i;
 const CRAWL_LIMIT=3000, FILE_LIMIT=1_000_000;
 const redact=s=>String(s??"").replace(/(Bearer\s+)[\w-]{20,}/gi,"$1[REDACTED]").slice(0,400);
-export function walk(root,dir=root,list=[]){
- if(list.length>CRAWL_LIMIT)return list;
- for(const item of fs.readdirSync(dir,{withFileTypes:true})){
-  if(EXCLUDE.has(item.name))continue;
-  const full=path.join(dir,item.name);
-  if(item.isDirectory())walk(root,full,list);
-  else if(item.isFile()&&(SOURCE.test(item.name)||["_headers","_redirects","_routes.json"].includes(item.name)||item.name===".env"||item.name.startsWith(".env."))&&fs.statSync(full).size<=FILE_LIMIT)list.push(path.relative(root,full).replaceAll("\\","/"));
- }
- return list;
+// Keep the scan bounded, but expose every scope omission instead of silently
+// dropping later directories. Traverse metadata only for excluded candidates.
+export function inventorySources(root,{maxFiles=CRAWL_LIMIT,maxBytes=FILE_LIMIT}={}){
+ const paths=[],coverage={oversized:0,oversizedSample:[],limitOmitted:0};
+ const visit=dir=>{
+  for(const item of fs.readdirSync(dir,{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name,"en"))){
+   if(EXCLUDE.has(item.name))continue;
+   const full=path.join(dir,item.name);
+   if(item.isDirectory()){visit(full);continue}
+   if(!item.isFile()||!(SOURCE.test(item.name)||["_headers","_redirects","_routes.json"].includes(item.name)||item.name===".env"||item.name.startsWith(".env.")))continue;
+   const relative=path.relative(root,full).split(path.sep).join("/");
+   if(fs.statSync(full).size>maxBytes){
+    coverage.oversized++;
+    if(coverage.oversizedSample.length<25)coverage.oversizedSample.push(relative);
+   }else if(paths.length>=maxFiles)coverage.limitOmitted++;
+   else paths.push(relative);
+  }
+ };
+ visit(root);
+ return {paths,coverage};
 }
+export function walk(root){return inventorySources(root).paths}
 export function auditSources(files,read){
  const findings=[],inventory={sources:files.length,api:files.filter(p=>p.startsWith("functions/api/")).length,workflows:files.filter(p=>p.startsWith(".github/workflows/")).length};
  const add=(severity,status,category,where,summary,remediation)=>findings.push({severity,status,category,where,summary,remediation});
@@ -32,7 +44,7 @@ export function auditSources(files,read){
   ["functions/api/kofi-member-issue.js","member_issuer_credentials"]
  ];
  for(const [p,needle] of guarded){
-  if(!get(p)){add("medium","unverified","owner API",p,"Expected privileged route not inventoried.","Confirm routing and server-only authorization.");continue}
+  if(!files.includes(p)){add("medium","incomplete","owner API",p,"Expected privileged route not inventoried; authorization coverage cannot be verified.","Confirm the route is scanned or explicitly update the expected-route contract.");continue}
   if(!get(p).includes(needle))add("critical","confirmed","owner API",p,"Expected server-side owner authorization marker missing.","Restore authorization and add a negative-path regression test before release.");
  }
  const access="Cloudflare Access settings cannot be proven by repository code; separately verify exact-email policy, MFA and aliases using the Cloudflare API.";
@@ -144,10 +156,12 @@ export async function auditLive(){
 function riskOrder(x){return ({critical:0,high:1,medium:2,low:3,info:4})[x]??5}
 export function markdownReport(report){
  const {inventory,findings,live,createdAt,revision}=report;
+ const coverage=inventory.coverage??null;
  const count=Object.fromEntries(["critical","high","medium","low","info"].map(x=>[x,findings.filter(f=>f.severity===x).length]));
  const lines=["# DeepCutsEDH — security sweep","",`Time (UTC): ${createdAt}`,`Source revision: ${revision}`,"",
   "> This is a **non-destructive automated first pass**, not a penetration-testing certificate. Potential findings are NOT confirmed vulnerabilities. No secrets, response bodies or private records are included.", "",
   "## Scope and counts","",`- Source files scanned: ${inventory.sources}`,`- API files inventoried: ${inventory.api}`,`- GitHub workflows inventoried: ${inventory.workflows}`,
+  ...(coverage?[`- Eligible files omitted by count limit: ${coverage.limitOmitted}`,`- Source candidates excluded by size limit: ${coverage.oversized}`,`- Size-exclusion sample (paths only, max 25): ${coverage.oversizedSample.map(x=>JSON.stringify(x)).join(", ")||"none"}`]:[]),
   `- Potential issues by severity: ${JSON.stringify(count)}`,"", "## Safe live checks","",
   "| Host | Path | Check | Status | Result |","|---|---|---|---|---|",
   ...(live?.length?live.map(x=>`| ${x.host} | \`${x.path}\` | ${x.check} | ${x.code??"Unavailable"} | ${x.pass?"PASS":"INVESTIGATE"} |`):["| Not run | — | Run workflow with network-enabled runner | — | NOT TESTED |"]),
@@ -159,19 +173,23 @@ export function markdownReport(report){
  return lines.join("\n");
 }
 export function shouldFailSweep(findings,checks){
- return findings.some(x=>x.status==="confirmed"&&x.severity==="critical")||checks.some(x=>!x.pass);
+ return findings.some(x=>x.status==="incomplete"||(x.status==="confirmed"&&x.severity==="critical"))||checks.some(x=>!x.pass);
 }
 export async function run({root=DEFAULT_ROOT,live=false}={}){
- const paths=walk(root),audit=auditSources(paths,p=>fs.readFileSync(path.join(root,p),"utf8"));
+ const {paths,coverage}=inventorySources(root),audit=auditSources(paths,p=>fs.readFileSync(path.join(root,p),"utf8"));
+ audit.inventory.coverage=coverage;
+ if(coverage.limitOmitted)audit.findings.push({severity:"medium",status:"incomplete",category:"scan coverage",where:"repository",summary:"Source count limit omitted "+coverage.limitOmitted+" eligible files; the scan is incomplete.",remediation:"Review scan scope and increase the tested limit or split the scan."});
+ if(coverage.oversized)audit.findings.push({severity:"info",status:"not-tested",category:"scan coverage",where:"repository",summary:"Size limit excluded "+coverage.oversized+" source candidates. See coverage metadata for paths.",remediation:"Review omitted generated or large files separately; do not interpret them as scanned."});
  const checks=live?await auditLive():[];
  for(const x of checks)if(!x.pass)audit.findings.push({severity:x.check==="Access interception"?"critical":"medium",status:"potential",category:"live access",where:x.host+x.path,summary:"Unexpected status for "+x.check+" ("+(x.code??"unavailable")+").",remediation:"Review Access route matching and origin response using authorized read-only tools."});
  const report={version:1,createdAt:new Date().toISOString(),revision:process.env.GITHUB_SHA||"local",inventory:audit.inventory,live:checks,findings:audit.findings};
  const dir=path.join(root,"security-report-output");fs.mkdirSync(dir,{recursive:true});
  fs.writeFileSync(path.join(dir,"report.json"),JSON.stringify(report,null,2)+"\n");
  fs.writeFileSync(path.join(dir,"report.md"),markdownReport(report)+"\n");
+ if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,markdownReport(report)+"\n");
  if(checks.some(x=>!x.pass))console.log("Safe live checks requiring follow-up:",checks.filter(x=>!x.pass).map(x=>x.host+x.path+" HTTP "+(x.code??"unavailable")).join("; "));
  console.log(`Security sweep complete. ${audit.inventory.sources} files; ${audit.findings.length} findings/review items; ${checks.filter(x=>x.pass).length}/${checks.length} safe live checks. Reports: security-report-output/report.md and report.json`);
- // A failed public availability or Access check must not produce a green run.
+ // Incomplete required coverage or a failed public/Access check must not be green.
  if(shouldFailSweep(audit.findings,checks))process.exitCode=1;
  return report;
 }
