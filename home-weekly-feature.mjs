@@ -79,8 +79,8 @@ export function applyWeeklyFeature(root,report,documentNode){
 }
 if(typeof document!=='undefined'){
  const featured=document.getElementById('homeWeeklyFeature');
- if(featured&&typeof fetch==='function'){
-  watchFeaturedImage(featured.querySelector('[data-weekly-image]'));
+ if(featured)watchFeaturedImage(featured.querySelector('[data-weekly-image]'));
+ if(featured&&featured.dataset.weeklyResolved!=='true'&&typeof fetch==='function'){
   fetch(LATEST_URL,{headers:{Accept:'application/json'},cache:'no-store'})
    .then(r=>{if(!r.ok)throw Error('Weekly archive unavailable');return r.json();})
    .then(data=>{
