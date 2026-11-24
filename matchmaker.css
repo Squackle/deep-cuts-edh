@@ -24,6 +24,7 @@
 .mm-status{min-height:47px;padding:13px 15px;border:1px solid #5e7b62;background:#20382b;color:#d9e8d1;border-radius:4px;font-size:13px;line-height:1.6;margin:20px 0}
 .mm-status[data-error=true]{border-color:#bb9067;color:#f5ddae}
 .mm-result-actions{margin:0 0 24px}
+.mm-result-actions[hidden]{display:none}
 .mm-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
 .mm-card{display:grid;grid-template-columns:124px minmax(0,1fr);gap:17px;background:linear-gradient(135deg,#20382b,#17271e);border:1px solid #638268;padding:15px;border-radius:6px;min-width:0;box-shadow:0 5px 14px #06110b44}
 .mm-card:first-child{grid-column:1/-1;grid-template-columns:minmax(145px,200px) minmax(0,1fr);border-color:#c3a46a;background:linear-gradient(120deg,#2b4631,#172b20)}
