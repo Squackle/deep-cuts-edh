@@ -19,7 +19,7 @@ export function latestChecks(checks){
  }
  return [...latest.values()];
 }
-export function assessPR(pr,checks,required,files,peers,{strict=false,mainSha=null,checksKnown=true,behindBy=null}={}){
+export function assessPR(pr,checks,required,files,peers,{strict=false,mainSha=null,checksKnown=true,behindBy=null,rulesKnown=true}={}){
  const latest=latestChecks(checks);
  const status=name=>{
   const candidates=latest.filter(x=>x.name===name);
@@ -39,6 +39,7 @@ export function assessPR(pr,checks,required,files,peers,{strict=false,mainSha=nu
  const ancestryKnown=Number.isSafeInteger(behindBy)&&behindBy>=0;
  const holds=[];
  if(pr.draft)holds.push("draft");
+ if(!rulesKnown)holds.push("active required rules unverified");
  if(!checksKnown||!requiredStates.length||requiredStates.some(x=>x.state!=="pass"))holds.push("required checks incomplete");
  if(failures.length)holds.push("other check failures");
  if(pending.length)holds.push("checks running");
@@ -111,7 +112,8 @@ export async function collectRepository(config,client){
  const rules=await safe(()=>get(repo,"rules/branches/main"),errors,"active main rules");
  const actual=Array.isArray(rules)?rules.filter(x=>x.type==="required_status_checks"):null;
  const contexts=actual?.flatMap(x=>x.parameters?.required_status_checks?.map(c=>c.context)??[])??[];
- const strict=actual?.some(x=>x.parameters?.strict_required_status_checks_policy)??false;
+ const rulesKnown=!!actual?.length&&contexts.length>0;
+ const strict=rulesKnown?actual.some(x=>x.parameters?.strict_required_status_checks_policy):config.audit;
  const requiredNames=contexts.length?[...new Set(contexts)]:required;
  const prs=await safe(()=>pages(repo,"pulls?state=open"),errors,"open PRs")??[];
  const inputs=[];
@@ -122,7 +124,7 @@ export async function collectRepository(config,client){
   const ancestry=strict&&mainSha?await safe(()=>get(repo,"compare/"+mainSha+"..."+pr.head.sha+"?per_page=1"),errors,"PR "+pr.number+" ancestry"):null;
   inputs.push({pr,number:pr.number,files:files?.map(x=>x.filename)??null,checks,behindBy:ancestry?.behind_by??null});
  }
- const items=inputs.map(x=>assessPR(x.pr,x.checks??[],requiredNames,x.files,inputs,{strict,mainSha,checksKnown:!!x.checks,behindBy:x.behindBy}));
+ const items=inputs.map(x=>assessPR(x.pr,x.checks??[],requiredNames,x.files,inputs,{strict,mainSha,checksKnown:!!x.checks,behindBy:x.behindBy,rulesKnown}));
  const approvals=[];
  for(const number of gates){
   const issue=await safe(()=>get(repo,"issues/"+number),errors,"issue "+number);
@@ -145,7 +147,7 @@ export async function collectRepository(config,client){
   const statuses=await safe(()=>get(repo,"deployments/"+d.id+"/statuses?per_page=1"),errors,"deployment "+d.id);
   deploymentStates.push({environment:d.environment,state:statuses?.[0]?.state??"unknown",sha:d.sha,url:statuses?.[0]?.log_url??null});
  }
- return {repo,project:config.project,mainSha,requiredNames,rulesVerified:!!actual?.length&&contexts.length>0,strict,items,approvals,scheduled,deploymentStates,errors};
+ return {repo,project:config.project,mainSha,requiredNames,rulesVerified:rulesKnown,strict,items,approvals,scheduled,deploymentStates,errors};
 }
 export async function collectCloudflare(project,env=process.env,fetcher=fetch){
  if(!env.CF_READ_TOKEN||!env.CF_ACCOUNT_ID)return {state:"unverified — optional Cloudflare read-only connection not configured"};
@@ -188,7 +190,9 @@ export function renderReport(report){
   for(const a of r.approvals)lines.push("- [#"+a.number+"]("+a.url+") "+markdown(a.state)+" — "+markdown(a.title));
   if(r.errors.length)lines.push("","### Evidence unavailable","",...r.errors.map(e=>"- "+markdown(e)));
  }
- lines.push("","## Dependency advisory evidence","",report.audit?("Current checked-out lockfile ("+markdown(report.audit.revision)+"): "+markdown(report.audit.state)+(report.audit.counts?" — "+JSON.stringify(report.audit.counts):"")):"No fresh npm audit requested. Use latest dependency-audit workflow and #151; do not interpret an absent audit as zero advisories.","","Provider failures and repeated scheduled failures are reported once per check/PR. Inspect exact job logs before changes. No automatic issue creation, retries of red CI, or notifications outside Actions.");
+ lines.push("","## Dependency advisory evidence","",report.audit?("Current checked-out lockfile ("+markdown(report.audit.revision)+"): "+markdown(report.audit.state)+(report.audit.counts?" — "+JSON.stringify(report.audit.counts):"")):"No fresh npm audit requested. Use latest dependency-audit workflow and #151; do not interpret an absent audit as zero advisories.","");
+ for(const p of report.audit?.packages??[])lines.push("- "+p.name+": "+p.severity+(p.advisories.length?" — "+p.advisories.map(x=>x.title+" ("+x.severity+")").join("; "):" (transitive)"));
+ lines.push("","Provider failures and repeated scheduled failures are reported once per check/PR. Inspect exact job logs before changes. No automatic issue creation, retries of red CI, or notifications outside Actions.");
  return lines.join("\n")+"\n";
 }
 export function auditEvidence(file,revision){
@@ -196,7 +200,9 @@ export function auditEvidence(file,revision){
   const data=JSON.parse(readFileSync(file,"utf8"));
   if(!data.metadata?.vulnerabilities||data.error)return {revision,state:"audit unavailable"};
   const counts=data.metadata.vulnerabilities;
-  return {revision,state:counts.total===0?"zero known advisories":"advisories present",counts:{low:counts.low,moderate:counts.moderate,high:counts.high,critical:counts.critical,total:counts.total}};
+  if(!Number.isSafeInteger(counts.total)||counts.total<0)return {revision,state:"audit unavailable"};
+  const packages=Object.entries(data.vulnerabilities??{}).slice(0,50).map(([name,v])=>({name:markdown(name),severity:markdown(v.severity),advisories:(v.via??[]).filter(x=>typeof x==="object").slice(0,10).map(x=>({source:Number.isSafeInteger(x.source)?x.source:null,severity:markdown(x.severity),title:markdown(x.title)}))}));
+  return {revision,state:counts.total===0?"zero known advisories":"advisories present",counts:{low:counts.low,moderate:counts.moderate,high:counts.high,critical:counts.critical,total:counts.total},packages};
  }catch{return {revision,state:"audit unavailable"};}
 }
 export async function main(){
