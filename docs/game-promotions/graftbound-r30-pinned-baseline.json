@@ -1,0 +1,301 @@
+{
+  "schemaVersion": 1,
+  "game": "graftbound",
+  "labRepository": "Squackle/deep-cuts-game-lab-",
+  "websiteRepository": "Squackle/deep-cuts-edh",
+  "labSourceSha": "367c15af26231b0ea707bd5d3e4ca75d78f32bfa",
+  "websiteBaseSha": "9e71327e2a5b8b1ff7deb6249f57f51bfe066999",
+  "rulesVersion": "graftbound-rules-1.8.3-beta",
+  "status": "hold",
+  "gameVersion": "1.8.3-beta",
+  "cardPoolVersion": "real-pool-133-v7",
+  "scoringVersion": "gb-score-2",
+  "challengeRevision": 30,
+  "rulesDigestSha256": "6ddba82f23c4af1790910ce7ef8647f746e4b9eb0a33145297328095d4ccc51e",
+  "note": "Historical pinned r30 rules modules only; NOT a new release candidate, acceptance or public launch authorization. Re-pin requires fresh full manifest, security disposition, score/history tests and owner/Release Manager approval.",
+  "evidence": {},
+  "files": [
+    {
+      "source": "graftbound/src/cards/attachments.js",
+      "target": "src/graftbound-verify/cards/attachments.js",
+      "bytes": 4320,
+      "sha256": "1557d803f0831f17fc55fd31277125364a4f6a7052d96b57639ae6eeffb91092"
+    },
+    {
+      "source": "graftbound/src/cards/catalog.js",
+      "target": "src/graftbound-verify/cards/catalog.js",
+      "bytes": 1347,
+      "sha256": "a0688cf4f9f82b271c4decf323eaebea7d7332aca5537f36edc90f15d0a9dbb7"
+    },
+    {
+      "source": "graftbound/src/cards/compatibility.js",
+      "target": "src/graftbound-verify/cards/compatibility.js",
+      "bytes": 11742,
+      "sha256": "19da0b6839e084a4ae0d188c3a4697e94f43f0e6e888f871b493a702c4328615"
+    },
+    {
+      "source": "graftbound/src/cards/enemy-facts.js",
+      "target": "src/graftbound-verify/cards/enemy-facts.js",
+      "bytes": 4132,
+      "sha256": "bbccb860f543db2499b7a37c04fe5a03790ca0009cca08642313176afda3477d"
+    },
+    {
+      "source": "graftbound/src/cards/graft-levels.js",
+      "target": "src/graftbound-verify/cards/graft-levels.js",
+      "bytes": 6960,
+      "sha256": "01970e73dac6aee5bf498b2126b8b46369eae05f7722c7e71cdc0f7a81542d7a"
+    },
+    {
+      "source": "graftbound/src/cards/real-pool.js",
+      "target": "src/graftbound-verify/cards/real-pool.js",
+      "bytes": 13779,
+      "sha256": "c0338e1558d838fa8d18fd2bdbd6e7e8fb840e6c3b1cdee3af99184b2bd88c0f"
+    },
+    {
+      "source": "graftbound/src/cards/reference-set.js",
+      "target": "src/graftbound-verify/cards/reference-set.js",
+      "bytes": 1180,
+      "sha256": "2239bdcf52b06389299568cb831eb6682f8a75ecf94ef6c5e1dfee88765b7f81"
+    },
+    {
+      "source": "graftbound/src/cards/trait-registry.js",
+      "target": "src/graftbound-verify/cards/trait-registry.js",
+      "bytes": 6947,
+      "sha256": "9af002c87c327ee0febbc66363cf7604e5d6352a2ddeadaca3108a856262a989"
+    },
+    {
+      "source": "graftbound/src/core/grid.js",
+      "target": "src/graftbound-verify/core/grid.js",
+      "bytes": 3570,
+      "sha256": "ef5a5a4ec65e8c700016789214aee1e59c34910b75a9bb9d7003b2c1a9ba1163"
+    },
+    {
+      "source": "graftbound/src/core/rng.js",
+      "target": "src/graftbound-verify/core/rng.js",
+      "bytes": 831,
+      "sha256": "631386aa3cc6899aeba498fc19c77fffa10ebcae4bde07368c4ef4a32f0e1a40"
+    },
+    {
+      "source": "graftbound/src/data/cards.js",
+      "target": "src/graftbound-verify/data/cards.js",
+      "bytes": 9158,
+      "sha256": "3962c0dff82fb62a9b88ca5e77550db791308aa7544ff9f51891ddd9ab32a35d"
+    },
+    {
+      "source": "graftbound/src/data/creature-models.js",
+      "target": "src/graftbound-verify/data/creature-models.js",
+      "bytes": 3658,
+      "sha256": "fe486173e13b224c2e19df887129e311d1706517eeccb5242f3620e3845aac1e"
+    },
+    {
+      "source": "graftbound/src/data/encounters.js",
+      "target": "src/graftbound-verify/data/encounters.js",
+      "bytes": 5145,
+      "sha256": "d07aaeb4236c12df00fdfeeda48d737de5eb614852af47cf53d725aa1a6e0a2e"
+    },
+    {
+      "source": "graftbound/src/data/enemies.js",
+      "target": "src/graftbound-verify/data/enemies.js",
+      "bytes": 9539,
+      "sha256": "03b27491a773f9477f3fc18276fcf62c94d71f6635d827f9be4ff9c7f17acb5d"
+    },
+    {
+      "source": "graftbound/src/data/keywords.js",
+      "target": "src/graftbound-verify/data/keywords.js",
+      "bytes": 3216,
+      "sha256": "03b4347bde166cfcee08d321ebd6b1e72bc8fe85e2a0360f418ef171664ff6ff"
+    },
+    {
+      "source": "graftbound/src/data/legendary.js",
+      "target": "src/graftbound-verify/data/legendary.js",
+      "bytes": 3149,
+      "sha256": "069c9129ddd0c81e9c7e76d35e77c9cf235dc3a940a2e9e44cdaf093022e0902"
+    },
+    {
+      "source": "graftbound/src/data/scoring.js",
+      "target": "src/graftbound-verify/data/scoring.js",
+      "bytes": 1342,
+      "sha256": "a7a94160d0df95ae45fbfc9a39c05afb350ddbb8edd221cf6dcfb2d3374a4cde"
+    },
+    {
+      "source": "graftbound/src/data/tactics.js",
+      "target": "src/graftbound-verify/data/tactics.js",
+      "bytes": 427,
+      "sha256": "4087d54f8ee5779b8519d7874cbef1411f14a92b1ed5c334c73515aebc90cb9c"
+    },
+    {
+      "source": "graftbound/src/data/terrain.js",
+      "target": "src/graftbound-verify/data/terrain.js",
+      "bytes": 982,
+      "sha256": "93091bcc5f371e884b924e9d54d6b3a97e118467f8c799113d34e3a70aff7ea9"
+    },
+    {
+      "source": "graftbound/src/engine/abilities.js",
+      "target": "src/graftbound-verify/engine/abilities.js",
+      "bytes": 24316,
+      "sha256": "044305dcb907c455b9ed1b3cf25ed767c33e7b02a2d34a8389cfb44826e4455f"
+    },
+    {
+      "source": "graftbound/src/engine/ai.js",
+      "target": "src/graftbound-verify/engine/ai.js",
+      "bytes": 46987,
+      "sha256": "1b343226899a0612f392e65dd7d73c1fba4c5d439b231dac767eec1c101547ea"
+    },
+    {
+      "source": "graftbound/src/engine/anatomy-resolver.js",
+      "target": "src/graftbound-verify/engine/anatomy-resolver.js",
+      "bytes": 4326,
+      "sha256": "0f6ac063bbdd8a73a571c6ce5ce58a87c5450ee3d65ea8a9f01ab2f7e7a7e19f"
+    },
+    {
+      "source": "graftbound/src/engine/appearance.js",
+      "target": "src/graftbound-verify/engine/appearance.js",
+      "bytes": 2286,
+      "sha256": "6072007fe9ac3ce8dab47e0ef6b68c02fa5b0279dfb622a21b705769315ae242"
+    },
+    {
+      "source": "graftbound/src/engine/attachments.js",
+      "target": "src/graftbound-verify/engine/attachments.js",
+      "bytes": 3668,
+      "sha256": "2775bcb3c658e694cb9934de1ef90788074decb96a5a873a2ea6d2d791ffc158"
+    },
+    {
+      "source": "graftbound/src/engine/campaign.js",
+      "target": "src/graftbound-verify/engine/campaign.js",
+      "bytes": 4310,
+      "sha256": "2acfebc2c576d30d8a55a72224ad9cb50b974e0e01b75e795095379f4fccae23"
+    },
+    {
+      "source": "graftbound/src/engine/clock.js",
+      "target": "src/graftbound-verify/engine/clock.js",
+      "bytes": 1587,
+      "sha256": "7df9f4b858857525a143d20eb212eb39c5313815a253585aae2acdf48645915b"
+    },
+    {
+      "source": "graftbound/src/engine/combat.js",
+      "target": "src/graftbound-verify/engine/combat.js",
+      "bytes": 27586,
+      "sha256": "63a541133dd40c874f14b70d760e78444b5b5f16585889b14f3368693153cfd5"
+    },
+    {
+      "source": "graftbound/src/engine/combo-triggers.js",
+      "target": "src/graftbound-verify/engine/combo-triggers.js",
+      "bytes": 16586,
+      "sha256": "52f2ab1087ab81fa347d83b193efda80a2e3f7dd83b0a388d21ea3cb7d0c51be"
+    },
+    {
+      "source": "graftbound/src/engine/deck.js",
+      "target": "src/graftbound-verify/engine/deck.js",
+      "bytes": 1857,
+      "sha256": "ed920aeedae0e40df08eb4226b6a82937f2895542a5b6ba7e83488420e2f9d7b"
+    },
+    {
+      "source": "graftbound/src/engine/encounters.js",
+      "target": "src/graftbound-verify/engine/encounters.js",
+      "bytes": 9226,
+      "sha256": "cb976292e90bb5ef2ef8bd4dfc3b32a9470a291d23c512ae29fb1fc335133cf5"
+    },
+    {
+      "source": "graftbound/src/engine/events.js",
+      "target": "src/graftbound-verify/engine/events.js",
+      "bytes": 9189,
+      "sha256": "64e66c5888673d756ec5c80b6e8b9f1dc2eee6a9cc376d648b8f62d4ca144d8c"
+    },
+    {
+      "source": "graftbound/src/engine/evolution.js",
+      "target": "src/graftbound-verify/engine/evolution.js",
+      "bytes": 4196,
+      "sha256": "38f656debd63d89f09516f5f22df3fabe6f10986545f87d6f3723a47929e8049"
+    },
+    {
+      "source": "graftbound/src/engine/journal.js",
+      "target": "src/graftbound-verify/engine/journal.js",
+      "bytes": 2135,
+      "sha256": "91e236b864c438f32242fa29bfb1d6a6e66f211319c4a3dfe23408b1902bffd5"
+    },
+    {
+      "source": "graftbound/src/engine/loadout.js",
+      "target": "src/graftbound-verify/engine/loadout.js",
+      "bytes": 2249,
+      "sha256": "50c91294f8b857dd5742b41e7ea13394fc76156bfac5ff67abbbc28517c4883b"
+    },
+    {
+      "source": "graftbound/src/engine/mana.js",
+      "target": "src/graftbound-verify/engine/mana.js",
+      "bytes": 1163,
+      "sha256": "c05b030df986be32bc869e73e93bcb7cc422849115776dddbc5684b4334cad4e"
+    },
+    {
+      "source": "graftbound/src/engine/power.js",
+      "target": "src/graftbound-verify/engine/power.js",
+      "bytes": 3280,
+      "sha256": "62548056cc19b9ffc7739d42f8e3946d28582589a7e7f30427f20014a4dab232"
+    },
+    {
+      "source": "graftbound/src/engine/printed-triggers.js",
+      "target": "src/graftbound-verify/engine/printed-triggers.js",
+      "bytes": 8403,
+      "sha256": "8ce63f9eb3932e6bfc9dba3f5e3061ecd48cac653dbc6758f1f9e2f349aef1b5"
+    },
+    {
+      "source": "graftbound/src/engine/ranked.js",
+      "target": "src/graftbound-verify/engine/ranked.js",
+      "bytes": 7692,
+      "sha256": "7cb9a265dac42c1084c30e060ec48d59ac19d7d78c6251f2584383037c6f610a"
+    },
+    {
+      "source": "graftbound/src/engine/rewards.js",
+      "target": "src/graftbound-verify/engine/rewards.js",
+      "bytes": 6085,
+      "sha256": "57c4b7087c598eec4072d148d754aa5c21204d20399613b7878e02b9ad55f10a"
+    },
+    {
+      "source": "graftbound/src/engine/run.js",
+      "target": "src/graftbound-verify/engine/run.js",
+      "bytes": 21380,
+      "sha256": "df780a214db02ab9204bda7a509665f255675dbb37ca4fced792b0f30dfe9959"
+    },
+    {
+      "source": "graftbound/src/engine/scoring.js",
+      "target": "src/graftbound-verify/engine/scoring.js",
+      "bytes": 3990,
+      "sha256": "533cfed4647078dad5ef9b1f717ef1d1bf64e035d96637993c44eae9059b106a"
+    },
+    {
+      "source": "graftbound/src/engine/shrines.js",
+      "target": "src/graftbound-verify/engine/shrines.js",
+      "bytes": 2712,
+      "sha256": "7247a0389a96b3874ef7de9444870898915be3854a4cf8ee1fb3935a9efd745e"
+    },
+    {
+      "source": "graftbound/src/engine/spells.js",
+      "target": "src/graftbound-verify/engine/spells.js",
+      "bytes": 15400,
+      "sha256": "71f036958b962cdf1430f13b02e552187a2c62185d274c53810f27ab157891bd"
+    },
+    {
+      "source": "graftbound/src/engine/strength.js",
+      "target": "src/graftbound-verify/engine/strength.js",
+      "bytes": 2556,
+      "sha256": "88591acb3b51a67f778773aa1ce5d9133b891b4dc49906550ab0b97d4e3c7726"
+    },
+    {
+      "source": "graftbound/src/engine/trait-triggers.js",
+      "target": "src/graftbound-verify/engine/trait-triggers.js",
+      "bytes": 4868,
+      "sha256": "3486e183f73e1f06fa1ad59234dc3813c86e939c9202bd35370262c99f94782a"
+    },
+    {
+      "source": "graftbound/src/engine/visual-identity.js",
+      "target": "src/graftbound-verify/engine/visual-identity.js",
+      "bytes": 2578,
+      "sha256": "b765956885d7de88da6e028c21c73ffe74148c6c456af93c3cf00049e300ff33"
+    },
+    {
+      "source": "graftbound/src/engine/world-threat.js",
+      "target": "src/graftbound-verify/engine/world-threat.js",
+      "bytes": 11267,
+      "sha256": "073c6b7b9eb05de75309281a4eb6d64767d493dff41faf1fc9de7f2f06371975"
+    }
+  ]
+}
