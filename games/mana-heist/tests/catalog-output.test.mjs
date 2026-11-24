@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdir,mkdtemp,readFile,writeFile,symlink,rm} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {dirname,join} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
@@ -108,5 +109,37 @@ test('catalog writes only validated inert JSON within fixed directory and never 
  }finally{
   await rm(file,{force:true});await rm(linkPath,{force:true});
   await rm(dir,{recursive:true,force:true});
+ }
+});
+
+test('offline catalog generator accepts a valid synthetic Scryfall export end to end',async()=>{
+ const temp=await mkdtemp(join(tmpdir(),'mana-generator-fixture-'));
+ const name=uniqueName(),dest=catalogDestination(name),output=fileURLToPath(dest);
+ const preload=join(temp,'fixture-fetch.mjs');
+ const metadata={type:'oracle_cards',download_uri:DOWNLOAD,updated_at:'2026-10-26T12:00:00Z'};
+ const cards=[{oracle_id:'12345678-abcd-4abc-9abc-123456789abc',
+  name:'Example Artifact',type_line:'Artifact',oracle_text:'{T}: Add {C}.',
+  mana_cost:'{2}',layout:'normal',legalities:{commander:'legal'},color_identity:[],
+  scryfall_uri:'https://scryfall.com/card/abc/1/example'}];
+ // Preload replaces only this test child process's fetch: no live API, network or production data.
+ const code='const expected='+JSON.stringify(DOWNLOAD)+';\n'+
+  'const metadata='+JSON.stringify(metadata)+';\n'+
+  'const cards='+JSON.stringify(cards)+';\n'+
+  'globalThis.fetch=async(url)=>new Response(JSON.stringify(url===expected?cards:metadata),'+
+  '{headers:{"content-type":"application/json"}});\n';
+ try{
+  await writeFile(preload,code);
+  const tool=fileURLToPath(new URL('../tools/build-mana-catalog.mjs',import.meta.url));
+  const run=spawnSync(process.execPath,['--import',preload,tool,name],
+   {encoding:'utf8',timeout:25000,env:{...process.env,NODE_NO_WARNINGS:'1'}});
+  assert.equal(run.status,0,run.stderr||run.error?.message||run.stdout);
+  const json=JSON.parse(await readFile(output,'utf8'));
+  assert.equal(json.count,1);
+  assert.equal(json.source.provider,'Scryfall');
+  assert.equal(json.cards[0].name,'Example Artifact');
+  assert.equal(json.cards[0].review,'candidate-unverified');
+ }finally{
+  await rm(output,{force:true});
+  await rm(temp,{recursive:true,force:true});
  }
 });
