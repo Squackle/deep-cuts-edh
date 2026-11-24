@@ -1,0 +1,29 @@
+name: Synthetic database recovery rehearsal
+on:
+  pull_request:
+    paths:
+      - 'db/**'
+      - 'games/hive-run/db/**'
+      - 'scripts/recovery-rehearsal.py'
+      - '.github/workflows/recovery-rehearsal.yml'
+  schedule:
+    - cron: '31 14 1 * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: synthetic-recovery-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  synthetic-restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Exercise isolated recovery fixtures
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 scripts/recovery-rehearsal.py | tee -a "$GITHUB_STEP_SUMMARY"
