@@ -27,9 +27,13 @@ function setup(t, {game = 'graftbound'} = {}) {
   const git = (...args) => execFileSync('git', args, {cwd: labRoot, encoding: 'utf8'}).trim();
   git('init', '-q'); git('config', 'user.email', 'synthetic@example.invalid'); git('config', 'user.name', 'Synthetic QA');
   git('add', '.'); git('commit', '-q', '-m', 'synthetic source');
+  const siteGit = (...args) => execFileSync('git', args, {cwd: siteRoot, encoding: 'utf8'}).trim();
+  siteGit('init', '-q'); siteGit('config', 'user.email', 'synthetic@example.invalid'); siteGit('config', 'user.name', 'Synthetic QA');
+  siteGit('add', '.'); siteGit('commit', '-q', '-m', 'website baseline');
+
   const manifest = {schemaVersion: 1, game, labRepository: 'Squackle/deep-cuts-game-lab-',
     websiteRepository: 'Squackle/deep-cuts-edh', labSourceSha: git('rev-parse', 'HEAD'),
-    websiteBaseSha: 'f'.repeat(40), rulesVersion: game === 'hive-run' ? 'hive-1.5.4' : 'graftbound-rules-1.8.3-beta',
+    websiteBaseSha: siteGit('rev-parse', 'HEAD'), rulesVersion: game === 'hive-run' ? 'hive-1.5.4' : 'graftbound-rules-1.8.3-beta',
     status: 'hold', evidence: {...evidence}, files: [{source, target, bytes: Buffer.byteLength(body), sha256: h(body)}]};
   return {labRoot, siteRoot, manifest, source, target, git};
 }
@@ -49,6 +53,10 @@ test('source-only plan is explicitly not a destination parity check', t => {
 test('manifest pins the actual checked-out source SHA', t => {
   const x = setup(t); x.manifest.labSourceSha = 'a'.repeat(40);
   assert.throws(() => auditPromotion(x.manifest, x), /HEAD mismatch/);
+});
+test('stale or unrelated website baseline is rejected', t => {
+  const x = setup(t); x.manifest.websiteBaseSha = 'f'.repeat(40);
+  assert.throws(() => auditPromotion(x.manifest, x), /does not contain declared baseline/);
 });
 test('changed tracked source is rejected even if an old manifest exists', t => {
   const x = setup(t); writeFileSync(join(x.labRoot, x.source), 'tampered');
