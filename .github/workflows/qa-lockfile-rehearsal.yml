@@ -23,7 +23,7 @@ jobs:
           npm view miniflare dist-tags --json
           npm view undici versions --json > "$RUNNER_TEMP/undici-versions.json"
           node -e 'const v=require(process.argv[1]);console.log("Latest published versions:",v.slice(-15).join(", "))' "$RUNNER_TEMP/undici-versions.json"
-          version=$(node -e 'const v=require(process.argv[1]).filter(x=>/^7\.[0-9]+\.[0-9]+$/.test(x)).sort((a,b)=>{const aa=a.split(".").map(Number),bb=b.split(".").map(Number);return aa[1]-bb[1]||aa[2]-bb[2]});const x=v.at(-1);if(!x||Number(x.split(".")[1])<31)process.exit(1);console.log(x)' "$RUNNER_TEMP/undici-versions.json")
+          version=$(node -e 'const v=require(process.argv[1]).filter(x=>/^7\.[0-9]+\.[0-9]+$/.test(x)).sort((a,b)=>{const aa=a.split(".").map(Number),bb=b.split(".").map(Number);return aa[1]-bb[1]||aa[2]-bb[2]});const x=v.at(-1);if(!x)process.exit(1);const [,minor,patch]=x.split(".").map(Number);if(minor<30||(minor===30&&patch===0))process.exit(1);console.log(x)' "$RUNNER_TEMP/undici-versions.json")
           npm pkg set "overrides.miniflare.undici=$version"
           npm install --package-lock-only --ignore-scripts
           git diff -- package.json package-lock.json
