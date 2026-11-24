@@ -9,8 +9,27 @@ const decode = input => String(input).replace(/&(#x[0-9a-f]+|#[0-9]+|amp|lt|gt|q
  const n = e.startsWith('#x') ? parseInt(e.slice(2),16) : parseInt(e.slice(1),10);
  return Number.isInteger(n) && n>=32 && n<=0x10ffff && !(n>=0xd800 && n<=0xdfff) ? String.fromCodePoint(n) : '';
 });
-const readable = s => decode(String(s).replace(/<[^>]*>/g,'')).replace(/\s+/g,' ').trim();
-const escapeXml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+// Archive metadata is editorial plain text, not arbitrary HTML. Reject markup
+// instead of deleting tag-shaped substrings (which can reconstruct new tags).
+const readable = s => {
+ if (s.includes('<') || s.includes('>')) throw new Error('Invalid published metadata markup');
+ return decode(s).replace(/\s+/g,' ').trim();
+};
+// XML 1.0 text nodes cannot contain forbidden controls or lone surrogates.
+const escapeXml = s => {
+ const text = String(s);
+ for (const ch of text) {
+  const cp = ch.codePointAt(0);
+  if (!(cp === 9 || cp === 10 || cp === 13 || (cp >= 32 && cp <= 0xd7ff) ||
+        (cp >= 0xe000 && cp <= 0xfffd) || (cp >= 0x10000 && cp <= 0x10ffff))) {
+   throw new Error('Invalid XML character in published metadata');
+  }
+ }
+ return text.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'})[ch]);
+};
+// RSS description text is commonly parsed as HTML after XML decoding.
+// Encode HTML text first, then serialize the resulting string as XML.
+const escapeDescription = s => escapeXml(escapeXml(s));
 
 export function extractPublishedRescueReports(html) {
  if (typeof html !== 'string' || html.length > 400000) throw new Error('Invalid homepage');
@@ -39,7 +58,7 @@ export function renderRescueReportFeed(html) {
    '      <title>'+escapeXml(title)+' — Rescue Report | Deep Cuts EDH</title>',
    '      <link>'+escapeXml(url)+'</link>',
    '      <guid isPermaLink="true">'+escapeXml(url)+'</guid>',
-   '      <description>'+escapeXml(excerpt ? excerpt+'. Read the published Deep Cuts EDH Commander Rescue Report.' : 'Read the published Deep Cuts EDH Commander Rescue Report.')+'</description>',
+   '      <description>'+escapeDescription(excerpt ? excerpt+'. Read the published Deep Cuts EDH Commander Rescue Report.' : 'Read the published Deep Cuts EDH Commander Rescue Report.')+'</description>',
    '    </item>'
   ].join('\n');
  }).join('\n');
