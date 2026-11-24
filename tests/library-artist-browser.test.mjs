@@ -86,3 +86,43 @@ test("Artist combobox selects fuzzy suggestion, filters distinct prints, restore
   }
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
 });
+
+
+test("Library preserves loaded cards and stops malformed or looping pagination, then accepts a fresh search",{timeout:45000},async()=>{
+ const {server,url}=await serve();let browser;
+ try{
+  browser=await launchBrowser();
+  const page=await browser.newPage({viewport:{width:1280,height:840}});
+  const requests=[],errors=[];page.on("pageerror",error=>errors.push(error.message));
+  const card=name=>({id:name,oracle_id:name,name,type_line:"Legendary Creature — Test",prices:{usd:"1.00"},image_uris:{normal:"/assets/favicon.svg"}});
+  const next="https://api.scryfall.com/cards/search?q=forest&page=2";
+  await page.route(/^https:\/\//,route=>{
+   const u=new URL(route.request().url());
+   if(u.origin!=="https://api.scryfall.com"||u.pathname!=="/cards/search")return route.abort();
+   requests.push(u.href);
+   const q=u.searchParams.get("q")||"";
+   if(q.includes("malformed"))return route.fulfill({json:{data:[card("Malformed continuation")],has_more:true,next_page:"not a URL",total_cards:2}});
+   if(q.includes("recovered"))return route.fulfill({json:{data:[card("Fresh result")],has_more:false,total_cards:1}});
+   if(u.searchParams.get("page")==="2")return route.fulfill({json:{data:[card("First card"),card("Second card")],has_more:true,next_page:next,total_cards:3}});
+   return route.fulfill({json:{data:[card("First card")],has_more:true,next_page:next,total_cards:3}});
+  });
+  await page.route("**/api/card-inclusion?*",route=>route.fulfill({json:{available:false}}));
+  await page.goto(url+"/library",{waitUntil:"domcontentloaded"});
+  await page.locator("#cardGallery h3").first().waitFor();
+  await page.locator("#loadMore").click();
+  await page.waitForFunction(()=>document.querySelectorAll("#cardGallery .library-card").length===2&&document.querySelector("#loadMore").hidden);
+  assert.match(await page.locator("#pageStats").textContent(),/Additional results are unavailable/);
+  assert.equal(requests.length,2);
+  await page.locator("#cardQuery").fill("malformed");
+  await page.locator("#cardQuery").press("Enter");
+  await page.waitForFunction(()=>document.querySelector("#cardGallery").textContent.includes("Malformed continuation"));
+  assert.equal(await page.locator("#loadMore").isVisible(),false);
+  assert.match(await page.locator("#pageStats").textContent(),/Restart your search/);
+  await page.locator("#cardQuery").fill("recovered");
+  await page.locator("#cardQuery").press("Enter");
+  await page.waitForFunction(()=>document.querySelector("#cardGallery").textContent.includes("Fresh result"));
+  assert.equal(await page.locator("#cardGallery .library-card").count(),1);
+  assert.match(await page.locator("#pageStats").textContent(),/End of search results/);
+  assert.deepEqual(errors,[]);
+ }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
+});
