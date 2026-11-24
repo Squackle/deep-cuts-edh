@@ -7,6 +7,25 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 const html=readFileSync('index.html','utf8');
 const css=readFileSync('home-hub.css','utf8');
+// This contract identifies the actual script tag and the complete approved
+// AdSense URL, including the existing public publisher ID.
+const approvedAdScript='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1885127351876276';
+function hasApprovedAdScript(markup){
+ return [...markup.matchAll(/<script\b(?:[^"'<>]|"[^"]*"|'[^']*')*?\s+src="([^"]*)"(?:[^"'<>]|"[^"]*"|'[^']*')*>/g)].some(m=>m[1]===approvedAdScript);
+}
+const officialSource='https://github.com/Squackle/deep-cuts-edh';
+const officialWebsite='https://deep-cuts-edh.pages.dev/';
+const hasOfficialDirectory=(notes)=>notes.split(/\r?\n/).includes('- **Official public source repository:** '+officialSource)&&notes.split(/\r?\n/).includes('- **Official live website:** '+officialWebsite);
+test('Homepage URL contracts reject lookalikes and substring matches',()=>{
+ assert.equal(hasApprovedAdScript('<script async src="'+approvedAdScript+'"></script>'),true);
+ for(const src of ['https://evil.example/?url='+approvedAdScript,'https://pagead2.googlesyndication.com.evil.example/pagead/js/adsbygoogle.js','https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js-extra',approvedAdScript+'&extra=1','https://pagead2.googlesyndication.com@evil.example/pagead/js/adsbygoogle.js']){
+  assert.equal(hasApprovedAdScript('<script src="'+src+'"></script>'),false);
+ }
+ assert.equal(hasApprovedAdScript('<script data-src="'+approvedAdScript+'"></script>'),false);
+ const directory=src=>'- **Official live website:** '+officialWebsite+'\n- **Official public source repository:** '+src;
+ assert.equal(hasOfficialDirectory(directory(officialSource)),true);
+ for(const bad of [officialSource+'-evil',officialSource+'/extra','https://evil.example/?next='+officialSource,officialSource+'?redirect=evil'])assert.equal(hasOfficialDirectory(directory(bad)),false);
+});
 test('Homepage is a navigational landing page, not full feature documentation',()=>{
  assert.match(html,/<main id="main">/);
  assert.match(html,/id="directory"/);
@@ -46,7 +65,7 @@ test('Homepage loads only the shared lightweight UI scripts',()=>{
  for(const kept of ['/header-profile.js','/header-tagline.js','/feedback.js']){
   assert.ok(html.includes('src="'+kept+'"'),kept+' retained');
  }
- assert.ok(html.includes('src="https://pagead2.googlesyndication.com/'),'AdSense retained');
+ assert.ok(hasApprovedAdScript(html),'AdSense retained');
  assert.ok(html.includes('href="/home-styles.css"'));
 });
 test('Branding, indexing, and accessible structure remain',()=>{
@@ -91,7 +110,7 @@ test("PageSpeed changes stabilize homepage layout without touching AdSense or au
  assert.match(stability,/hub-card-top\{color:#435b47\}/);
  assert.match(stability,/hub-card-desc.*#455c49/);
  assert.ok(html.includes('src="https://cards.scryfall.io/normal/front/2/7/27427233-da58-45af-ade8-e0727929efaa.jpg?1783939404"'),'Featured card image must use exact trusted Scryfall CDN URL');
- assert.match(html,/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js/);
+ assert.ok(hasApprovedAdScript(html),'Approved AdSense script retained');
  assert.match(html,/name="google-site-verification"/);
  assert.match(html,/name="follow.it-verification-code"/);
 });
@@ -137,8 +156,7 @@ test('Home CSS bundle preserves every source exactly in cascade order',()=>{
   previous=start;
  }
  for(const name of assets)assert.equal(html.includes('href="/'+name+'"'),false,'Redundant CSS request '+name);
- assert.ok(html.includes('src="https://pagead2.googlesyndication.com/'),
-  'Preserve owner-approved AdSense script');
+ assert.ok(hasApprovedAdScript(html),'Preserve owner-approved AdSense script');
 });
 
 test('Supporter ticker measures its duplicated strip without a second forced reflow',()=>{
@@ -191,15 +209,15 @@ test('Brand-search copy describes the actual Commander site without losing its i
  assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22600,'Preserve strict combined homepage performance budget');
  assert.match(html,/name="google-site-verification"/);
  assert.match(html,/name="follow.it-verification-code"/);
- assert.match(html,/pagead2\.googlesyndication\.com/);
+ assert.ok(hasApprovedAdScript(html),'Approved AdSense script retained');
 });
 
 test("The official source link and brand directory are public, accurate and safe",()=>{
  const source='https://github.com/Squackle/deep-cuts-edh';
  assert.match(html,/<a class="dc-footer-subscribe" style="margin-left:12px" href="https:\/\/github\.com\/Squackle\/deep-cuts-edh" target="_blank" rel="noopener noreferrer">GITHUB SOURCE ↗<\/a>/);
  const notes=readFileSync('docs/BRAND-AND-OFFICIAL-LINKS.md','utf8');
- assert.match(notes,/Official live website:\*\* https:\/\/deep-cuts-edh\.pages\.dev\//);
- assert.ok(notes.includes(source),'Link directory identifies the same repository as the footer');
+ assert.equal(source,officialSource);
+ assert.ok(hasOfficialDirectory(notes),'Link directory identifies the exact official site and source repository');
  assert.match(notes,/no homepage URL, no description, and no topics/i);
  assert.match(notes,/PR #96/,'Root README must wait for active older PR');
  assert.match(notes,/commander-card price filter/i,'Brand copy must not imply verified full-deck budgets');

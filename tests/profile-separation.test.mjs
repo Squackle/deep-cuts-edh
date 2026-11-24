@@ -6,12 +6,30 @@ const read=x=>fs.readFileSync(x,"utf8");
 const community=read("community.html"),profile=read("profile.html"),
  app=read("community.js"),exp=read("field-expansion.js"),header=read("header-profile.js");
 const panels=html=>[...html.matchAll(/<section class="cm-panel(?: [^"]+)?" data-panel="([^"]+)"/g)].map(x=>x[1]);
+// Source-contract helpers: extract the actual double-quoted attribute from
+// the audited static tags, then compare the complete URL rather than a substring.
+const scriptSources=html=>[...html.matchAll(/<script\b(?:[^"'<>]|"[^"]*"|'[^']*')*?\s+src="([^"]*)"(?:[^"'<>]|"[^"]*"|'[^']*')*>/g)].map(m=>m[1]);
+function isTurnstileSource(raw){
+ try{
+  const u=new URL(raw,"https://deep-cuts-edh.pages.dev/");
+  return u.hostname==="challenges.cloudflare.com"&&(u.pathname==="/turnstile"||u.pathname.startsWith("/turnstile/"));
+ }catch{return false}
+}
+const privateBookmark=html=>[...html.matchAll(/<a\b(?:[^"'<>]|"[^"]*"|'[^']*')*?\s+href="([^"]*)"(?:[^"'<>]|"[^"]*"|'[^']*')*>/g)].some(m=>["/profile#account","profile#account","/profile#collection","profile#collection"].includes(m[1]));
+test("Private navigation contracts distinguish exact routes and real Turnstile sources",()=>{
+ assert.equal(isTurnstileSource("https://challenges.cloudflare.com/turnstile/v0/api.js"),true);
+ assert.equal(isTurnstileSource("//challenges.cloudflare.com/turnstile/v0/api.js"),true);
+ for(const raw of ["https://evil.example/challenges.cloudflare.com/turnstile","https://challenges.cloudflare.com.evil.example/turnstile","https://challenges.cloudflare.com/turnstile-lookalike","not a URL"])assert.equal(isTurnstileSource(raw),false);
+ assert.deepEqual(scriptSources('<script data-src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>'),[]);
+ assert.equal(privateBookmark('<a href="profile#account">Account</a>'),true);
+ for(const href of ["https://evil.example/profile#account","/notprofile#account","/profile#account-other","/profile#collection?extra"])assert.equal(privateBookmark('<a href="'+href+'">Account</a>'),false);
+});
 test("Community has only public social features, with no personal forms or private data panels",()=>{
  assert.deepEqual(panels(community),["cases","decks","challenge","lab","network","evidence","compare","reputation"]);
  for(const bad of ["registerForm","loginForm","recoverStartForm","accountLoggedOut","accountLoggedIn","ownProfile","collectionItems","dispatchList","identitySummary"])
   assert.ok(!community.includes('id="'+bad+'"'),"Leaked private UI: "+bad);
  assert.doesNotMatch(community,/Free profiles use their own recovery keys/);
- assert.doesNotMatch(community,/challenges\.cloudflare\.com\/turnstile/);
+ assert.ok(!scriptSources(community).some(isTurnstileSource),"Public Community must not load private Turnstile scripts");
 });
 test("Profile has only personal destinations and intact forms/keys",()=>{
  assert.deepEqual(panels(profile),["overview","collection","following","dispatches","account"]);
@@ -22,7 +40,7 @@ test("Profile has only personal destinations and intact forms/keys",()=>{
   assert.ok(profile.includes('id="'+id+'"'),"Profile UI missing "+id);
  }
  assert.match(profile,/<meta name="robots" content="noindex,follow">/);
- assert.match(profile,/<link rel="canonical" href="https:\/\/deep-cuts-edh.pages.dev\/profile">/);
+ assert.ok(profile.includes('<link rel="canonical" href="https://deep-cuts-edh.pages.dev/profile">'));
  assert.match(profile,/<h1>MY <em>PROFILE\.<\/em><\/h1>/);
 });
 test("Profile avatar is independent of social navigation and has useful shortcuts",()=>{
@@ -65,10 +83,10 @@ test("Old URLs and backend interfaces remain in place",()=>{
  for(const file of ["functions/api/community.js","functions/api/profile-device.js","functions/api/profile-recovery.js","functions/api/field-expansion.js"]){
   assert.ok(fs.existsSync(file),file+" missing");
  }
- assert.match(community,/<link rel="canonical" href="https:\/\/deep-cuts-edh.pages.dev\/community">/);
+ assert.ok(community.includes('<link rel="canonical" href="https://deep-cuts-edh.pages.dev/community">'));
  for(const page of ["games.html","supporters.html"]){
   const html=read(page);
-  assert.match(html,/\/?profile#(?:account|collection)/,page+" still points to old private tab");
+  assert.ok(privateBookmark(html),page+" still points to old private tab");
  }
 });
 test("Responsive profile layout, privacy notice and account navigation exist",()=>{
