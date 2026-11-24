@@ -10,7 +10,10 @@ test("latest check per app/name; missing, pending and failed checks remain visib
  const p=assessPR(pr,checks,["release-coordination","site-quality"],["a"],[],{strict:true,mainSha:"c".repeat(40)});
  assert.deepEqual(p.requiredStates.map(x=>x.state),["pass","missing"]);
  assert.equal(p.technical,"HOLD");
- assert.ok(p.holds.includes("base SHA changed"));
+ assert.ok(p.holds.includes("base snapshot changed during collection"));
+ assert.ok(p.holds.includes("strict-base ancestry unverified"));
+ const stale=assessPR(pr,[check("release-coordination",1)],["release-coordination"],["a"],[],{strict:true,mainSha:base,behindBy:2});
+ assert.ok(stale.holds.includes("branch behind main by 2 commit(s)"));
  assert.equal(p.failures[0].name,"provider");
 });
 test("older path overlap blocks; future PR overlap does not override owner ordering",()=>{
@@ -66,10 +69,12 @@ test("Cloudflare readback requires explicit credentials and never returns secret
  const env={CF_READ_TOKEN:"fixture-secret",CF_ACCOUNT_ID:"a".repeat(32)};
  const r=await collectCloudflare("deep-cuts-game-lab",env,async(url,options)=>{
   assert.equal(options.method,"GET");
+  if(url.includes("/deployments?"))return new Response(JSON.stringify({success:true,result:[{deployment_trigger:{metadata:{commit_hash:sha,branch:"game/test"}},latest_stage:{name:"queued",status:"idle"}}]}));
   assert.match(url,/\/pages\/projects\/deep-cuts-game-lab$/);
   return new Response(JSON.stringify({success:true,result:{name:"deep-cuts-game-lab",canonical_deployment:{deployment_trigger:{metadata:{commit_hash:sha}},latest_stage:{status:"success",name:"deploy"}},deployment_configs:{preview:{env_vars:{TOKEN:{value:"secret"}}}}}}));
  });
  assert.equal(r.sha,sha);
+ assert.deepEqual(r.previews,[{sha,branch:"game/test",stage:"queued",status:"idle"}]);
  assert.ok(!JSON.stringify(r).includes("fixture-secret"));
  assert.ok(!JSON.stringify(r).includes('"value"'));
 });
