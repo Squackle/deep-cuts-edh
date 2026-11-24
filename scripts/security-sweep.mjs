@@ -16,7 +16,7 @@ export function walk(root,dir=root,list=[]){
   if(EXCLUDE.has(item.name))continue;
   const full=path.join(dir,item.name);
   if(item.isDirectory())walk(root,full,list);
-  else if(item.isFile()&&(SOURCE.test(item.name)||item.name===".env"||item.name.startsWith(".env."))&&fs.statSync(full).size<=FILE_LIMIT)list.push(path.relative(root,full).replaceAll("\\","/"));
+  else if(item.isFile()&&(SOURCE.test(item.name)||["_headers","_redirects","_routes.json"].includes(item.name)||item.name===".env"||item.name.startsWith(".env."))&&fs.statSync(full).size<=FILE_LIMIT)list.push(path.relative(root,full).replaceAll("\\","/"));
  }
  return list;
 }
@@ -158,6 +158,9 @@ export function markdownReport(report){
  lines.push("","## Review not covered by automatic checks","","- Positive Cloudflare MFA login and exact-email restriction require a real owner and an authorized negative test identity.","- Account-to-account permissions, recovery challenges, payments, webhook replay and game-score forgery need safe staging fixtures and explicit review.","- Database restores, fuzzing, rate-limit stress, brute force and payment actions were deliberately **not** run.","- Cloudflare Access account policy verification and secret scanning history require connected, read-only administrator review.","","## Remediation disposition","","This report does not claim that a flagged finding was closed until a targeted code fix, regression test, CI pass, and confirmed deployment are linked. Record fixes in a private security issue/PR and mark open vs closed after verification.","");
  return lines.join("\n");
 }
+export function shouldFailSweep(findings,checks){
+ return findings.some(x=>x.status==="confirmed"&&x.severity==="critical")||checks.some(x=>!x.pass);
+}
 export async function run({root=DEFAULT_ROOT,live=false}={}){
  const paths=walk(root),audit=auditSources(paths,p=>fs.readFileSync(path.join(root,p),"utf8"));
  const checks=live?await auditLive():[];
@@ -168,8 +171,8 @@ export async function run({root=DEFAULT_ROOT,live=false}={}){
  fs.writeFileSync(path.join(dir,"report.md"),markdownReport(report)+"\n");
  if(checks.some(x=>!x.pass))console.log("Safe live checks requiring follow-up:",checks.filter(x=>!x.pass).map(x=>x.host+x.path+" HTTP "+(x.code??"unavailable")).join("; "));
  console.log(`Security sweep complete. ${audit.inventory.sources} files; ${audit.findings.length} findings/review items; ${checks.filter(x=>x.pass).length}/${checks.length} safe live checks. Reports: security-report-output/report.md and report.json`);
- // Only halt automated release on high-confidence owner-auth guard regressions.
- if(audit.findings.some(x=>x.status==="confirmed"&&x.severity==="critical")||checks.some(x=>!x.pass&&x.check==="Access interception"))process.exitCode=1;
+ // A failed public availability or Access check must not produce a green run.
+ if(shouldFailSweep(audit.findings,checks))process.exitCode=1;
  return report;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))
