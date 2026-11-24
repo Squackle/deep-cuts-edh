@@ -3,15 +3,17 @@ import assert from 'node:assert/strict';
 import {mkdir,mkdtemp,readFile,writeFile,symlink,rm} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
+import {gzipSync} from 'node:zlib';
 import {tmpdir} from 'node:os';
 import {dirname,join} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {
  catalogDestination,bulkDownloadUrl,writeCatalogSnapshot,
- readLimitedJson,validateOracleCollection,MAX_ORACLE_CARDS
+ readLimitedJson,readOracleCards,validateOracleCollection,MAX_ORACLE_CARDS,MAX_COMPRESSED_BYTES
 } from '../tools/catalog-output.mjs';
 
 const DOWNLOAD='https://data.scryfall.io/oracle-cards/oracle-cards-20261026.json';
+const GZIP_DOWNLOAD='https://data.scryfall.io/oracle-cards/oracle-cards-20261026.jsonl.gz';
 function fixture(){
  return {
   source:{provider:'Scryfall',bulk_type:'oracle_cards',updated_at:'2026-10-26T12:00:00Z',
@@ -39,6 +41,7 @@ test('offline catalog accepts only plain JSON basenames in the fixed game data d
 });
 test('bulk URL accepts only the exact HTTPS Scryfall oracle-cards data directory',()=>{
  assert.equal(bulkDownloadUrl({type:'oracle_cards',download_uri:DOWNLOAD}),DOWNLOAD);
+ assert.equal(bulkDownloadUrl({type:'oracle_cards',jsonl_download_uri:GZIP_DOWNLOAD}),GZIP_DOWNLOAD);
  for(const url of ['http://data.scryfall.io/oracle-cards/a.json',
   'https://data.scryfall.io.evil.test/oracle-cards/a.json',
   'https://evil.test/data.scryfall.io/oracle-cards/a.json',
@@ -58,6 +61,20 @@ test('bounded network JSON checks response type, byte budget and JSON syntax',as
  await assert.rejects(readLimitedJson(new Response(json,{headers:{'content-type':'application/json'}}),5,'bulk'),/stream limit/);
  await assert.rejects(readLimitedJson(new Response('{bad json',{headers:{'content-type':'application/json'}}),100,'bulk'),/Invalid bulk JSON/);
  await assert.rejects(readLimitedJson(new Response('',{headers:{'content-type':'application/json'}}),100,'bulk'),/Empty/);
+});
+test('current gzip JSONL and legacy JSON bulk cards both validate with explicit stream limits',async()=>{
+ const card={oracle_id:'12345678-abcd-4abc-9abc-123456789abc',
+  name:'Example',type_line:'Artifact',oracle_text:'{T}: Add {C}.',color_identity:[]};
+ const zipped=gzipSync(Buffer.from(JSON.stringify(card)+'\n'));
+ const gz=()=>new Response(zipped,{headers:{'content-type':'application/gzip'}});
+ assert.deepEqual(await readOracleCards(gz(),GZIP_DOWNLOAD),[card]);
+ assert.deepEqual(await readOracleCards(new Response(JSON.stringify([card]),
+  {headers:{'content-type':'application/json'}}),DOWNLOAD),[card]);
+ await assert.rejects(readOracleCards(new Response(zipped,{headers:{'content-type':'text/html'}}),GZIP_DOWNLOAD),/content type/);
+ await assert.rejects(readOracleCards(new Response(zipped,{headers:{
+  'content-type':'application/gzip','content-length':String(MAX_COMPRESSED_BYTES+1)}}),GZIP_DOWNLOAD),/byte limit/);
+ await assert.rejects(readOracleCards(new Response(gzipSync(Buffer.from('{invalid json}\n')),
+  {headers:{'content-type':'application/gzip'}}),GZIP_DOWNLOAD),/JSONL/);
 });
 test('malformed Oracle records and unbounded collections cannot reach classification',()=>{
  const basic={oracle_id:'12345678-abcd-4abc-9abc-123456789abc',name:'Example',
@@ -116,17 +133,20 @@ test('offline catalog generator accepts a valid synthetic Scryfall export end to
  const temp=await mkdtemp(join(tmpdir(),'mana-generator-fixture-'));
  const name=uniqueName(),dest=catalogDestination(name),output=fileURLToPath(dest);
  const preload=join(temp,'fixture-fetch.mjs');
- const metadata={type:'oracle_cards',download_uri:DOWNLOAD,updated_at:'2026-10-26T12:00:00Z'};
+ const metadata={type:'oracle_cards',jsonl_download_uri:GZIP_DOWNLOAD,updated_at:'2026-10-26T12:00:00Z'};
  const cards=[{oracle_id:'12345678-abcd-4abc-9abc-123456789abc',
   name:'Example Artifact',type_line:'Artifact',oracle_text:'{T}: Add {C}.',
   mana_cost:'{2}',layout:'normal',legalities:{commander:'legal'},color_identity:[],
   scryfall_uri:'https://scryfall.com/card/abc/1/example'}];
  // Preload replaces only this test child process's fetch: no live API, network or production data.
- const code='const expected='+JSON.stringify(DOWNLOAD)+';\n'+
+ const code='import {gzipSync} from "node:zlib";\n'+
+  'const expected='+JSON.stringify(GZIP_DOWNLOAD)+';\n'+
   'const metadata='+JSON.stringify(metadata)+';\n'+
   'const cards='+JSON.stringify(cards)+';\n'+
-  'globalThis.fetch=async(url)=>new Response(JSON.stringify(url===expected?cards:metadata),'+
-  '{headers:{"content-type":"application/json"}});\n';
+  'globalThis.fetch=async(url)=>url===expected'+
+  '?new Response(gzipSync(Buffer.from(cards.map(c=>JSON.stringify(c)).join("\\n"))),'+
+  '{headers:{"content-type":"application/gzip"}})'+
+  ':new Response(JSON.stringify(metadata),{headers:{"content-type":"application/json"}});\n';
  try{
   await writeFile(preload,code);
   const tool=fileURLToPath(new URL('../tools/build-mana-catalog.mjs',import.meta.url));
@@ -136,6 +156,7 @@ test('offline catalog generator accepts a valid synthetic Scryfall export end to
   const json=JSON.parse(await readFile(output,'utf8'));
   assert.equal(json.count,1);
   assert.equal(json.source.provider,'Scryfall');
+  assert.equal(json.source.downloaded_file,GZIP_DOWNLOAD);
   assert.equal(json.cards[0].name,'Example Artifact');
   assert.equal(json.cards[0].review,'candidate-unverified');
  }finally{
