@@ -157,8 +157,16 @@ test("Command Center 2.0 home, sections, real-form preservation, owner API actio
     assert.equal(chartOrder,true,"Graph belongs between Today numbers and quota meters");
     const capacityOverflow=await page.evaluate(()=>({width:document.body.scrollWidth,viewport:window.innerWidth}));
     assert.ok(capacityOverflow.width<=width+2,"Capacity mobile horizontal overflow "+JSON.stringify(capacityOverflow));
+    const beforeRefresh=requests.filter(r=>r.view==="capacity"&&r.method==="GET"&&r.auth).length;
+    const refreshed=page.waitForResponse(response=>{
+      const req=response.request();
+      return new URL(req.url()).pathname==="/api/owner-ops"&&
+        new URL(req.url()).searchParams.get("view")==="capacity"&&req.method()==="GET";
+    });
     await page.getByRole("button",{name:"Refresh metrics",exact:true}).click();
-    assert.ok(requests.filter(r=>r.view==="capacity").length>=2,"Refresh button must request current metrics");
+    assert.equal((await refreshed).status(),200);
+    assert.equal(requests.filter(r=>r.view==="capacity"&&r.method==="GET"&&r.auth).length,beforeRefresh+1,"Refresh button must request current authenticated metrics exactly once");
+    await page.getByText("Updated from production data.",{exact:true}).filter({visible:true}).waitFor();
     await page.locator('[data-owner-v2-group="Site"]').click();
     await page.getByRole("button",{name:"Site status",exact:true}).click();
     await page.getByText("2",{exact:true}).first().waitFor();
