@@ -105,6 +105,10 @@ test('gate blocks missing approval and malformed security evidence', t => {
   x.manifest.evidence.securityDispositionUrl = 'http://insecure.test/';
   assert.throws(() => validateManifest(x.manifest, {gate: true}), /must be HTTPS/);
 });
+test('release gate cannot report success from a source-only plan', t => {
+  const x = setup(t); x.manifest.status = 'owner-approved';
+  assert.throws(() => auditPromotion(x.manifest, {...x, gate: true, sourceOnly: true}), /website parity/);
+});
 test('gate can validate completeness without inventing source approvals', t => {
   const x = setup(t); x.manifest.status = 'owner-approved';
   assert.equal(auditPromotion(x.manifest, {...x, gate: true}).ok, true);
