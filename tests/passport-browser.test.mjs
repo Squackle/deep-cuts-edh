@@ -6,7 +6,8 @@ import {launchBrowser} from "./helpers/browser.mjs";
 const source=readFileSync(new URL("../passport.js",import.meta.url),"utf8");
 const stats=n=>({verifiedSource:true,games:{daily:[{completed:n,won:1}],arcane:[]},community:{publishedDecks:2,challengeEntries:0,visibleContributions:1,playtests:0}});
 test("Passport retains available verified sections, deduplicates pending refresh and clears stale investigator records",{timeout:45000},async()=>{
- let browser,release;
+ let browser,release,bobStarted;
+ const bobPending=new Promise(resolve=>{bobStarted=resolve});
  const gate=new Promise(resolve=>{release=resolve});
  try{
   browser=await launchBrowser();
@@ -21,14 +22,14 @@ test("Passport retains available verified sections, deduplicates pending refresh
    if(u.pathname==="/api/community"||u.pathname==="/api/daily-games"){
     const handle=u.searchParams.get("handle")||current;
     const k=handle+u.pathname;counts[k]=(counts[k]||0)+1;
-    if(handle==="Bob"){await gate;try{await route.fulfill({json:u.pathname==="/api/community"?stats(99):{badges:[{title:"Bob award"}]}})}catch{}return}
+    if(handle==="Bob"){if(counts["Bob/api/community"]&&counts["Bob/api/daily-games"])bobStarted();await gate;try{await route.fulfill({json:u.pathname==="/api/community"?stats(99):{badges:[{title:"Bob award"}]}})}catch{}return}
     if(handle==="Charlie"&&u.pathname==="/api/daily-games")return route.fulfill({status:503,json:{error:"Unavailable"}});
     if(handle==="Dana"&&u.pathname==="/api/community")return route.fulfill({json:{verifiedSource:true,games:{daily:[]},community:{}}});
     return route.fulfill({json:u.pathname==="/api/community"?stats(handle==="Charlie"?3:7):{badges:[{title:handle+" award"}]}});
    }
    return route.fulfill({status:404,body:"Not found"});
   });
-  await page.goto("http://passport.test/",{waitUntil:"domcontentloaded"});
+  await page.goto("http://passport.test/",{waitUntil:"load"});
   const switchTo=async handle=>{
    current=handle;
    await page.evaluate(async h=>{
@@ -44,6 +45,7 @@ test("Passport retains available verified sections, deduplicates pending refresh
   assert.equal(counts["Alice/api/community"],1);
   assert.equal(counts["Alice/api/daily-games"],1);
   await switchTo("Bob");
+  await bobPending;
   assert.equal(await page.getByText("Alice award",{exact:true}).count(),0);
   assert.equal(await page.locator("#passportStats .passport-stat").count(),0);
   await switchTo("Charlie");
