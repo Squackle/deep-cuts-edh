@@ -15,7 +15,7 @@
  *
  * Output is data for an offline audit, not automatically playable cards.
  */
-import {catalogDestination,bulkDownloadUrl,writeCatalogSnapshot,readLimitedJson,validateOracleCollection,MAX_METADATA_BYTES,MAX_BULK_BYTES} from "./catalog-output.mjs";
+import {catalogDestination,bulkDownloadUrl,writeCatalogSnapshot,readLimitedJson,readOracleCards,MAX_METADATA_BYTES} from "./catalog-output.mjs";
 const ENDPOINT="https://api.scryfall.com/bulk-data/oracle_cards";
 const dest=catalogDestination(process.argv[2]);
 const response=await fetch(ENDPOINT,{redirect:"error",signal:AbortSignal.timeout(30000),headers:{"User-Agent":"DeepCutsEDH-ManaHeist-Research/1.0 (offline catalog build)","Accept":"application/json"}});
@@ -24,7 +24,7 @@ const metadata=await readLimitedJson(response,MAX_METADATA_BYTES,"Scryfall metad
 const downloadUrl=bulkDownloadUrl(metadata);
 const cardsResponse=await fetch(downloadUrl,{redirect:"error",signal:AbortSignal.timeout(600000),headers:{"User-Agent":"DeepCutsEDH-ManaHeist-Research/1.0"}});
 if(!cardsResponse.ok)throw new Error("Scryfall oracle data "+cardsResponse.status);
-const source=validateOracleCollection(await readLimitedJson(cardsResponse,MAX_BULK_BYTES,"Oracle cards"));
+const source=await readOracleCards(cardsResponse,downloadUrl);
 const reg={
  add:/\badd (?:\{[WUBRGCX0-9/{} ]+\}|(?:one|two|three|four|five|six|X|an amount of) mana|mana equal to)/i,
  treasure:/\bcreate\b.{0,130}\bTreasure\b/i,
@@ -59,7 +59,7 @@ const candidates=source.map(classify).filter(Boolean);
 candidates.sort((a,b)=>a.name.localeCompare(b.name));
 const tally=Object.fromEntries(["Artifact","Instant","Sorcery"].map(t=>[t,candidates.filter(c=>c.types.includes(t)).length]));
 const snapshot={source:{provider:"Scryfall",bulk_type:"oracle_cards",updated_at:metadata.updated_at,
- downloaded_file:metadata.download_uri,oracle_cards_checked:source.length,compiled_at:new Date().toISOString()},
+ downloaded_file:downloadUrl,oracle_cards_checked:source.length,compiled_at:new Date().toISOString()},
  scope:"All potentially mana-relevant artifact, instant and sorcery Oracle identities matching public discovery filters; not full rules implementation",
  caveat:"Candidates include false positives and exclude atypical mana interactions. Every playable card requires explicit Oracle verification and mechanics tests.",
  count:candidates.length,counts_by_type:tally,cards:candidates};
