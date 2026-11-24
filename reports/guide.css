@@ -247,3 +247,11 @@
 @media(hover:none),(pointer:coarse){
  .premade-card-preview{display:none!important}
 }
+
+/* Reserve the same card geometry while images load or fail, including partner
+   cards. Preserve the existing responsive widths and report-specific design. */
+.report-hero-media img,.report-image-backup{aspect-ratio:488/680}
+.report-hero-media:not(.report-hero-partners) .report-image-backup{width:min(240px,100%);height:auto;box-sizing:border-box;overflow-wrap:anywhere}
+.report-hero-partners .report-image-backup{width:100%;height:auto;box-sizing:border-box;overflow-wrap:anywhere}
+@media(max-width:850px){.report-hero-media:not(.report-hero-partners) .report-image-backup{width:min(180px,100%)}}
+@media(max-width:620px){.report-hero-media:not(.report-hero-partners) .report-image-backup{width:min(165px,100%);font-size:clamp(15px,4vw,24px);padding:12px}}
