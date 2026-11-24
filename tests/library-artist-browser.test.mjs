@@ -14,8 +14,9 @@ async function serve(){
   if(!file.startsWith(root+path.sep)){res.writeHead(403).end();return}
   try{
    const type=file.endsWith(".js")?"text/javascript":file.endsWith(".html")?"text/html":file.endsWith(".css")?"text/css":file.endsWith(".svg")?"image/svg+xml":"application/octet-stream";
-   res.writeHead(200,{"Content-Type":type}).end(fs.readFileSync(file));
-  }catch{res.writeHead(404).end("Not found")}
+   const bytes=fs.readFileSync(file);
+   res.writeHead(200,{"Content-Type":type}).end(bytes);
+  }catch{if(!res.headersSent)res.writeHead(404);res.end("Not found")}
  });
  await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
  return {server,url:"http://127.0.0.1:"+server.address().port};
