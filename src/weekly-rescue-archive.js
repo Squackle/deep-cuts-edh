@@ -6,8 +6,7 @@
 import {EDITORIAL_EDITIONS} from './weekly-rescue-editions.js';
 import {remoteJson} from './weekly-rescues-html.js';
 
-const DATE=/^20\d\d-\d\d-\d\d$/;
-const validDate=value=>typeof value==='string'&&DATE.test(value)&&Number.isFinite(Date.parse(value+'T00:00:00Z'))&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
+import {validWeeklyDate as validDate} from '../home-weekly-feature.mjs';
 const validRow=row=>row&&validDate(row.date)&&typeof row.commander==='string'&&row.commander.trim()&&typeof row.theme==='string'&&row.theme.trim();
 const editions=new Map(EDITORIAL_EDITIONS.map(x=>[x.date,x]));
 
