@@ -1,0 +1,349 @@
+// Top-down dye-in-water ward, driven by the accepted orbs from ward-charge.js.
+// One reusable 64x64 semi-Lagrangian dye/velocity grid; no network, shaders,
+// workers, texture downloads, or per-mana setup. Mouse and touch impart velocity.
+// Visual state never changes the Magic rules, mana pool, or solver state.
+import {COLOR_RGB,cssForOrbs} from "./fluid-palette.js";
+import {initializePigments,mixPigments,stirPigmentWake,pigmentStatistics,introducePigment} from "./pigment-mixer.js";
+
+const N=64,COUNT=N*N,MID=(N-1)/2,RADIUS=N*.465;
+const INDEX=(x,y)=>y*N+x;
+const FIELDS=["mass","r","g","b","vx","vy"];
+const inside=(x,y)=>Math.hypot(x-MID,y-MID)<RADIUS;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+export function makeFluidGrid(){
+ const active=new Uint8Array(COUNT),drag=new Float32Array(COUNT);
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+  const i=INDEX(x,y),dist=Math.hypot(x-MID,y-MID);
+  active[i]=dist<RADIUS?1:0;
+  const wall=clamp((RADIUS-dist)/5,0,1);
+  // Match the old mobile pot's long-lived currents at both 30 and 60fps.
+  drag[i]=wall>.01?.9935*(.17+.83*wall):0;
+ }
+ const grid={active,drag,n:N,mass:new Float32Array(COUNT),r:new Float32Array(COUNT),g:new Float32Array(COUNT),b:new Float32Array(COUNT),vx:new Float32Array(COUNT),vy:new Float32Array(COUNT)};
+ grid.tmp=Object.fromEntries(FIELDS.map(k=>[k,new Float32Array(COUNT)]));
+ return grid;
+}
+export function addDye(grid,color,x=MID,y=MID,amount=1){
+ const rgb=COLOR_RGB[color];if(!rgb)return;
+ const rad=6.7,spread=rad*rad*.78;
+ for(let gy=Math.max(0,Math.floor(y-rad*2));gy<=Math.min(N-1,Math.ceil(y+rad*2));gy++){
+  for(let gx=Math.max(0,Math.floor(x-rad*2));gx<=Math.min(N-1,Math.ceil(x+rad*2));gx++){
+   const i=INDEX(gx,gy);if(!grid.active[i])continue;
+   const d=(gx-x)**2+(gy-y)**2;
+   const n=amount*Math.exp(-d/spread);
+   grid.mass[i]+=n;
+   grid.r[i]+=rgb[0]*n;grid.g[i]+=rgb[1]*n;grid.b[i]+=rgb[2]*n;
+   // Droplet impact gives local radial ripples, not persistent boundary orbit.
+   grid.vx[i]+=(gx-x)*.004*n;grid.vy[i]+=(gy-y)*.004*n;
+  }
+ }
+}
+// Full-disk proportional composition: each distinct mana color initially owns
+// count/total of the WATER, rather than making a tiny splat in empty water.
+// New mana rebalances the entire pot immediately; stirring then advects dye.
+// Edges use a little deterministic waviness, not isolated pie-shape overlays.
+export function fillDyeProportions(grid,orbs){
+ const result=initializePigments(grid,orbs||[]);
+ if(!result.total){
+  for(const k of ["mass","r","g","b"])grid[k].fill(0);
+ }
+ return {total:result.total,groups:result.group.map(g=>({
+  color:["W","U","B","R","G","C"][g.color],count:g.count
+ }))};
+}
+
+export function stirDye(grid,x,y,dx,dy){
+ const speed=clamp(Math.hypot(dx,dy),0,10);
+ if(!speed)return;
+ stirPigmentWake(grid,x,y,dx,dy);
+ const radius2=105;
+ for(let j=Math.max(1,Math.floor(y-11));j<Math.min(N-1,Math.ceil(y+11));j++){
+  for(let i=Math.max(1,Math.floor(x-11));i<Math.min(N-1,Math.ceil(x+11));i++){
+   const p=INDEX(i,j),rx=i-x,ry=j-y,d2=rx*rx+ry*ry;
+   if(!grid.active[p]||d2>radius2)continue;
+   const f=(1-d2/radius2)**2;
+   grid.vx[p]+=clamp(dx,-10,10)*.18*f-ry*.004*speed*f;
+   grid.vy[p]+=clamp(dy,-10,10)*.18*f+rx*.004*speed*f;
+  }
+ }
+}
+function sample(grid,field,x,y){
+ x=clamp(x,0,N-1.001);y=clamp(y,0,N-1.001);
+ const x0=Math.floor(x),y0=Math.floor(y),fx=x-x0,fy=y-y0;
+ const a=INDEX(x0,y0),b=INDEX(x0+1,y0),c=INDEX(x0,y0+1),d=INDEX(x0+1,y0+1);
+ const fallback=field[INDEX(Math.round(x),Math.round(y))]||0;
+ const av=grid.active[a]?field[a]:fallback,bv=grid.active[b]?field[b]:fallback;
+ const cv=grid.active[c]?field[c]:fallback,dv=grid.active[d]?field[d]:fallback;
+ return ((av*(1-fx)+bv*fx)*(1-fy)+(cv*(1-fx)+dv*fx)*fy);
+}
+
+export function advanceFluid(grid,dt=1){
+ const {tmp}=grid;
+ dt=clamp(dt,.05,2.5);
+ // When the pot holds mana, only advect the physical velocity here.
+ // Each color is transported separately, mixed and rebalanced afterwards.
+ const fields=grid.pigmentLive?["vx","vy"]:FIELDS;
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+  const i=INDEX(x,y);
+  if(!grid.active[i]){for(const k of fields)tmp[k][i]=0;continue;}
+  const sx=x-grid.vx[i]*dt*.72,sy=y-grid.vy[i]*dt*.72;
+  for(const k of fields)tmp[k][i]=sample(grid,grid[k],sx,sy);
+ }
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+  const i=INDEX(x,y);if(!grid.active[i])continue;
+  if(!grid.pigmentLive){
+   const left=i-1,right=i+1,up=i-N,down=i+N;
+   const neighbors=(grid.active[left]?1:0)+(grid.active[right]?1:0)+(grid.active[up]?1:0)+(grid.active[down]?1:0);
+   for(const k of ["mass","r","g","b"]){
+    const average=neighbors?((grid.active[left]?tmp[k][left]:0)+(grid.active[right]?tmp[k][right]:0)+(grid.active[up]?tmp[k][up]:0)+(grid.active[down]?tmp[k][down]:0))/neighbors:tmp[k][i];
+    grid[k][i]=Math.max(0,(tmp[k][i]*.96+average*.04)*.9998);
+   }
+  }
+  // Real-time damping: 30fps and 60fps must yield comparable flow.
+  const damping=Math.pow(grid.drag[i],dt);
+  grid.vx[i]=tmp.vx[i]*damping;
+  grid.vy[i]=tmp.vy[i]*damping;
+ }
+ if(grid.pigmentLive)mixPigments(grid,dt);
+}
+
+export function installFluidWard({canvas,target,onInteract=()=>{}}){
+ const ctx=canvas?.getContext?.("2d",{alpha:true,desynchronized:true});
+ if(!ctx||!target)return {
+  available:false,sync:()=>{},clear:()=>{},pause:()=>{},resume:()=>{},
+  isStirring:()=>false,lastStirAt:()=>0,burst:()=>{},setReduced:()=>{}
+ };
+ target.classList.add("fluid-enabled");
+ const grid=makeFluidGrid(),off=document.createElement("canvas");
+ off.width=N;off.height=N;
+ const offctx=off.getContext("2d"),pixels=offctx.createImageData(N,N);
+ canvas.width=192;canvas.height=192;
+ // Higher-resolution presentation on larger screens. The physical solver
+ // remains 64x64, so GPU scaling improves edges without increasing its cost.
+ let lastMeasuredTime=-Infinity;
+ function ensureResolution(){
+  const now=performance.now();
+  if(now-lastMeasuredTime<300)return;
+  const rect=canvas.getBoundingClientRect?.();
+  const cssWidth=rect?.width||0;
+  if(cssWidth<20)return; // Hidden overworld; do not delay the first visible resize.
+  lastMeasuredTime=now;
+  const mobile=(window.innerWidth||0)<=700;
+  const deviceScale=Math.min(window.devicePixelRatio||1,2);
+  const next=mobile?256:clamp(Math.ceil(cssWidth*deviceScale/32)*32,256,512);
+  if(next!==canvas.width){
+   canvas.width=next;canvas.height=next;
+   ctx.imageSmoothingEnabled=true;
+   ctx.imageSmoothingQuality="high";
+  }
+ }
+ let active=false,raf=0,lastFrame=0,lastStir=0,drag=null,hover=null;
+ let charged=[],appliedIds=new Set(),ripples=[],pulse=0;
+ let manualReduced=false;
+ const reduced=()=>manualReduced||window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches===true;
+ function clearGrid(){
+  target.classList.remove("ward-breaking","is-stirring");
+  drag=null;hover=null;lastStir=0;
+  for(const k of FIELDS)grid[k].fill(0);
+  // Undo, a new ward, or Map must not retain pigment from an old state.
+  grid.pigmentLive=false;
+  grid.pigments?.forEach(field=>field.fill(0));
+  grid.turbulence?.fill(0);
+  appliedIds.clear();charged=[];ripples=[];pulse=0;
+ }
+ const coord=event=>{
+  const bounds=canvas.getBoundingClientRect();
+  return {x:(event.clientX-bounds.left)/Math.max(bounds.width,1)*(N-1),
+          y:(event.clientY-bounds.top)/Math.max(bounds.height,1)*(N-1)};
+ };
+ function render(){
+  ensureResolution();
+  const data=pixels.data;
+  for(let i=0;i<COUNT;i++){
+   const offset=i*4;
+   if(!grid.active[i]){data[offset+3]=0;continue;}
+   const mass=grid.mass[i];
+   const inv=1/Math.max(mass,.0001);
+   // Entire pot is occupied once any mana arrives. The dye itself supplies
+   // the water color, not a nearly invisible layer on dark teal water.
+   data[offset]=Math.round(clamp(mass?grid.r[i]*inv:21,0,255));
+   data[offset+1]=Math.round(clamp(mass?grid.g[i]*inv:53,0,255));
+   data[offset+2]=Math.round(clamp(mass?grid.b[i]*inv:64,0,255));
+   data[offset+3]=255;
+  }
+  offctx.putImageData(pixels,0,0);
+  const w=canvas.width,h=canvas.height,m=w/2,rad=w*.468,k=w/192;
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality="high";
+  ctx.clearRect(0,0,w,h);
+  ctx.save();
+  ctx.beginPath();ctx.arc(m,m,rad,0,Math.PI*2);ctx.clip();
+  const water=ctx.createRadialGradient(m-30*k,m-41*k,5*k,m,m,rad);
+  water.addColorStop(0,"#315a68");water.addColorStop(.62,"#173942");water.addColorStop(1,"#0b232d");
+  ctx.fillStyle=water;ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha=.97;
+  ctx.drawImage(off,0,0,w,h);
+  ctx.globalAlpha=1;
+  const shine=ctx.createRadialGradient(m-31*k,m-35*k,0,m,m,rad);
+  shine.addColorStop(0,"rgba(255,255,255,.13)");shine.addColorStop(.48,"rgba(255,255,255,.012)");shine.addColorStop(1,"rgba(0,0,0,.36)");
+  ctx.fillStyle=shine;ctx.fillRect(0,0,w,h);
+  for(const ripple of ripples){
+   ctx.beginPath();ctx.arc(ripple.x*w,ripple.y*h,(ripple.age*27+3)*k,0,Math.PI*2);
+   ctx.lineWidth=1.6*k;ctx.strokeStyle="rgba(245,247,251,"+(Math.max(0,1-ripple.age/2)*.55)+")";ctx.stroke();
+  }
+  ctx.restore();
+  ctx.lineWidth=3*k;ctx.strokeStyle="rgba(229,210,157,.75)";
+  ctx.shadowColor=cssForOrbs(charged);ctx.shadowBlur=(7+pulse*16)*k;
+  ctx.beginPath();ctx.arc(m,m,rad-1.5*k,0,Math.PI*2);ctx.stroke();
+  ctx.shadowBlur=0;
+ }
+ function frame(now){
+  if(!active)return;
+  if(document.hidden||(!charged.length&&!drag&&!ripples.length)){
+   lastFrame=0;raf=requestAnimationFrame(frame);return;
+  }
+  if(lastFrame&&window.innerWidth<=700&&now-lastFrame<28){raf=requestAnimationFrame(frame);return;}
+  // Include the entire time between 30fps mobile frames. Previously clamping
+  // 33ms to 1.7 steps made mobile physics run in slow motion relative to PC.
+  const dt=lastFrame?clamp((now-lastFrame)/16.6667,.05,2.5):1;
+  lastFrame=now;
+  if(!reduced()){advanceFluid(grid,dt);for(const ripple of ripples)ripple.age+=dt*.09;}
+  ripples=ripples.filter(r=>r.age<2);pulse=Math.max(0,pulse-.025*dt);
+  render();raf=requestAnimationFrame(frame);
+ }
+ function resume(){
+  if(active)return;active=true;lastFrame=0;
+  render();
+  if(!reduced())raf=requestAnimationFrame(frame);
+ }
+ function pause(){active=false;cancelAnimationFrame(raf);raf=0;drag=null;hover=null;target.classList.remove("is-stirring");}
+ function inject(orb){
+  // Every drop lands in the INTERIOR. Color-specific angles separate freshly
+  // injected dyes so the player's stirring creates real overlapping plumes.
+  const key=String(orb.id),n=key.split("").reduce((a,c)=>a+c.charCodeAt(0),0);
+  const dir=({R:.1,U:2.2,G:4.05,B:3.3,W:5.2,C:1.15}[orb.color]||0)+n*.13;
+  const radius=N*(.09+(n%4)*.028);
+  const x=MID+Math.cos(dir)*radius,y=MID+Math.sin(dir)*radius;
+  // Tiny impulse produces the injection ripple. Color coverage is set by
+  // fillDyeProportions after the full accepted set is known.
+  addDye(grid,orb.color,x,y,.08);
+  ripples.push({x:x/N,y:y/N,age:0});
+  pulse=1;
+ }
+ function sync(next,{reset=false}={}){
+  const list=next||[],ids=new Set(list.map(o=>o.id));
+  const removed=charged.some(o=>!ids.has(o.id)||!list.find(p=>p.id===o.id&&p.color===o.color));
+  if(reset||removed)clearGrid();
+  const newMana=list.filter(o=>!appliedIds.has(o.id));
+  for(const orb of newMana){inject(orb);appliedIds.add(orb.id);}
+  if(reset||!grid.pigmentLive){
+   fillDyeProportions(grid,list);
+  }else if(newMana.length){
+   const known=charged.slice();
+   for(const orb of newMana){
+    known.push(orb);
+    introducePigment(grid,orb,known);
+   }
+  }
+  charged=list.map(o=>({...o}));
+  target.style.setProperty("--fusion-color",cssForOrbs(charged));
+  target.dataset.fusionCount=String(charged.length);
+  // A running frame loop sleeps when no mana remains. Always repaint once
+  // when the last orb disappears; otherwise its previous colored Canvas
+  // bitmap remains visible indefinitely despite a cleared simulation grid.
+  if(reset||removed||!list.length||!active||reduced())render();
+ }
+ // Continuous strokes are sampled along the path, not just at event
+ // endpoints. The same fractional path through the pot has the same input
+ // strength on a large monitor or a small phone.
+ function stirBetween(from,to){
+  const dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy);
+  if(distance<.14)return false;
+  const steps=Math.min(24,Math.max(1,Math.ceil(distance/2.4)));
+  const sx=dx/steps,sy=dy/steps;
+  for(let i=1;i<=steps;i++){
+   stirDye(grid,from.x+sx*i,from.y+sy*i,sx,sy);
+  }
+  lastStir=performance.now();onInteract();
+  if(reduced())render();
+  return true;
+ }
+ // Mouse: simply entering and moving stirs. Touch: press and drag.
+ canvas.addEventListener("pointerenter",e=>{
+  if(e.pointerType==="touch")return;
+  const c=coord(e);
+  hover=inside(c.x,c.y)?c:null;
+ });
+ canvas.addEventListener("pointerleave",e=>{
+  if(e.pointerType!=="touch")hover=null;
+ });
+ canvas.addEventListener("pointerdown",e=>{
+  const c=coord(e);if(!inside(c.x,c.y))return;
+  e.preventDefault();
+  try{canvas.setPointerCapture?.(e.pointerId);}catch{}
+  drag={id:e.pointerId,x:c.x,y:c.y};
+  lastStir=performance.now();
+  stirDye(grid,c.x,c.y,.45,.45);
+  ripples.push({x:c.x/(N-1),y:c.y/(N-1),age:0});
+  target.classList.add("is-stirring");onInteract();
+  if(reduced())render();
+ });
+ canvas.addEventListener("pointermove",e=>{
+  const c=coord(e);
+  if(drag&&drag.id===e.pointerId){
+   stirBetween(drag,c);
+   drag.x=c.x;drag.y=c.y;
+   return;
+  }
+  if(e.pointerType==="touch")return;
+  if(!inside(c.x,c.y)){hover=null;return;}
+  if(hover)stirBetween(hover,c);
+  hover=c;
+ });
+ function release(e){
+  if(!drag||e?.pointerId!=null&&e.pointerId!==drag.id)return;
+  drag=null;lastStir=performance.now();target.classList.remove("is-stirring");onInteract();
+ }
+ for(const type of ["pointerup","pointercancel","lostpointercapture"])canvas.addEventListener(type,release);
+ function burst(){
+  // The finishing spell pulls pigment inward and sends a surface shockwave.
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+   const i=INDEX(x,y);
+   if(!grid.active[i])continue;
+   const dx=MID-x,dy=MID-y;
+   grid.vx[i]+=dx*.017-dy*.005;
+   grid.vy[i]+=dy*.017+dx*.005;
+  }
+  ripples.push({x:.5,y:.5,age:0});
+  pulse=1;
+  target.classList.remove("ward-breaking");
+  void target.offsetWidth;
+  target.classList.add("ward-breaking");
+  if(reduced())render();
+ }
+
+ function setReduced(value){
+  const old=reduced();manualReduced=Boolean(value);
+  if(!active)return;
+  if(reduced()){if(raf)cancelAnimationFrame(raf);raf=0;lastFrame=0;render();}
+  else if(old){lastFrame=0;raf=requestAnimationFrame(frame);}
+ }
+ return {
+  available:true,setReduced,sync,clear(){
+   clearGrid();
+   target.style.setProperty("--fusion-color",cssForOrbs([]));
+   target.dataset.fusionCount="0";
+   render();
+  },
+  pause,resume,burst,isStirring:()=>!!drag||!!hover&&performance.now()-lastStir<550,lastStirAt:()=>lastStir,
+  getColor:()=>cssForOrbs(charged),getCount:()=>charged.length,
+  // Exposed for direct browser QA, does not affect authoritative puzzle rules.
+  debugCellMass:()=>grid.mass.reduce((sum,v)=>sum+v,0),
+  debugColorAt:(x,y)=>{const i=INDEX(Math.max(0,Math.min(N-1,Math.round(x))),Math.max(0,Math.min(N-1,Math.round(y))));const m=grid.mass[i]||1;return [grid.r[i]/m,grid.g[i]/m,grid.b[i]/m]},
+  debugProportions:()=>charged.reduce((a,o)=>(a[o.color]=(a[o.color]||0)+1,a),{}),
+  debugMixerStats:()=>pigmentStatistics(grid),
+  debugResolution:()=>canvas.width,
+  debugVelocityEnergy:()=>grid.vx.reduce((sum,v,i)=>sum+(grid.active[i]?Math.abs(v)+Math.abs(grid.vy[i]):0),0)
+ };
+}

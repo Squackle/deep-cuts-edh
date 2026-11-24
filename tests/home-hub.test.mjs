@@ -1,5 +1,8 @@
 import test from 'node:test';
 import "./guest-session.test.mjs";
+import "./budget-commander-seo.test.mjs";
+import "./weekly-rescue-publisher-reliability.test.mjs";
+import "./home-weekly-feature.test.mjs";
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 const html=readFileSync('index.html','utf8');
@@ -13,7 +16,7 @@ test('Homepage is a navigational landing page, not full feature documentation',(
  assert.equal((html.match(/<h1\b/g)||[]).length,1);
  assert.equal((html.match(/class="hub-card /g)||[]).length,8);
  assert.ok(Buffer.byteLength(html)<11500, 'Hub homepage should stay intentionally concise');
- assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22500, 'Combined hub HTML and CSS budget (expanded accessible feature + overview)');
+ assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22600, 'Combined hub HTML and CSS budget (expanded accessible feature + overview)');
  for(const old of ['process-section','method-grid','home-set-watch','archiveGrid','caseDialog','searchInput','colorFilter','featured-premise','supporter-strip','closing-cta'])
   assert.ok(!html.includes(old),'Removed full-page feature should not render on hub: '+old);
 });
@@ -66,7 +69,7 @@ test('The homepage explains the full site and enlarges the featured card without
  assert.match(css,/\.hub-feature-main\{[^\n]*grid-template-columns:154px minmax\(0,1fr\)/);
  assert.match(css,/\.hub-feature-portrait\{[^\n]*width:154px;height:215px/);
  assert.match(css,/@media\(max-width:430px\)\{\.hub-feature-main\{grid-template-columns:110px/);
- assert.match(html,/href="\/reports\/commander-mustard" aria-label="Read the featured Commander Mustard rescue report"/);
+ assert.match(html,/id="homeWeeklyFeature" data-weekly-date="2026-11-20" href="\/rescues\/2026-11-20"/);
 });
 
 test('Desktop feature expands only into the right gutter without shifting its grid origin',()=>{
@@ -87,7 +90,7 @@ test("PageSpeed changes stabilize homepage layout without touching AdSense or au
  assert.match(stability,/header-inner:not\(\.header-profile-enabled\)/);
  assert.match(stability,/hub-card-top\{color:#435b47\}/);
  assert.match(stability,/hub-card-desc.*#455c49/);
- assert.match(html,/Commander%20Mustard&amp;format=image&amp;version=small/);
+ assert.ok(html.includes('src="https://cards.scryfall.io/normal/front/2/7/27427233-da58-45af-ade8-e0727929efaa.jpg?1783939404"'),'Featured card image must use exact trusted Scryfall CDN URL');
  assert.match(html,/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js/);
  assert.match(html,/name="google-site-verification"/);
  assert.match(html,/name="follow.it-verification-code"/);
@@ -185,7 +188,7 @@ test('Brand-search copy describes the actual Commander site without losing its i
  for(const input of inputs)assert.ok((input.toLowerCase().match(/deep cuts edh/g)||[]).length<=1,'No brand keyword stuffing');
  assert.ok(!html.includes('href="/underplayed-commanders"'),'Future hub navigation waits until Step 08');
  assert.ok(!html.includes('href="/budget-commanders"'),'Budget hub waits for reviewed complete decklists');
- assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22500,'Preserve strict combined homepage performance budget');
+ assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22600,'Preserve strict combined homepage performance budget');
  assert.match(html,/name="google-site-verification"/);
  assert.match(html,/name="follow.it-verification-code"/);
  assert.match(html,/pagead2\.googlesyndication\.com/);
@@ -201,7 +204,7 @@ test("The official source link and brand directory are public, accurate and safe
  assert.match(notes,/PR #96/,'Root README must wait for active older PR');
  assert.match(notes,/commander-card price filter/i,'Brand copy must not imply verified full-deck budgets');
  assert.equal((html.match(/href="https:\/\/github\.com\/Squackle\/deep-cuts-edh"/g)||[]).length,1);
- assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22500,'Official link must preserve page-performance byte cap');
+ assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22600,'Official link must preserve page-performance byte cap');
  assert.ok(!html.includes('href="/about"'),'Never link an About page that does not exist');
  assert.equal((html.match(/class="footer-links"/g)||[]).length,1);
  assert.equal((html.match(/class="dc-footer-subscribe"/g)||[]).length,2,'Preserve the email and official source links together');

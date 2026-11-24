@@ -1,0 +1,10 @@
+{
+  "worker": "deep-cuts-weekly-publisher",
+  "timeZone": "America/Chicago",
+  "releaseLocalHour": 10,
+  "crons": [
+    "0,15,30,45 15 * * FRI",
+    "0,15,30,45 16 * * FRI"
+  ],
+  "explanation": "Cloudflare Cron Triggers use 1=Sunday, 5=Thursday, 6=Friday. Use the FRI abbreviation, not weekday 5. Both UTC hours run year-round; the Worker publishes only during 10:00-10:59 America/Chicago, with no duplicate publications."
+}

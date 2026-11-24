@@ -57,3 +57,9 @@ CODEOWNERS currently maps paths to `@Squackle` as the accountable repository own
 ## Sensitive changes
 
 Migration, auth/session, Ko-fi, API privilege, D1 binding and leaderboard changes require explicit security review, negative-case tests and a rollback plan. Public display changes never authorize changes to player data.
+
+## Sitewide public-page visual contract
+
+**Every newly added public main-site HTML route must use the established Deep Cuts EDH header and template.** This includes standalone or promoted Arcade games, editorial tools, community content, and every newly published page. Treat as a release-blocking acceptance criterion: shared `site-header`, original logo/wordmark, standard fallback `primary-nav` destinations, `header-profile.js`, matching CSS, injected profile/supporter/mobile UI, and standard footer. Arcade pages additionally use cream `games-main` with breadcrumbs and masthead. A local game's existing design can live *inside* this shared shell, not replace it.
+
+`tests/public-page-template.test.mjs` + the new-public-HTML workflow guard future additions; `tests/mana-heist-shell.test.mjs` guards the integrated Mana Heist. Exemptions are limited to noindex test fixtures, private/admin/verification pages, and embedded assets, never published games or public editorial features. Browser-test both desktop and mobile, including a game already in progress, and keep the site header reachable.

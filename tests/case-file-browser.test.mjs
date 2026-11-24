@@ -3,10 +3,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import {execFileSync} from "node:child_process";
-import {chromium} from "playwright-core";
+import {launchBrowser} from "./helpers/browser.mjs";
 const mime={".html":"text/html",".css":"text/css",".js":"application/javascript",".svg":"image/svg+xml"};
-function chrome(){for(const bin of ["google-chrome","google-chrome-stable","chromium","chromium-browser"]){try{const x=execFileSync("which",[bin],{encoding:"utf8"}).trim();if(x)return x}catch{}}throw Error("Chromium unavailable")}
+
 async function local(){
  const root=process.cwd(),server=http.createServer((req,res)=>{
   const p=new URL(req.url,"http://localhost").pathname;
@@ -21,7 +20,7 @@ async function local(){
 test("Shareable Case File creates a real downloadable PNG, validates sources and supports a public deck",{timeout:45000},async()=>{
  const {server,url}=await local();let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const width of [390,1280]){
    const ctx=await browser.newContext({viewport:{width,height:844},acceptDownloads:true});
    const page=await ctx.newPage(),errors=[];page.on("pageerror",e=>errors.push(e.message));

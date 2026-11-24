@@ -10,17 +10,23 @@ test('local asset server denies traversal, symlinks, private files and writes',a
  writeFileSync(join(dir,'secret.html'),'PRIVATE');
  writeFileSync(join(publicDir,'.secret.html'),'PRIVATE');
  writeFileSync(join(publicDir,'secret.env'),'PRIVATE');
- symlinkSync(join(dir,'secret.html'),join(publicDir,'linked.html'));
- symlinkSync(dir,join(publicDir,'escape'));
+ const deniedPaths=['/secret.html','/.secret.html','/secret.env','/escape/secret.html','/%2e%2e/secret.html','/..%2fsecret.html'];
+ // Windows junctions exercise directory-link exclusion without symlink privileges.
+ symlinkSync(dir,join(publicDir,'escape'),process.platform==='win32'?'junction':'dir');
+ if(process.platform!=='win32'){
+  symlinkSync(join(dir,'secret.html'),join(publicDir,'linked.html'),'file');
+  deniedPaths.push('/linked.html');
+ }
  const server=createAssetServer([{directory:publicDir}]);
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const origin='http://127.0.0.1:'+server.address().port;
  try{
   assert.equal(await(await fetch(origin+'/')).text(),'SAFE');
-  for(const path of ['/secret.html','/.secret.html','/secret.env','/linked.html','/escape/secret.html','/%2e%2e/secret.html','/..%2fsecret.html'])assert.equal((await fetch(origin+path)).status,404,path);
+  for(const path of deniedPaths)assert.equal((await fetch(origin+path)).status,404,path);
   assert.equal((await fetch(origin+'/',{method:'POST',body:'bad'})).status,405);
   // Files introduced after the server starts are outside the approved snapshot.
   writeFileSync(join(publicDir,'late.html'),'PRIVATE');
   assert.equal((await fetch(origin+'/late.html')).status,404);
  }finally{await new Promise(r=>server.close(r));rmSync(dir,{recursive:true,force:true});}
 });
+

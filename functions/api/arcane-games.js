@@ -1,7 +1,7 @@
 /* Arcane Cipher + Conspiracy Board. The server alone validates and scores
    daily moves, stores authenticated progress, and freezes dated puzzles. */
 import {send,fail,auth,body,originOK,quota,safe} from "../../src/community-core.js";
-import {buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,gameHash,gameShuffle,boardMatch,boardOneAway,chicagoDate} from "../../src/arcane-game-data.js";
+import {buildArcanePuzzle,cipherFeedback,cipherLetters,cipherPattern,gameHash,gameShuffle,boardMatch,boardOneAway,chicagoDate,nextBoardPracticeSeed,BOARD_CATEGORIES} from "../../src/arcane-game-data.js";
 const GAMES=new Set(["cipher","board"]);
 export const ARCANE_BADGES={
  cipher_solved:{title:"🔐 Cipher Breaker",detail:"Solve a daily Arcane Cipher."},
@@ -24,7 +24,21 @@ async function puzzleFor(db,params){
  const {game,mode,seed,day}=params;
  if(mode==="practice")return buildArcanePuzzle(game,"practice",mode,seed); // Stable for this seed across dates and sessions.
  const existing=await db.prepare("SELECT payload FROM daily_arcane_puzzles WHERE game=? AND day=?").bind(game,day).first();
- if(existing?.payload)return JSON.parse(existing.payload);
+ if(existing?.payload){
+  const frozen=JSON.parse(existing.payload);
+  // One-time editorial replacement for Oct 22 only. Old puzzles are otherwise
+  // immutable. Never reset any signed-in run, score or badge: replacement is
+  // atomic and is rejected if even an unstarted run already exists.
+  if(game==="board"&&day==="2026-10-22"&&frozen.edition==="hand-curated-v1"){
+   const fresh=buildArcanePuzzle(game,day);
+   await db.prepare("UPDATE daily_arcane_puzzles SET payload=? WHERE game=? AND day=? AND json_extract(payload,'$.edition')='hand-curated-v1' AND NOT EXISTS (SELECT 1 FROM daily_arcane_runs WHERE game=? AND day=?)")
+    .bind(JSON.stringify(fresh),game,day,game,day).run();
+   const selected=await db.prepare("SELECT payload FROM daily_arcane_puzzles WHERE game=? AND day=?").bind(game,day).first();
+   if(!selected?.payload)throw Error("Daily puzzle snapshot unavailable");
+   return JSON.parse(selected.payload);
+  }
+  return frozen;
+ }
  const chosen=buildArcanePuzzle(game,day);
  await db.prepare("INSERT OR IGNORE INTO daily_arcane_puzzles(game,day,payload) VALUES(?,?,?)").bind(game,day,JSON.stringify(chosen)).run();
  const frozen=await db.prepare("SELECT payload FROM daily_arcane_puzzles WHERE game=? AND day=?").bind(game,day).first();
@@ -144,6 +158,17 @@ export async function onRequestGet({request,env}){
    return send({badges:await profileBadges(env.DB,profile.id)});
   }
   const p=normalizeGame(url);if(!p)return fail("Unknown daily game.",400);
+  if(action==="new-practice"){
+   if(p.game!=="board")return fail("Practice selection unavailable for this game.",400);
+   let previous=[];
+   try{previous=JSON.parse(url.searchParams.get("previousTiles")||"[]")}catch{return fail("Invalid previous practice tiles.",400)}
+   const catalog=new Set(BOARD_CATEGORIES.flatMap(group=>group[2]));
+   if(!Array.isArray(previous)||!(previous.length===0||previous.length===16)||
+    previous.some(name=>typeof name!=="string"||!catalog.has(name))||
+    new Set(previous).size!==previous.length)return fail("Invalid previous practice tiles.",400);
+   const priorSeed=p.mode==="practice"?p.seed:0;
+   return send({game:"board",mode:"practice",seed:nextBoardPracticeSeed(previous,priorSeed)});
+  }
   if(action==="board"){
    const r=await env.DB.prepare("SELECT p.handle,r.score,r.won,r.finished_at,r.progress FROM daily_arcane_runs r JOIN community_profiles p ON p.id=r.profile_id WHERE r.game=? AND r.day=? AND r.finished_at IS NOT NULL ORDER BY r.score DESC,r.finished_at ASC LIMIT 12").bind(p.game,p.day).all();
    return send({game:p.game,day:p.day,leaders:(r.results||[]).map(({progress,...row})=>({

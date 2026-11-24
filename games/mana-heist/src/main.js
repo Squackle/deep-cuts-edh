@@ -1,0 +1,1150 @@
+import {LEVELS,CHAPTERS,GALAXIES,BASE_LEVELS} from "./levels.js";
+import {COLORS,CARDS,initial,actions,reduce,completed,getCard,lookup,medal,key} from "./engine.js";
+import {solve} from "./solver.js";
+import {chapterIndex,stageCode,normalizedBests,validBest} from "./campaign.js";
+import {LEARN_GROUPS,LEARN_COUNT,isLearnLevel,normalizedLearnProgress,nextLearnIndex} from "./learn-track.js";
+import {renderOverworld} from "./overworld.js";
+import {reconstruct,transitionOrbs,consistent} from "./mana-orbs.js";
+import {launchOrbitMana,cancelOrbitMana} from "./orbital-mana.js";
+import {handFanLayout} from "./hand-fan-layout.js";
+import {renderWardCharge} from "./ward-charge.js";
+import {installFluidWard} from "./fluid-ward.js";
+import {PRELOADED_MIX_COUNT} from "./fluid-palette.js";
+import {chooseAutomaticCast} from "./auto-cast.js";
+import {landPainting} from "./land-art.js";
+import {installLandDragging} from "./drag-lands.js";
+import {renderCardReferences,referenceFor} from "./card-references.js";
+import {installCardInspector} from "./card-inspector.js";
+import {installCardMagnifier} from "./card-magnifier.js";
+import {SAGE_LESSONS} from "./sage-lessons.js";
+import {BONUS_TRIALS,BONUS_TRIAL_STORAGE_KEY,normalizeBonusBests,betterBonusScore} from "./bonus-trials.js";
+import {PLAYTEST_KEY,PLAYTEST_OPT_KEY,blankPlaytest,normalizePlaytest,beginPlaytest,countPlaytestEvent,finishPlaytest,ratePlaytest,exportPlaytest} from "./playtest-metrics.js";
+import {navigateCardRack} from "./keyboard-rack.js";
+import {guestMilestones} from "./guest-milestones.js";
+import {hintConcept,legalContinuation,hintInstruction} from "./verified-hints.js";
+import {MAX_BACKUP_BYTES,readGuestSaves,createGuestBackup,parseGuestBackup,previewGuestRestore,applyGuestRestore} from "./guest-backup.js";
+import {DEVICE_QA_KEY,DEVICE_QA_CHECKS,DEVICE_QA_STATUSES,blankDeviceQA,normalizeDeviceQA,setDeviceContext,setDeviceQAResult,summarizeDeviceQA,exportDeviceQA} from "./device-qa.js";
+import {LEARN_LEVELS} from "./expanded-learn.js";
+import {certifyCapstone} from "./capstone-certificates.js";
+import {certifyMastery} from "./mastery-certificates.js";
+import {certifyDiverse} from "./mana-variety-certificates.js";
+import {diverseFor} from "./mana-variety-puzzles.js";
+import {certifyRemix,REMIX_KEY,REMIXED_IDS,validateRemixBests} from "./certified-remixes.js";
+import {DECISION_LADDER} from "./decision-ladder.js";
+import {evaluateVault} from "./difficulty-metrics.js";
+import {mountSage} from "./sage-ui.js";
+import {imageFor,printingFor,startStagePrintings,invalidateStagePrintings} from "./printing-art.js";
+import {missingMana,failureText,flashWard} from "./ward-feedback.js";
+import {isFinalTurn,requiredManaText,finalTurnMessage,tappedLandMessage} from "./turn-guidance.js";
+const el=id=>document.getElementById(id);
+// Scoped late-loading repair stylesheet avoids overlap with the concurrent
+// Game Lab branding PR that owns index.html.
+const sageStyle=document.createElement("link");
+sageStyle.rel="stylesheet";
+sageStyle.href=new URL("../sage-and-card-fixes.css",import.meta.url).href;
+document.head.append(sageStyle);
+const difficultyStyle=document.createElement("link");difficultyStyle.rel="stylesheet";
+difficultyStyle.href=new URL("../mastery-ratings.css",import.meta.url).href;document.head.append(difficultyStyle);
+// Applied after legacy modal styles to preserve the compact victory layout.
+const victoryStyle=document.createElement("link");victoryStyle.rel="stylesheet";
+victoryStyle.href=new URL("../victory-layout.css",import.meta.url).href;
+document.head.append(victoryStyle);
+const decisionStyle=document.createElement("link");decisionStyle.rel="stylesheet";
+decisionStyle.href=new URL("../decision-ladder.css",import.meta.url).href;document.head.append(decisionStyle);
+const SYMBOL={W:{name:"White",color:"#e5dfb7",icon:"W"},U:{name:"Blue",color:"#287eb0",icon:"U"},B:{name:"Black",color:"#595067",icon:"B"},R:{name:"Red",color:"#c05b48",icon:"R"},G:{name:"Green",color:"#498967",icon:"G"},C:{name:"Colorless",color:"#bec5bd",icon:"◇"},N:{name:"Generic",color:"#bec5bd",icon:"1"}};
+const storageKey="dc-mana-heist-landfall-v2";
+function readProgress(){
+ try{const x=JSON.parse(localStorage.getItem(storageKey)||"null");if(x&&x.v===2&&typeof x.bests==="object"&&x.bests&&!Array.isArray(x.bests))return {bests:normalizedBests(x.bests),index:Math.max(0,Math.min(LEVELS.length-1,Number.isInteger(x.index)?x.index:0))};}catch{}
+ return {bests:{},index:0};
+}
+const modeKey="dc-mana-heist-mode-v1",learnKey="dc-mana-heist-learn-v1";
+const revisedKey="dc-mana-heist-capstones-v1";
+const varietyKey="dc-mana-heist-variety-v1";
+let remixBests={};
+try{remixBests=validateRemixBests(JSON.parse(localStorage.getItem(REMIX_KEY)||"null"));}catch{}
+function persistRemix(){try{localStorage.setItem(REMIX_KEY,JSON.stringify({v:1,bests:remixBests}));}catch{}}
+let decisionIndex=null; // Unscored, session-only sample progression.
+let trialIndex=null,trialBests={};
+try{trialBests=normalizeBonusBests(JSON.parse(localStorage.getItem(BONUS_TRIAL_STORAGE_KEY)||"null"));}catch{}
+function persistBonusTrials(){try{localStorage.setItem(BONUS_TRIAL_STORAGE_KEY,JSON.stringify({v:1,bests:trialBests}));}catch{}}
+let varietyBests={};
+try{const d=JSON.parse(localStorage.getItem(varietyKey)||"null");if(d?.v===1&&d.bests)for(const l of LEVELS.filter(l=>l.revision===3||l.revision===4)){const best=d.bests[l.id];if(validBest(best))varietyBests[l.id]={turn:best.turn,spentLife:best.spentLife,actions:Number.isInteger(best.actions)?best.actions:999};}}catch{}
+function persistVariety(){try{localStorage.setItem(varietyKey,JSON.stringify({v:1,bests:varietyBests}));}catch{}}
+function readRevised(){
+ try{const d=JSON.parse(localStorage.getItem(revisedKey)||"null");
+  return d?.v===1?Object.fromEntries(LEVELS.filter(l=>[1,2].includes(l.revision)&&validBest(d.bests?.[l.id])).map(l=>[l.id,{turn:d.bests[l.id].turn,spentLife:d.bests[l.id].spentLife,actions:Number.isInteger(d.bests[l.id].actions)?d.bests[l.id].actions:999}])):{};}catch{return {};}
+}
+let revisedBests=readRevised();
+function displayBests(){
+ const out={...progress.bests};
+ for(const puzzle of LEVELS)if(puzzle.revision)delete out[puzzle.id];
+ return {...out,...revisedBests,...Object.fromEntries(Object.entries(varietyBests).filter(([id])=>!REMIXED_IDS.includes(id))),...remixBests};
+}
+function persistRevised(){
+ try{localStorage.setItem(revisedKey,JSON.stringify({v:1,bests:revisedBests}));}catch{}
+}
+function readMode(){try{const m=localStorage.getItem(modeKey);return m==="learn"||m==="heist"?m:null;}catch{return null;}}
+function readLearn(){try{return normalizedLearnProgress(JSON.parse(localStorage.getItem(learnKey)||"null"));}catch{return normalizedLearnProgress(null);}}
+let mode=readMode(),learnProgress=readLearn();
+let progress=readProgress(),index=progress.index,level=LEVELS[index],state=initial(level),history=[],choiceActions=[],selectedMessage="";
+let mapLaunchFocus=null;
+let playtestEnabled=false,playtestData=blankPlaytest(),playtestAttempt=null,pendingRatingKey=null,playtestRatingDone=false;
+try{
+ playtestEnabled=localStorage.getItem(PLAYTEST_OPT_KEY)==="yes";
+ playtestData=normalizePlaytest(JSON.parse(localStorage.getItem(PLAYTEST_KEY)||"null"));
+}catch{}
+el("playtestOptIn").checked=playtestEnabled;
+function savePlaytest(){try{localStorage.setItem(PLAYTEST_KEY,JSON.stringify(playtestData));}catch{}}
+function startPlaytest(){
+ if(!playtestEnabled||playtestAttempt||completed(level,state))return;
+ playtestAttempt=beginPlaytest(level,performance.now());
+}
+function notePlaytest(event){if(playtestEnabled&&playtestAttempt)playtestAttempt=countPlaytestEvent(playtestAttempt,event);}
+function closePlaytest(status){
+ if(!playtestAttempt)return;
+ const attempt=playtestAttempt;playtestAttempt=null;
+ if(!playtestEnabled)return;
+ playtestData=finishPlaytest(playtestData,attempt,status,performance.now());
+ savePlaytest();
+ if(status==="win"){pendingRatingKey=attempt.key;playtestRatingDone=false;}
+}
+
+let deviceQa=blankDeviceQA();
+try{deviceQa=normalizeDeviceQA(JSON.parse(localStorage.getItem(DEVICE_QA_KEY)||"null"));}catch{}
+function saveDeviceQA(){try{localStorage.setItem(DEVICE_QA_KEY,JSON.stringify(deviceQa));}catch{}}
+function updateDeviceQAStatus(){
+ const s=summarizeDeviceQA(deviceQa);
+ el("deviceQaStatus").textContent=s.reviewed+" / "+s.total+" checked · "+s.pass+" passed · "+s.issue+" needs fixing · "+s.untested+" not tested. Manual self-report only.";
+}
+function renderDeviceQA(){
+ const root=el("deviceQaChecks");
+ root.replaceChildren();
+ for(const [field,id] of [["device","deviceQaDevice"],["browser","deviceQaBrowser"],["orientation","deviceQaOrientation"]])el(id).value=deviceQa[field];
+ const statuses=[["untested","Not tested"],["pass","Pass"],["issue","Needs fixing"],["not-applicable","Not applicable"]];
+ for(const item of DEVICE_QA_CHECKS){
+  const card=document.createElement("section");card.className="device-qa-case";
+  const title=document.createElement("h3");title.textContent=item.title;
+  const details=document.createElement("p");details.textContent=item.steps;
+  const controls=document.createElement("div");controls.className="device-qa-case-controls";
+  const label=document.createElement("label");label.textContent="Your test result";
+  const select=document.createElement("select");select.dataset.qaCase=item.id;
+  select.setAttribute("aria-label",item.title+" — your device test result");
+  for(const [value,name] of statuses){const opt=document.createElement("option");opt.value=value;opt.textContent=name;select.append(opt);}
+  select.value=deviceQa.checks[item.id];label.append(select);
+  const launch=document.createElement("button");launch.type="button";launch.dataset.qaLaunch=item.id;
+  launch.textContent="OPEN TEST STAGE →";
+  launch.setAttribute("aria-label","Open test stage for "+item.title);
+  controls.append(label,launch);card.append(title,details,controls);root.append(card);
+ }
+ updateDeviceQAStatus();
+}
+let world=chapterIndex(index),manaOrbs=reconstruct(state.pool),landDrag=null,lastCardId=null,selectedHandId=null;
+let reducedFx=false;
+const reducedFxKey="dc-mana-heist-reduced-effects-v1";
+try{reducedFx=localStorage.getItem(reducedFxKey)==="yes";}catch{}
+el("reducedFxToggle").checked=reducedFx;
+document.body.classList.toggle("mana-reduced-effects",reducedFx);
+let autoCastEnabled=false;
+try{autoCastEnabled=localStorage.getItem("dc-mana-heist-auto-cast")==="yes";}catch{}
+el("autoCastToggle").checked=autoCastEnabled;
+let viewEpoch=0;
+let autoTimer=null;
+function cancelAuto(){
+ if(autoTimer!==null){clearTimeout(autoTimer);autoTimer=null;}
+ el("wardTarget")?.classList.remove("auto-primed");
+}
+// The water is optional to stir: leave a short window after charging, let
+// stirring postpone the finish, but NEVER let interaction block a puzzle.
+const AUTO_SETTLE_MS=2000,AUTO_STIR_MAX_MS=5100;
+function queueAutoCast(){
+ if(!autoCastEnabled||pendingFlights.size||completed(level,state))return;
+ if(!chooseAutomaticCast(level,state)||autoTimer!==null)return;
+ el("wardTarget").classList.add("auto-primed");
+ el("autoCastLabel").textContent="WARD READY · STIR TO MIX";
+ const epoch=viewEpoch,primedAt=performance.now();
+ function tryCast(){
+  if(epoch!==viewEpoch||pendingFlights.size||completed(level,state)){autoTimer=null;return;}
+  const now=performance.now(),elapsed=now-primedAt;
+  const stirring=fluid.isStirring()||now-fluid.lastStirAt()<900;
+  if(elapsed<AUTO_SETTLE_MS||(stirring&&elapsed<AUTO_STIR_MAX_MS)){
+   autoTimer=setTimeout(tryCast,140);return;
+  }
+  const legal=chooseAutomaticCast(level,state);
+  if(!legal){autoTimer=null;return;}
+  fluid.burst();
+  el("autoCastLabel").textContent="CHROMATIC WARD BREAKING";
+  autoTimer=setTimeout(()=>{
+   autoTimer=null;
+   if(epoch!==viewEpoch||pendingFlights.size||completed(level,state))return;
+   const stillLegal=chooseAutomaticCast(level,state);
+   if(stillLegal)perform(stillLegal);
+  },250);
+ }
+ autoTimer=setTimeout(tryCast,140);
+}
+
+const pendingFlights=new Set();
+const fluid=installFluidWard({
+ canvas:el("wardFluidCanvas"),target:el("wardTarget"),
+ onInteract:()=>{if(autoCastEnabled&&autoTimer!==null)el("autoCastLabel").textContent="STIR THE WATER · AUTO-CAST WHEN IT SETTLES";}
+});
+fluid.setReduced(reducedFx);
+el("reducedFxToggle").addEventListener("change",e=>{
+ reducedFx=Boolean(e.target.checked);
+ document.body.classList.toggle("mana-reduced-effects",reducedFx);
+ try{localStorage.setItem(reducedFxKey,reducedFx?"yes":"no");}catch{}
+ fluid.setReduced(reducedFx);
+});
+el("wardTarget").dataset.preloadedMixes=String(PRELOADED_MIX_COUNT);
+let currentFluidStage="";
+function chargeWard({pendingId=null,animateId=null}={}){
+ const stageKey=level.id+":"+state.stage;
+ const isNewStage=currentFluidStage!==stageKey;
+ currentFluidStage=stageKey;
+ const result=renderWardCharge({
+  svg:el("wardManaRing"),count:el("wardChargeCount"),
+  cost:level.stages[state.stage]?.cost||{},orbs:manaOrbs,
+  pendingId,pendingIds:[...pendingFlights],animateId,open:completed(level,state),
+  fluid:fluid.available,reduced:reducedFx
+ });
+ fluid.sync(result.charged,{reset:isNewStage});
+ return result;
+}
+const cardInspector=installCardInspector({dialog:el("realCardInspector"),closeButton:el("closeInspector")});
+const magnifier=installCardMagnifier({
+ battlefield:el("battlefield"),hand:el("hand"),panel:el("cardMagnifier"),
+ canvas:el("magnifierCanvas"),title:el("magnifierTitle"),
+ canShow:()=>document.body.classList.contains("in-heist")&&!completed(level,state)
+});
+const sage=mountSage({stage:el("heist").querySelector(".vault-stage"),
+ goToLesson:i=>{decisionIndex=null;trialIndex=null;selectMode("learn");load(i,true);}
+});
+const returnFromResult=document.createElement("button");
+returnFromResult.type="button";returnFromResult.id="winReturn";
+returnFromResult.textContent="RETURN TO LESSONS";
+el("winActions").append(returnFromResult);
+const manaContext=document.createElement("span");manaContext.id="manaContext";manaContext.className="mana-scenario-context";
+el("difficulty").after(manaContext);
+returnFromResult.addEventListener("click",()=>showMap());
+const difficultyReview=document.createElement("div");difficultyReview.id="playtestRating";difficultyReview.className="playtest-rating";difficultyReview.hidden=true;
+const ratingLabel=document.createElement("span");ratingLabel.textContent="Optional · How hard was this puzzle? 1 easy — 5 hard";
+const ratingButtons=document.createElement("div");ratingButtons.className="playtest-rating-choices";
+ratingButtons.setAttribute("role","group");ratingButtons.setAttribute("aria-label","Rate this puzzle from 1 easy to 5 very hard");
+difficultyReview.append(ratingLabel,ratingButtons);
+for(let i=1;i<=5;i++){
+ const button=document.createElement("button");button.type="button";button.dataset.playtestRating=String(i);
+ button.textContent=String(i);button.setAttribute("aria-label","Rate difficulty "+i+" of 5");
+ ratingButtons.append(button);
+}
+el("winPanel").append(difficultyReview);
+ // Keep keyboard Tab traversal inside the visible modal; the underlying
+ // tabletop should not receive focus while the victory panel is open.
+el("winPanel").addEventListener("keydown",e=>{
+ if(e.key!=="Tab"||el("winPanel").hidden)return;
+ const buttons=[...el("winPanel").querySelectorAll("button:not(:disabled)")].filter(b=>!b.hidden&&!b.closest("[hidden]"));
+ if(!buttons.length)return;
+ const first=buttons[0],last=buttons.at(-1);
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
+function inspectById(id){
+ const record=lookup(level,id);
+ if(!record)return false;
+ lastCardId=id;
+ return cardInspector.show(record.card,getCard(level,id).name,printingFor(id,record.card));
+}
+// Compute proof only for the active or completed vault, not 250 at startup.
+// Every generated variant preserves a tested original route. The strict CI
+// campaign suite separately verifies the full 250-vault catalog offline.
+const proofCache=new Map();
+const sourceProofCache=new Map();
+function proofFor(id){
+ if(proofCache.has(id))return proofCache.get(id);
+ const puzzle=LEVELS.find(v=>v.id===id)||LEARN_LEVELS.find(v=>v.id===id)||BONUS_TRIALS.find(v=>v.id===id)||DECISION_LADDER.find(v=>v.id===id);
+ if(!puzzle)return null;
+ const exact=puzzle.revision===4?certifyRemix(puzzle):puzzle.revision===3?certifyDiverse(puzzle):puzzle.revision===2?certifyMastery(puzzle):puzzle.revision?certifyCapstone(puzzle):solve(puzzle,{maxStates:65000});
+ let proof=exact;
+ if(exact.status!=="solved"&&puzzle.templateId){
+  const source=BASE_LEVELS.find(p=>p.id===puzzle.templateId);
+  if(source){
+   if(!sourceProofCache.has(source.id))sourceProofCache.set(source.id,solve(source,{maxStates:65000}));
+   proof=sourceProofCache.get(source.id);
+  }
+ }
+ if(proof?.status!=="solved")throw Error("Unproven vault: "+id);
+ proofCache.set(id,proof);
+ return proof;
+}
+const proofs={get:proofFor};
+const masteryRating=document.createElement("span");masteryRating.id="masteryRating";masteryRating.className="mastery-rating";masteryRating.title="C = structural complexity; D = estimated execution difficulty. Both 1–100, old Galaxy V finale benchmark = 50.";
+el("stageLabel").after(masteryRating);
+const historicalNote=document.createElement("p");historicalNote.className="muted small";historicalNote.setAttribute("aria-live","polite");el("briefing").after(historicalNote);
+const historicalMedals=new Map();
+// Optional P05 Hint Ladder: each level is user-unlocked; Hint 3 is never
+// shown unless a reducer-validated continuation from this exact state exists.
+const hintPanel=document.createElement("section");hintPanel.id="hintLadder";hintPanel.className="hint-ladder";
+hintPanel.setAttribute("aria-label","Optional three-step mana hints");
+const hintHeading=document.createElement("h3");hintHeading.textContent="SAGE’S THREE CLUES";
+const hintCopy=document.createElement("p");hintCopy.id="hintCopy";hintCopy.setAttribute("aria-live","polite");
+hintCopy.textContent="Clues start hidden. Reveal them one at a time, only when you want help.";
+const hintActions=document.createElement("div");hintActions.className="hint-actions";
+const hintReveal=document.createElement("button");hintReveal.type="button";hintReveal.id="hintReveal";
+hintReveal.textContent="REVEAL HINT 1";
+const hintReset=document.createElement("button");hintReset.type="button";hintReset.id="hintReset";
+hintReset.textContent="HIDE HINTS";hintReset.hidden=true;
+hintActions.append(hintReveal,hintReset);hintPanel.append(hintHeading,hintCopy,hintActions);
+const decisionPlan=document.createElement("section");decisionPlan.id="decisionPlan";decisionPlan.hidden=true;
+ decisionPlan.setAttribute("aria-label","Complete ward plan");
+ el("wardDescription").after(decisionPlan);
+el("wardDescription").after(hintPanel);
+let hintStamp="",hintStep=0;
+function resetHintLadder(){
+ hintStep=0;
+ hintCopy.textContent="Clues start hidden. Reveal them one at a time, only when you want help.";
+ hintCopy.style.whiteSpace="pre-line";hintReveal.textContent="REVEAL HINT 1";
+ hintReveal.disabled=false;hintReset.hidden=true;
+}
+function syncHintLadder(){
+ const stamp=level.id+"|"+key(state);
+ if(stamp!==hintStamp){hintStamp=stamp;resetHintLadder();}
+}
+hintReset.addEventListener("click",()=>resetHintLadder());
+hintReveal.addEventListener("click",()=>{
+ syncHintLadder();
+ const next=Math.min(3,hintStep+1);
+ if(next===1){hintCopy.textContent=hintConcept(level,state);}
+ else{
+  let route={status:"inconclusive",actions:[]};
+  try{route=legalContinuation(level,state,proofFor(level.id),{maxStates:12000});}
+  catch{route={status:"inconclusive",actions:[]};}
+  hintCopy.textContent=hintInstruction(level,state,route,next===3);
+ }
+ hintStep=next;
+ hintReset.hidden=false;
+ hintReveal.textContent=next<3?"REVEAL HINT "+(next+1):"ALL HINTS REVEALED";
+ hintReveal.disabled=next===3;
+});
+
+const lockGlyphs=["✧","⌑","◈","✦","⬡","✶"];
+function persist(){try{localStorage.setItem(storageKey,JSON.stringify({v:2,index:progress.index,bests:progress.bests}));}catch{}}
+function persistLearn(){try{localStorage.setItem(learnKey,JSON.stringify({v:1,completed:learnProgress.completed,last:learnProgress.last}));}catch{}}
+function renderLearn(){
+ const done=new Set(learnProgress.completed),root=el("learnPicker");root.replaceChildren();
+ // Current HTML comes from a concurrent Game Lab branding branch. Keep
+ // course copy in sync at runtime without touching their index.html file.
+ const desc=document.querySelector('[data-mode="learn"] .mode-description');
+ if(desc)desc.textContent=LEARN_COUNT+" step-by-step exercises, from basic lands and rituals to opponent-dependent colors and damage tradeoffs.";
+ const intro=document.querySelector("#learnPanel .learn-panel-head p:not(.overline)");
+ if(intro)intro.textContent=LEARN_COUNT+" skill-specific lessons. Follow the Sage's Notes beside the cauldron. Practice lessons are unscored; optional bonus trials keep separate local medals.";
+
+ el("learnCount").textContent=done.size+" / "+LEARN_COUNT+" COMPLETED";
+ for(const group of LEARN_GROUPS){
+  const section=document.createElement("section");section.className="learn-group";
+  const h=document.createElement("div");h.className="learn-group-header";
+  const title=document.createElement("h3");title.textContent=group.title;
+  const intro=document.createElement("p");intro.textContent=group.summary;h.append(title,intro);
+  const list=document.createElement("div");list.className="learn-exercises";
+  for(const i of group.indices){
+   const p=LEARN_LEVELS[i],b=document.createElement("button");b.type="button";
+   b.className="learn-exercise"+(done.has(i)?" complete":"");b.dataset.learnLevel=String(i);
+   const n=document.createElement("span");n.className="learn-number";n.textContent=String(i+1).padStart(2,"0");
+   const txt=document.createElement("span");txt.className="learn-exercise-copy";
+   const t=document.createElement("strong");t.textContent=p.title;
+   const flag=document.createElement("small");flag.textContent=done.has(i)?"✓ COMPLETE":"PRACTICE";
+   txt.append(t,flag);b.append(n,txt);list.append(b);
+  }
+  section.append(h,list);root.append(section);
+ }
+ const trials=document.createElement("section");trials.className="learn-group bonus-trial-group";
+ const head=document.createElement("div");head.className="learn-group-header";
+ const title=document.createElement("h3");title.textContent="BONUS MANA TRIALS";
+ const caption=document.createElement("p");caption.textContent="Optional scored side-vaults · local medals only · no change to your 500 campaign scores.";
+ head.append(title,caption);const list=document.createElement("div");list.className="learn-exercises";
+ BONUS_TRIALS.forEach((trial,i)=>{
+  const record=trialBests[trial.id],button=document.createElement("button");button.type="button";
+  button.className="learn-exercise"+(record?" complete":"");button.dataset.trialIndex=String(i);
+  const number=document.createElement("span");number.className="learn-number";number.textContent="T"+(i+1);
+  const text=document.createElement("span");text.className="learn-exercise-copy";
+  const label=document.createElement("strong");label.textContent=trial.title;
+  const status=document.createElement("small");status.textContent=record?"★".repeat(record.stars)+" · BEST TURN "+record.turn:"SCORED SIDE VAULT";
+  text.append(label,status);button.append(number,text);list.append(button);
+ });
+ trials.append(head,list);root.append(trials);
+ const decisions=document.createElement("section");decisions.className="learn-group";
+ const heading=document.createElement("h3");heading.textContent="DECISION LAB · FIVE SAMPLE VAULTS";
+ const description=document.createElement("p");description.textContent="From color matching to interlocking resource decisions. Unscored practice; difficulty order awaits player calibration. Your campaign and lesson saves are unchanged.";
+ const picks=document.createElement("div");picks.className="learn-exercises";
+ DECISION_LADDER.forEach((p,i)=>{
+  const button=document.createElement("button");button.type="button";button.className="learn-exercise";button.dataset.decisionIndex=String(i);
+  const number=document.createElement("span");number.className="learn-number";number.textContent="D"+(i+1);
+  const copy=document.createElement("span");copy.className="learn-exercise-copy";
+  const name=document.createElement("strong");name.textContent=p.title;
+  const detail=document.createElement("small");detail.textContent=p.decision.focus;
+  copy.append(name,detail);button.append(number,copy);picks.append(button);
+ });
+ decisions.append(heading,description,picks);root.append(decisions);
+}
+function showModePanels(){
+ const learn=mode==="learn",heist=mode==="heist";
+ el("learnPanel").hidden=!learn;el("heistPanel").hidden=!heist;
+ for(const b of document.querySelectorAll(".mode-option")){
+  const active=b.dataset.mode===mode;b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));
+ }
+ if(learn)renderLearn();
+ if(heist)renderOverworld({world,bests:displayBests(),index,proofs,medal});
+}
+function selectMode(next){
+ if(next!=="learn"&&next!=="heist")return;
+ mode=next;try{localStorage.setItem(modeKey,mode);}catch{}
+ if(mode==="heist"){index=progress.index;world=chapterIndex(index);}
+ showModePanels();
+}
+const coin=(c,extra="")=>'<span class="mana-glyph '+c+'" style="--coin:'+SYMBOL[c].color+'" aria-label="'+(c==="N"&&extra?extra+" generic mana":SYMBOL[c].name+" mana")+'">'+(extra||SYMBOL[c].icon)+'</span>';
+function costHtml(cost){
+ // Generic costs are numeric; diamonds are true colorless.
+ return Object.entries(cost).flatMap(([k,n])=>k==="N"?(n?[coin("N",String(n))]:[]):Array.from({length:n},()=>coin(k))).join("");
+}
+function desc(action){
+ if(action.type==="activate"){
+  const source=getCard(level,action.id);
+  const paid=action.spend.map(id=>state.manaUnits.find(x=>x.id===id)?.color).filter(Boolean);
+  return (paid.length?"Spend "+paid.join(" + ")+" · ":"")+source.name+" → "+action.output.join(" + ")+
+    (source.v2==="talisman"&&action.mode!=="talisman-C"?" · 1 damage to you":"")+
+    (source.v2==="ziggurat"?" · creature spells only":"")+
+    (source.v2==="treasure"||source.v2==="petal"?" · sacrifice":"");
+ }
+ if(action.type==="ritual")return "Cast "+getCard(level,action.id).name+" · "+action.output.join(" + ")+" mana";
+ if(action.type==="play")return (action.shock?"Pay 2 life · enter untapped":getCard(level,action.id).kind==="shock"?"Save 2 life · enter tapped":getCard(level,action.id).kind==="bounce"?"Return "+getCard(level,action.returnId).name+" · enter tapped":"Play "+getCard(level,action.id).name);
+ if(action.type==="tap")return "Tap for "+SYMBOL[action.color].name+(getCard(level,action.id).kind==="pain"&&action.color!=="C"?" · lose 1 life":"");
+ if(action.type==="fetch")return "Find "+getCard(level,action.targetId).name+(action.shock?" · pay 3 life":" · pay 1 life");
+ if(action.type==="cast"){
+  const payment=COLORS.map(c=>action.spend[c]?action.spend[c]+c:"").filter(Boolean).join(" + ");
+  return "Spend "+payment+(action.untapId?" · untap "+getCard(level,action.untapId).name:"");
+ }
+ return "End this turn";
+}
+let choiceReturnFocus=null;
+function choices(title,help,moves){
+ const wasVisible=!el("actionBox").hidden;
+ if(moves.length&&!wasVisible)choiceReturnFocus=document.activeElement;
+ choiceActions=moves;
+ el("actionBox").hidden=moves.length===0;
+ el("actionTitle").textContent=title;
+ el("choices").innerHTML='<p class="muted small">'+help+'</p>'+moves.map((action,i)=>'<button class="choice-button" type="button" data-choice="'+i+'">'+desc(action)+'</button>').join("");
+ if(!moves.length)el("choices").innerHTML='<p class="muted">'+help+'</p>';
+ if(moves.length&&!wasVisible)el("dismissChoices").focus({preventScroll:true});
+ if(!moves.length&&wasVisible){
+  const previous=choiceReturnFocus;choiceReturnFocus=null;
+  if(previous?.isConnected&&document.body.classList.contains("in-heist"))previous.focus({preventScroll:true});
+ }
+}
+function message(text,error=false){
+ const item=el("feedback");
+ item.textContent=text;
+ item.classList.toggle("bad",error);
+ if(error){
+  item.animate?.([{opacity:.55,transform:"translateX(-50%) translateY(8px)"},{opacity:1,transform:"translateX(-50%) translateY(0)"}],{duration:280,easing:"ease-out"});
+ }
+}
+function rejectCast(){
+ notePlaytest("failedCast");
+ const stage=level.stages[state.stage];
+ if(stage&&state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast")){
+  const matching=COLORS.every(c=>(state.pool[c]||0)>=(stage.cost[c]||0));
+  if(matching){message("Some floating mana is restricted to creature spells and cannot pay for this spell.",true);return;}
+ }
+
+ if(!stage)return;
+ const missing=missingMana(state.pool,stage.cost);
+ flashWard({vault:el("heist").querySelector(".vault-card"),ward:el("lockGlyph"),costRow:el("wardCost"),button:null,pool:null,missing,reduced:reducedFx});
+ message(failureText(missing),true);
+}
+function perform(action){
+ const sourceRect=(action.type==="tap"||action.type==="activate")?el("battlefield").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():action.type==="ritual"?el("hand").querySelector('[data-cardid="'+action.id+'"]')?.getBoundingClientRect():null;
+ const out=reduce(level,state,action);
+ if(!out.ok){if(action?.type==="cast")rejectCast();else message(out.error,true);return;}
+ cancelAuto();
+ if(action.type!=="tap"){viewEpoch++;pendingFlights.clear();cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();}
+ history.push({state,orbs:manaOrbs.map(o=>({...o})),actionType:action.type});
+ notePlaytest("action");
+ state=out.state;
+ manaOrbs=(action.type==="ritual"||action.type==="activate"||action.type==="tap"&&(getCard(level,action.id).kind==="bounce"||state.highTide))?reconstruct(state.pool):transitionOrbs(manaOrbs,action,state.pool);
+ if(!consistent(state.pool,manaOrbs))manaOrbs=reconstruct(state.pool);
+ // Floating mana expires at the turn boundary. Reset ALL visual pigment,
+ // currents, ripples and glow immediately, even while Canvas is animating.
+ // This does not change the reducer, spell costs or playable land state.
+ if(action.type==="end"){fluid.clear();currentFluidStage="";}
+ // Orbital particles represent output mana, including paired and filtered output.
+ // Compare serialized mana units instead of guessing "one per tap".
+ // High Tide may create extra blue while a typed Island produces red/white,
+ // and untap abilities produce no mana at all.
+ const priorSerial=history.at(-1)?.state.manaSerial||0;
+ const produced=state.manaUnits.filter(u=>Number(u.id.slice(1))>priorSerial).map(u=>u.color);
+ const needed=new Map();
+ for(const color of produced)needed.set(color,(needed.get(color)||0)+1);
+ const incoming=[];
+ // The reconstructed pool is color-sorted, not temporal. Select by hue to
+ // animate exactly the units created (important for High Tide blue+red).
+ for(let at=manaOrbs.length-1;at>=0;at--){
+  const orb=manaOrbs[at],count=needed.get(orb.color)||0;
+  if(count>0){incoming.push(orb);needed.set(orb.color,count-1);}
+ }
+ incoming.reverse();
+ for(const orb of incoming)pendingFlights.add(orb.id);
+ const pendingId=incoming[0]?.id??null;
+ if(completed(level,state)){
+  closePlaytest("win");
+  magnifier.hide();
+  if(decisionIndex!==null){
+   message("Decision vault opened. Unscored practice; no campaign or lesson save was changed.");
+  }else if(trialIndex!==null){
+   const proof=proofs.get(level.id),record={turn:state.turn,spentLife:state.spentLife,actions:state.actions,
+    stars:medal(level,state,proof)};
+   if(betterBonusScore(record,trialBests[level.id]))trialBests[level.id]=record;
+   persistBonusTrials();
+   message("Bonus vault opened! Local medal saved independently from your campaign.");
+  }else if(mode==="learn"){
+   if(!learnProgress.completed.includes(index))learnProgress.completed.push(index);
+   learnProgress.completed.sort((a,b)=>a-b);learnProgress.last=index;persistLearn();
+   message("Practice complete! Select the next exercise or return to Learn Mana.");
+  }else{
+   if(level.revision===4){
+    const best=remixBests[level.id];
+    if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife)||(state.turn===best.turn&&state.spentLife===best.spentLife&&state.actions<best.actions))
+     remixBests[level.id]={turn:state.turn,spentLife:state.spentLife,actions:state.actions};
+    persistRemix();
+   }else if(level.revision===3){
+    const best=varietyBests[level.id];
+    if(!best||state.turn<best.turn||
+       (state.turn===best.turn&&state.spentLife<best.spentLife)||
+       (state.turn===best.turn&&state.spentLife===best.spentLife&&state.actions<best.actions))
+      varietyBests[level.id]={turn:state.turn,spentLife:state.spentLife,actions:state.actions};
+    persistVariety();
+   }else if(level.revision){
+    const best=revisedBests[level.id];
+    if(!best||state.turn<best.turn||
+       (state.turn===best.turn&&state.spentLife<best.spentLife)||
+       (state.turn===best.turn&&state.spentLife===best.spentLife&&state.actions<best.actions))
+      revisedBests[level.id]={turn:state.turn,spentLife:state.spentLife,actions:state.actions};
+    persistRevised();
+   }else{
+    const best=progress.bests[level.id];
+    if(!best||state.turn<best.turn||(state.turn===best.turn&&state.spentLife<best.spentLife))
+      progress.bests[level.id]={turn:state.turn,spentLife:state.spentLife};
+   }
+   persist();message("The vault breaks open! Case closed.");
+  }
+ }else if(action.type==="end")message("Turn "+state.turn+" · lands untapped · mana emptied.");
+ else if(action.type==="play")message(getCard(level,action.id).name+" enters the battlefield"+(state.field.find(f=>f.id===action.id)?.tapped?" tapped.":"."));
+ else if(action.type==="tap")message(getCard(level,action.id).kind==="bounce"?"Simic Growth Chamber adds green AND blue mana.":produced.length>1?"Added "+produced.join(" + ")+" mana (High Tide).":"+1 "+SYMBOL[action.color].name+" mana · land tapped sideways.");
+  else if(action.type==="activate")message(action.untapTarget?getCard(level,action.id).name+" untaps "+getCard(level,action.untapTarget).name+".":action.untapSelf?getCard(level,action.id).name+" untaps after its three-mana payment.":getCard(level,action.id).name+" produces "+produced.join(" + ")+" mana"+(getCard(level,action.id).v2==="ziggurat"?" (creature spells only).":"."));
+ else if(action.type==="ritual")message(getCard(level,action.id).manaSpell?.effect==="highTide"?"High Tide resolves! Islands tapped for mana produce extra blue until the turn ends.":"Cast "+getCard(level,action.id).name+" from your hand. It goes to your graveyard and adds "+produced.join(" + ")+" mana.");
+ else if(action.type==="fetch")message("Fetched "+getCard(level,action.targetId).name+". The fetch land is gone.");
+ else if(action.type==="cast")message("Spell cast · "+(level.stages.length-state.stage)+" seals remain.");
+ landDrag?.cancel();
+ render(pendingId);
+ if(incoming.length){
+  const epoch=viewEpoch;
+  incoming.forEach((orb,i)=>launchOrbitMana({
+   color:produced[i],sourceRect,layer:el("manaTravelLayer"),index:i,
+   destination:el("wardTarget"),reduced:reducedFx,
+   onArrival:()=>{if(epoch!==viewEpoch)return;
+    pendingFlights.delete(orb.id);
+    chargeWard({animateId:orb.id});
+    updateCastButton();
+    if(pendingFlights.size===0)queueAutoCast();
+   }
+  }));
+ }else queueAutoCast();
+}
+function tapLand(id){
+ lastCardId=id;
+ if(completed(level,state))return;
+ const onField=state.field.find(f=>f.id===id);
+ if(!onField){message("This source is not on the battlefield.",true);return;}
+ if(onField.tapped&&!["petal","basalt"].includes(getCard(level,id).v2)){message(tappedLandMessage(level,state),true);return;}
+ const card=getCard(level,id),possible=actions(level,state).filter(a=>(a.type==="tap"||a.type==="fetch"||a.type==="activate")&&a.id===id);
+ if(card.kind==="fetch"){
+  if(!possible.length)message("This fetch land has no legal target, or you cannot pay the life cost.",true);
+  else choices("SEARCH YOUR RESERVE","Sacrifice this fetch land and pay 1 life to choose a compatible land.",possible);
+ }else if(possible.length===1)perform(possible[0]);
+ else if(possible.length)choices("CHOOSE A MANA ABILITY",card.v2?"Each choice shows the exact output and any input payment.":"Tap "+card.name+" for one mana color.",possible);
+ else message("This source is unavailable, or you cannot pay its activation cost or life payment.",true);
+}
+function playLand(id){
+ lastCardId=id;selectedHandId=null;
+ const card=getCard(level,id);
+ if(card.manaSpell){
+  const rituals=actions(level,state).filter(a=>a.type==="ritual"&&a.id===id);
+  if(!rituals.length){message("Make enough mana to pay for this instant before casting it.",true);return;}
+  if(rituals.length===1)perform(rituals[0]);
+  else choices("CAST A MANA SPELL","Choose which mana pays for the instant.",rituals);
+  return;
+ }
+ const possible=actions(level,state).filter(a=>a.type==="play"&&a.id===id);
+ if(!possible.length){message(state.played?"You have already played a land this turn.":"This land cannot be played right now.",true);return;}
+ if(possible.length===1)perform(possible[0]);
+ else choices(card.kind==="shock"?"SHOCK OR SAVE LIFE":card.kind==="bounce"?"RETURN A LAND":"PLAY YOUR LAND",card.kind==="shock"?"Pay 2 life to enter untapped, or enter tapped at no life cost.":card.kind==="bounce"?"This land enters tapped and sends a battlefield land back to your hand.":"Select how to play this land.",possible);
+}
+function landHtml(instance,field){
+ const card=getCard(level,instance.id),tapped=field&&instance.tapped;
+ const key=lookup(level,instance.id).card;
+ const full=referenceFor(key);
+ const name=full?.name||card.name;
+ const src=imageFor(instance.id,key);
+ const fallback=landPainting(card);
+ const alt=name+" — Magic: The Gathering card from Scryfall";
+ return '<button type="button" draggable="false" class="land-card mtg-real-land '+(tapped?"is-tapped":"")+'" data-cardid="'+instance.id+'" data-zone="'+(field?"field":"hand")+'" data-kind="'+card.kind+'" data-real-card="'+key+'" aria-label="'+(field?"Tap ":"Tap to play or cast: ")+name+(tapped?", tapped":"")+'" title="'+name+' · '+(field?"tap to produce mana":"tap to play · hold and drag · press I to inspect")+'">'+
+  '<img class="mtg-card-image" data-card-key="'+key+'" src="'+src+'" alt="'+alt+'" draggable="false" decoding="async" loading="eager">'+
+  '<span class="mtg-fallback" aria-hidden="true"><strong>'+name+'</strong>'+fallback+'</span>'+
+  '</button>';
+}
+
+// Keep image DOM nodes alive: a Scryfall /cards/random redirect must NEVER
+// reload on tap, play, Undo, automatic casting or cost updates.
+function syncLandRows(){
+ const existing=new Map(
+  [...document.querySelectorAll('#battlefield .land-card[data-cardid],#hand .land-card[data-cardid]')]
+   .map(node=>[node.dataset.cardid,node])
+ );
+ const make=(instance,field)=>{
+  const id=instance.id,card=getCard(level,id),tapped=field&&instance.tapped;
+  let node=existing.get(id);
+  if(!node){
+   const wrapper=document.createElement("template");
+   wrapper.innerHTML=landHtml(instance,field);
+   node=wrapper.content.firstElementChild;
+  }
+  node.classList.toggle("is-tapped",!!tapped);
+  node.dataset.zone=field?"field":"hand";
+  const name=card.name;
+  node.setAttribute("aria-label",(field?"Tap ":"Tap to play or cast: ")+name+(tapped?", tapped":""));
+  node.title=name+" · "+(field?"tap to produce mana":"tap to play or cast")+" · arrow keys move between cards · I inspects";
+   node.classList.toggle("hand-selected",!field&&id===selectedHandId);
+   if(field)node.removeAttribute("aria-pressed");else node.setAttribute("aria-pressed",String(id===selectedHandId));
+  return node;
+ };
+ const fieldNodes=state.field.map(f=>make(f,true));
+ const handNodes=state.hand.map(id=>make({id},false));
+ const empty=text=>{
+  const item=document.createElement("span");
+  item.className="empty";item.textContent=text;return item;
+ };
+ el("battlefield").replaceChildren(...(fieldNodes.length?fieldNodes:[empty("No lands in play yet. Play one from your hand.")]));
+ el("battlefield").classList.toggle("field-many",fieldNodes.length>=8);
+ el("hand").replaceChildren(...(handNodes.length?handNodes:[empty("No land cards remain in hand.")]));
+ // Fit both zones within one viewport; overlap cards instead of scrolling.
+ const vw=window.innerWidth||390,vh=window.innerHeight||740;
+ const fan=handFanLayout(handNodes.length,vw,vh);
+ const fieldWidth=Math.round(vw<650?(vh<650?Math.min(64,Math.max(52,vh*.12)):Math.min(84,Math.max(68,vh*.12))):Math.min(80,Math.max(65,vh*.11)));
+ const fit=(count,width,padding)=>count>1?Math.min(0,(vw-padding-count*width)/(count-1)):0;
+ el("hand").style.setProperty("--hand-card-width",fan.cardWidth+"px");
+ el("hand").style.setProperty("--hand-overlap",fan.overlap+"px");
+ el("battlefield").style.setProperty("--field-card-width",fieldWidth+"px");
+ el("battlefield").style.setProperty("--field-overlap",Math.round(fit(fieldNodes.length,fieldWidth,22))+"px");
+ handNodes.forEach((node,i)=>{
+  const position=fan.cards[i];
+  node.style.setProperty("--fan-tilt",position.tilt+"deg");
+  node.style.setProperty("--fan-drop",position.drop+"px");
+  node.style.setProperty("--fan-index",String(position.order));
+ });
+ el("playSelectedLand").disabled=!selectedHandId||!state.hand.includes(selectedHandId)||(!!state.played&&!getCard(level,selectedHandId)?.manaSpell);
+ el("playSelectedLand").textContent=selectedHandId&&!!getCard(level,selectedHandId)?.manaSpell?"CAST MANA SPELL ✦":"PLAY SELECTED LAND ↑";
+ el("inspectSelected").disabled=!selectedHandId||!state.hand.includes(selectedHandId);
+}
+function selectHand(id){
+ if(!state.hand.includes(id))return;
+ selectedHandId=selectedHandId===id?null:id;
+ syncLandRows();
+ message(selectedHandId?"Selected "+getCard(level,id).name+" · play it or inspect it.":"Selection cleared.");
+}
+function updateCastButton(){
+ const ready=!completed(level,state)&&!pendingFlights.size&&!!chooseAutomaticCast(level,state);
+ const button=el("castButton");
+ button.disabled=!ready;
+ button.textContent=ready?"CAST SPELL ✦":state.manaUnits?.some(u=>u.restriction)&&COLORS.every(c=>(state.pool[c]||0)>=(level.stages[state.stage]?.cost?.[c]||0))?"MANA RESTRICTED":"NEED MORE MANA";
+ button.setAttribute("aria-label",ready?"Cast the spell by spending mana":"Spell not ready; produce more mana");
+ el("autoCastLabel").textContent=completed(level,state)?"VAULT OPEN":ready?(autoCastEnabled?"READY · AUTO-CAST ARMED":"READY · TAP CAST SPELL"):"TAP LANDS TO ADD MANA";
+}
+function teachingCue(){
+ if(completed(level,state))return "Vault opened. Nice work!";
+ if(state.manaUnits?.some(u=>u.restriction)&&!actions(level,state).some(a=>a.type==="cast"))return "Some mana can only pay for creature spells. This vault may need a different mana source.";
+ if(chooseAutomaticCast(level,state))return "Your mana matches the cost. Cast to spend it.";
+ if(decisionIndex!==null)return level.decision.focus;
+ if(index===0)return "Tap your Island. Turning a land sideways makes mana.";
+ if(index===1)return state.hand.length?"Play your Mountain from your hand.":"Tap your Mountain for red mana.";
+ if(index===2)return state.hand.length&&!state.played?"Play a land from your hand.":state.field.some(f=>!f.tapped)?"Tap a land to make mana.":"End your turn to untap your lands.";
+ if(state.hand.length&&!state.played&&state.field.every(f=>f.tapped))return "Select a land in your hand, then play it.";
+ if(state.field.some(f=>!f.tapped))return "Choose a mana source. Some abilities require another mana first.";
+ return state.turn<level.turnLimit?"End turn: lands untap and floating mana disappears.":"Final turn. Undo or restart for another solution.";
+}
+function render(pendingId=null){
+ syncHintLadder();
+ const isWin=completed(level,state),proof=mode==="learn"&&trialIndex===null&&decisionIndex===null?{turn:level.turnLimit,spentLife:0}:proofs.get(level.id),stage=level.stages[state.stage];
+ el("stageLabel").textContent=decisionIndex!==null?"D"+(decisionIndex+1)+" / "+DECISION_LADDER.length:trialIndex!==null?"BONUS TRIAL "+(trialIndex+1)+" / "+BONUS_TRIALS.length:mode==="learn"?"LEARN "+String(index+1).padStart(2,"0")+" / "+LEARN_COUNT:"STAGE "+stageCode(index);
+ el("returnMap").textContent=mode==="learn"?(decisionIndex!==null?"← DECISIONS":trialIndex!==null?"← TRIALS":"← LESSONS"):"← MAP";
+ el("toggleGuide").textContent=decisionIndex!==null?"WARD PLAN":mode==="learn"&&trialIndex===null?"✧ LESSON NOTES":"ⓘ GUIDE";
+ el("chapterName").textContent=level.chapter;
+ el("difficulty").textContent=["INITIATE","ROOKIE","TACTICIAN","EXPERT","MASTERMIND"][level.rank-1];
+ const ritesInGraveyard=state.graveyard.filter(id=>getCard(level,id)?.name==="Rite of Flame").length;
+ const opponentInfo=level.opponentTappedLands?"OPPONENT · "+level.opponentTappedLands+" TAPPED LANDS":"";
+ const paletteInfo=level.opponentLandColors?.length?"OPPONENT LAND COLORS · "+level.opponentLandColors.join(" / "):"";
+ manaContext.textContent=[opponentInfo,paletteInfo].filter(Boolean).join(" · ")||(state.highTide?"HIGH TIDE · EXTRA U ×"+state.highTide:ritesInGraveyard?"RITE MEMORY · "+ritesInGraveyard:"");
+ manaContext.hidden=!manaContext.textContent;
+ const rating=evaluateVault(level);
+ masteryRating.hidden=decisionIndex!==null;
+ masteryRating.textContent="C "+rating.complexity+" · D "+rating.difficulty;
+ masteryRating.setAttribute("aria-label","Complexity "+rating.complexity+" of 100, estimated difficulty "+rating.difficulty+" of 100");
+ el("vaultName").textContent=level.title;
+ el("briefing").textContent=level.briefing;
+ decisionPlan.hidden=decisionIndex===null;
+ decisionPlan.replaceChildren();
+ if(decisionIndex!==null){
+  const heading=document.createElement("h3");heading.textContent="PLAN EVERY WARD";decisionPlan.append(heading);
+  level.stages.forEach((spell,i)=>{
+   const row=document.createElement("p"),name=document.createElement("strong"),cost=document.createElement("span");
+   name.textContent=(i+1)+". "+spell.name+" · ";
+   cost.innerHTML=costHtml(spell.cost);row.append(name,cost);decisionPlan.append(row);
+  });
+ }
+ const archived=level.revision===4?varietyBests[level.id]:null;
+ if(archived){
+  if(!historicalMedals.has(level.id)){
+   const original=diverseFor(index),oldProof=certifyDiverse(original);
+   historicalMedals.set(level.id,medal(original,{turn:archived.turn,spentLife:archived.spentLife,actions:archived.actions,stage:original.stages.length},oldProof));
+  }
+  historicalNote.textContent="PREVIOUS VERSION · "+"★".repeat(historicalMedals.get(level.id))+" · turn "+archived.turn+", "+archived.spentLife+" life spent · preserved in your archived results. This new board has separate medals.";
+  historicalNote.hidden=false;
+ }else{historicalNote.textContent="";historicalNote.hidden=true;}
+ el("turnNumber").textContent=state.turn+" / "+level.turnLimit;
+ el("lifeTotal").textContent=state.life;
+ el("landDrop").textContent=state.played?"USED":"AVAILABLE";
+ el("parScore").textContent="TURN "+proof.turn+" · -"+proof.spentLife+" LIFE";
+ el("lockGlyph").textContent=lockGlyphs[index%lockGlyphs.length];
+ el("wardCounter").textContent=isWin?"VAULT OPEN":"WARD "+(state.stage+1)+" OF "+level.stages.length;
+ el("wardName").textContent=isWin?"The seal is broken":stage.name;
+ el("wardCost").innerHTML=isWin?"":costHtml(stage.cost);
+ el("wardDescription").textContent=decisionIndex!==null?(isWin?level.decision.why:level.decision.focus):isWin?(mode==="learn"?"Practice complete; your learning progress is saved separately.":"The heist is complete. Your best route is preserved on this device."):stage.effect==="untap"?"Casting this heist spell also untaps one land you choose.":"Numbers show generic mana costs, payable with any kind of mana; a diamond requires truly colorless mana.";
+ const finalTurn=!isWin&&isFinalTurn(level,state);
+ const neededMana=isWin?"":requiredManaText(level,state);
+ el("lessonPrompt").textContent=teachingCue();
+ el("autoCastToggle").checked=autoCastEnabled;
+ el("stageList").innerHTML=level.stages.map((spell,i)=>'<span class="stage-marker '+(i<state.stage?"done":i===state.stage?"active":"")+'">'+(i<state.stage?"✓":String(i+1).padStart(2,"0"))+" "+spell.name+"</span>").join("");
+ el("battleCount").textContent=state.field.length+" SOURCE"+(state.field.length===1?"":"S");
+ if(selectedHandId&&!state.hand.includes(selectedHandId))selectedHandId=null;
+ syncLandRows();
+ el("handGuide").hidden=state.hand.length===0;
+ el("hand").closest(".hand-card").classList.toggle("hand-empty",state.hand.length===0);
+ el("libraryPanel").hidden=level.library.length===0;
+ el("libraryPanel").textContent=level.library.length?"RESERVE / FETCH TARGETS: "+level.library.map(x=>CARDS[x.card].name).join(" · "):"";
+
+ chargeWard({pendingId});
+ updateCastButton();
+ el("undo").disabled=history.length===0;
+ // Keep Final Turn clickable to explain the puzzle limit. A disabled button
+ // would be silently unresponsive precisely when players most need guidance.
+ const endButton=el("endTurn");
+ endButton.disabled=isWin;
+ endButton.classList.toggle("turn-limit",finalTurn);
+ endButton.innerHTML=finalTurn?'FINAL TURN <span aria-hidden="true">✕</span>':'END TURN <span aria-hidden="true">↗</span>';
+ endButton.title=finalTurn?"No more turns. Tap for advice on this puzzle.":"End turn and untap your lands";
+ endButton.setAttribute("aria-label",finalTurn?"Final turn. No further turns allowed. Tap for Undo or Restart advice.":"End turn and untap lands");
+ const winPanel=el("winPanel"),wasWin=!winPanel.hidden;
+ winPanel.hidden=!isWin;
+ difficultyReview.hidden=!(isWin&&playtestEnabled&&pendingRatingKey&&!playtestRatingDone);
+ el("winStats").hidden=!isWin||(mode==="learn"&&trialIndex===null);
+ if(isWin){
+  el("winStatTurn").textContent=String(state.turn);
+  el("winStatLife").textContent=String(state.spentLife);
+  el("winStatExtraLabel").textContent=trialIndex!==null?"BEST MEDAL":"REFERENCE";
+  el("winStatExtra").textContent=trialIndex!==null?
+   String(trialBests[level.id]?.stars||medal(level,state,proof))+" ★":
+   proof?.status==="solved"&&Number.isFinite(proof.turn)?
+   "T"+proof.turn+" / "+proof.spentLife:"LEGAL ROUTE";
+  if(decisionIndex!==null){
+   el("winTitle").textContent="DECISION VAULT OPEN";
+   el("winCopy").textContent=level.decision.why;
+  }else if(trialIndex!==null){
+   const best=trialBests[level.id],stars=medal(level,state,proof);
+   el("winTitle").textContent="★".repeat(stars)+" BONUS VAULT OPEN";
+   el("winCopy").textContent=state.actions+" moves · Optional bonus challenge, separate from campaign rankings.";
+  }else if(mode==="learn"){
+   el("winTitle").textContent="✧ LESSON COMPLETE";
+   el("winCopy").textContent=SAGE_LESSONS[index]?.why||"Practice complete. Your new mana skill is ready for the next lesson.";
+  }else{
+   const score=medal(level,state,proof);
+   el("winTitle").textContent="★".repeat(score)+" VAULT CRACKED";
+   el("winCopy").textContent=level.revision?"Reference is a verified legal route, not guaranteed optimal.":"Every ward opened. Compare your result to the reference below.";
+  }
+ }
+ el("skip").textContent="← MAP";
+ el("winNext").textContent=decisionIndex!==null?(decisionIndex+1<DECISION_LADDER.length?"NEXT DECISION →":"BACK TO DECISIONS →"):trialIndex!==null?"BACK TO BONUS TRIALS →":mode==="learn"?(nextLearnIndex(index)===null?"RETURN TO LESSONS →":"NEXT EXERCISE →"):index===LEVELS.length-1?"BACK TO VAULTS →":"NEXT VAULT →";
+ returnFromResult.hidden=!isWin;returnFromResult.textContent=decisionIndex!==null?"← DECISIONS":trialIndex!==null?"← BONUS TRIALS":mode==="learn"?"← LESSONS":"← VAULT MAP";
+ if(isWin&&!wasWin)el("winNext").focus({preventScroll:true});
+ sage.render({mode:decisionIndex!==null?"decision":trialIndex!==null?"bonus":mode,index,level,state,finished:isWin});
+ if(mode==="heist")renderOverworld({world,bests:displayBests(),index,proofs,medal});
+ choices(isWin?"CASE CLOSED":"YOUR NEXT CHOICE",isWin?"The vault is open. Head to the next case.":state.turn>=level.turnLimit?"Final permitted turn. Every tap and spell counts.":selectedMessage||"Tap battlefield lands for mana; tap a hand card to play it or cast a ritual.",[]);
+ selectedMessage="";
+}
+function renderGuestMilestones(){
+ const outcome=guestMilestones({bests:displayBests(),learnCompleted:learnProgress.completed,
+  bonusBests:trialBests,remixBests});
+ const root=el("guestMilestoneGrid");root.replaceChildren();
+ for(const badge of outcome.badges){
+  const item=document.createElement("div");
+  item.className="guest-milestone"+(badge.earned?" earned":"");
+  const heading=document.createElement("strong");
+  heading.textContent=(badge.earned?"★ ":"◇ ")+badge.name;
+  const explanation=document.createElement("span");explanation.textContent=badge.meaning;
+  const status=document.createElement("small");status.textContent=badge.earned?"EARNED ON THIS DEVICE":"NOT YET EARNED";
+  item.append(heading,explanation,status);root.append(item);
+ }
+}
+function showMap(){
+ renderGuestMilestones();
+ const wasPlaying=document.body.classList.contains("in-heist");
+ const leavingTrial=trialIndex,leavingDecision=decisionIndex;
+ closePlaytest("exit");pendingRatingKey=null;
+ sage.hide();fluid.pause();fluid.clear();currentFluidStage="";
+ magnifier.hide();
+ invalidateStagePrintings();
+ cancelAuto();viewEpoch++;pendingFlights.clear();
+ cardInspector.hide({restore:false});
+ landDrag?.cancel();
+ document.body.classList.remove("in-heist","is-training","is-decision-lab");
+ el("gameNotes").hidden=true;el("gameNotes").open=false;
+  el("toggleGuide").setAttribute("aria-expanded","false");
+ el("actionBox").hidden=true;
+ cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
+ el("gameScreen").hidden=true;el("campaignScreen").hidden=false;
+ trialIndex=null;decisionIndex=null;
+ showModePanels();
+ el("campaignScreen").scrollIntoView({block:"start",behavior:"instant"});
+ if(wasPlaying){
+  const focusable=mapLaunchFocus?.isConnected&&!mapLaunchFocus.closest("[hidden]")?mapLaunchFocus:null;
+  const fallback=leavingDecision!==null?el("learnPicker").querySelector('[data-decision-index="'+leavingDecision+'"]'):
+    leavingTrial!==null?el("learnPicker").querySelector('[data-trial-index="'+leavingTrial+'"]'):
+    mode==="learn"?el("learnPicker").querySelector('[data-learn-level="'+index+'"]'):
+    el("chapterPicker").querySelector('[data-level="'+index+'"]');
+  const visible=fallback&&!fallback.closest("[hidden]")?fallback:null;
+  (focusable||visible||document.querySelector('.mode-option[data-mode="'+mode+'"]'))?.focus({preventScroll:true});
+ }
+ mapLaunchFocus=null;
+}
+function showGame(){
+ startPlaytest();
+ fluid.resume();
+ document.body.classList.add("in-heist");
+ document.body.classList.toggle("is-training",mode==="learn");
+ el("campaignScreen").hidden=true;el("gameScreen").hidden=false;
+ el("gameNotes").hidden=false;
+ renderCardReferences(el("cardGallery"),level);
+ el("gameScreen").scrollIntoView({block:"start",behavior:"instant"});
+}
+function load(i,enter=false){
+ if(enter&&el("campaignScreen").contains(document.activeElement))mapLaunchFocus=document.activeElement;
+ closePlaytest("exit");pendingRatingKey=null;playtestRatingDone=false;
+ fluid.clear();currentFluidStage="";
+ magnifier.hide();
+ cancelAuto();viewEpoch++;pendingFlights.clear();
+ cardInspector.hide({restore:false});
+ lastCardId=null;selectedHandId=null;
+ landDrag?.cancel();
+ if(!Number.isInteger(i)||i<0||i>=LEVELS.length||(mode==="learn"&&!isLearnLevel(i)))return false;
+ document.body.classList.toggle("is-decision-lab",decisionIndex!==null);
+ index=i;world=chapterIndex(index);
+ level=decisionIndex!==null?DECISION_LADDER[decisionIndex]:trialIndex!==null?BONUS_TRIALS[trialIndex]:mode==="learn"?LEARN_LEVELS[index]:LEVELS[index];state=initial(level);history=[];selectedMessage="";
+ startStagePrintings(level);
+ el("battlefield").replaceChildren();el("hand").replaceChildren();
+ manaOrbs=reconstruct(state.pool);cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();
+ if(decisionIndex!==null){/* Practice has no score or completion persistence. */}
+ else if(mode==="learn"&&trialIndex===null){learnProgress.last=index;persistLearn();}
+ else {progress.index=index;persist();}
+ render();
+ if(!el("gameNotes").hidden)renderCardReferences(el("cardGallery"),level);
+ message((decisionIndex!==null?"Decision Lab "+(decisionIndex+1):trialIndex!==null?"Bonus Trial "+(trialIndex+1):mode==="learn"?"Learn Mana "+(index+1):"Stage "+stageCode(index))+" · "+teachingCue());
+ if(enter)showGame();
+ return true;
+}
+el("chapterPicker").addEventListener("click",e=>{
+ const x=e.target.closest("[data-level]");
+ if(x)load(Number(x.dataset.level),true);
+});
+el("previousWorld").addEventListener("click",()=>{
+ if(world>0){world--;renderOverworld({world,bests:displayBests(),index,proofs,medal});}
+});
+el("nextWorld").addEventListener("click",()=>{
+ if(world<CHAPTERS.length-1){world++;renderOverworld({world,bests:displayBests(),index,proofs,medal});}
+});
+el("galaxyPicker").addEventListener("click",e=>{
+ const button=e.target.closest("[data-galaxy]");
+ if(!button||button.disabled)return;
+ const galaxy=Number(button.dataset.galaxy);
+ if(!Number.isInteger(galaxy)||galaxy<0||galaxy>=GALAXIES.length)return;
+ world=GALAXIES[galaxy].worldRange[0];
+ renderOverworld({world,bests:displayBests(),index,proofs,medal});
+});
+el("worldPips").addEventListener("click",e=>{
+ const button=e.target.closest("[data-world]");
+ if(button&&!button.disabled){world=Number(button.dataset.world);renderOverworld({world,bests:displayBests(),index,proofs,medal});}
+});
+el("campaignScreen").addEventListener("click",e=>{
+ const pick=e.target.closest(".mode-option[data-mode]");
+ if(pick){selectMode(pick.dataset.mode);return;}
+ const decision=e.target.closest("[data-decision-index]");
+ if(decision&&mode==="learn"){
+  const n=Number(decision.dataset.decisionIndex);
+  if(Number.isInteger(n)&&n>=0&&n<DECISION_LADDER.length){decisionIndex=n;trialIndex=null;load(n,true);}
+  return;
+ }
+ const bonus=e.target.closest("[data-trial-index]");
+ if(bonus&&mode==="learn"){const n=Number(bonus.dataset.trialIndex);if(Number.isInteger(n)&&n>=0&&n<BONUS_TRIALS.length){trialIndex=n;load(26+n,true);}return;}
+ const exercise=e.target.closest("[data-learn-level]");
+ if(exercise&&mode==="learn"){trialIndex=null;load(Number(exercise.dataset.learnLevel),true);}
+});
+el("campaignScreen").addEventListener("click",e=>{
+ const button=e.target.closest("[data-jump-galaxy]");
+ if(!button||mode!=="heist")return;
+ const g=Number(button.dataset.jumpGalaxy);
+ if(!Number.isInteger(g)||g<0||g>=GALAXIES.length)return;
+ world=GALAXIES[g].worldRange[0];
+ renderOverworld({world,bests:displayBests(),index,proofs,medal});
+ el("galaxyPicker").focus?.({preventScroll:true});
+});
+el("returnMap").addEventListener("click",showMap);
+function setGuideOpen(open,{restoreFocus=true}={}){
+ const guide=el("gameNotes");
+ guide.open=Boolean(open);
+ el("toggleGuide").setAttribute("aria-expanded",String(guide.open));
+ // The guide is a fixed overlay; changing the URL hash cannot close it.
+ // Return keyboard focus to the trigger when dismissing the guide.
+ if(restoreFocus)(guide.open?el("returnFromGuide"):el("toggleGuide")).focus({preventScroll:true});
+}
+el("toggleGuide").addEventListener("click",()=>setGuideOpen(!el("gameNotes").open));
+el("returnFromGuide").addEventListener("click",()=>setGuideOpen(false));
+// Clicking the native <summary> also changes <details>. Keep the state in sync.
+el("gameNotes").addEventListener("toggle",()=>{
+ el("toggleGuide").setAttribute("aria-expanded",String(el("gameNotes").open));
+});
+el("autoCastToggle").addEventListener("change",e=>{
+ autoCastEnabled=e.target.checked;
+ try{localStorage.setItem("dc-mana-heist-auto-cast",autoCastEnabled?"yes":"no");}catch{}
+ cancelAuto();updateCastButton();if(autoCastEnabled)queueAutoCast();
+});
+el("castButton").addEventListener("click",()=>{
+ if(pendingFlights.size)return;
+ const cast=chooseAutomaticCast(level,state);
+ if(cast){cancelAuto();fluid.burst();perform(cast);}else rejectCast();
+});
+el("playSelectedLand").addEventListener("click",()=>{if(selectedHandId)playLand(selectedHandId);});
+el("inspectSelected").addEventListener("click",()=>{if(selectedHandId)inspectById(selectedHandId);});
+el("dismissChoices").addEventListener("click",()=>choices("YOUR NEXT CHOICE","Tap a land or play a land from your hand.",[]));
+document.addEventListener("keydown",e=>{
+ if(e.key!=="Escape")return;
+ if(el("gameNotes").open){e.preventDefault();setGuideOpen(false);return;}
+ if(!el("actionBox").hidden){choices("YOUR NEXT CHOICE","Selection canceled.",[]);}
+});
+for(const zone of ["hand","battlefield"]){
+ el(zone).addEventListener("error",e=>{
+  if(e.target.matches?.(".mtg-card-image"))e.target.closest(".land-card")?.classList.add("image-failed");
+ },true);
+}
+el("battlefield").addEventListener("click",e=>{
+ const card=e.target.closest('[data-zone="field"][data-cardid]');
+ if(card)tapLand(card.dataset.cardid);
+ else if(selectedHandId)playLand(selectedHandId);
+});
+for(const id of ["battlefield","hand"])el(id).addEventListener("keydown",e=>{
+ if(navigateCardRack(el(id),e))return;
+ if(e.key.toLowerCase()!=="i"||e.altKey||e.ctrlKey||e.metaKey)return;
+ const card=e.target.closest('[data-cardid]');
+ if(card){e.preventDefault();inspectById(card.dataset.cardid);}
+});
+landDrag=installLandDragging({
+ hand:el("hand"),battlefield:el("battlefield"),
+ onDrop:id=>playLand(id),
+ onInspect:id=>playLand(id),
+ onHint:(text,error=false)=>message(text,error)
+});
+el("choices").addEventListener("click",e=>{const b=e.target.closest("[data-choice]");if(!b)return;const a=choiceActions[Number(b.dataset.choice)];if(a)perform(a);});
+// Mana-choice sheets must remain usable by keyboard and screen readers on
+// small screens, not just visually centered above the battlefield.
+el("actionBox").addEventListener("keydown",e=>{
+ if(e.key!=="Tab"||el("actionBox").hidden)return;
+ const controls=[...el("actionBox").querySelectorAll('button:not([disabled])')];
+ if(!controls.length)return;
+ const first=controls[0],last=controls.at(-1);
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
+el("playtestOptIn").addEventListener("change",e=>{
+ playtestEnabled=Boolean(e.target.checked);
+ try{localStorage.setItem(PLAYTEST_OPT_KEY,playtestEnabled?"yes":"no");}catch{}
+ if(playtestEnabled&&document.body.classList.contains("in-heist"))startPlaytest();
+ if(!playtestEnabled){playtestAttempt=null;pendingRatingKey=null;difficultyReview.hidden=true;}
+ el("playtestStatus").textContent=playtestEnabled?"Local playtest counts enabled. Nothing is transmitted automatically.":"Playtest notes are off. Existing local counts remain until you clear them.";
+});
+el("playtestCopy").addEventListener("click",async()=>{
+ const report=exportPlaytest(playtestData);
+ try{
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard API unavailable");
+  await navigator.clipboard.writeText(report);
+  el("playtestExportText").hidden=true;
+  el("playtestStatus").textContent="Local report copied. Paste it into your playtest feedback when you choose.";
+ }catch{
+  const area=el("playtestExportText");
+  area.value=report;area.hidden=false;area.focus();area.select();
+  el("playtestStatus").textContent="Clipboard access is unavailable. Select and copy the report shown below.";
+ }
+});
+el("playtestClear").addEventListener("click",()=>{
+ if(!window.confirm("Clear ALL optional local playtest notes? Campaign medals and lesson completion are unaffected."))return;
+ playtestData=blankPlaytest();savePlaytest();playtestAttempt=null;pendingRatingKey=null;
+ if(playtestEnabled&&document.body.classList.contains("in-heist"))startPlaytest();
+ el("playtestExportText").hidden=true;
+ el("playtestStatus").textContent="Local playtest notes cleared. Your campaign and lesson saves were not changed.";
+});
+difficultyReview.addEventListener("click",e=>{
+ const selected=e.target.closest("[data-playtest-rating]");
+ if(!selected||!pendingRatingKey||!playtestEnabled||playtestRatingDone)return;
+ const rating=Number(selected.dataset.playtestRating);
+ if(!Number.isInteger(rating)||rating<1||rating>5)return;
+ playtestData=ratePlaytest(playtestData,pendingRatingKey,rating);
+ savePlaytest();playtestRatingDone=true;pendingRatingKey=null;
+ difficultyReview.hidden=true;
+ message("Thanks. Difficulty rating saved on this device only.");
+});
+
+el("endTurn").addEventListener("click",()=>{const a=actions(level,state).find(a=>a.type==="end");if(a)perform(a);else message(finalTurnMessage(level,state),true);});
+el("undo").addEventListener("click",()=>{
+ if(!history.length)return;
+ notePlaytest("undo");
+ cancelAuto();viewEpoch++;pendingFlights.clear();
+ let prev=history.pop();
+ // An automatic cast is a consequence of the previous manual move.
+ // Undo that move and every automatically resolved ward after it together.
+ while(prev.actionType==="cast"&&history.length)prev=history.pop();
+ state=prev.state;manaOrbs=prev.orbs;
+ cancelOrbitMana(el("manaTravelLayer"));el("manaTravelLayer").replaceChildren();render();
+ message("Previous move undone, including any automatically cast wards.");
+});
+window.addEventListener("resize",()=>{if(document.body.classList.contains("in-heist"))syncLandRows();},{passive:true});
+el("reset").addEventListener("click",()=>{closePlaytest("restart");sage.onRestart(level);load(index);startPlaytest();});
+el("skip").addEventListener("click",showMap);
+el("winNext").addEventListener("click",()=>{
+ if(decisionIndex!==null){if(decisionIndex+1<DECISION_LADDER.length){decisionIndex++;load(decisionIndex,true);}else showMap();return;}
+ if(trialIndex!==null){showMap();return;}
+ if(mode==="learn"){const next=nextLearnIndex(index);if(next!==null)load(next,true);else showMap();return;}
+ if(index+1<LEVELS.length)load(index+1,true);else showMap();
+});
+// All checklist outcomes come from explicit tester actions. Opening a
+// suggested stage never automatically changes its QA result or player medals.
+for(const [field,id] of [["device","deviceQaDevice"],["browser","deviceQaBrowser"],["orientation","deviceQaOrientation"]]){
+ el(id).addEventListener("change",e=>{
+  deviceQa=setDeviceContext(deviceQa,field,e.target.value);saveDeviceQA();updateDeviceQAStatus();
+ });
+}
+el("deviceQaChecks").addEventListener("change",e=>{
+ const selector=e.target.closest("select[data-qa-case]");
+ if(!selector)return;
+ deviceQa=setDeviceQAResult(deviceQa,selector.dataset.qaCase,selector.value);
+ saveDeviceQA();updateDeviceQAStatus();
+});
+el("deviceQaChecks").addEventListener("click",e=>{
+ const button=e.target.closest("button[data-qa-launch]");
+ if(!button)return;
+ const item=DEVICE_QA_CHECKS.find(c=>c.id===button.dataset.qaLaunch);
+ if(!item?.target)return;
+ trialIndex=null;decisionIndex=null;
+ selectMode(item.target.mode);
+ load(item.target.index,true);
+});
+el("deviceQaCopy").addEventListener("click",async()=>{
+ const report=exportDeviceQA(deviceQa);
+ try{
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard API unavailable");
+  await navigator.clipboard.writeText(report);
+  el("deviceQaExportText").hidden=true;
+  el("deviceQaMessage").textContent="Manual QA report copied. Share it only if you choose; results are not sent automatically.";
+ }catch{
+  const area=el("deviceQaExportText");area.value=report;area.hidden=false;area.focus();area.select();
+  el("deviceQaMessage").textContent="Clipboard unavailable. Select and copy the manual test report below.";
+ }
+});
+el("deviceQaClear").addEventListener("click",()=>{
+ if(!window.confirm("Reset only the manual device QA checklist on this browser? Game progress and playtest counts will remain untouched."))return;
+ deviceQa=blankDeviceQA();saveDeviceQA();renderDeviceQA();
+ el("deviceQaExportText").hidden=true;
+ el("deviceQaMessage").textContent="Manual device QA checklist reset; all nine results are Not tested. Game and playtest data are unchanged.";
+});
+// P12: Download/restore only the six existing guest progress namespaces.
+// Real tester QA, optional playtest metrics, consent, and mode settings NEVER
+// enter backups. Import merges better records rather than resetting progress.
+let pendingGuestBackup=null;
+const readGuestStorage=()=>readGuestSaves(key=>localStorage.getItem(key));
+function backupStatus(messageText,isError=false){
+ const node=el("guestBackupStatus");node.textContent=messageText;
+ node.classList.toggle("bad",isError);
+}
+el("guestBackupDownload").addEventListener("click",()=>{
+ try{
+  const json=createGuestBackup(readGuestStorage());
+  const blob=new Blob([json],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const anchor=document.createElement("a");
+  anchor.href=url;anchor.download="mana-heist-guest-backup-v1.json";
+  document.body.append(anchor);anchor.click();anchor.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  backupStatus("Backup file prepared. Keep your JSON copy somewhere safe; it contains your guest game results only.");
+ }catch{backupStatus("Could not prepare a backup. Check that browser storage is available.",true);}
+});
+el("guestBackupCopy").addEventListener("click",async()=>{
+ try{
+  const json=createGuestBackup(readGuestStorage());
+  if(!navigator.clipboard?.writeText)throw Error("Clipboard unavailable");
+  await navigator.clipboard.writeText(json);
+  el("guestBackupText").hidden=true;
+  backupStatus("Guest progress JSON copied. Paste and save it securely as a text or .json file.");
+ }catch{
+  try{
+   const node=el("guestBackupText");node.value=createGuestBackup(readGuestStorage());
+   node.hidden=false;node.focus();node.select();
+   backupStatus("Clipboard unavailable. Select and copy the backup text shown below.");
+  }catch{backupStatus("Could not read browser guest progress.",true);}
+ }
+});
+el("guestBackupFile").addEventListener("change",async()=>{
+ pendingGuestBackup=null;el("guestBackupImport").disabled=true;
+ const file=el("guestBackupFile").files?.[0];
+ if(!file){backupStatus("No backup selected.");return;}
+ if(file.size>MAX_BACKUP_BYTES){backupStatus("Backup exceeds the 256 KB safety limit.",true);return;}
+ try{
+  const text=await file.text();
+  const incoming=parseGuestBackup(text);
+  const plan=previewGuestRestore(readGuestStorage(),incoming);
+  pendingGuestBackup=incoming;
+  el("guestBackupImport").disabled=!plan.changed;
+  backupStatus(plan.changed?
+   "Ready to merge: "+plan.added+" new vault results, "+plan.improved+" better vault results, "+plan.addedLessons+" new completed lessons. Your existing better scores stay. Review before confirming.":
+   "Valid backup loaded, but it has no new or better progress to restore. No changes needed.");
+ }catch(error){
+  backupStatus("Import rejected: "+(error?.message||"unreadable backup"),true);
+ }
+});
+el("guestBackupImport").addEventListener("click",()=>{
+ if(!pendingGuestBackup)return;
+ try{
+  // Re-read current browser progress at the moment of confirmation so a
+  // previously opened import preview cannot overwrite more recent wins.
+  const plan=previewGuestRestore(readGuestStorage(),pendingGuestBackup);
+  if(!plan.changed){backupStatus("All progress in this backup is already present or superseded.");return;}
+  if(!window.confirm("Merge "+plan.added+" new vault results, "+plan.improved+" improved results and "+plan.addedLessons+" lesson completions into THIS browser? Existing better records remain. This cannot be undone automatically."))return;
+  applyGuestRestore(localStorage,plan);
+  backupStatus("Guest progress merged. Reloading Mana Heist to display all restored results.");
+  window.location.reload();
+ }catch(error){backupStatus("Restore was not completed: "+(error?.message||"browser storage unavailable"),true);}
+});
+renderDeviceQA();
+load(mode==="learn"?learnProgress.last:index);
+showMap();
+showModePanels();

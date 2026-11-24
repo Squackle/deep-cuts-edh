@@ -3,15 +3,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import {execFileSync} from "node:child_process";
-import {chromium} from "playwright-core";
+import {launchBrowser} from "./helpers/browser.mjs";
 
-function chrome(){
- for(const bin of ["google-chrome","google-chrome-stable","chromium","chromium-browser"]){
-  try{const found=execFileSync("which",[bin],{encoding:"utf8"}).trim();if(found)return found}catch{}
- }
- throw Error("Chromium browser unavailable");
-}
+
 const contentTypes={".html":"text/html",".css":"text/css",".js":"application/javascript",".svg":"image/svg+xml"};
 async function server(){
  const root=process.cwd();
@@ -28,7 +22,7 @@ async function server(){
 test("owner command center preserves real forms, tabs and local lock on desktop/mobile",{timeout:60000},async()=>{
  const {httpServer,url}=await server();let browser;
  try{
-  browser=await chromium.launch({headless:true,executablePath:chrome(),args:["--no-sandbox","--disable-dev-shm-usage"]});
+  browser=await launchBrowser();
   for(const width of [320,390,768,1280]){
    const ctx=await browser.newContext({viewport:{width,height:860}});
    const page=await ctx.newPage(),errors=[];
