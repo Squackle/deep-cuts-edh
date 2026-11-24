@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {weeklySitemap,serveWeeklySitemap,onRequestGet,onRequestHead} from '../functions/sitemap-weekly.xml.js';
 import {EDITORIAL_EDITIONS} from '../src/weekly-rescue-editions.js';
+import publisher from '../workers/weekly-rescue-publisher.js';
+import {onRequestGet as archiveRoute} from '../functions/rescues/index.js';
+import {onRequestGet as reportRoute} from '../functions/rescues/[week].js';
+import {onRequestGet as homeRoute} from '../functions/index.js';
+import {onRequestGet as legacyFeedRoute} from '../functions/feed.xml.js';
 const root='https://deep-cuts-edh.pages.dev';
 const row=(date,extra={})=>({date,commander:'A real commander',theme:'A real theme',...extra});
 const urls=xml=>[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
@@ -47,4 +52,60 @@ test('a partially malformed upstream index cannot advertise an incomplete succes
   assert.equal(head.headers.get('retry-after'),'300');
   assert.equal(await head.text(),'');assert.doesNotMatch(await get.text(),/<loc>/);
  }
+});
+
+test('publisher, homepage, dated archive, canonical reports, sitemap and existing subscriber feed agree on their intended inventories',async()=>{
+ const date='2026-12-04',remote={...EDITORIAL_EDITIONS[0],date,commander:{...EDITORIAL_EDITIONS[0].commander},theme:'Synthetic future test angle'};
+ const remoteRow={date,commander:remote.commander.name,theme:remote.theme,headline:remote.sections.headline,imageUrl:remote.commander.imageUrl};
+ const store=new Map([['index',JSON.stringify([remoteRow])],['article:'+date,JSON.stringify(remote)]]);
+ let writes=0,down=false;
+ const publisherEnv={REPORTS:{async get(k,mode){const v=store.get(k)??null;return mode==='json'&&v!==null?JSON.parse(v):v},async put(){writes++;throw Error('Public read path cannot write')}}};
+ const original=globalThis.fetch;
+ const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+ const html=body=>new Response(body,{headers:{'content-type':'text/html; charset=utf-8'}});
+ const assets={fetch:async req=>{
+  const path=new URL(req.url).pathname;
+  if(path==='/rescues')return html(read('rescues.html'));
+  if(path==='/index.html')return html(read('index.html'));
+  throw Error('Unexpected static asset '+path);
+ }};
+ globalThis.fetch=async (url,options)=>{
+  const request=new Request(url,options),target=new URL(request.url);
+  assert.equal(target.hostname,'deep-cuts-weekly-publisher.logan-ottfamily.workers.dev');
+  if(down)return new Response('offline',{status:503});
+  return publisher.fetch(request,publisherEnv);
+ };
+ const ctx={request:new Request(root+'/rescues'),env:{ASSETS:assets}};
+ const home=()=>homeRoute({next:async()=>html(read('index.html'))});
+ try{
+  const dates=[...new Set([...EDITORIAL_EDITIONS.map(x=>x.date),date])].sort();
+  const archive=await archiveRoute(ctx);assert.equal(archive.status,200);
+  const archiveBody=await archive.text();
+  const linked=[...archiveBody.matchAll(/class="weekly-index-card" href="\/rescues\/(20\d\d-\d\d-\d\d)"/g)].map(m=>m[1]);
+  assert.deepEqual(linked,dates.slice().reverse());
+  const sitemap=await onRequestGet();assert.equal(sitemap.status,200);
+  assert.deepEqual(urls(await sitemap.text()),dates.map(d=>root+'/rescues/'+d));
+  const homepage=await home();assert.equal(homepage.status,200);
+  assert.match(await homepage.text(),/id="homeWeeklyFeature" data-weekly-date="2026-12-04" href="\/rescues\/2026-12-04"/);
+  for(const week of dates){
+   const report=await reportRoute({params:{week}});assert.equal(report.status,200,week);
+   assert.ok((await report.text()).includes('rel="canonical" href="'+root+'/rescues/'+week+'"'),week);
+  }
+  assert.equal((await reportRoute({params:{week:'2026-12-11'}})).status,404);
+  const feed=await legacyFeedRoute(ctx);assert.equal(feed.status,200);
+  const xml=await feed.text(),guid=[...xml.matchAll(/<guid isPermaLink="true">([^<]+)<\/guid>/g)].map(m=>m[1]);
+  assert.equal(guid.length,4);assert.equal(new Set(guid).size,4);
+  assert.ok(guid.every(url=>url.startsWith(root+'/reports/')));
+  assert.doesNotMatch(xml,/\/rescues\/20\d\d-/,'Do not silently add dated articles to the consent-gated subscriber feed');
+  down=true;
+  assert.equal((await onRequestGet()).status,503);
+  const fallback=await archiveRoute(ctx);assert.equal(fallback.status,200);
+  const fallbackBody=await fallback.text();assert.ok(fallbackBody.includes('href="/rescues/2026-11-20"'));
+  assert.doesNotMatch(fallbackBody,/class="weekly-index-card" href="\/rescues\/2026-12-04"/);
+  assert.equal((await reportRoute({params:{week:'2026-11-20'}})).status,200);
+  assert.equal((await reportRoute({params:{week:date}})).status,503);
+  assert.match(await (await home()).text(),/data-weekly-date="2026-11-20"/);
+  assert.equal((await legacyFeedRoute(ctx)).status,200);
+  assert.equal(writes,0);
+ }finally{globalThis.fetch=original}
 });
