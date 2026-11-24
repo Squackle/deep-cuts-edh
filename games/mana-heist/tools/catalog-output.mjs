@@ -21,7 +21,8 @@ function plainObject(value){
 }
 function bounded(value,label,max,{optional=false}={}){
  if(optional&&(value===null||value===undefined))return;
- if(typeof value!=='string'||value.length>max||/[\u0000-\u001f\u007f]/.test(value))throw new Error('Invalid '+label);
+ if(typeof value!=='string'||value.length>max||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value)||
+    (!label.includes('text')&&/[\t\r\n]/.test(value)))throw new Error('Invalid '+label);
 }
 function isoDate(value,label){
  bounded(value,label,40);
