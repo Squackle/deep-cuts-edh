@@ -1,0 +1,31 @@
+name: QA dependency lockfile rehearsal
+on:
+  push:
+    branches: [site/qa-dev-dependency-20261124]
+    paths: ['.github/workflows/qa-lockfile-rehearsal.yml']
+permissions:
+  contents: read
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Select latest stable patched Undici 7 and regenerate lock
+        shell: bash
+        run: |
+          npm view undici versions --json > "$RUNNER_TEMP/undici-versions.json"
+          version=$(node -e 'const v=require(process.argv[1]).filter(x=>/^7\.[0-9]+\.[0-9]+$/.test(x)).sort((a,b)=>{const aa=a.split(".").map(Number),bb=b.split(".").map(Number);return aa[1]-bb[1]||aa[2]-bb[2]});const x=v.at(-1);if(!x||Number(x.split(".")[1])<31)process.exit(1);console.log(x)' "$RUNNER_TEMP/undici-versions.json")
+          npm pkg set "overrides.miniflare.undici=$version"
+          npm install --package-lock-only --ignore-scripts
+          git diff -- package.json package-lock.json
+      - name: Verify exact generated lockfile
+        run: |
+          npm ci --ignore-scripts
+          npm audit --package-lock-only --audit-level=high
+          npm run test:workers
