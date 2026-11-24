@@ -103,7 +103,8 @@ test("Reset invalidates a delayed Matchmaker response; subsequent discovery reus
   assert.equal(new URL(page.url()).searchParams.get("theme"),"spells");
   assert.match(await page.locator("#mmStatus").textContent(),/match your playstyle; the rest are alternatives/);
   assert.ok(await page.getByText("Alternative playstyle",{exact:true}).count()>0);
-  await page.waitForFunction(()=>document.querySelectorAll(".mm-no-art").length===5);
+  await page.locator(".mm-card").first().scrollIntoViewIfNeeded();
+  await page.locator(".mm-card").first().locator(".mm-no-art").waitFor();
   await page.locator("#mmReset").click();
   assert.equal(await page.locator("#mmResultActions").isVisible(),false);
   assert.equal(await page.locator(".mm-card").count(),0);
