@@ -157,3 +157,6 @@
 .dc-artist-option:focus-visible{outline:2px solid #b58b4d;outline-offset:-2px}
 .dc-artist-status{min-height:16px;margin:7px 0 0;font:600 11px/1.4 ui-sans-serif,system-ui;color:#667e6a}
 @media(max-width:600px){.dc-artist-filter{padding:13px 12px;margin-top:14px}.dc-artist-header span{font-size:8px}.dc-artist-combo{max-width:none}.dc-artist-option{min-height:48px}.dc-artist-options{max-height:246px}}
+
+/* A themed button's display rule must not override its hidden pagination state. */
+#loadMore[hidden]{display:none}
