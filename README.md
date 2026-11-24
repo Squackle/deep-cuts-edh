@@ -1,6 +1,24 @@
-> **Current engineering entrypoints:** [Local testing](docs/TESTING.md) · [October 20 technical audit](docs/AUDIT-2026-10-20.md). The prototype narrative below includes historical states; current source and these verification notes take precedence. `/deck` now serves Tools & Resources, not the old Workshop editor.
+# Deep Cuts EDH — Underplayed Commander Ideas & Rescue Reports
 
-# Deep Cuts EDH — first deployable website prototype
+**[Visit the official Deep Cuts EDH website](https://deep-cuts-edh.pages.dev/)**
+
+Deep Cuts EDH is an independent Magic: The Gathering Commander fan project for unusual commander strategies, budget-friendly brewing ideas, community research and free browser games. It is not affiliated with Wizards of the Coast.
+
+- [Weekly Rescue Reports and budget starter cores](https://deep-cuts-edh.pages.dev/rescues) — published investigations and practical strategy guidance; starter cores are not complete price-verified decklists.
+- [Commander Matchmaker](https://deep-cuts-edh.pages.dev/matchmaker) and [Deep Cut Finder](https://deep-cuts-edh.pages.dev/deep-cut-finder) — discover commander ideas and potential card synergies.
+- [Card Library](https://deep-cuts-edh.pages.dev/library) and [Tools & Resources](https://deep-cuts-edh.pages.dev/deck) — card research and deckbuilding resources.
+- [Arcade](https://deep-cuts-edh.pages.dev/games) — daily puzzles, Mana Heist, Hive Run and Stackbreaker.
+- [Community](https://deep-cuts-edh.pages.dev/community) and [Nominations](https://deep-cuts-edh.pages.dev/nominations) — community discussion and commander suggestions.
+
+## Current engineering entrypoints
+
+The site uses buildless browser HTML/CSS/JavaScript with Cloudflare Pages Functions and D1 where needed. Start with [local testing](docs/TESTING.md), [developer instructions](AGENTS.md), [development lanes](docs/DEVELOPMENT-LANES.md), and the [Development Control Room](https://github.com/Squackle/deep-cuts-edh/issues/14). The standalone Game Lab has its own repository and release process. Production deployment requires explicit owner approval.
+
+## Historical development archive
+
+The sections below preserve earlier prototype features and release history. They are not a current feature inventory; for example, `/deck` now serves Tools & Resources instead of the original Workshop editor. Consult current code, linked documentation, and the live website before relying on old feature descriptions.
+
+### First deployable website prototype
 
 An **independent, no-framework, static** prototype for an obscure Commander discovery website and a weekly editorial series called **The Rescue Report**.
 
