@@ -16,6 +16,9 @@ Website main 762b1afb6d928b6dafb3501ac737adb60128bf8e, canonical Pages deploymen
 Required release-coordination now calls complete-local-audit and fails unless all unit, workerd and browser matrix jobs succeed. The same audit remains manually callable. Site-quality and every existing test assertion remain; separate PR invocation is removed to avoid duplication. Daily scanner includes extensionless Pages configs and fails on public GET failures as well as Access failure, while heuristic findings remain triaged. Weekly locked npm audit also runs on lockfile changes and fails at high/critical advisory level or inability to audit. Dependabot monthly grouped minor/patch npm updates remain PR-only. Review npm major bumps separately.
 
 ## Failure triage (no AI needed for first pass)
+
+The audit matrix runs against the candidate merge ref. The separate coordination job reads the policy script and its contract tests from the PR base SHA before giving the policy script the read-only API token. A proposed policy change still runs through the candidate unit suite. Review workflow changes themselves as part of release acceptance.
+
 1. Read failed job/step, exact SHA, test name and first exception; classify network, dependency, fixture, assertion or runtime. Do not blindly retry or disable assertions.
 2. For local: npm ci --ignore-scripts; npm run test:install-browser; npm run test:unit / test:workers / test:browser; npm run check. Capture TAP counts and skipped cases. Explicit npm run test:live is separate.
 3. If scheduled security fails, inspect sanitized artifact; a public GET failure is availability, not proof of compromise. Potential findings are not confirmed exploits.
