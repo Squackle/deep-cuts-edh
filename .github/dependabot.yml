@@ -14,3 +14,15 @@ updates:
       github-actions:
         patterns:
           - "*"
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+    groups:
+      development-patches:
+        update-types:
+          - "minor"
+          - "patch"
