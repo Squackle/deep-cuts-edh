@@ -25,6 +25,14 @@ async function drive(frame, count) {
   }, count);
 }
 const gameFrame = page => page.frames().find(f => f.url().includes('/games/graftbound-play/'));
+// Keep headless desktop clicks responsive with the game's supported lower-cost WebGL preset.
+async function usePerformanceGraphics(page, origin) {
+  const framePath = '/games/graftbound-play/?siteRanked=1';
+  await page.route(origin + framePath, route => route.fulfill({
+    status: 302,
+    headers: { location: framePath + '&gfx=performance' },
+  }));
+}
 async function hydrated(page, seq) {
   const diag = () => page.evaluate(() => { const w = document.querySelector('iframe').contentWindow; return JSON.stringify({ state: document.getElementById('rankedRunState').textContent, mode: w.__LC?.mode, seq: w.__LC?.run?.ranked?.seq, site: w.__LC?.run?.ranked?.siteAttempt }); }).catch(e => String(e));
   await page.waitForFunction(seq => {
@@ -41,6 +49,7 @@ test('verified GRAFTBOUND run: start, submit, resume, tamper resync, finish, lea
   const browser = await launchBrowser();
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await usePerformanceGraphics(page, origin);
     await page.goto(origin + '/games/graftbound');
     await page.waitForFunction(() => document.getElementById('rankedRun').textContent === 'START VERIFIED RUN', null, { timeout: 60000 });
     await page.waitForFunction(() => document.getElementById('frameStatus').hidden, null, { timeout: 60000 });
@@ -108,6 +117,7 @@ test('restarting a verified run ignores a delayed segment from the previous run'
   const releaseOldResponse = Promise.withResolvers();
   try {
     const page = await browser.newPage();
+    await usePerformanceGraphics(page, origin);
     await page.goto(origin + '/games/graftbound');
     await page.waitForFunction(() => document.getElementById('rankedRun').textContent === 'START VERIFIED RUN');
     await page.waitForFunction(() => document.getElementById('frameStatus').hidden);
