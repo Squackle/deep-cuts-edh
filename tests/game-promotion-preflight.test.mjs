@@ -62,6 +62,21 @@ test('changed tracked source is rejected even if an old manifest exists', t => {
   const x = setup(t); writeFileSync(join(x.labRoot, x.source), 'tampered');
   assert.throws(() => auditPromotion(x.manifest, x), /modified tracked files/);
 });
+test('pinned source inventory rejects a file absent from the commit', t => {
+  const x = setup(t);
+  const source = 'graftbound/src/draft.js', body = 'export const draft = true;\n';
+  writeFileSync(join(x.labRoot, source), body);
+  x.manifest.files[0] = {...x.manifest.files[0], source, bytes: Buffer.byteLength(body), sha256: h(body)};
+  assert.throws(() => auditPromotion(x.manifest, {...x, sourceOnly: true}), /pinned Lab commit/);
+});
+test('covered working-tree bytes must match their committed blob even when Git status is clean', t => {
+  const x = setup(t), body = 'export const n = 12;\n';
+  x.git('update-index', '--assume-unchanged', x.source);
+  writeFileSync(join(x.labRoot, x.source), body);
+  assert.equal(x.git('status', '--porcelain', '--untracked-files=no'), '');
+  x.manifest.files[0] = {...x.manifest.files[0], bytes: Buffer.byteLength(body), sha256: h(body)};
+  assert.throws(() => auditPromotion(x.manifest, {...x, sourceOnly: true}), /pinned Git blob/);
+});
 test('changed source bytes are rejected even without git mode', t => {
   const x = setup(t); writeFileSync(join(x.labRoot, x.source), 'tampered');
   assert.throws(() => auditPromotion(x.manifest, {...x, checkGit: false}), /Source hash mismatch/);

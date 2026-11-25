@@ -56,9 +56,26 @@ function within(root, path) {
   assert(lstatSync(at).isFile(), `Not a regular file: ${path}`);
   return at;
 }
-function digestFile(root, path) {
+function digestFile(root, path, pinnedBlob) {
   const bytes = readFileSync(within(root, path));
+  if (pinnedBlob) {
+    const committed = execFileSync('git', ['cat-file', 'blob', pinnedBlob], {
+      cwd: root, maxBuffer: 50 * 1024 * 1024 + 1
+    });
+    assert(bytes.equals(committed), `Source bytes differ from the pinned Git blob: ${path}`);
+  }
   return {bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex')};
+}
+function sourceBlobs(root, commit) {
+  const tree = execFileSync('git', ['ls-tree', '-rz', '--full-tree', commit], {
+    cwd: root, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024
+  });
+  const files = new Map();
+  for (const entry of tree.split('\0')) {
+    const match = /^(?:100644|100755) blob ([0-9a-f]{40})\t([\s\S]+)$/.exec(entry);
+    if (match) files.set(match[2], match[1]);
+  }
+  return files;
 }
 function verifySiteBaseline(root, expected) {
   const head = execFileSync('git', ['rev-parse', '--verify', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
@@ -118,14 +135,18 @@ export function auditPromotion(manifest, {labRoot, siteRoot, gate = false, sourc
   assert(labRoot && siteRoot, 'Both Lab and site checkout roots are required');
   const sourceRoot = realpathSync(labRoot), destRoot = realpathSync(siteRoot);
   assert(sourceRoot !== destRoot, 'Lab and website checkouts must be different');
+  let pinned;
   if (checkGit) {
     const actual = gitSha(sourceRoot);
     assert(actual === manifest.labSourceSha, `Lab source HEAD mismatch: expected ${manifest.labSourceSha}, got ${actual}`);
     verifySiteBaseline(destRoot, manifest.websiteBaseSha);
+    pinned = sourceBlobs(sourceRoot, actual);
   }
   const differences = [], plan = [];
   for (const item of manifest.files) {
-    const original = digestFile(sourceRoot, item.source);
+    const blob = pinned?.get(item.source);
+    assert(!pinned || blob, `Source is not a regular file in the pinned Lab commit: ${item.source}`);
+    const original = digestFile(sourceRoot, item.source, blob);
     assert(original.bytes === item.bytes && original.sha256 === item.sha256, `Source hash mismatch: ${item.source}`);
     plan.push({source: item.source, target: item.target, bytes: item.bytes, sha256: item.sha256});
     if (!sourceOnly) {
