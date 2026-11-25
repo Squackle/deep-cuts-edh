@@ -66,10 +66,11 @@ def validate_fixture(connection, name):
 
 def restore(source, target):
     require(not target.exists(), "restore destination must not already exist")
-    with connect(source, readonly=True) as snapshot, connect(target) as restored:
+    with connect(source, readonly=True) as snapshot:
         check(snapshot)
-        snapshot.backup(restored)
-        check(restored)
+        with connect(target) as restored:
+            snapshot.backup(restored)
+            check(restored)
 
 
 def rehearse(directory, name):
@@ -103,6 +104,8 @@ def rehearse(directory, name):
         require("already exist" in str(error), "unexpected negative-path error")
     else:
         raise RuntimeError("restore overwrote an existing destination")
+    with connect(target, readonly=True) as recovered:
+        require(logical_digest(recovered) == expected, "existing restore changed after rejection")
     return expected
 
 
@@ -115,10 +118,12 @@ def main():
             print(f"PASS {name}: backup, simulated loss, restore, integrity, fixture history, digest {digest}, overwrite rejection")
         bad = directory / "invalid.sqlite"
         bad.write_bytes(b"synthetic invalid snapshot")
+        rejected_target = directory / "invalid-restored.sqlite"
         try:
-            restore(bad, directory / "invalid-restored.sqlite")
+            restore(bad, rejected_target)
         except sqlite3.DatabaseError:
-            print("PASS invalid snapshot rejected")
+            require(not rejected_target.exists(), "invalid snapshot left a restore destination")
+            print("PASS invalid snapshot rejected before destination creation")
         else:
             raise RuntimeError("invalid snapshot accepted")
     print("Synthetic local restore rehearsal passed. No production D1, records, or Time Travel accessed.")
