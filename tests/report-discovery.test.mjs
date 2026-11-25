@@ -47,11 +47,22 @@ test('original report structured data is truthful and points to the existing can
 });
 test('Ekthi historical preview is distinguished from official current eligibility without certifying deck drafts',()=>{
  const html=read('reports/ekthi-contaminator-priest.html'),archive=read('rescues.html');
- assert.ok(html.includes('November 13, 2026'));assert.ok(html.includes('https://magic.wizards.com/en/news/feature/whats-inside-mystery-booster-commander-edition'));
- assert.ok(html.includes('https://magic.wizards.com/en/news/feature/mystery-booster-commander-edition-release-notes'));
+ assert.match(html,/Commander-legal on November 13, 2026/);
+ const links=new Set(Array.from(html.matchAll(/<a\s+href="([^"]+)"/g),match=>match[1]));
+ assert.ok(links.has('https://magic.wizards.com/en/news/feature/whats-inside-mystery-booster-commander-edition'));
+ assert.ok(links.has('https://magic.wizards.com/en/news/feature/mystery-booster-commander-edition-release-notes'));
  assert.doesNotMatch(html,/NOT YET COMMANDER-LEGAL|not yet Commander-legal|scheduled for November 9/);
  assert.equal(JSON.parse(html.match(/<script type="application\/json" id="rescue-data">([^<]+)<\/script>/)[1]).preview,true);
  assert.match(archive,/not independently verified the complete deck or a budget price/);
+});
+test('weekly reports render a positive integer card-use rank or report it unavailable',()=>{
+ const edition=EDITORIAL_EDITIONS[0];
+ assert.match(reportHtml(edition),/<strong>4919 · NOT leader deck count<\/strong>/);
+ for(const edhrecCardUseRank of ['unknown','<b>unverified rank</b>',0,-1,1.5,null]){
+  const html=reportHtml({...edition,commander:{...edition.commander,edhrecCardUseRank}});
+  assert.match(html,/<strong>Unavailable · NOT leader deck count<\/strong>/);
+  assert.doesNotMatch(html,/<b>unverified rank<\/b>/);
+ }
 });
 test('evergreen discovery worksheet links to published weekly cases, actual tools and optional signup',()=>{
  const html=read('rescues.html');

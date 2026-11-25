@@ -25,8 +25,10 @@ test('Guide relates three real published Commander strategies and links back fro
   assert.ok(report.includes('href="/rescues#budget-commander-ideas"'),'Missing topical backlink: '+slug);
   assert.ok(report.includes('The $100 build challenge'),slug+' lost editorial pricing caveat');
  }
- assert.match(page,/Ekthi preview/);
- assert.match(page,/not Commander-legal/);
+ assert.match(page,/<a href="\/reports\/ekthi-contaminator-priest">Ekthi report<\/a> was a pre-release investigation/);
+ assert.match(page,/Commander-legal on November 13, 2026/);
+ assert.match(page,/not independently verified the complete deck or a budget price/);
+ assert.doesNotMatch(page,/\bnot (?:yet )?Commander-legal\b/i);
 });
 
 test('Budget article avoids unsupported checked-out prices, verified builds and invented rankings',()=>{
@@ -45,8 +47,10 @@ test('Existing sitemap, first-party discovery links and mobile/keyboard presenta
  assert.ok(read('index.html').includes('href="/rescues"'),'Homepage link to published Rescue Reports');
  for(const path of ['deck.html',...sourceReports.map(slug=>'reports/'+slug+'.html')])
   assert.ok(read(path).includes('href="/rescues#budget-commander-ideas"'),path);
- for(const href of ['/library','/deck','/combos','/rescues','/matchmaker','/deep-cut-finder'])
+ for(const href of ['/library','/deck','/combos','/matchmaker','/deep-cut-finder'])
   assert.ok(page.includes('href="'+href+'"'),'Missing useful first-party link '+href);
+ assert.match(page,/<a href="#weekly">Browse current Rescue Reports[^<]*<\/a>/);
+ assert.match(page,/<section[^>]*\bid="weekly">\s*<h2>Weekly investigations<\/h2>/);
  const css=read('budget-commander-decks.css');
  assert.match(css,/@media\(max-width:950px\)/);
  assert.match(css,/@media\(max-width:480px\)/);
