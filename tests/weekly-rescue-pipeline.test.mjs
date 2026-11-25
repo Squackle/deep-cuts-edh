@@ -13,11 +13,17 @@ const evidence=['Evidence Alpha','Evidence Beta','Evidence Gamma','Evidence Delt
 const sourceFetch=globalThis.fetch;
 const model=()=>({AI:{async run(_name,{messages}){if(messages.at(-1).content.includes('choose the strongest UNUSUAL'))return {response:JSON.stringify({commander:'Three One',usualBuild:'Spellslinger',theme:'Artifact-token value',hook:'Try casting noncreature engines',supportCards:evidence,selectionReason:'Offbeat synergy hypothesis'})};return {response:JSON.stringify(strongArticle(evidence))}}}});
 function mockRoute(raw){
- const u=new URL(String(raw));
- if(u.origin!=='https://api.scryfall.com'||u.username||u.password||u.hash)return null;
- if(u.pathname==='/cards/search')return 'search';
- if(u.pathname==='/cards/collection'&&!u.search)return 'collection';
- return null;
+ try{
+  const u=new URL(String(raw));
+  if(u.origin!=='https://api.scryfall.com'||u.username||u.password||u.hash)return null;
+  if(u.pathname==='/cards/search'){
+   const q=u.searchParams;
+   if([...q].length!==5||q.get('q')!=='is:commander legal:commander game:paper'||q.get('order')!=='edhrec'||q.get('dir')!=='asc'||q.get('unique')!=='cards'||!['2','3','4','5','6','7','8','9','10'].includes(q.get('page')))return null;
+   return 'search';
+  }
+  if(u.pathname==='/cards/collection'&&!u.search)return 'collection';
+  return null;
+ }catch{return null}
 }
 async function withMock(fn){globalThis.fetch=async(url,options)=>{const route=mockRoute(url);if(route==='search'&&(!options?.method||options.method==='GET'))return {ok:true,json:async()=>({data:candidates})};if(route==='collection'&&options?.method==='POST')return {ok:true,json:async()=>({data:evidence.map(name=>paper(name,'Create a 1/1 artifact creature token.'))})};throw Error('Unexpected fixture request '+String(url))};try{await fn()}finally{globalThis.fetch=sourceFetch}}
 const commanderLink=(html,uri)=>html.includes('<a href="'+uri+'" target="_blank" rel="noopener noreferrer">VIEW COMMANDER ORACLE ↗</a>');
@@ -26,7 +32,9 @@ test('Weekly source assertions require exact commander link and API routes',()=>
  const link=u=>'<a href="'+u+'" target="_blank" rel="noopener noreferrer">VIEW COMMANDER ORACLE ↗</a>';
  assert.equal(commanderLink(link(uri),uri),true);
  for(const bad of ['https://evil.example/?next='+uri,uri+'/extra','https://scryfall.com.evil.example/card/set/1/Three%20One','https://scryfall.com@evil.example/card/set/1/Three%20One'])assert.equal(commanderLink(link(bad),uri),false);
- assert.equal(mockRoute('https://api.scryfall.com/cards/search?q=fixture'),'search');
+ const search='https://api.scryfall.com/cards/search?q=is%3Acommander+legal%3Acommander+game%3Apaper&order=edhrec&dir=asc&unique=cards&page=3';
+ assert.equal(mockRoute(search),'search');
+ for(const bad of [search+'&extra=1',search+'&page=4',search.replace('page=3','page=0'),search.replace('order=edhrec','order=name'),search.replace('dir=asc','dir=desc'),search.replace('https:','http:'),search+'#extra','not a URL'])assert.equal(mockRoute(bad),null);
  assert.equal(mockRoute('https://api.scryfall.com/cards/collection'),'collection');
  for(const bad of ['https://evil.example/cards/search','https://api.scryfall.com.evil.example/cards/search','https://api.scryfall.com/cards/search-extra','https://api.scryfall.com:8443/cards/collection','https://user@api.scryfall.com/cards/search','https://api.scryfall.com/cards/collection?extra=1'])assert.equal(mockRoute(bad),null);
 });

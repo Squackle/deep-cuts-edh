@@ -104,7 +104,7 @@ function namedApiRequest(raw){
 test("Exact card URL assertions reject misleading hosts, paths and malformed input",()=>{
  exactFixtureUrl(expectedPreviewImage,expectedPreviewImage);
  exactFixtureUrl(expectedSplitImage,expectedSplitImage);
- for(const image of ["https://cards.scryfall.io.evil.example/normal/front/8/7/test.jpg","https://evil.example/cards.scryfall.io",expectedPreviewImage+"/extra","https://cards.scryfall.io@evil.example/normal/front/8/7/test.jpg","http://cards.scryfall.io/normal/front/8/7/test.jpg","not a URL"]){
+ for(const image of ["https://cards.scryfall.io.evil.example/normal/front/8/7/test.jpg","https://evil.example/cards.scryfall.io",expectedPreviewImage+"/extra","https://cards.scryfall.io:444/normal/front/8/7/test.jpg","https://user@cards.scryfall.io/normal/front/8/7/test.jpg","https://cards.scryfall.io@evil.example/normal/front/8/7/test.jpg","http://cards.scryfall.io/normal/front/8/7/test.jpg","not a URL"]){
   assert.throws(()=>exactFixtureUrl(image,expectedPreviewImage),{code:"ERR_ASSERTION"});
   assert.throws(()=>exactFixtureUrl(image,expectedSplitImage),{code:"ERR_ASSERTION"});
  }

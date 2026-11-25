@@ -10,24 +10,49 @@ const css=readFileSync('home-hub.css','utf8');
 // This contract identifies the actual script tag and the complete approved
 // AdSense URL, including the existing public publisher ID.
 const approvedAdScript='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1885127351876276';
-// Static source fixture extraction, not a general HTML sanitizer.
-function fixtureTagAttributes(markup,tags,attribute){
- const results=[];
- for(const [tag] of markup.matchAll(tags)){
-  if(tag.startsWith("<!--"))continue;
-  const values=[];
-  for(const [,name,double,single,bare] of tag.matchAll(/\s+([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>]+)))?/g)){
-   if(name.toLowerCase()===attribute)values.push(double??single??bare??"");
+// Deliberately narrow static-source contract: consume each selected opening
+// tag completely. Do not reinterpret decoded HTML or silently skip bad tokens.
+function fixtureTags(markup,starts){
+ const tags=[];
+ const token=/\s+([A-Za-z_:][A-Za-z0-9_:.-]*)(?:\s*=\s*(?:"([^"<>]*)"|'([^'<>]*)'|([^\s"'=<>`]+)))?/y;
+ for(let match;(match=starts.exec(markup));){
+  if(match[0]==="<!--"){
+   const end=markup.indexOf("-->",starts.lastIndex);
+   assert.ok(end>=0,"Unterminated fixture comment");
+   starts.lastIndex=end+3;
+   continue;
   }
-  if(values.length)results.push(values);
+  const attrs=new Map();
+  let cursor=starts.lastIndex;
+  while(true){
+   token.lastIndex=cursor;
+   const attr=token.exec(markup);
+   if(!attr)break;
+   const name=attr[1].toLowerCase();
+   assert.ok(!attrs.has(name),"Duplicate fixture attribute: "+name);
+   attrs.set(name,attr[2]??attr[3]??attr[4]??null);
+   cursor=token.lastIndex;
+  }
+  const close=/\s*>/y;close.lastIndex=cursor;
+  assert.ok(close.exec(markup),"Malformed fixture opening tag");
+  starts.lastIndex=close.lastIndex;
+  tags.push({attrs,end:close.lastIndex});
  }
- return results;
+ return tags;
 }
 function hasApprovedAdScript(markup){
- return fixtureTagAttributes(markup,/<!--[\s\S]*?-->|<script(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi,"src").some(values=>values.length===1&&values[0]===approvedAdScript);
+ try{return fixtureTags(markup,/<!--|<script(?=[\s/>])/gi).filter(({attrs})=>attrs.get("src")===approvedAdScript).length===1}catch{return false}
 }
 const officialSource='https://github.com/Squackle/deep-cuts-edh';
 const officialWebsite='https://deep-cuts-edh.pages.dev/';
+function hasOfficialSourceLink(markup){
+ try{
+  const candidates=fixtureTags(markup,/<!--|<a(?=[\s/>])/gi).filter(({attrs,end})=>attrs.get("href")===officialSource||markup.startsWith("GITHUB SOURCE ↗</a>",end));
+  if(candidates.length!==1)return false;
+  const {attrs,end}=candidates[0];
+  return attrs.get("href")===officialSource&&attrs.get("target")==="_blank"&&attrs.get("rel")==="noopener noreferrer"&&attrs.get("class")==="dc-footer-subscribe"&&attrs.get("style")==="margin-left:12px"&&markup.startsWith("GITHUB SOURCE ↗</a>",end);
+ }catch{return false}
+}
 const hasOfficialDirectory=(notes)=>notes.split(/\r?\n/).includes('- **Official public source repository:** '+officialSource)&&notes.split(/\r?\n/).includes('- **Official live website:** '+officialWebsite);
 test('Homepage URL contracts reject lookalikes and substring matches',()=>{
  assert.equal(hasApprovedAdScript('<script async src="'+approvedAdScript+'"></script>'),true);
@@ -37,9 +62,16 @@ test('Homepage URL contracts reject lookalikes and substring matches',()=>{
  assert.equal(hasApprovedAdScript('<script data-src="'+approvedAdScript+'"></script>'),false);
  assert.equal(hasApprovedAdScript('<script src="https://evil.example/" src="'+approvedAdScript+'"></script>'),false);
  assert.equal(hasApprovedAdScript('<!-- <script src="'+approvedAdScript+'"></script> -->'),false);
+ assert.equal(hasApprovedAdScript('<script src="'+approvedAdScript+'"junk></script>'),false);
+ assert.equal(hasApprovedAdScript('<script src="'+approvedAdScript+'"></script><script src="'+approvedAdScript+'"></script>'),false);
  const directory=src=>'- **Official live website:** '+officialWebsite+'\n- **Official public source repository:** '+src;
  assert.equal(hasOfficialDirectory(directory(officialSource)),true);
  for(const bad of [officialSource+'-evil',officialSource+'/extra','https://evil.example/?next='+officialSource,officialSource+'?redirect=evil'])assert.equal(hasOfficialDirectory(directory(bad)),false);
+ const anchor=src=>'<a class="dc-footer-subscribe" style="margin-left:12px" href="'+src+'" target="_blank" rel="noopener noreferrer">GITHUB SOURCE ↗</a>';
+ const valid=anchor(officialSource);
+ assert.equal(hasOfficialSourceLink(valid),true);
+ for(const bad of [officialSource+'-evil',officialSource+'/extra','http://github.com/Squackle/deep-cuts-edh','https://evil.example/?next='+officialSource,officialSource+'?redirect=evil'])assert.equal(hasOfficialSourceLink(anchor(bad)),false);
+ for(const bad of [valid+valid,valid+anchor(officialSource+'-evil'),'<!-- '+valid+' -->',valid.replace('target="_blank"','target="_self"'),valid.replace('noopener noreferrer','noopener'),valid.replace('href="','href="https://evil.example/" href="'),valid.replace('>GITHUB','junk>GITHUB')])assert.equal(hasOfficialSourceLink(bad),false);
 });
 test('Homepage is a navigational landing page, not full feature documentation',()=>{
  assert.match(html,/<main id="main">/);
@@ -229,14 +261,14 @@ test('Brand-search copy describes the actual Commander site without losing its i
 
 test("The official source link and brand directory are public, accurate and safe",()=>{
  const source='https://github.com/Squackle/deep-cuts-edh';
- assert.match(html,/<a class="dc-footer-subscribe" style="margin-left:12px" href="https:\/\/github\.com\/Squackle\/deep-cuts-edh" target="_blank" rel="noopener noreferrer">GITHUB SOURCE ↗<\/a>/);
+ assert.ok(hasOfficialSourceLink(html),'Exactly one complete protected official source anchor');
  const notes=readFileSync('docs/BRAND-AND-OFFICIAL-LINKS.md','utf8');
  assert.equal(source,officialSource);
  assert.ok(hasOfficialDirectory(notes),'Link directory identifies the exact official site and source repository');
  assert.match(notes,/no homepage URL, no description, and no topics/i);
  assert.match(notes,/PR #96/,'Root README must wait for active older PR');
  assert.match(notes,/commander-card price filter/i,'Brand copy must not imply verified full-deck budgets');
- assert.equal((html.match(/href="https:\/\/github\.com\/Squackle\/deep-cuts-edh"/g)||[]).length,1);
+ assert.equal(fixtureTags(html,/<!--|<a(?=[\s/>])/gi).filter(({attrs})=>attrs.get("href")===officialSource).length,1);
  assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)<22600,'Official link must preserve page-performance byte cap');
  assert.ok(!html.includes('href="/about"'),'Never link an About page that does not exist');
  assert.equal((html.match(/class="footer-links"/g)||[]).length,1);

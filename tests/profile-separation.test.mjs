@@ -5,40 +5,96 @@ import fs from "node:fs";
 const read=x=>fs.readFileSync(x,"utf8");
 const community=read("community.html"),profile=read("profile.html"),
  app=read("community.js"),exp=read("field-expansion.js"),header=read("header-profile.js");
-const panels=html=>[...html.matchAll(/<section class="cm-panel(?: [^"]+)?" data-panel="([^"]+)"/g)].map(x=>x[1]);
-// Source-contract helpers: extract the actual double-quoted attribute from
-// the audited static tags, then compare the complete URL rather than a substring.
-// Static source fixture extraction, not a general HTML sanitizer.
-function fixtureTagAttributes(markup,tags,attribute){
- const results=[];
- for(const [tag] of markup.matchAll(tags)){
-  if(tag.startsWith("<!--"))continue;
-  const values=[];
-  for(const [,name,double,single,bare] of tag.matchAll(/\s+([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>]+)))?/g)){
-   if(name.toLowerCase()===attribute)values.push(double??single??bare??"");
+// Deliberately narrow static-source contract: consume each selected opening
+// tag completely. Do not reinterpret decoded HTML or silently skip bad tokens.
+function fixtureTags(markup,starts){
+ const tags=[];
+ const token=/\s+([A-Za-z_:][A-Za-z0-9_:.-]*)(?:\s*=\s*(?:"([^"<>]*)"|'([^'<>]*)'|([^\s"'=<>`]+)))?/y;
+ for(let match;(match=starts.exec(markup));){
+  if(match[0]==="<!--"){
+   const end=markup.indexOf("-->",starts.lastIndex);
+   assert.ok(end>=0,"Unterminated fixture comment");
+   starts.lastIndex=end+3;
+   continue;
   }
-  if(values.length)results.push(values);
+  const attrs=new Map();
+  let cursor=starts.lastIndex;
+  while(true){
+   token.lastIndex=cursor;
+   const attr=token.exec(markup);
+   if(!attr)break;
+   const name=attr[1].toLowerCase();
+   assert.ok(!attrs.has(name),"Duplicate fixture attribute: "+name);
+   attrs.set(name,attr[2]??attr[3]??attr[4]??null);
+   cursor=token.lastIndex;
+  }
+  const close=/\s*>/y;close.lastIndex=cursor;
+  assert.ok(close.exec(markup),"Malformed fixture opening tag");
+  starts.lastIndex=close.lastIndex;
+  tags.push({attrs,end:close.lastIndex});
  }
- return results;
+ return tags;
 }
-const scriptSources=html=>fixtureTagAttributes(html,/<!--[\s\S]*?-->|<script(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi,"src").flat();
+function panels(html){
+ const names=[];
+ for(const {attrs} of fixtureTags(html,/<!--|<section(?=[\s/>])/gi)){
+  const classes=(attrs.get("class")??"").split(/\s+/);
+  const candidate=classes.includes("cm-panel")||attrs.has("data-panel");
+  if(!candidate)continue;
+  assert.ok(classes.filter(x=>x==="cm-panel").length===1,"Panel requires exact cm-panel class token");
+  assert.ok([...attrs.keys()].every(k=>["class","data-panel","hidden"].includes(k)),"Unexpected panel attribute");
+  assert.ok(!attrs.has("hidden")||attrs.get("hidden")===null,"Panel hidden must be a boolean attribute");
+  const name=attrs.get("data-panel");
+  assert.ok(typeof name==="string"&&/^[a-z]+$/.test(name),"Invalid panel name");
+  assert.ok(!names.includes(name),"Duplicate panel name");
+  names.push(name);
+ }
+ return names;
+}
+const scriptSources=html=>fixtureTags(html,/<!--|<script(?=[\s/>])/gi).filter(({attrs})=>attrs.has("src")).map(({attrs})=>{
+ const src=attrs.get("src");assert.ok(typeof src==="string"&&src.trim()!=="","Invalid script src");return src;
+});
+const turnstileURL="https://challenges.cloudflare.com/turnstile/v0/api.js";
 function isTurnstileSource(raw){
+ if(typeof raw!=="string"||raw!==raw.trim())return false;
  try{
   const u=new URL(raw,"https://deep-cuts-edh.pages.dev/");
-  return u.hostname==="challenges.cloudflare.com"&&(u.pathname==="/turnstile"||u.pathname.startsWith("/turnstile/"));
+  return u.protocol==="https:"&&u.origin==="https://challenges.cloudflare.com"&&!u.username&&!u.password&&!u.port&&u.pathname==="/turnstile/v0/api.js"&&!u.search&&!u.hash;
  }catch{return false}
 }
-const privateBookmark=html=>fixtureTagAttributes(html,/<!--[\s\S]*?-->|<a(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi,"href").some(values=>values.length===1&&["/profile#account","profile#account","/profile#collection","profile#collection"].includes(values[0]));
+// The absence assertion is stricter than a trusted-source predicate: an
+// invalid or unapproved URL on the Turnstile host must not pass as public UI.
+function isTurnstileHost(raw){
+ try{return new URL(raw,"https://deep-cuts-edh.pages.dev/").hostname==="challenges.cloudflare.com"}catch{return false}
+}
+const privateBookmark=html=>fixtureTags(html,/<!--|<a(?=[\s/>])/gi).some(({attrs})=>["/profile#account","profile#account","/profile#collection","profile#collection"].includes(attrs.get("href")));
+test("Panel extraction requires complete section attributes and distinct exact names",()=>{
+ assert.deepEqual(panels('<section class="cm-panel profile-overview" data-panel="overview"></section><section class="cm-panel" data-panel="account" hidden></section>'),["overview","account"]);
+ assert.deepEqual(panels('<!-- <section class="cm-panel" data-panel="account"> --><section class="cm-paper">'),[]);
+ for(const markup of [
+  '<section class="cm-panel" data-panel-extra="account">',
+  '<section class="cm-panel" data-panel="account" data-panel="cases">',
+  '<section class="cm-panel" class="cm-paper" data-panel="account">',
+  '<section class="cm-panel-extra" data-panel="account">',
+  '<section class="cm-panel" data-panel="account"junk>',
+  '<section class="cm-panel" data-panel="account"',
+  '<section class="cm-panel" data-panel="account extra">',
+  '<section class="cm-panel" data-panel="account"><section class="cm-panel" data-panel="account">'
+ ])assert.throws(()=>panels(markup),{code:"ERR_ASSERTION"});
+});
 test("Private navigation contracts distinguish exact routes and real Turnstile sources",()=>{
- assert.equal(isTurnstileSource("https://challenges.cloudflare.com/turnstile/v0/api.js"),true);
+ assert.equal(isTurnstileSource(turnstileURL),true);
  assert.equal(isTurnstileSource("//challenges.cloudflare.com/turnstile/v0/api.js"),true);
- for(const raw of ["https://evil.example/challenges.cloudflare.com/turnstile","https://challenges.cloudflare.com.evil.example/turnstile","https://challenges.cloudflare.com/turnstile-lookalike","not a URL"])assert.equal(isTurnstileSource(raw),false);
- assert.deepEqual(scriptSources('<script data-src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>'),[]);
- const turnstile="https://challenges.cloudflare.com/turnstile/v0/api.js";
- for(const markup of ["<SCRIPT SRC='"+turnstile+"'></SCRIPT>","<script src="+turnstile+"></script>",'<script src="other.js" src="'+turnstile+'"></script>'])assert.ok(scriptSources(markup).some(isTurnstileSource));
- assert.deepEqual(scriptSources('<!-- <script src="'+turnstile+'"></script> -->'),[]);
+ for(const raw of ["https://evil.example/challenges.cloudflare.com/turnstile","https://challenges.cloudflare.com.evil.example/turnstile","https://challenges.cloudflare.com/turnstile-lookalike","http://challenges.cloudflare.com/turnstile/v0/api.js","https://attacker@challenges.cloudflare.com/turnstile/v0/api.js","https://attacker:password@challenges.cloudflare.com/turnstile/v0/api.js","https://challenges.cloudflare.com:444/turnstile/v0/api.js",turnstileURL+"?extra=1",turnstileURL+"#extra",turnstileURL+"/extra","not a URL"])assert.equal(isTurnstileSource(raw),false);
+ assert.equal(isTurnstileHost("http://challenges.cloudflare.com/turnstile/v0/api.js"),true);
+ assert.equal(isTurnstileHost("https://attacker@challenges.cloudflare.com/turnstile/v0/api.js"),true);
+ assert.equal(isTurnstileHost("https://challenges.cloudflare.com:444/turnstile/v0/api.js"),true);
+ assert.deepEqual(scriptSources('<script data-src="'+turnstileURL+'"></script>'),[]);
+ for(const markup of ["<SCRIPT SRC='"+turnstileURL+"'></SCRIPT>","<script src="+turnstileURL+"></script>"])assert.deepEqual(scriptSources(markup),[turnstileURL]);
+ for(const markup of ['<script src="other.js" src="'+turnstileURL+'"></script>','<script src="'+turnstileURL+'" SRC="other.js"></script>','<script src="'+turnstileURL+'"junk></script>','<script src="'+turnstileURL+'"','<script src>'])assert.throws(()=>scriptSources(markup),{code:"ERR_ASSERTION"});
+ assert.deepEqual(scriptSources('<!-- <script src="'+turnstileURL+'"></script> -->'),[]);
  assert.equal(privateBookmark('<a href="profile#account">Account</a>'),true);
- assert.equal(privateBookmark('<a href="/wrong" href="/profile#account">Account</a>'),false);
+ assert.throws(()=>privateBookmark('<a href="/wrong" href="/profile#account">Account</a>'),{code:"ERR_ASSERTION"});
  assert.equal(privateBookmark('<!-- <a href="/profile#account">Account</a> -->'),false);
  for(const href of ["https://evil.example/profile#account","/notprofile#account","/profile#account-other","/profile#collection?extra"])assert.equal(privateBookmark('<a href="'+href+'">Account</a>'),false);
 });
@@ -47,10 +103,13 @@ test("Community has only public social features, with no personal forms or priva
  for(const bad of ["registerForm","loginForm","recoverStartForm","accountLoggedOut","accountLoggedIn","ownProfile","collectionItems","dispatchList","identitySummary"])
   assert.ok(!community.includes('id="'+bad+'"'),"Leaked private UI: "+bad);
  assert.doesNotMatch(community,/Free profiles use their own recovery keys/);
- assert.ok(!scriptSources(community).some(isTurnstileSource),"Public Community must not load private Turnstile scripts");
+ assert.ok(!scriptSources(community).some(isTurnstileHost),"Public Community must not load private Turnstile scripts");
 });
 test("Profile has only personal destinations and intact forms/keys",()=>{
  assert.deepEqual(panels(profile),["overview","collection","following","dispatches","account"]);
+ const sources=scriptSources(profile).filter(isTurnstileHost);
+ assert.equal(sources.length,1,"Profile has exactly one Turnstile source");
+ assert.ok(isTurnstileSource(sources[0]),"Profile requires the approved HTTPS Turnstile script");
  for(const id of ["registerForm","loginForm","recoverStartForm","recoverFinishForm","editProfileForm","deleteAccount",
  "signOut","rememberThisDevice","ownProfile","newKeyBox","profileRecoveryKeyBox",
  "collectionAddForm","collectionImportButton","collectionClearButton","collectionItems",
