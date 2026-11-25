@@ -43,3 +43,24 @@ test('collection queries deduplicate across decks and request at most 75 names a
  assert.deepEqual(waits,[650]);
  assert.equal(data.length,80);
 });
+test('collection looks up split cards by face, then prices only the matching complete card',async()=>{
+ const leader=record('Leader',{type_line:'Legendary Creature',color_identity:['R','W']});
+ const split=record('Wear // Tear',{layout:'split',color_identity:['R','W']});
+ const adventure=record("Horn of Valhalla // Ysgard's Call",{layout:'adventure',color_identity:['W'],card_faces:[{name:'Horn of Valhalla'},{name:"Ysgard's Call"}]});
+ const plains=record('Plains',{set:'dmu',type_line:'Basic Land — Plains',color_identity:['W']});
+ const names=['Leader','Wear // Tear','Horn of Valhalla','Plains'];
+ const cards=await collectCardRecords(names,{fetchImpl:async(url,options)=>{
+  assert.deepEqual(JSON.parse(options.body).identifiers,[
+   {name:'Leader'},{name:'Wear'},{name:'Horn of Valhalla'},{name:'Plains',set:'dmu'}
+  ]);
+  return Response.json({data:[leader,split,adventure,plains]});
+ }});
+ const draft={slug:'fixture',commanders:['Leader'],rows:names.map(name=>({name,qty:1}))};
+ const result=reviewDraft(draft,cards);
+ assert.equal(result.cardDataChecksPassed,true);
+ assert.equal(result.totalCents,4*17);
+ assert.deepEqual(result.rows.map(row=>row.printing.id),cards.map(card=>card.id));
+ const wrongSplit=reviewDraft(draft,[leader,{...split,name:'Wear // Wrong'},adventure,plains]);
+ assert.equal(wrongSplit.cardDataChecksPassed,false);
+ assert.equal(wrongSplit.totalCents,null);
+});

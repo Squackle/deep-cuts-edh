@@ -2,7 +2,8 @@
 // checkout approval or changes to the original deck draft data.
 import {readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
-const basics=new Set(['Plains','Island','Swamp','Mountain','Forest','Wastes','Snow-Covered Plains','Snow-Covered Island','Snow-Covered Swamp','Snow-Covered Mountain','Snow-Covered Forest']);
+const dominariaBasics=new Set(['Plains','Island','Swamp','Mountain','Forest']);
+const basics=new Set([...dominariaBasics,'Wastes','Snow-Covered Plains','Snow-Covered Island','Snow-Covered Swamp','Snow-Covered Mountain','Snow-Covered Forest']);
 const key=s=>String(s).trim().toLowerCase();
 const cents=s=>typeof s==='string'&&/^\d+(?:\.\d{1,2})?$/.test(s)?Math.round(Number(s)*100):null;
 export function budgetDrafts(doc){
@@ -24,6 +25,10 @@ export function budgetDrafts(doc){
 }
 export function reviewDraft(draft,cards){
  const lookup=new Map(cards.map(c=>[key(c.name),c]));
+ for(const card of cards){
+  const front=card.layout==='adventure'?card.card_faces?.[0]?.name:null;
+  if(front&&!lookup.has(key(front)))lookup.set(key(front),card);
+ }
  const commanderCards=draft.commanders.map(n=>lookup.get(key(n)));
  const issues=[];
  if(commanderCards.some(c=>!c||!Array.isArray(c.color_identity)))issues.push('Commander identity unavailable');
@@ -54,7 +59,13 @@ export async function collectCardRecords(names,{fetchImpl=fetch,wait=ms=>new Pro
  const unique=[...new Map(names.map(n=>[key(n),n])).values()],records=[];
  for(let i=0;i<unique.length;i+=75){
   if(i)await wait(650);
-  const response=await fetchImpl('https://api.scryfall.com/cards/collection',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json','User-Agent':'DeepCutsEDH-EditorialReview/1.0 (+https://deep-cuts-edh.pages.dev/)'},signal:AbortSignal.timeout(20000),body:JSON.stringify({identifiers:unique.slice(i,i+75).map(name=>({name}))})});
+  const identifiers=unique.slice(i,i+75).map(name=>{
+   if(dominariaBasics.has(name))return {name,set:'dmu'};
+   // Scryfall collection finds split cards by face name. The review still
+   // matches their complete returned name and checks the whole card identity.
+   return {name:name.split(' // ',1)[0]};
+  });
+  const response=await fetchImpl('https://api.scryfall.com/cards/collection',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json','User-Agent':'DeepCutsEDH-EditorialReview/1.0 (+https://deep-cuts-edh.pages.dev/)'},signal:AbortSignal.timeout(20000),body:JSON.stringify({identifiers})});
   if(!response.ok)throw Error('Scryfall collection request failed: '+response.status);
   const data=await response.json();
   if(!Array.isArray(data?.data))throw Error('Malformed collection response');
@@ -69,7 +80,7 @@ async function main(){
  }
  const records=await collectCardRecords(drafts.flatMap(d=>d.rows.map(r=>r.name)));
  const decks=drafts.map(d=>reviewDraft(d,records));
- console.log(JSON.stringify({retrievedAt:new Date().toISOString(),source:'Scryfall collection API; returned nonfoil paper printings, USD; basics included; excludes taxes/shipping; not lowest price or a purchase quote',decks},null,2));
+ console.log(JSON.stringify({retrievedAt:new Date().toISOString(),source:'Scryfall collection API; returned nonfoil paper printings in USD; ordinary basics from Dominaria United; excludes taxes and shipping; prices reflect the returned printings',decks},null,2));
  if(decks.some(d=>!d.cardDataChecksPassed||d.unknownCopies))process.exitCode=1;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(e=>{console.error(e.message);process.exitCode=1});
