@@ -47,8 +47,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           READINESS_OUTPUT: ${{ runner.temp }}/release-readiness.json
-          CF_ACCOUNT_ID: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.CF_READINESS_ACCOUNT_ID || '' }}
-          CF_READ_TOKEN: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && secrets.CF_READINESS_READ_TOKEN || '' }}
         run: node scripts/release-readiness.mjs
       - name: Upload sanitized machine-readable snapshot
         if: always()
