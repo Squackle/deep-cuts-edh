@@ -24,6 +24,30 @@ test("older path overlap blocks; future PR overlap does not override owner order
  assert.equal(assessPR(pr,[],["release-coordination"],["a"],[],{checksKnown:false}).technical,"HOLD");
  assert.equal(assessPR(pr,[check("release-coordination",1)],["release-coordination"],null,[]).technical,"HOLD");
 });
+test("required checks only pass on completed success",()=>{
+ const required=["release-coordination","site-quality"];
+ const coordination=check(required[0],1);
+ const scenarios=[
+  [null,"missing"],
+  [check(required[1],2,"skipped"),"skipped"],
+  [check(required[1],2,"neutral"),"neutral"],
+  [check(required[1],2,"action_required"),"failed"],
+  [check(required[1],2,"unrecognized"),"unknown"],
+  [check(required[1],2,"success","in_progress"),"pending"]
+ ];
+ for(const [candidate,state] of scenarios){
+  const checks=candidate?[coordination,candidate]:[coordination];
+  const result=assessPR(pr,checks,required,[],[]);
+  assert.deepEqual(result.requiredStates,[{name:required[0],state:"pass"},{name:required[1],state}]);
+  assert.equal(result.technical,"HOLD",state);
+  assert.ok(result.holds.includes("required checks incomplete"),state);
+ }
+ const quality=check(required[1],2);
+ const rerun=check(required[0],3,"skipped");
+ assert.equal(assessPR(pr,[coordination,quality,rerun],required,[],[]).technical,"HOLD");
+ const optional=[check("optional",3,"skipped"),check("informational",4,"neutral")];
+ assert.equal(assessPR(pr,[coordination,quality,...optional],required,[],[]).technical,"REVIEW");
+});
 test("preview guard detects shared KV, wildcard and unexpected Lab credentials; isolated exact list passes",()=>{
  const p={name:"deep-cuts-game-lab",source:{config:{preview_deployment_setting:"none",preview_branch_includes:["*"]}},deployment_configs:{production:{kv_namespaces:{LAB_PRESENCE:{namespace_id:"live"}}},preview:{kv_namespaces:{OTHER:{namespace_id:"live"}},env_vars:{TOKEN:{type:"secret_text",value:"DO_NOT_REPORT"}}}}};
  const bad=previewSafety(p);

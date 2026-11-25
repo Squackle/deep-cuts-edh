@@ -8,7 +8,6 @@ export const REPOS=[
  {repo:"Squackle/deep-cuts-game-lab-",project:"deep-cuts-game-lab",required:["release-coordination"],gates:[103,343],audit:false}
 ];
 const MAX_PAGES=5;
-const good=new Set(["success","neutral","skipped"]);
 const bad=new Set(["failure","cancelled","timed_out","action_required","startup_failure","stale"]);
 const markdown=s=>String(s??"").replace(/[\r\n|<>]/g," ").replace(/[\u0000-\u001f]/g," ").slice(0,180);
 export function latestChecks(checks){
@@ -26,7 +25,10 @@ export function assessPR(pr,checks,required,files,peers,{strict=false,mainSha=nu
   if(!candidates.length)return "missing";
   if(candidates.some(c=>c.status==="completed"&&bad.has(c.conclusion)))return "failed";
   if(candidates.some(c=>c.status!=="completed"))return "pending";
-  return candidates.every(c=>good.has(c.conclusion))?"pass":"unknown";
+  if(candidates.every(c=>c.conclusion==="success"))return "pass";
+  if(candidates.some(c=>c.conclusion==="skipped"))return "skipped";
+  if(candidates.some(c=>c.conclusion==="neutral"))return "neutral";
+  return "unknown";
  };
  const requiredStates=required.map(name=>({name,state:status(name)}));
  const failures=latest.filter(c=>c.status==="completed"&&bad.has(c.conclusion)).map(c=>({name:c.name,conclusion:c.conclusion,url:c.html_url}));
