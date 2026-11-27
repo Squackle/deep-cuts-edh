@@ -6,7 +6,7 @@ import {mergeIndex,loadArchive,loadReport,loadLatest,editionFor} from '../src/we
 import {reportHtml,linkCards,genericHeadline,staticArchiveHtml} from '../src/weekly-rescues-html.js';
 import {applyLatestToHomeHtml,homeFeatureModel} from '../src/home-weekly-ssr.js';
 import {qualityIssues,publish} from '../workers/weekly-rescue-publisher.js';
-import {trustedCardImage} from '../home-weekly-feature.mjs';
+import {trustedCardImage,validWeeklyDate,newerWeeklyReport,preloadCardImage} from '../home-weekly-feature.mjs';
 import {onRequestGet as homepage} from '../functions/index.js';
 import {strongArticle} from './helpers/strong-article.mjs';
 
@@ -145,9 +145,11 @@ test('GET / serves the homepage with the latest weekly report and survives an ou
   assert.equal(res.headers.get('Content-Length'),null);
   const html=await res.text();
   assert.match(html,/data-weekly-name>Future Legend</);
+  assert.match(html,/data-weekly-resolved="true"/);
   globalThis.fetch=async()=>{throw Error('down')};
   const fallback=await (await homepage({next})).text();
   assert.match(fallback,/data-weekly-name>Kruphix, God of Horizons</);
+  assert.doesNotMatch(fallback,/data-weekly-resolved=/);
   const asset=await homepage({next:async()=>new Response('nope',{status:404})});
   assert.equal(asset.status,404);
  }finally{globalThis.fetch=old}
@@ -159,4 +161,71 @@ test('The archive page script never replaces the server-rendered archive',()=>{
  const page=readFileSync('rescues.html','utf8');
  const rendered=staticArchiveHtml(page,mergeIndex(workerRows));
  assert.doesNotMatch(rendered,/Checking the weekly archive/,'SSR output carries no placeholder, so the client script stays idle');
+});
+
+test('A stale upstream feature cannot replace a newer embedded report',()=>{
+ const stale={...workerRows[0],date:'2026-11-06'};
+ assert.equal(applyLatestToHomeHtml(homeHtml,stale),homeHtml);
+});
+test('Malformed archive rows cannot create broken report links or displace valid duplicates',async()=>{
+ const good={date:'2026-12-04',commander:'Valid legend',theme:'Distinct strategy'};
+ const rows=mergeIndex([{...good,commander:''},{...good,date:'2026-02-31'},{...good,theme:42},good],[]);
+ assert.deepEqual(rows,[good]);
+ let called=false;
+ assert.equal(await loadReport('2026-02-31',async()=>{called=true}),null);
+ assert.equal(called,false);
+ const malformed=await loadArchive(async()=>({error:'upstream temporarily unavailable'}));
+ assert.equal(malformed.unavailable,true);
+ assert.deepEqual(malformed.reports.map(row=>row.date),EDITORIAL_EDITIONS.map(row=>row.date).sort().reverse());
+});
+test('Resolved SSR homepage does not perform a duplicate client fetch, but static fallback does',async()=>{
+ const originalDocument=globalThis.document, originalFetch=globalThis.fetch;
+ const oldFetch=Object.getOwnPropertyDescriptor(globalThis,'fetch');
+ let calls=0,watched=0;
+ const image={complete:false,addEventListener(name){if(name==='error')watched++}};
+ const root={dataset:{weeklyResolved:'true',weeklyDate:'2026-11-20'},querySelector:()=>image};
+ try{
+  globalThis.document={getElementById:()=>root};
+  globalThis.fetch=async()=>{calls++;return Response.json({report:null})};
+  await import('../home-weekly-feature.mjs?resolved-test');
+  assert.equal(calls,0);assert.equal(watched,1);
+  delete root.dataset.weeklyResolved;
+  await import('../home-weekly-feature.mjs?static-test');
+  assert.equal(calls,1);assert.equal(watched,2);
+ }finally{
+  if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;
+  if(oldFetch)Object.defineProperty(globalThis,'fetch',oldFetch);else globalThis.fetch=originalFetch;
+ }
+});
+
+test('All feature entry points reject non-calendar dates including normalized February overflow',()=>{
+ const row={...workerRows[0],date:'2027-02-31'};
+ assert.equal(validWeeklyDate(row.date),false);
+ assert.equal(validWeeklyDate('2028-02-29'),true);
+ assert.equal(homeFeatureModel(row),null);
+ assert.equal(newerWeeklyReport({report:row},'2026-11-20'),null);
+ assert.equal(applyLatestToHomeHtml(homeHtml,row),homeHtml);
+ assert.deepEqual(mergeIndex([row],[]),[]);
+});
+test('Unresponsive card artwork times out without changing the featured report',async()=>{
+ const image={complete:false,naturalWidth:0,src:''};
+ const pending=preloadCardImage('https://example.test/never.jpg',()=>image,5);
+ assert.equal(await pending,false);
+ assert.equal(image.onload,null);assert.equal(image.onerror,null);
+ const cached={complete:true,naturalWidth:488,src:''};
+ assert.equal(await preloadCardImage('https://example.test/cached.jpg',()=>cached,50),true);
+});
+test('Publisher repairs an existing article index without repeating generation or rewriting its article',async()=>{
+ const date='2026-10-30',raw=JSON.stringify(vhati),store=new Map([['article:'+date,raw],['index',JSON.stringify([workerRows[0]])]]),writes=[];
+ const env={AI:{run:async()=>{throw Error('Generation must not run for existing article')}},REPORTS:{
+  get:async(k,t)=>{const v=store.get(k);return t==='json'&&v?JSON.parse(v):v??null},
+  put:async(k,v)=>{writes.push(k);store.set(k,v)}
+ }};
+ const now=new Date('2026-10-30T15:00:00Z');
+ await publish(env,now);await publish(env,now);
+ assert.equal(store.get('article:'+date),raw);
+ assert.ok(!writes.includes('article:'+date));
+ const index=JSON.parse(store.get('index'));
+ assert.equal(index.filter(r=>r.date===date).length,1);
+ assert.ok(index.some(r=>r.date===workerRows[0].date));
 });
