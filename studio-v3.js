@@ -1,6 +1,7 @@
 /* Deep Cuts Studio 3.0: browser-guided generator, live imports, Spellbook, rules and share links.
    This is purposefully non-generative: card lists/rulings/combos are grounded in external databases. */
 import {readDeck,saveDeck,compactCard,normalizedName,GAME_CHANGERS,scryfall,parseLines,toText,sleep,isLand} from "./shared.js";
+import {rulingsUrl,publicCardUrl} from "./src/studio-rulings-url.mjs";
 const $=id=>document.getElementById(id);
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e};
 const status=(id,message)=>{const e=$(id);if(e)e.textContent=message};
@@ -140,11 +141,10 @@ $("lookupRulings")?.addEventListener("click",async()=>{
  const btn=$("lookupRulings");btn.disabled=true;status("rulingsStatus","Searching Scryfall card rulings…");
  try{
   const c=await scryfall("https://api.scryfall.com/cards/named?fuzzy="+encodeURIComponent(input));
-  const url=c.rulings_uri||("https://api.scryfall.com/cards/"+encodeURIComponent(c.id)+"/rulings");
-  if(!new URL(url).hostname.endsWith("scryfall.com"))throw Error("Unexpected rulings source.");
-  const data=await scryfall(url);
+  const url=rulingsUrl(c);
+  const data=await scryfall(url,{redirect:"error"});
   root.append(mk("h3",null,c.name));
-  const official=mk("a","text-link","CARD ON SCRYFALL ↗");official.href=c.scryfall_uri||"https://scryfall.com";official.target="_blank";official.rel="noopener noreferrer";root.append(official);
+  const official=mk("a","text-link","CARD ON SCRYFALL ↗");official.href=publicCardUrl(c.scryfall_uri);official.target="_blank";official.rel="noopener noreferrer";root.append(official);
   const entries=(data.data||[]).slice(0,25);
   if(!entries.length)root.append(mk("p","helper-note","No card-specific rulings are listed. Consult the official Comprehensive Rules linked above."));
   for(const entry of entries){const block=mk("article","ruling-entry");block.append(mk("small",null,(entry.source||"Scryfall")+" · "+(entry.published_at||"")));
