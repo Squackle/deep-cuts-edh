@@ -27,12 +27,12 @@ const fakeWorker=({fail=false}={})=>async path=>{
 
 test('Archive lists every weekly report once, newest first, with repository editions winning',()=>{
  const rows=mergeIndex(workerRows);
- assert.deepEqual(rows.map(x=>x.date),['2026-11-20','2026-11-13','2026-11-06','2026-10-30']);
- const kruphix=rows[0];
+ assert.deepEqual(rows.map(x=>x.date),['2026-11-27','2026-11-20','2026-11-13','2026-11-06','2026-10-30']);
+ const kruphix=rows[1];
  assert.equal(kruphix.theme,'Mana Bank Eldrazi','editorial fix replaces the weak automated listing');
  assert.notEqual(kruphix.headline,'Kruphix Rescue Report');
- assert.equal(rows[3].commander,'Vhati il-Dal','Worker-only reports stay listed');
- assert.deepEqual(mergeIndex([{date:'javascript:x()',commander:'Bad'},null,...workerRows,workerRows[1]]).map(x=>x.date),['2026-11-20','2026-11-13','2026-11-06','2026-10-30']);
+ assert.equal(rows[4].commander,'Vhati il-Dal','Worker-only reports stay listed');
+ assert.deepEqual(mergeIndex([{date:'javascript:x()',commander:'Bad'},null,...workerRows,workerRows[1]]).map(x=>x.date),['2026-11-27','2026-11-20','2026-11-13','2026-11-06','2026-10-30']);
 });
 
 test('Archive and report pages survive the report service being down',async()=>{
@@ -44,7 +44,7 @@ test('Archive and report pages survive the report service being down',async()=>{
  assert.equal((await loadReport('2026-10-30',fakeWorker())).commander.name,'Vhati il-Dal');
  assert.equal(await loadReport('2026-12-04',fakeWorker()),null,'unpublished dates are not invented');
  assert.equal(await loadReport('../etc',fakeWorker()),null);
- assert.equal((await loadLatest(fakeWorker())).date,'2026-11-20');
+ assert.equal((await loadLatest(fakeWorker())).date,'2026-11-27');
  const page=readFileSync('rescues.html','utf8');
  const html=staticArchiveHtml(page,down.reports,{unavailable:true});
  assert.match(html,/may be missing while the archive service is unavailable/);
@@ -65,6 +65,8 @@ test('Every repository edition is complete, Scryfall-sourced and clears the edit
   assert.doesNotMatch(html,/utm_source/);
  }
  assert.match(reportHtml(editionFor('2026-11-20')),/EDITOR'S REVISION:<\/strong> Updated November 21, 2026/);
+ assert.match(reportHtml(editionFor('2026-11-27')),/EDITOR'S REVISION:<\/strong> Updated November 27, 2026/);
+ assert.ok(!editionFor('2026-11-27').synergies.some(x=>x.name==='Steel Golem'),'anti-synergy pick removed');
  assert.match(reportHtml(editionFor('2026-11-13')),/EDITORIAL BACKFILL/);
  assert.match(reportHtml(editionFor('2026-11-06')),/EDITORIAL BACKFILL/);
 });
@@ -131,8 +133,9 @@ test('Homepage HTML is rendered with the newest report, so no older commander ca
  assert.equal(applyLatestToHomeHtml(homeHtml,{...row,date:'soon'}),homeHtml);
  assert.equal(applyLatestToHomeHtml('<main>other</main>',row),'<main>other</main>');
  assert.equal(homeFeatureModel(null),null);
- // The static fallback already shows the newest edition too.
- assert.equal(applyLatestToHomeHtml(homeHtml,mergeIndex(workerRows)[0]),homeHtml);
+ // The server render always swaps the static fallback for the newest edition.
+ const newest=mergeIndex(workerRows)[0];
+ assert.match(applyLatestToHomeHtml(homeHtml,newest),new RegExp('data-weekly-name>'+newest.commander+'<'));
 });
 
 test('GET / serves the homepage with the latest weekly report and survives an outage',async()=>{
@@ -148,7 +151,7 @@ test('GET / serves the homepage with the latest weekly report and survives an ou
   assert.match(html,/data-weekly-resolved="true"/);
   globalThis.fetch=async()=>{throw Error('down')};
   const fallback=await (await homepage({next})).text();
-  assert.match(fallback,/data-weekly-name>Kruphix, God of Horizons</);
+  assert.match(fallback,/data-weekly-name>Abigale, Eloquent First-Year</);
   assert.doesNotMatch(fallback,/data-weekly-resolved=/);
   const asset=await homepage({next:async()=>new Response('nope',{status:404})});
   assert.equal(asset.status,404);
