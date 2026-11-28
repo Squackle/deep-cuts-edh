@@ -1,5 +1,6 @@
 /* Standalone Combo Finder: Commander Spellbook is authoritative for listed combo records. */
 import {parseLines} from "./shared.js";
+import {requestJson} from "./tool-request.js";
 const $=id=>document.getElementById(id);
 const mk=(tag,cls,value)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=String(value);return e};
 const status=(id,message)=>{const e=$(id);if(e)e.textContent=message};
@@ -8,24 +9,28 @@ function spellbookVariants(value){
  if(Array.isArray(value?.variants))return value.variants;
  if(Array.isArray(value?.results))return value.results;
  if(Array.isArray(value?.data))return value.data;
- return [];
+ return null;
 }
 function variantCardNames(v){
  const item=v?.variant||v?.combo||v;
- return (item?.uses||item?.cards||[]).map(x=>x?.card?.name||x?.name||"").filter(Boolean);
+ const values=item?.uses||item?.cards;
+ return (Array.isArray(values)?values:[]).map(x=>x?.card?.name||x?.name||"").filter(x=>typeof x==="string"&&x);
 }
 function showComboList(id,records,type){
  const root=$(id);root.replaceChildren();
  const list=spellbookVariants(records);
+ if(!list){root.append(mk("p","helper-note","Combo results are unavailable from Spellbook. Try again."));return}
  if(!list.length){root.append(mk("p","helper-note",type==="included"?"No confirmed complete combos returned.":"No one-card-away combos returned."));return}
  for(const value of list.slice(0,15)){
-  const variant=value?.variant??value?.combo??value,box=mk("article","combo-result"),
-   names=variantCardNames(value),effects=(variant?.produces||[]).map(x=>x?.feature?.name||x?.name).filter(Boolean);
+  const variant=value?.variant??value?.combo??value;
+  if(!variant||typeof variant!=="object")continue;
+  const box=mk("article","combo-result"),names=variantCardNames(value),effects=(Array.isArray(variant.produces)?variant.produces:[]).map(x=>x?.feature?.name||x?.name).filter(x=>typeof x==="string"&&x);
   
   box.append(mk("strong",null,names.join(" + ")||variant?.name||"Commander Spellbook combo"));
   if(effects.length)box.append(mk("div","combo-effect","Result: "+effects.slice(0,3).join(" · ")));
   if(type==="missing"){
-   const remaining=(value?.missingCards||value?.missing||value?.notIncluded||[]).map(x=>x?.card?.name||x?.name||x).filter(x=>typeof x==="string");
+   const rawMissing=value?.missingCards||value?.missing||value?.notIncluded;
+   const remaining=(Array.isArray(rawMissing)?rawMissing:[]).map(x=>x?.card?.name||x?.name||x).filter(x=>typeof x==="string");
    if(remaining.length)box.append(mk("div","combo-effect","Missing: "+remaining.join(", ")));
   }
   if(variant?.easyPrerequisites)box.append(mk("p","combo-effect","Requires: "+String(variant.easyPrerequisites).slice(0,280)));
@@ -73,19 +78,36 @@ function validate(){
  if([...all,...cards.map(x=>x.name)].some(x=>x.length>130))throw Error("Card names must be at most 130 characters.");
  return {commanders:all,cards:cards.map(x=>({name:x.name,qty:x.qty}))};
 }
+let serial=0,active=null;
+const setBusy=value=>{$("checkCombos").disabled=value;$("comboForm").setAttribute("aria-busy",String(value))};
+function clearResults(){
+ $("combosIncluded").replaceChildren();$("combosMissing").replaceChildren();
+ $("bracketSignals").replaceChildren(mk("h2",null,"Bracket signals"),mk("p",null,"Run a lookup to see any documented flags."));
+}
+$("comboForm").addEventListener("input",()=>{
+ serial++;active?.abort();active=null;setBusy(false);clearResults();
+ status("spellbookStatus","Paste a list to find documented combos.");
+});
 $("comboForm").addEventListener("submit",async event=>{
- event.preventDefault();const button=$("checkCombos");
- button.disabled=true;status("spellbookStatus","Checking documented combos…");
+ event.preventDefault();if(active)return;
+ const id=++serial,controller=new AbortController();
+ active=controller;setBusy(true);clearResults();
+ status("spellbookStatus","Checking documented combos…");
  try{
   const deck=validate();
-  const res=await fetch("/api/external",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"combos",deck})});
-  const data=await res.json().catch(()=>{throw Error("Combo service returned an unreadable response.")});
-  if(!res.ok)throw Error(data.error||"Combo lookup is unavailable.");
-  const c=data.combo||{};
-  showComboList("combosIncluded",c.included??c.combos??c.present??c,"included");
-  showComboList("combosMissing",c.almostIncluded??c.almost_included??c.oneCardAway??[],"missing");
+  const data=await requestJson("/api/external",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"combos",deck}),signal:controller.signal,timeoutMs:24000});
+  if(id!==serial)return;
+  const c=data.combo;
+  if(c&&typeof c==="object"){
+   showComboList("combosIncluded",c.included??c.combos??c.present??c,"included");
+   showComboList("combosMissing",c.almostIncluded??c.almost_included??c.oneCardAway??null,"missing");
+  }else{
+   showComboList("combosIncluded",null,"included");showComboList("combosMissing",null,"missing");
+  }
   showBracketSignals(data.bracket);
-  status("spellbookStatus","Lookup complete. "+(data.warnings||[]).join(" ")+" Review each combo's prerequisites.");
- }catch(e){status("spellbookStatus",e.message)}
- finally{button.disabled=false}
+  const warnings=Array.isArray(data.warnings)?data.warnings.filter(w=>typeof w==="string"):[];
+  if(!c&&!warnings.length)warnings.push("Combo lookups unavailable.");
+  status("spellbookStatus",(warnings.length?"Partial lookup. ":"Lookup complete. ")+warnings.join(" ")+" Review each combo's prerequisites.");
+ }catch(e){if(id===serial){clearResults();status("spellbookStatus",e.message||"Combo lookup unavailable.")}}
+ finally{if(id===serial){active=null;setBusy(false)}}
 });

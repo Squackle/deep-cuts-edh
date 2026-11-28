@@ -1,30 +1,27 @@
 import {key,CASES,parseCollection,roleOf,validCommander,allowed,synergySignal} from "./deep-tools-core.js";
+import {requestJson} from "./tool-request.js";
 const $=id=>document.getElementById(id),node=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=String(text);if(cls)e.className=cls;return e};
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const scUrl=name=>"https://scryfall.com/search?q="+encodeURIComponent('!"'+name+'"');
 const cardLink=(name,url)=>{const a=node("a",name);a.href=url?.startsWith("https://scryfall.com/")?url:scUrl(name);a.target="_blank";a.rel="noopener noreferrer";return a};
 const money=v=>v==null?"PRICE UNKNOWN":"$"+Number(v).toFixed(2);
 function status(id,value,error=false){const el=$(id);if(el){el.textContent=value;el.dataset.error=error?"true":"false"}}
-async function jsonReq(url,opts={}){
- const r=await fetch(url,{credentials:"same-origin",cache:"no-store",...opts});
- let data;try{data=await r.json()}catch{throw Error("Card service returned an unreadable response.")}
- if(!r.ok)throw Error(data.error||data.details||"Card lookup failed ("+r.status+").");
- return data;
-}
-async function commanderLookup(name){
- const card=await jsonReq("https://api.scryfall.com/cards/named?fuzzy="+encodeURIComponent(name),{credentials:"omit"});
- if(!validCommander(card))throw Error("Choose a Commander-legal legendary creature or a card that explicitly can be your commander.");
+const validRecord=c=>c&&typeof c.name==="string"&&c.name.trim()&&typeof c.type_line==="string"&&Array.isArray(c.color_identity);
+async function commanderLookup(name,signal){
+ const card=await requestJson("https://api.scryfall.com/cards/named?fuzzy="+encodeURIComponent(name),{credentials:"omit",signal});
+ if(!validRecord(card)||!validCommander(card))throw Error("Choose a Commander-legal legendary creature or a card that explicitly can be your commander.");
  return card;
 }
-async function batchCards(names,progress){
- const unique=[...new Map(names.filter(Boolean).map(x=>[key(x),x])).values()],all=[],missing=[];
+async function batchCards(names,signal){
+ const unique=[...new Map(names.filter(Boolean).map(x=>[key(x),x])).values()],all=[];
  for(let i=0;i<unique.length;i+=75){
   if(i)await sleep(700);
-  if(progress)progress(Math.min(i+75,unique.length),unique.length);
-  const d=await jsonReq("/api/tool-cards",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({names:unique.slice(i,i+75)})});
-  all.push(...(d.cards||[]));missing.push(...(d.missing||[]));
+  if(signal.aborted)throw Error("Lookup canceled.");
+  const d=await requestJson("/api/tool-cards",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({names:unique.slice(i,i+75)}),signal});
+  if(!Array.isArray(d.cards))throw Error("Editorial card lookup returned incomplete data.");
+  all.push(...d.cards.filter(validRecord));
  }
- return {cards:all,missing};
+ return all;
 }
 function download(filename,content){
  const link=document.createElement("a"),url=URL.createObjectURL(new Blob([content],{type:"text/plain;charset=utf-8"}));
@@ -70,50 +67,67 @@ function renderFinder(){
 }
 function runFinder(){
  initOwnedImport();
- let busy=false;
+ let busy=false,active=null,revision=0;
+ const setBusy=value=>{busy=value;$("finderForm").querySelector("button").disabled=value;$("finderResults").setAttribute("aria-busy",String(value))};
+ const clearResults=()=>{$("finderResults").replaceChildren();$("finderIdentity").hidden=true;window.__finderCandidates=[]};
  const load=document.querySelectorAll("#finderRole,#finderType,#finderMaxPrice,#finderOwned,#finderSort");
  load.forEach(e=>e.addEventListener("change",renderFinder));
  $("finderForm").addEventListener("submit",async e=>{
-  e.preventDefault();if(busy)return;busy=true;const button=e.currentTarget.querySelector("button");button.disabled=true;
-  const name=$("finderCommander").value.trim();status("finderStatus","Investigating "+name+"…");$("finderResults").replaceChildren();$("finderIdentity").hidden=true;window.__finderCandidates=[];
+  e.preventDefault();if(busy)return;
+  const serial=++revision,controller=new AbortController();
+  active=controller;setBusy(true);
+  const name=$("finderCommander").value.trim();status("finderStatus","Investigating "+name+"…");clearResults();
   try{
-   const cmd=await commanderLookup(name),editorial=CASES[key(cmd.name)]||null,sig=synergySignal(cmd);
+   const cmd=await commanderLookup(name,controller.signal),editorial=CASES[key(cmd.name)]||null,sig=synergySignal(cmd);
+   if(serial!==revision)return;
    const identity=$("finderIdentity");identity.replaceChildren();identity.append(node("strong",cmd.name),node("span","COLOR IDENTITY · "+(cmd.color_identity?.join(" / ")||"COLORLESS")));
    if(editorial)identity.append(node("small","Featured rescue: "+editorial.theme));
    identity.hidden=false;
-   const source=[];
+   const source=[],warnings=[];
    if(editorial){
-    const d=await batchCards(editorial.cards.map(x=>x[0]));
-    for(const c of d.cards){const copy=editorial.cards.find(x=>key(x[0])===key(c.name));if(!copy||!allowed(c,cmd))continue;
-     source.push({...c,role:roleOf(c),curated:true,explanation:copy[1]})}
+    try{
+     const cards=await batchCards(editorial.cards.map(x=>x[0]),controller.signal);
+     if(serial!==revision)return;
+     for(const c of cards){const copy=editorial.cards.find(x=>key(x[0])===key(c.name));if(!copy||!allowed(c,cmd))continue;
+      source.push({...c,role:roleOf(c),curated:true,explanation:copy[1]})}
+     if(!source.length)warnings.push("Editorial card records could not be verified.");
+    }catch(error){if(serial!==revision)return;warnings.push("Editorial card lookup is temporarily unavailable.")}
    }
    const colors=(cmd.color_identity||[]).join("").toLowerCase();
    const q=["legal:commander",colors?"id<="+colors:"id:c",sig.query].join(" ");
    const url="https://api.scryfall.com/cards/search?"+new URLSearchParams({q,unique:"cards",order:"cmc",dir:"asc"});
    try{
-    const d=await jsonReq(url,{credentials:"omit"});
-    for(const c of (d.data||[]).slice(0,38)){
+    const d=await requestJson(url,{credentials:"omit",signal:controller.signal});
+    if(serial!==revision)return;
+    if(!Array.isArray(d.data))throw Error("Card search returned incomplete data.");
+    for(const c of d.data.filter(validRecord).slice(0,38)){
      if(!allowed(c,cmd)||key(c.name)===key(cmd.name)||source.some(x=>key(x.name)===key(c.name)))continue;
      source.push({...c,image:c.image_uris?.normal||c.card_faces?.find(f=>f.image_uris?.normal)?.image_uris?.normal||"",role:roleOf(c),
       curated:false,explanation:sig.explanation});
     }
-   }catch(err){if(!source.length)throw err;status("finderStatus","Editorial cases loaded; automated rule-text candidates are currently unavailable.")}
-   if(!source.length)throw Error("No legal cards were found using these signals. Try another Commander.");
+   }catch(err){if(serial!==revision)return;warnings.push("Automated rule-text candidates are temporarily unavailable.")}
+   if(serial!==revision)return;
+   if(!source.length)throw Error(warnings.length?warnings.join(" ")+" Try again.":"No legal cards were found using these signals. Try another Commander.");
    window.__finderCandidates=source;
    loadOwnedNames();
    renderFinder();
-   if(!$("finderOwned").checked)status("finderStatus",source.length+" Commander-legal candidates found. Editorial findings are distinct from exploratory text matches.");
-  }catch(err){status("finderStatus",err.message,true);renderFinder()}
-  finally{busy=false;button.disabled=false}
+   status("finderStatus",source.length+" Commander-legal candidates found. Editorial findings are distinct from exploratory text matches. "+warnings.join(" "),warnings.length>0);
+  }catch(err){if(serial===revision){status("finderStatus",err.message,true);renderFinder()}}
+  finally{if(serial===revision){active=null;setBusy(false)}}
  });
- let suggestVersion=0,suggestTimer=null;
+ let suggestVersion=0,suggestTimer=null,suggestController=null;
  $("finderCommander").addEventListener("input",()=>{
-  clearTimeout(suggestTimer);const q=$("finderCommander").value.trim(),serial=++suggestVersion;
+  revision++;active?.abort();active=null;setBusy(false);clearResults();
+  status("finderStatus","Enter a commander to open an investigation.");
+  clearTimeout(suggestTimer);suggestController?.abort();
+  $("finderCommanderSuggestions").replaceChildren();
+  const q=$("finderCommander").value.trim(),serial=++suggestVersion;
   if(q.length<3){$("finderCommanderSuggestions").replaceChildren();return}
   suggestTimer=setTimeout(async()=>{
-   try{const d=await jsonReq("https://api.scryfall.com/cards/autocomplete?q="+encodeURIComponent(q),{credentials:"omit"});
+   const controller=new AbortController();suggestController=controller;
+   try{const d=await requestJson("https://api.scryfall.com/cards/autocomplete?q="+encodeURIComponent(q),{credentials:"omit",signal:controller.signal,timeoutMs:8000});
     if(serial!==suggestVersion)return;const options=$("finderCommanderSuggestions");options.replaceChildren();
-    for(const n of (d.data||[]).slice(0,18)){const op=node("option");op.value=n;options.append(op)}
+    for(const n of (Array.isArray(d.data)?d.data.filter(x=>typeof x==="string"):[]).slice(0,18)){const op=node("option");op.value=n;options.append(op)}
    }catch{/* Autocomplete is optional; searching by full or partial name still works. */}
   },500);
  });
