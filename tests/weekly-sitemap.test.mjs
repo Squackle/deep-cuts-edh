@@ -55,7 +55,13 @@ test('a partially malformed upstream index cannot advertise an incomplete succes
 });
 
 test('publisher, homepage, dated archive, canonical reports, sitemap and existing subscriber feed agree on their intended inventories',async()=>{
- const date='2026-12-04',remote={...EDITORIAL_EDITIONS[0],date,commander:{...EDITORIAL_EDITIONS[0].commander},theme:'Synthetic future test angle'};
+ const editorialDates=EDITORIAL_EDITIONS.map(edition=>edition.date).sort();
+ const latestEditorial=editorialDates.at(-1);
+ const latestDate=new Date(latestEditorial+'T00:00:00Z');
+ const fixtureDate=days=>new Date(latestDate.getTime()+days*86_400_000).toISOString().slice(0,10);
+ const date=fixtureDate(7);
+ const edition=EDITORIAL_EDITIONS.find(edition=>edition.date===latestEditorial);
+ const remote={...edition,date,theme:'Synthetic future test angle'};
  const remoteRow={date,commander:remote.commander.name,theme:remote.theme,headline:remote.sections.headline,imageUrl:remote.commander.imageUrl};
  const store=new Map([['index',JSON.stringify([remoteRow])],['article:'+date,JSON.stringify(remote)]]);
  let writes=0,down=false;
@@ -78,7 +84,7 @@ test('publisher, homepage, dated archive, canonical reports, sitemap and existin
  const ctx={request:new Request(root+'/rescues'),env:{ASSETS:assets}};
  const home=()=>homeRoute({next:async()=>html(read('index.html'))});
  try{
-  const dates=[...new Set([...EDITORIAL_EDITIONS.map(x=>x.date),date])].sort();
+  const dates=[...editorialDates,date];
   const archive=await archiveRoute(ctx);assert.equal(archive.status,200);
   const archiveBody=await archive.text();
   const linked=[...archiveBody.matchAll(/class="weekly-index-card" href="\/rescues\/(20\d\d-\d\d-\d\d)"/g)].map(m=>m[1]);
@@ -86,12 +92,12 @@ test('publisher, homepage, dated archive, canonical reports, sitemap and existin
   const sitemap=await onRequestGet();assert.equal(sitemap.status,200);
   assert.deepEqual(urls(await sitemap.text()),dates.map(d=>root+'/rescues/'+d));
   const homepage=await home();assert.equal(homepage.status,200);
-  assert.match(await homepage.text(),/id="homeWeeklyFeature" data-weekly-date="2026-12-04" href="\/rescues\/2026-12-04"/);
+  assert.ok((await homepage.text()).includes('id="homeWeeklyFeature" data-weekly-date="'+date+'" href="/rescues/'+date+'"'));
   for(const week of dates){
    const report=await reportRoute({params:{week}});assert.equal(report.status,200,week);
    assert.ok((await report.text()).includes('rel="canonical" href="'+root+'/rescues/'+week+'"'),week);
   }
-  assert.equal((await reportRoute({params:{week:'2026-12-11'}})).status,404);
+  assert.equal((await reportRoute({params:{week:fixtureDate(14)}})).status,404);
   const feed=await legacyFeedRoute(ctx);assert.equal(feed.status,200);
   const xml=await feed.text(),guid=[...xml.matchAll(/<guid isPermaLink="true">([^<]+)<\/guid>/g)].map(m=>m[1]);
   assert.equal(guid.length,4);assert.equal(new Set(guid).size,4);
@@ -100,11 +106,11 @@ test('publisher, homepage, dated archive, canonical reports, sitemap and existin
   down=true;
   assert.equal((await onRequestGet()).status,503);
   const fallback=await archiveRoute(ctx);assert.equal(fallback.status,200);
-  const fallbackBody=await fallback.text();assert.ok(fallbackBody.includes('href="/rescues/2026-11-20"'));
-  assert.doesNotMatch(fallbackBody,/class="weekly-index-card" href="\/rescues\/2026-12-04"/);
-  assert.equal((await reportRoute({params:{week:'2026-11-20'}})).status,200);
+  const fallbackBody=await fallback.text();assert.ok(fallbackBody.includes('href="/rescues/'+latestEditorial+'"'));
+  assert.ok(!fallbackBody.includes('class="weekly-index-card" href="/rescues/'+date+'"'));
+  assert.equal((await reportRoute({params:{week:latestEditorial}})).status,200);
   assert.equal((await reportRoute({params:{week:date}})).status,503);
-  assert.match(await (await home()).text(),/data-weekly-date="2026-11-20"/);
+  assert.ok((await (await home()).text()).includes('id="homeWeeklyFeature" data-weekly-date="'+latestEditorial+'" href="/rescues/'+latestEditorial+'"'));
   assert.equal((await legacyFeedRoute(ctx)).status,200);
   assert.equal(writes,0);
  }finally{globalThis.fetch=original}
