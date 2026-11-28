@@ -14,13 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
       - name: Analyzer invariants
         run: node --test tests/game-quality/*.test.mjs
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: Squackle/deep-cuts-game-lab-
           ref: 3d634002b46a957f34fe6009c4a268a0001b1868
