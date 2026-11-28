@@ -58,3 +58,68 @@ test("Shareable Case File creates a real downloadable PNG, validates sources and
   }
  }finally{await browser?.close();await new Promise(done=>server.close(done))}
 });
+
+
+test("Switching source or editing the query invalidates an in-flight case file and hides stale exports",{timeout:45000},async()=>{
+ const {server,url}=await local();let browser,release,started;
+ const gate=new Promise(resolve=>{release=resolve});
+ const requestStarted=new Promise(resolve=>{started=resolve});
+ try{
+  browser=await launchBrowser();
+  const page=await browser.newPage({viewport:{width:390,height:844}});
+  const errors=[];page.on("pageerror",e=>errors.push(e.message));
+  await page.route(/^https:\/\//,route=>route.abort());
+  await page.route("**/api/tool-cards",async route=>{
+   started();await gate;
+   try{await route.fulfill({json:{cards:[{name:"Toshiro Umezawa",type_line:"Legendary Creature — Human Samurai",color_identity:["B"],legalities:{commander:"legal"}}]}})}catch{/* request was canceled */}
+  });
+  await page.route("**/api/community?action=deck*",route=>route.fulfill({json:{deck:{id:"a".repeat(32),title:"A New Case",commander:"Toshiro Umezawa",handle:"PublicBrewer"}}}));
+  await page.goto(url+"/case-file",{waitUntil:"domcontentloaded"});
+  await page.locator("#cfQuery").fill("Toshiro Umezawa");
+  await page.locator("#cfGenerate").click();
+  await requestStarted;
+  assert.equal(await page.locator("#cfForm").getAttribute("aria-busy"),"true");
+  await page.locator('input[value="deck"]').check();
+  assert.equal(await page.locator("#cfForm").getAttribute("aria-busy"),"false");
+  assert.equal(await page.locator("#cfActions").isVisible(),false);
+  await page.locator("#cfQuery").fill("a".repeat(32));
+  await page.locator("#cfGenerate").click();
+  await page.waitForFunction(()=>document.querySelector("#cfCanvas").getAttribute("aria-label").includes("A New Case")&&!document.querySelector("#cfCanvas").hidden);
+  release();
+  assert.equal(new URL(page.url()).searchParams.get("deck"),"a".repeat(32));
+  await page.locator("#cfQuery").fill("b".repeat(32));
+  assert.equal(await page.locator("#cfCanvas").isVisible(),false);
+  assert.equal(await page.locator("#cfActions").isVisible(),false);
+  assert.equal(new URL(page.url()).search,"");
+  assert.deepEqual(errors,[]);
+ }finally{release();await browser?.close();await new Promise(done=>server.close(done))}
+});
+
+test("An already-requested PNG keeps its original filename after the user changes the form",{timeout:45000},async()=>{
+ const {server,url}=await local();let browser;
+ try{
+  browser=await launchBrowser();
+  const context=await browser.newContext({acceptDownloads:true});
+  const page=await context.newPage(),errors=[];page.on("pageerror",e=>errors.push(e.message));
+  await page.route(/^https:\/\//,route=>route.abort());
+  await page.route("**/api/tool-cards",route=>route.fulfill({json:{cards:[null,{name:"Toshiro Umezawa",type_line:"Legendary Creature — Human Samurai",oracle_text:"",color_identity:["B"],legalities:{commander:"legal"}}]}}));
+  await page.goto(url+"/case-file",{waitUntil:"domcontentloaded"});
+  await page.locator("#cfQuery").fill("Toshiro Umezawa");
+  await page.locator("#cfGenerate").click();
+  await page.locator("#cfActions").waitFor();
+  // Capture the real encoded blob but delay its callback until after editing.
+  await page.evaluate(()=>{
+   const canvas=document.querySelector("#cfCanvas"),original=canvas.toBlob.bind(canvas);
+   canvas.toBlob=(callback,type)=>original(blob=>{window.finishExport=()=>callback(blob)},type);
+  });
+  await page.locator("#cfDownload").click();
+  await page.waitForFunction(()=>typeof window.finishExport==="function");
+  await page.locator("#cfQuery").fill("Another commander");
+  assert.equal(await page.locator("#cfActions").isVisible(),false);
+  const pending=page.waitForEvent("download");
+  await page.evaluate(()=>window.finishExport());
+  assert.equal((await pending).suggestedFilename(),"deep-cuts-toshiro-umezawa.png");
+  assert.deepEqual(errors,[]);
+  await context.close();
+ }finally{await browser?.close();await new Promise(done=>server.close(done))}
+});
