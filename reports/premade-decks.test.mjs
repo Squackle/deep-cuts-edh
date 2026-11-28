@@ -91,6 +91,30 @@ test("one collapsed disclosure contains three collapsed tier dropdowns",async()=
 });
 
 
+const expectedPreviewImage="https://cards.scryfall.io/normal/front/8/7/test.jpg";
+const expectedSplitImage="https://cards.scryfall.io/normal/front/a/test.jpg";
+const expectedCardPage="https://scryfall.com/card/cmr/305/sol-ring";
+const exactFixtureUrl=(actual,expected)=>assert.equal(actual,expected);
+function namedApiRequest(raw){
+ try{
+  const u=new URL(String(raw));
+  return u.origin==="https://api.scryfall.com"&&!u.username&&!u.password&&!u.hash&&u.pathname==="/cards/named"&&[...u.searchParams].length===1&&!!u.searchParams.get("exact");
+ }catch{return false}
+}
+test("Exact card URL assertions reject misleading hosts, paths and malformed input",()=>{
+ exactFixtureUrl(expectedPreviewImage,expectedPreviewImage);
+ exactFixtureUrl(expectedSplitImage,expectedSplitImage);
+ for(const image of ["https://cards.scryfall.io.evil.example/normal/front/8/7/test.jpg","https://evil.example/cards.scryfall.io",expectedPreviewImage+"/extra","https://cards.scryfall.io:444/normal/front/8/7/test.jpg","https://user@cards.scryfall.io/normal/front/8/7/test.jpg","https://cards.scryfall.io@evil.example/normal/front/8/7/test.jpg","http://cards.scryfall.io/normal/front/8/7/test.jpg","not a URL"]){
+  assert.throws(()=>exactFixtureUrl(image,expectedPreviewImage),{code:"ERR_ASSERTION"});
+  assert.throws(()=>exactFixtureUrl(image,expectedSplitImage),{code:"ERR_ASSERTION"});
+ }
+ assert.equal(namedApiRequest("https://api.scryfall.com/cards/named?exact=Sol%20Ring"),true);
+ for(const raw of ["https://evil.example/api.scryfall.com/cards/named?exact=Sol","https://api.scryfall.com.evil.example/cards/named?exact=Sol","https://api.scryfall.com/cards/named-extra?exact=Sol","https://user@api.scryfall.com/cards/named?exact=Sol","https://api.scryfall.com/cards/named?exact=Sol&exact=Ring","not a URL"])assert.equal(namedApiRequest(raw),false);
+ for(const image of ["https://cards.scryfall.io.evil.example/test.jpg","https://evil.example/cards.scryfall.io","javascript:alert(1)","http://cards.scryfall.io/test.jpg","not a URL"]){
+  assert.equal(safeCardDetails({image_uris:{normal:image}}).image,null);
+  assert.equal(safeCardDetails({card_faces:[{image_uris:{normal:image}}]}).image,null);
+ }
+});
 test("Scryfall exact-name links and preview URLs encode unusual card names safely",()=>{
  const names=["Sol Ring","Wear // Tear","Gilanra, Caller of Wirewood","Kemba, Kha Enduring","Alena's Gambit"];
  for(const name of names){
@@ -106,9 +130,9 @@ test("Scryfall exact-name links and preview URLs encode unusual card names safel
   image_uris:{normal:"https://cards.scryfall.io/normal/front/8/7/test.jpg"}
  });
  assert.equal(preview.uri,"https://scryfall.com/card/cmr/305/sol-ring");
- assert.match(preview.image,/cards\.scryfall\.io/);
+ exactFixtureUrl(preview.image,expectedPreviewImage);
  const split=safeCardDetails({card_faces:[{image_uris:{normal:"https://cards.scryfall.io/normal/front/a/test.jpg"}}]});
- assert.match(split.image,/cards\.scryfall\.io/);
+ exactFixtureUrl(split.image,expectedSplitImage);
  const hostile=safeCardDetails({scryfall_uri:"https://scryfall.com.evil.test/steal",
   image_uris:{normal:"javascript:alert(1)"}});
  assert.equal(hostile.uri,null);
@@ -144,8 +168,8 @@ test("every card in all four case files becomes a real clickable anchor with des
    matchMedia:()=>({matches:true})};
   globalThis.fetch=async(url)=>{
    const raw=String(url);
-   if(raw.includes("premade-decks.json"))return {ok:true,json:async()=>data};
-   if(raw.includes("api.scryfall.com/cards/named?exact=")){
+   if(raw===new URL("./premade-decks.json",import.meta.url).href)return {ok:true,json:async()=>data};
+   if(namedApiRequest(raw)){
     cardRequests++;
     return {ok:true,json:async()=>({
      scryfall_uri:"https://scryfall.com/card/cmr/305/sol-ring",
@@ -168,7 +192,9 @@ test("every card in all four case files becomes a real clickable anchor with des
     caseData.tiers["no-limit"].sections.flatMap(s=>s.cards).length,slug);
    for(const a of links){
     assert.equal(a.tag,"a");
-    assert.match(a.href,/^https:\/\/scryfall\.com\/search\?/);
+    const name=a.textContent.slice(a.textContent.indexOf(" × ")+3);
+    assert.ok(name&&a.textContent.includes(" × "));
+    exactFixtureUrl(a.href,"https://scryfall.com/search?q="+encodeURIComponent('!"'+name+'"')+"&unique=cards");
     assert.equal(a.target,"_blank");
     assert.equal(a.rel,"noopener noreferrer");
     assert.equal(typeof a.listeners.mouseenter,"function");
@@ -184,8 +210,8 @@ test("every card in all four case files becomes a real clickable anchor with des
     assert.equal(pop.className,"premade-card-preview");
     assert.equal(pop.hidden,false);
     const img=visit(pop,n=>n.tag==="img")[0];
-    assert.match(img.src,/cards\.scryfall\.io/);
-    assert.match(link.href,/^https:\/\/scryfall\.com\/card\//);
+    exactFixtureUrl(img.src,expectedPreviewImage);
+    exactFixtureUrl(link.href,expectedCardPage);
     assert.match(pop.style.left,/px$/);
     link.listeners.mouseleave();
     assert.equal(pop.hidden,true,"hover preview disappears after leaving the card");

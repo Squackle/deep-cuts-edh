@@ -12,7 +12,32 @@ const candidates=[paper('Three One','Whenever you cast a noncreature spell, draw
 const evidence=['Evidence Alpha','Evidence Beta','Evidence Gamma','Evidence Delta','Evidence Epsilon','Evidence Zeta','Evidence Eta','Evidence Theta'];
 const sourceFetch=globalThis.fetch;
 const model=()=>({AI:{async run(_name,{messages}){if(messages.at(-1).content.includes('choose the strongest UNUSUAL'))return {response:JSON.stringify({commander:'Three One',usualBuild:'Spellslinger',theme:'Artifact-token value',hook:'Try casting noncreature engines',supportCards:evidence,selectionReason:'Offbeat synergy hypothesis'})};return {response:JSON.stringify(strongArticle(evidence))}}}});
-async function withMock(fn){globalThis.fetch=async(url)=>{const s=String(url);if(s.includes('/cards/search'))return {ok:true,json:async()=>({data:candidates})};if(s.endsWith('/cards/collection'))return {ok:true,json:async()=>({data:evidence.map(name=>paper(name,'Create a 1/1 artifact creature token.'))})};throw Error('Unexpected URL '+s)};try{await fn()}finally{globalThis.fetch=sourceFetch}}
+function mockRoute(raw){
+ try{
+  const u=new URL(String(raw));
+  if(u.origin!=='https://api.scryfall.com'||u.username||u.password||u.hash)return null;
+  if(u.pathname==='/cards/search'){
+   const q=u.searchParams;
+   if([...q].length!==5||q.get('q')!=='is:commander legal:commander game:paper'||q.get('order')!=='edhrec'||q.get('dir')!=='asc'||q.get('unique')!=='cards'||!['2','3','4','5','6','7','8','9','10'].includes(q.get('page')))return null;
+   return 'search';
+  }
+  if(u.pathname==='/cards/collection'&&!u.search)return 'collection';
+  return null;
+ }catch{return null}
+}
+async function withMock(fn){globalThis.fetch=async(url,options)=>{const route=mockRoute(url);if(route==='search'&&(!options?.method||options.method==='GET'))return {ok:true,json:async()=>({data:candidates})};if(route==='collection'&&options?.method==='POST')return {ok:true,json:async()=>({data:evidence.map(name=>paper(name,'Create a 1/1 artifact creature token.'))})};throw Error('Unexpected fixture request '+String(url))};try{await fn()}finally{globalThis.fetch=sourceFetch}}
+const commanderLink=(html,uri)=>html.includes('<a href="'+uri+'" target="_blank" rel="noopener noreferrer">VIEW COMMANDER ORACLE ↗</a>');
+test('Weekly source assertions require exact commander link and API routes',()=>{
+ const uri='https://scryfall.com/card/set/1/Three%20One';
+ const link=u=>'<a href="'+u+'" target="_blank" rel="noopener noreferrer">VIEW COMMANDER ORACLE ↗</a>';
+ assert.equal(commanderLink(link(uri),uri),true);
+ for(const bad of ['https://evil.example/?next='+uri,uri+'/extra','https://scryfall.com.evil.example/card/set/1/Three%20One','https://scryfall.com@evil.example/card/set/1/Three%20One'])assert.equal(commanderLink(link(bad),uri),false);
+ const search='https://api.scryfall.com/cards/search?q=is%3Acommander+legal%3Acommander+game%3Apaper&order=edhrec&dir=asc&unique=cards&page=3';
+ assert.equal(mockRoute(search),'search');
+ for(const bad of [search+'&extra=1',search+'&page=4',search.replace('page=3','page=0'),search.replace('order=edhrec','order=name'),search.replace('dir=asc','dir=desc'),search.replace('https:','http:'),search+'#extra','not a URL'])assert.equal(mockRoute(bad),null);
+ assert.equal(mockRoute('https://api.scryfall.com/cards/collection'),'collection');
+ for(const bad of ['https://evil.example/cards/search','https://api.scryfall.com.evil.example/cards/search','https://api.scryfall.com/cards/search-extra','https://api.scryfall.com:8443/cards/collection','https://user@api.scryfall.com/cards/search','https://api.scryfall.com/cards/collection?extra=1'])assert.equal(mockRoute(bad),null);
+});
 
 test('Friday 10 a.m. Central publishes once, with verified named cards and no member DB',async()=>{await withMock(async()=>{const kv=mem(),env={REPORTS:kv,...model()};let running;const event={waitUntil(x){running=x}};
  await publisher.scheduled(null,env,event);await running; // real date might not be Friday 10 a.m.: guard only
@@ -23,9 +48,9 @@ test('Friday 10 a.m. Central publishes once, with verified named cards and no me
  const again=await publish(env,new Date('2026-10-30T15:00:00Z'));assert.equal(again.status,'already_published');
  const list=JSON.parse(kv.map.get('index'));assert.equal(list.length,1);assert.equal(list[0].commander,'Three One');
  const report=JSON.parse(kv.map.get('article:2026-10-30'));assert.equal(report.synergies.length,6);assert.equal(report.status,'AI-assisted and source-checked; not independently playtested');
- assert.ok(report.commander.imageUrl?.startsWith('https://cards.scryfall.io/normal/front/'));
+ assert.equal(report.commander.imageUrl,candidates[0].image_uris.normal);
  assert.equal(list[0].imageUrl,report.commander.imageUrl);
- const output=reportHtml(report);assert.ok(output.includes('https://scryfall.com/'));assert.ok(output.includes('STRATEG'));assert.ok(!output.includes('<script>alert'));
+ const output=reportHtml(report);assert.equal(report.commander.scryfall,candidates[0].scryfall_uri);assert.ok(commanderLink(output,candidates[0].scryfall_uri));assert.ok(output.includes('STRATEG'));assert.ok(!output.includes('<script>alert'));
 })});
 
 test('DST and standard time both select 10 Central, not UTC midnight',async()=>{const {localReleaseWindow}=await import('../workers/weekly-rescue-publisher.js');assert.equal(localReleaseWindow(new Date('2026-10-30T15:00:00Z')),true);assert.equal(localReleaseWindow(new Date('2026-11-06T16:00:00Z')),true);assert.equal(localReleaseWindow(new Date('2026-11-06T15:00:00Z')),false);assert.equal(localReleaseWindow(new Date('2026-10-30T16:00:00Z')),false);assert.equal(localReleaseWindow(new Date('2026-11-05T16:00:00Z')),false)})
@@ -73,12 +98,12 @@ test('Every weekly report has a full Commander card alongside the headline, incl
  assert.match(html,/class="games-masthead weekly-report-hero"/);
  assert.match(html,/class="weekly-commander-art"/);
  assert.match(html,/data-weekly-art-state="loading"/);
- assert.match(html,/<img data-weekly-card-img src="https:\/\/cards\.scryfall\.io\/normal\/front\/a\/8\/a8564611-b678-4336-87e0-5a00a930de48\.jpg/);
+ assert.ok(html.includes('<img data-weekly-card-img src="https://cards.scryfall.io/normal/front/a/8/a8564611-b678-4336-87e0-5a00a930de48.jpg?1783938448"'));
  assert.match(html,/alt="Full Magic: The Gathering Commander card: Vhati il-Dal"/);
  assert.match(html,/width="220" height="307"/);
  assert.match(html,/VIEW FULL CARD ON SCRYFALL/);
  assert.match(html,/weekly-card-art\.mjs/);
- assert.ok(commanderArt(old)?.includes('a8564611-b678'));
+ assert.equal(commanderArt(old),'https://cards.scryfall.io/normal/front/a/8/a8564611-b678-4336-87e0-5a00a930de48.jpg?1783938448');
  const css=fs.readFileSync('weekly-rescues.css','utf8');
  assert.match(css,/\.weekly-report-hero\{display:grid;/);
  assert.match(css,/\.weekly-commander-art img\{[^}]*object-fit:contain/);

@@ -47,6 +47,35 @@ test("Desktop and mobile breakpoints keep separate navigation systems",()=>{
  assert.match(css,/@media\(max-width:1180px\)/);
  assert.match(js,/max-width: 1180px/);
 });
+// These static fallback labels are intentionally plain text. Never reconstruct
+// apparently valid labels by stripping nested or malformed markup.
+function fallbackLabels(nav){
+ const labels=[];
+ const anchor=/<a(?=\s)((?:\s+(?:href|class|aria-current)="[^"<>]*")+)\s*>([^<>]+)<\/a>/y;
+ let cursor=0;
+ while(cursor<nav.length){
+  const space=/\s*/y;space.lastIndex=cursor;space.exec(nav);cursor=space.lastIndex;
+  if(cursor===nav.length)break;
+  anchor.lastIndex=cursor;
+  const match=anchor.exec(nav);
+  assert.ok(match,"Fallback nav must contain complete anchors with plain text labels");
+  const attrs=new Map();
+  for(const [,name,value] of match[1].matchAll(/\s+(href|class|aria-current)="([^"<>]*)"/g)){
+   assert.ok(!attrs.has(name),"Duplicate fallback attribute");
+   attrs.set(name,value);
+  }
+  assert.ok(attrs.has("href")&&attrs.get("href").length>0,"Fallback anchor must have a destination");
+  labels.push(match[2].trim());cursor=anchor.lastIndex;
+ }
+ return labels;
+}
+test("Fallback labels reject nested and reconstructed markup",()=>{
+ assert.deepEqual(fallbackLabels('<a href="/deck">TOOLS & RESOURCES</a>'),["TOOLS & RESOURCES"]);
+ for(const markup of ['<a href="/deck">TOOLS & RESOURCES','<a-extra href="/deck">TOOLS & RESOURCES</a>','<a href="/bad" href="/deck">TOOLS & RESOURCES</a>','<!-- <a href="/deck">TOOLS & RESOURCES</a> -->','<a href="/deck">TOOLS & RESOURCES</a><broken>'])assert.throws(()=>fallbackLabels(markup),{code:"ERR_ASSERTION"});
+ for(const value of ['COMM<b></b>UNITY','COMM<scr<script>ipt>UNITY','COMMUNITY<!--hidden-->','COMMUNITY<img src=x onerror=alert(1)>']){
+  assert.throws(()=>fallbackLabels('<a href="/community">'+value+'</a>'),/plain text/);
+ }
+});
 test("All public pages retain the same eight fallback links",()=>{
  const pages=["index.html","games.html","community.html","deck.html","library.html","nominations.html",
  "set-watch.html","supporters.html","deep-cut-finder.html","binder-to-brew.html",
@@ -56,8 +85,7 @@ test("All public pages retain the same eight fallback links",()=>{
   const html=fs.readFileSync(file,"utf8");
   const match=html.match(/<nav\b[^>]*class="primary-nav"[^>]*>([\s\S]*?)<\/nav>/);
   assert.ok(match,file+" has no primary links");
-  const labels=[...match[1].matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)]
-    .map(m=>m[1].replace(/<[^>]+>/g,"").trim());
+  const labels=fallbackLabels(match[1]);
   assert.deepEqual(labels,expected,file+" fallback nav labels differ");
  }
 });

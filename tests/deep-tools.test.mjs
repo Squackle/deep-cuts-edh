@@ -67,13 +67,56 @@ test("Card-lookup server rejects requests from another origin and impossible bat
  const noOrigin=await onRequestPost({request:request({names:["Sol Ring"]}),env});assert.equal(noOrigin.status,403);
  const huge=await onRequestPost({request:request({names:Array(76).fill("Sol Ring")},"https://deep-cuts-edh.pages.dev"),env});assert.equal(huge.status,400);
 });
+const deckTutorUrl="https://deckstats.net/collection/deck-tutor/";
+// Deliberately narrow static-source contract: consume each selected opening
+// tag completely. Do not reinterpret decoded HTML or silently skip bad tokens.
+function fixtureTags(markup,starts){
+ const tags=[];
+ const token=/\s+([A-Za-z_:][A-Za-z0-9_:.-]*)(?:\s*=\s*(?:"([^"<>]*)"|'([^'<>]*)'|([^\s"'=<>`]+)))?/y;
+ for(let match;(match=starts.exec(markup));){
+  if(match[0]==="<!--"){
+   const end=markup.indexOf("-->",starts.lastIndex);
+   assert.ok(end>=0,"Unterminated fixture comment");
+   starts.lastIndex=end+3;
+   continue;
+  }
+  const attrs=new Map();
+  let cursor=starts.lastIndex;
+  while(true){
+   token.lastIndex=cursor;
+   const attr=token.exec(markup);
+   if(!attr)break;
+   const name=attr[1].toLowerCase();
+   assert.ok(!attrs.has(name),"Duplicate fixture attribute: "+name);
+   attrs.set(name,attr[2]??attr[3]??attr[4]??null);
+   cursor=token.lastIndex;
+  }
+  const close=/\s*>/y;close.lastIndex=cursor;
+  assert.ok(close.exec(markup),"Malformed fixture opening tag");
+  starts.lastIndex=close.lastIndex;
+  tags.push({attrs,end:close.lastIndex});
+ }
+ return tags;
+}
+function hasDeckTutor(markup){
+ try{return fixtureTags(markup,/<!--|<a(?=[\s/>])/gi).some(({attrs})=>attrs.get("href")===deckTutorUrl)}catch{return false}
+}
+test("Binder's Deckstats destination is an exact anchor URL, not an embedded substring",()=>{
+ const anchor=url=>'<a href="'+url+'">Deck Tutor</a>';
+ assert.equal(hasDeckTutor(anchor(deckTutorUrl)),true);
+ for(const bad of ["https://evil.example/deckstats.net/collection/deck-tutor","https://deckstats.net.evil.example/collection/deck-tutor/","https://deckstatsXnet/collection/deck-tutor/","https://deckstats.net/collection/deck-tutor/extra","https://deckstats.net@evil.example/collection/deck-tutor/",deckTutorUrl+"?next=evil"])assert.equal(hasDeckTutor(anchor(bad)),false);
+ assert.equal(hasDeckTutor('<a data-href="'+deckTutorUrl+'">Deck Tutor</a>'),false);
+ assert.equal(hasDeckTutor('<a href="https://evil.example/" href="'+deckTutorUrl+'">Deck Tutor</a>'),false);
+ assert.equal(hasDeckTutor('<!-- <a href="'+deckTutorUrl+'">Deck Tutor</a> -->'),false);
+ assert.equal(hasDeckTutor('<a href="'+deckTutorUrl+'"junk>Deck Tutor</a>'),false);
+});
 test("Retired Binder links to specialists, while Finder and combo checker stay functional",()=>{
  for(const p of ["deep-cut-finder.html","binder-to-brew.html","deck.html","combos.html","combo-checker.js","deep-tools.js","deep-tools.css","functions/api/tool-cards.js","deep-tools-core.js","functions/api/external.js"])assert.ok(fs.existsSync(p),p+" missing");
  const finder=fs.readFileSync("deep-cut-finder.html","utf8"),binder=fs.readFileSync("binder-to-brew.html","utf8");
  assert.match(finder,/id="finderForm"/);
  assert.match(finder,/id="finderImport"/);
  assert.match(finder,/id="finderOwnedList"/);
- assert.match(binder,/deckstats.net\/collection\/deck-tutor/);
+ assert.ok(hasDeckTutor(binder),"Exact Deckstats Deck Tutor anchor required");
  assert.doesNotMatch(binder,/binderBuildForm/);
  const js=fs.readFileSync("deep-tools.js","utf8");
  assert.doesNotMatch(js,/runBinder\(/);
