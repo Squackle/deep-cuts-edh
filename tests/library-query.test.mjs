@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {dollarCents,manaLimit,compileLibraryQuery,libraryResultSummary,artistSearchTerm,libraryCardIdentity} from "../library-query.js";
+import {dollarCents,manaLimit,compileLibraryQuery,libraryResultSummary,artistSearchTerm,libraryCardIdentity,libraryNextPage} from "../library-query.js";
 test("decimal prices including cents shorthand",()=>{
  for(const [input,expected] of [[".50",50],["0.50",50],["2.5",250],["$1.25",125],["0.01",1],["0",0],["100000",10000000],["$100000.00",10000000],[" 1.75 ",175]])assert.equal(dollarCents(input),expected,input);
  assert.equal(dollarCents(""),null);
@@ -45,4 +45,12 @@ test("Scryfall artwork and printing modes do not collapse different paintings",(
  assert.equal(libraryCardIdentity(first,"cards"),libraryCardIdentity(second,"cards"));
  assert.notEqual(libraryCardIdentity(first,"art"),libraryCardIdentity(second,"art"));
  assert.notEqual(libraryCardIdentity(first,"prints"),libraryCardIdentity(second,"prints"));
+});
+
+
+test("Scryfall pagination accepts only the canonical HTTPS card-search endpoint",()=>{
+ const good="https://api.scryfall.com/cards/search?q=forest&page=2";
+ assert.equal(libraryNextPage(good),good);
+ for(const bad of [null,42,"not a URL","/cards/search?page=2","http://api.scryfall.com/cards/search","https://api.scryfall.com.evil.test/cards/search","https://api.scryfall.com:444/cards/search","https://user@api.scryfall.com/cards/search","https://api.scryfall.com/cards/named","https://api.scryfall.com/cards/search#x"])
+  assert.equal(libraryNextPage(bad),null,String(bad));
 });
