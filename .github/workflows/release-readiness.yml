@@ -1,0 +1,58 @@
+name: Central release readiness
+on:
+  pull_request:
+    paths:
+      - 'scripts/release-readiness.mjs'
+      - 'tests/release-readiness.test.mjs'
+      - '.github/workflows/release-readiness.yml'
+      - 'docs/RELEASE-READINESS.md'
+      - 'docs/INFRASTRUCTURE-APPROVAL-2026-11-24.md'
+  schedule:
+    - cron: '35 1 * * *'
+  workflow_dispatch:
+    inputs:
+      audit_dependencies:
+        description: 'Run fresh read-only npm lockfile audit (main only)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+  checks: read
+  actions: read
+  deployments: read
+concurrency:
+  group: release-readiness-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - run: node --test tests/release-readiness.test.mjs
+      - name: Optional locked dependency audit (no installation)
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.audit_dependencies
+        shell: bash
+        run: |
+          npm audit --package-lock-only --json > "$RUNNER_TEMP/readiness-audit.json" || true
+          echo "READINESS_AUDIT_FILE=$RUNNER_TEMP/readiness-audit.json" >> "$GITHUB_ENV"
+      - name: Collect sanitized read-only evidence
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          READINESS_OUTPUT: ${{ runner.temp }}/release-readiness.json
+        run: node scripts/release-readiness.mjs
+      - name: Upload sanitized machine-readable snapshot
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-readiness
+          path: ${{ runner.temp }}/release-readiness.json
+          if-no-files-found: ignore
+          retention-days: 7
