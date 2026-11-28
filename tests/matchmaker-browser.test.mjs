@@ -71,3 +71,69 @@ test("Commander Matchmaker renders five server-verified ideas with no account, a
   }
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
 });
+
+
+test("Reset invalidates a delayed Matchmaker response; subsequent discovery reuses the pending lookup", {timeout:45000}, async()=>{
+ const {server,url}=await serve();let browser,release;
+ const gate=new Promise(resolve=>{release=resolve});
+ try{
+  browser=await launchBrowser();
+  const page=await browser.newPage({viewport:{width:390,height:840}});
+  const errors=[];page.on("pageerror",e=>errors.push(e.message));
+  let count=0;
+  await page.route(/^https:\/\//,route=>route.abort());
+  await page.route("**/api/tool-cards",async route=>{
+   count++;
+   await gate;
+   await route.fulfill({json:{cards:IDEAS.map(({name})=>({name,type_line:"Legendary Creature — Test",legalities:{commander:"legal"},color_identity:colorFor(name),prices:{usd:"1.25"},image:"https://cards.scryfall.io/mock.jpg"}))}});
+  });
+  await page.goto(url+"/matchmaker",{waitUntil:"domcontentloaded"});
+  assert.equal(await page.locator("#mmResultActions").isVisible(),false);
+  const requested=page.waitForRequest("**/api/tool-cards");
+  await page.locator("#mmSurprise").click();await requested;
+  assert.equal(await page.locator("#mmResults").getAttribute("aria-busy"),"true");
+  await page.locator("#mmReset").click();
+  assert.equal(await page.locator("#mmResults").getAttribute("aria-busy"),"false");
+  assert.equal(await page.locator("#mmMatch").isEnabled(),true);
+  await page.locator("#mmTheme").selectOption("spells");
+  await page.locator("#mmMatch").click();
+  release();
+  await page.waitForFunction(()=>document.querySelectorAll(".mm-card").length===5 && document.querySelector("#mmResults").getAttribute("aria-busy")==="false");
+  assert.equal(count,1);
+  assert.equal(new URL(page.url()).searchParams.get("theme"),"spells");
+  assert.match(await page.locator("#mmStatus").textContent(),/match your playstyle; the rest are alternatives/);
+  assert.ok(await page.getByText("Alternative playstyle",{exact:true}).count()>0);
+  await page.locator(".mm-card").first().scrollIntoViewIfNeeded();
+  await page.locator(".mm-card").first().locator(".mm-no-art").waitFor();
+  await page.locator("#mmReset").click();
+  assert.equal(await page.locator("#mmResultActions").isVisible(),false);
+  assert.equal(await page.locator(".mm-card").count(),0);
+  assert.equal(new URL(page.url()).search,"");
+  assert.deepEqual(errors,[]);
+ }finally{release();if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
+});
+
+test("Malformed and unavailable card lookups can be retried instead of caching empty results", {timeout:45000}, async()=>{
+ const {server,url}=await serve();let browser;
+ try{
+  browser=await launchBrowser();
+  const page=await browser.newPage();
+  let count=0;
+  await page.route(/^https:\/\//,route=>route.abort());
+  await page.route("**/api/tool-cards",route=>{
+   count++;
+   if(count===1)return route.fulfill({status:503,json:{error:"Service temporarily unavailable"}});
+   if(count===2)return route.fulfill({json:{cards:[null,{}]}});
+   return route.fulfill({json:{cards:[null,{name:IDEAS[0].name,type_line:"Legendary Creature — Test",legalities:{commander:"legal"},color_identity:["B"],prices:{usd:"1.25"}}]}});
+  });
+  await page.goto(url+"/matchmaker",{waitUntil:"domcontentloaded"});
+  await page.locator("#mmSurprise").click();
+  await page.waitForFunction(()=>document.querySelector("#mmStatus").textContent.includes("Service temporarily unavailable")&&!document.querySelector("#mmMatch").disabled);
+  await page.locator("#mmMatch").click();
+  await page.waitForFunction(()=>document.querySelector("#mmStatus").textContent.includes("No card records could be verified")&&!document.querySelector("#mmMatch").disabled);
+  await page.locator("#mmMatch").click();
+  await page.locator(".mm-card").waitFor();
+  assert.equal(await page.locator(".mm-card h3").textContent(),IDEAS[0].name);
+  assert.equal(count,3);
+ }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
+});
