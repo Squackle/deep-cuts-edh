@@ -1,7 +1,7 @@
 name: Complete local audit tests
 on:
-  pull_request:
-    branches: [main]
+  # Called once by the required release-coordination gate on every PR.
+  workflow_call:
   workflow_dispatch:
 permissions:
   contents: read
