@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {assessPR,latestChecks,previewSafety,collectRepository,collectCloudflare,githubClient,renderReport,pilotPreflight,PILOT_BRANCH} from "../scripts/release-readiness.mjs";
+import {assessPR,latestChecks,previewSafety,collectRepository,collectCloudflare,githubClient,renderReport,pilotPreflight,PREVIEW_PROJECT,PILOT_BRANCHES} from "../scripts/release-readiness.mjs";
 const sha="a".repeat(40),base="b".repeat(40);
 const pr={number:8,title:"Fixture",head:{sha,ref:"game/test"},base:{sha:base},html_url:"https://github.com/Squackle/deep-cuts-game-lab-/pull/8"};
 const check=(name,id,conclusion="success",status="completed")=>({name,id,conclusion,status,app:{slug:"github-actions"}});
@@ -48,6 +48,18 @@ test("required checks only pass on completed success",()=>{
  const optional=[check("optional",3,"skipped"),check("informational",4,"neutral")];
  assert.equal(assessPR(pr,[coordination,quality,...optional],required,[],[]).technical,"REVIEW");
 });
+test("required checks pinned to a GitHub app use that app's own completed result",()=>{
+ const context="release-coordination";
+ const required=[{context,integration_id:21}];
+ const unrelated={...check(context,3),app:{id:22,slug:"other"}};
+ const expected={...check(context,1),app:{id:21,slug:"github-actions"}};
+ const assess=checks=>assessPR(pr,checks,required,[],[]);
+ assert.deepEqual(assess([unrelated]).requiredStates,[{name:context,state:"missing",app:21}]);
+ assert.equal(assess([unrelated]).technical,"HOLD");
+ assert.equal(assess([expected,unrelated]).technical,"REVIEW");
+ const rerun={...expected,id:2,conclusion:"neutral"};
+ assert.equal(assess([expected,rerun,unrelated]).requiredStates[0].state,"neutral");
+});
 test("preview guard detects shared KV, wildcard and unexpected Lab credentials; isolated exact list passes",()=>{
  const p={name:"deep-cuts-game-lab",source:{config:{preview_deployment_setting:"none",preview_branch_includes:["*"]}},deployment_configs:{production:{kv_namespaces:{LAB_PRESENCE:{namespace_id:"live"}}},preview:{kv_namespaces:{OTHER:{namespace_id:"live"}},env_vars:{TOKEN:{type:"secret_text",value:"DO_NOT_REPORT"}}}}};
  const bad=previewSafety(p);
@@ -65,7 +77,7 @@ test("collector distinguishes absent schedules and deployment status from verifi
  const config={repo:"Squackle/deep-cuts-game-lab-",project:"deep-cuts-game-lab",required:["release-coordination"],gates:[103],audit:false};
  const get=async(repo,path)=>{
   if(path==="branches/main")return {commit:{sha:base}};
-  if(path==="rules/branches/main")return [{type:"required_status_checks",parameters:{required_status_checks:[{context:"release-coordination"}],strict_required_status_checks_policy:false}}];
+  if(path==="rules/branches/main")return [{type:"required_status_checks",parameters:{required_status_checks:[{context:"release-coordination",integration_id:21}],strict_required_status_checks_policy:false}}];
   if(path==="issues/103")return {state:"open",title:"Owner gate"};
   if(path.startsWith("deployments?"))return [];
   throw Error("unexpected "+path);
@@ -73,12 +85,13 @@ test("collector distinguishes absent schedules and deployment status from verifi
  const pages=async(repo,path)=>{
   if(path==="pulls?state=open")return [pr];
   if(path.includes("/files"))return [{filename:"a"}];
-  if(path.includes("/check-runs"))return [check("release-coordination",1)];
+  if(path.includes("/check-runs"))return [{...check("release-coordination",1),app:{id:21,slug:"github-actions"}}];
   if(path==="actions/workflows")return [];
   throw Error("unexpected "+path);
  };
  const r=await collectRepository(config,{get,pages});
  assert.equal(r.items[0].technical,"REVIEW");
+ assert.equal(r.items[0].requiredStates[0].app,21);
  assert.equal(r.rulesVerified,true);
  assert.equal(r.scheduled[0].state,"not on default branch");
  assert.equal(r.approvals[0].state,"open");
@@ -93,12 +106,17 @@ test("Cloudflare readback requires explicit credentials and never returns secret
  const env={CF_READ_TOKEN:"fixture-secret",CF_ACCOUNT_ID:"a".repeat(32)};
  const r=await collectCloudflare("deep-cuts-game-lab",env,async(url,options)=>{
   assert.equal(options.method,"GET");
-  if(url.includes("/deployments?"))return new Response(JSON.stringify({success:true,result:[{deployment_trigger:{metadata:{commit_hash:sha,branch:"game/test"}},latest_stage:{name:"queued",status:"idle"}}]}));
+  if(url.endsWith("/"+PREVIEW_PROJECT))return new Response(JSON.stringify({success:true,result:isolatedProject()}));
+  if(url.includes("/deployments?")){
+   const record=branch=>({deployment_trigger:{metadata:{commit_hash:sha,branch}},latest_stage:{name:"queued",status:"idle"}});
+   return new Response(JSON.stringify({success:true,result:url.includes(PREVIEW_PROJECT)?[record(PILOT_BRANCHES[0]),record("game/outside")]:[record("game/test")]}));
+  }
   assert.match(url,/\/pages\/projects\/deep-cuts-game-lab$/);
   return new Response(JSON.stringify({success:true,result:{name:"deep-cuts-game-lab",canonical_deployment:{deployment_trigger:{metadata:{commit_hash:sha}},latest_stage:{status:"success",name:"deploy"}},deployment_configs:{preview:{env_vars:{TOKEN:{value:"secret"}}}}}}));
  });
  assert.equal(r.sha,sha);
  assert.deepEqual(r.previews,[{sha,branch:"game/test",stage:"queued",status:"idle"}]);
+ assert.deepEqual(r.isolated.previews,[{sha,branch:PILOT_BRANCHES[0],stage:"queued",status:"idle"}]);
  assert.ok(!JSON.stringify(r).includes("fixture-secret"));
  assert.ok(!JSON.stringify(r).includes('"value"'));
 });
@@ -114,15 +132,21 @@ test("peer fallback never reuses private token for another origin",async()=>{
  assert.ok(calls.every(x=>x.url.startsWith("https://api.github.com/repos/Squackle/")));
 });
 
-test("zero-binding pilot preflight rejects absent config, unexpected bindings, unsafe branch controls and secrets",()=>{
- const valid={name:"deep-cuts-game-lab",source:{config:{production_branch:"main",production_deployments_enabled:true,preview_deployment_setting:"custom",preview_branch_includes:[PILOT_BRANCH],preview_branch_excludes:[]}},deployment_configs:{production:{kv_namespaces:{LAB_PRESENCE:{namespace_id:"production"}}},preview:{env_vars:{},kv_namespaces:{},compatibility_date:"2026-01-01",compatibility_flags:[],fail_open:true}}};
+const isolatedProject=()=>({name:PREVIEW_PROJECT,source:{config:{production_branch:"main",production_deployments_enabled:false,preview_deployment_setting:"custom",preview_branch_includes:[...PILOT_BRANCHES],preview_branch_excludes:[]}},deployment_configs:{production:{},preview:{env_vars:{},kv_namespaces:{},compatibility_date:"2026-01-01",compatibility_flags:[],fail_open:true}}});
+test("isolated preflight requires disabled production, approved refs and empty bindings on both environments",()=>{
+ const valid=isolatedProject();
  assert.deepEqual(pilotPreflight(valid),{state:"CONFIGURATION MATCH ONLY",issues:[]});
- for(const [key,value] of [["kv_namespaces",{LAB_PRESENCE:{namespace_id:"isolated"}}],["d1_databases",{DB:{id:"live"}}],["env_vars",{SECRET:{value:"never-print-me"}}],["future_resource",{x:"unrecognized"}]]){
-  const changed=structuredClone(valid);changed.deployment_configs.preview[key]=value;
-  const check=pilotPreflight(changed);assert.equal(check.state,"BLOCKED");assert.ok(!JSON.stringify(check).includes("never-print-me"));
+ for(const environment of ["preview","production"]){
+  for(const [key,value] of [["kv_namespaces",{LAB_PRESENCE:{namespace_id:"isolated"}}],["d1_databases",{DB:{id:"live"}}],["env_vars",{SECRET:{value:"never-print-me"}}],["future_resource",{x:"unrecognized"}]]){
+   const changed=structuredClone(valid);changed.deployment_configs[environment][key]=value;
+   const check=pilotPreflight(changed);assert.equal(check.state,"BLOCKED");assert.ok(!JSON.stringify(check).includes("never-print-me"));
+  }
  }
  const bad=structuredClone(valid);bad.source.config.preview_branch_includes.push("game/*");
  assert.equal(pilotPreflight(bad).state,"BLOCKED");
+ const enabled=structuredClone(valid);enabled.source.config.production_deployments_enabled=true;
+ assert.equal(pilotPreflight(enabled).state,"BLOCKED");
+ assert.equal(pilotPreflight({...valid,name:"deep-cuts-game-lab"}).state,"BLOCKED");
  delete valid.deployment_configs.preview;assert.equal(pilotPreflight(valid).state,"BLOCKED");
  assert.equal(pilotPreflight({}).state,"BLOCKED");
 });

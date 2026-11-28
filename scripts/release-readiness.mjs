@@ -13,15 +13,15 @@ const markdown=s=>String(s??"").replace(/[\r\n|<>]/g," ").replace(/[\u0000-\u001
 export function latestChecks(checks){
  const latest=new Map();
  for(const c of checks){
-  const key=(c.app?.slug??"unknown")+":"+c.name;
+  const key=(c.app?.id??c.app?.slug??"unknown")+":"+c.name;
   if(!latest.has(key)||Number(c.id)>Number(latest.get(key).id))latest.set(key,c);
  }
  return [...latest.values()];
 }
 export function assessPR(pr,checks,required,files,peers,{strict=false,mainSha=null,checksKnown=true,behindBy=null,rulesKnown=true}={}){
  const latest=latestChecks(checks);
- const status=name=>{
-  const candidates=latest.filter(x=>x.name===name);
+ const status=(name,integrationId)=>{
+  const candidates=latest.filter(x=>x.name===name&&(!integrationId||x.app?.id===integrationId));
   if(!candidates.length)return "missing";
   if(candidates.some(c=>c.status==="completed"&&bad.has(c.conclusion)))return "failed";
   if(candidates.some(c=>c.status!=="completed"))return "pending";
@@ -30,7 +30,11 @@ export function assessPR(pr,checks,required,files,peers,{strict=false,mainSha=nu
   if(candidates.some(c=>c.conclusion==="neutral"))return "neutral";
   return "unknown";
  };
- const requiredStates=required.map(name=>({name,state:status(name)}));
+ const requiredStates=required.map(rule=>{
+  const name=typeof rule==="string"?rule:rule.context;
+  const app=typeof rule==="string"?null:rule.integration_id;
+  return {name,state:status(name,app),...(app?{app}:{})};
+ });
  const failures=latest.filter(c=>c.status==="completed"&&bad.has(c.conclusion)).map(c=>({name:c.name,conclusion:c.conclusion,url:c.html_url}));
  const pending=latest.filter(c=>c.status!=="completed").map(c=>c.name);
  const ours=new Set(files??[]);
@@ -69,28 +73,36 @@ export function previewSafety(project){
  if(src.preview_deployment_setting==="custom"&&(!src.preview_branch_includes?.length||src.preview_branch_includes.some(x=>x.includes("*"))))issues.push("preview branch allowlist is not exact");
  return {mode:src.preview_deployment_setting??"unknown",includes:src.preview_branch_includes??[],excludes:src.preview_branch_excludes??[],shared,extra,issues};
 }
-// The first Lab preview is intentionally storage-free. This is a configuration
-// check only; historical deployment isolation, candidate egress, access policy,
-// exact SHA and owner authorization remain independent acceptance gates.
-export const PILOT_BRANCH="coord/lab-browser-smoke-20261124";
+// The release preview project is separate from the canonical Lab. Keep its
+// exact scope in step with the approved Cloudflare branch configuration.
+export const PREVIEW_PROJECT="deep-cuts-game-lab-release-preview";
+export const PILOT_BRANCHES=[
+ "coord/hive-release-preview-20261125",
+ "coord/graftbound-release-preview-20261125",
+ "coord/archemancy-release-preview-20261125"
+];
 export function pilotPreflight(project){
  const issues=[];
- if(project?.name!=="deep-cuts-game-lab")issues.push("wrong or unverified Pages project");
+ if(project?.name!==PREVIEW_PROJECT)issues.push("wrong or unverified Pages project");
  const cfg=project?.source?.config;
- if(!cfg||cfg.production_branch!=="main"||cfg.production_deployments_enabled!==true)issues.push("production branch/build settings unverified or changed");
- if(cfg?.preview_deployment_setting!=="custom"||!Array.isArray(cfg?.preview_branch_includes)||cfg.preview_branch_includes.length!==1||cfg.preview_branch_includes[0]!==PILOT_BRANCH||!Array.isArray(cfg?.preview_branch_excludes)||cfg.preview_branch_excludes.length!==0)issues.push("exact single-branch pilot settings not matched");
+ if(!cfg||cfg.production_branch!=="main"||cfg.production_deployments_enabled!==false)issues.push("disabled production builds not verified");
+ const branches=cfg?.preview_branch_includes;
+ if(cfg?.preview_deployment_setting!=="custom"||!Array.isArray(branches)||branches.length!==PILOT_BRANCHES.length||PILOT_BRANCHES.some(b=>!branches.includes(b))||!Array.isArray(cfg?.preview_branch_excludes)||cfg.preview_branch_excludes.length!==0)issues.push("exact approved preview branches not matched");
  const configs=project?.deployment_configs;
- const preview=configs?.preview;
- if(!configs?.production||typeof configs.production!=="object"||!preview||typeof preview!=="object"||Array.isArray(preview))issues.push("deployment configuration missing");
- else{
+ for(const environment of ["preview","production"]){
+  const settings=configs?.[environment];
+  if(!settings||typeof settings!=="object"||Array.isArray(settings)){
+   issues.push(environment+" deployment configuration missing");
+   continue;
+  }
   // Allow only known non-binding configuration fields. Future unknown populated
   // fields fail closed rather than accidentally treating a new binding as safe.
   const metadata=new Set(["fail_open","always_use_latest_compatibility_date","compatibility_date","compatibility_flags","build_image_major_version","usage_model"]);
-  for(const [key,value] of Object.entries(preview)){
+  for(const [key,value] of Object.entries(settings)){
    if(metadata.has(key))continue;
    if(value===null||value===undefined)continue;
    if(typeof value==="object"&&Object.keys(value).length===0)continue;
-   issues.push("nonempty or unrecognized preview configuration: "+markdown(key));
+   issues.push("nonempty or unrecognized "+environment+" configuration: "+markdown(key));
   }
  }
  return {state:issues.length?"BLOCKED":"CONFIGURATION MATCH ONLY",issues};
@@ -140,10 +152,12 @@ export async function collectRepository(config,client){
  const mainSha=main?.commit?.sha??null;
  const rules=await safe(()=>get(repo,"rules/branches/main"),errors,"active main rules");
  const actual=Array.isArray(rules)?rules.filter(x=>x.type==="required_status_checks"):null;
- const contexts=actual?.flatMap(x=>x.parameters?.required_status_checks?.map(c=>c.context)??[])??[];
- const rulesKnown=!!actual?.length&&contexts.length>0;
+ const contexts=actual?.flatMap(x=>x.parameters?.required_status_checks??[])??[];
+ const rulesKnown=contexts.length>0&&contexts.every(c=>typeof c?.context==="string"&&c.context.length>0&&
+  (c.integration_id==null||c.integration_id===-1||(Number.isSafeInteger(c.integration_id)&&c.integration_id>0)));
  const strict=rulesKnown?actual.some(x=>x.parameters?.strict_required_status_checks_policy):config.audit;
- const requiredNames=contexts.length?[...new Set(contexts)]:required;
+ const requiredRules=rulesKnown?contexts.map(({context,integration_id})=>({context,integration_id:integration_id>0?integration_id:null})):required;
+ const requiredNames=rulesKnown?[...new Set(contexts.map(c=>c.context))]:required;
  const prs=await safe(()=>pages(repo,"pulls?state=open"),errors,"open PRs")??[];
  const inputs=[];
  // Sequential bounded reads avoid provider abuse and simplify rate-limit behavior.
@@ -153,7 +167,7 @@ export async function collectRepository(config,client){
   const ancestry=strict&&mainSha?await safe(()=>get(repo,"compare/"+mainSha+"..."+pr.head.sha+"?per_page=1"),errors,"PR "+pr.number+" ancestry"):null;
   inputs.push({pr,number:pr.number,files:files?.map(x=>x.filename)??null,checks,behindBy:ancestry?.behind_by??null});
  }
- const items=inputs.map(x=>assessPR(x.pr,x.checks??[],requiredNames,x.files,inputs,{strict,mainSha,checksKnown:!!x.checks,behindBy:x.behindBy,rulesKnown}));
+ const items=inputs.map(x=>assessPR(x.pr,x.checks??[],requiredRules,x.files,inputs,{strict,mainSha,checksKnown:!!x.checks,behindBy:x.behindBy,rulesKnown}));
  const approvals=[];
  for(const number of gates){
   const issue=await safe(()=>get(repo,"issues/"+number),errors,"issue "+number);
@@ -178,24 +192,48 @@ export async function collectRepository(config,client){
  }
  return {repo,project:config.project,mainSha,requiredNames,rulesVerified:rulesKnown,strict,items,approvals,scheduled,deploymentStates,errors};
 }
-export async function collectCloudflare(project,env=process.env,fetcher=fetch){
- if(!env.CF_READ_TOKEN||!env.CF_ACCOUNT_ID)return {state:"unverified — optional Cloudflare read-only connection not configured"};
- if(!/^[a-f0-9]{32}$/i.test(env.CF_ACCOUNT_ID)||!REPOS.some(x=>x.project===project))return {state:"invalid read-only configuration"};
- const url="https://api.cloudflare.com/client/v4/accounts/"+env.CF_ACCOUNT_ID+"/pages/projects/"+project;
- try{
-  const x=await request(url,{Authorization:"Bearer "+env.CF_READ_TOKEN},fetcher);
-  if(!x.success||!x.result)return {state:"Cloudflare readback unavailable"};
-  const p=x.result,d=p.canonical_deployment,previews=[];
+async function previewRecords(url,headers,fetcher){
+ const previews=[];
   let previewInventory="sampled latest 60 records maximum";
   for(let page=1;page<=3;page++){
    try{
-    const list=await request(url+"/deployments?env=preview&per_page=20&page="+page,{Authorization:"Bearer "+env.CF_READ_TOKEN},fetcher);
+    const list=await request(url+"/deployments?env=preview&per_page=20&page="+page,headers,fetcher);
     if(!list.success||!Array.isArray(list.result))throw Error("invalid list");
     previews.push(...list.result.map(item=>({sha:item.deployment_trigger?.metadata?.commit_hash,branch:item.deployment_trigger?.metadata?.branch,stage:item.latest_stage?.name,status:item.latest_stage?.status})));
     if(list.result.length<20){previewInventory="complete within 60-record bound";break;}
    }catch{previewInventory="preview inventory unavailable or partial";break;}
   }
-  return {state:"verified readback",sha:d?.deployment_trigger?.metadata?.commit_hash??null,stage:d?.latest_stage?.name??null,status:d?.latest_stage?.status??null,preview:previewSafety(p),pilot:project==="deep-cuts-game-lab"?pilotPreflight(p):null,previews,previewInventory};
+ return {previews,previewInventory};
+}
+
+export async function collectCloudflare(project,env=process.env,fetcher=fetch){
+ if(!env.CF_READ_TOKEN||!env.CF_ACCOUNT_ID)return {state:"unverified — optional Cloudflare read-only connection not configured"};
+ if(!/^[a-f0-9]{32}$/i.test(env.CF_ACCOUNT_ID)||!REPOS.some(x=>x.project===project))return {state:"invalid read-only configuration"};
+ const root="https://api.cloudflare.com/client/v4/accounts/"+env.CF_ACCOUNT_ID+"/pages/projects/";
+ const headers={Authorization:"Bearer "+env.CF_READ_TOKEN};
+ try{
+  const x=await request(root+project,headers,fetcher);
+  if(!x.success||!x.result)return {state:"Cloudflare readback unavailable"};
+  const p=x.result,d=p.canonical_deployment;
+  const canonical=await previewRecords(root+project,headers,fetcher);
+  let isolated=null;
+  if(project==="deep-cuts-game-lab"){
+   const url=root+PREVIEW_PROJECT;
+   try{
+    const candidate=await request(url,headers,fetcher);
+    if(!candidate.success||!candidate.result)throw Error("invalid project response");
+    const preflight=pilotPreflight(candidate.result);
+    isolated={...preflight,project:PREVIEW_PROJECT};
+    if(preflight.state==="CONFIGURATION MATCH ONLY"){
+     const observed=await previewRecords(url,headers,fetcher);
+     isolated.previews=observed.previews.filter(p=>PILOT_BRANCHES.includes(p.branch));
+     isolated.previewInventory=observed.previewInventory;
+    }
+   }catch{
+    isolated={project:PREVIEW_PROJECT,state:"unverified",issues:["isolated project readback unavailable"]};
+   }
+  }
+  return {state:"verified readback",sha:d?.deployment_trigger?.metadata?.commit_hash??null,stage:d?.latest_stage?.name??null,status:d?.latest_stage?.status??null,preview:previewSafety(p),...canonical,isolated};
  }catch(e){return {state:"Cloudflare readback unavailable"};}
 }
 export function renderReport(report){
@@ -204,14 +242,20 @@ export function renderReport(report){
   lines.push("","## "+r.repo,"","Main: "+(r.mainSha??"unknown")+"; required: "+r.requiredNames.join(", ")+" ("+(r.rulesVerified?"rules API":"documented fallback; rules unverified")+"); strict: "+(r.rulesVerified?String(r.strict):"unverified")+".",
    "Canonical Pages: "+markdown(r.cloudflare?.state)+"; "+markdown(r.cloudflare?.sha??"unknown SHA")+"; "+markdown(r.cloudflare?.status??"unknown status")+(r.cloudflare?.sha&&r.mainSha&&r.cloudflare.sha!==r.mainSha?" — SHA MISMATCH":"")+".");
   if(r.cloudflare?.preview)lines.push("Preview: "+markdown(r.cloudflare.preview.mode)+"; "+r.cloudflare.preview.issues.map(markdown).join("; ")+"; "+markdown(r.cloudflare.previewInventory));
-  if(r.cloudflare?.pilot)lines.push("Zero-binding pilot configuration: "+markdown(r.cloudflare.pilot.state)+"; "+r.cloudflare.pilot.issues.map(markdown).join("; ")+"; historical preview, code, access and owner gates still separate.");
+  if(r.cloudflare?.isolated){
+   const isolated=r.cloudflare.isolated;
+   lines.push("Isolated project "+markdown(isolated.project)+": "+markdown(isolated.state)+
+    (isolated.issues.length?" — "+isolated.issues.map(markdown).join(", "):"")+
+    (isolated.previewInventory?" — "+markdown(isolated.previewInventory):"")+". Exact source, historical isolation, access and owner gates still need independent evidence.");
+  }
   lines.push("GitHub deployment records for main: "+(r.deploymentStates.length?r.deploymentStates.map(d=>markdown(d.environment)+": "+markdown(d.state)).join("; "):"none available; not proof of deployed SHA"),"",
    "| PR | Exact head | Required checks | Exact-head preview | Disposition / next step |","|---|---|---|---|---|");
   for(const p of r.items){
-   const required=p.requiredStates.map(x=>markdown(x.name)+": "+x.state).join(", ");
+   const required=p.requiredStates.map(x=>markdown(x.name)+(x.app?" (app "+x.app+")":"")+": "+x.state).join(", ");
    const details=[...p.holds,...p.failures.map(x=>markdown(x.name)+": "+x.conclusion),...p.overlaps.map(x=>"overlap #"+x.number+" ("+x.paths.map(markdown).join(", ")+")")];
    const preview=r.cloudflare?.previews?.find(x=>x.sha===p.head&&x.branch===p.branch);
-   const previewState=preview?markdown(preview.stage)+"/"+markdown(preview.status):r.cloudflare?.preview?.mode==="none"?"automatic previews disabled":r.cloudflare?.preview?"not in observed preview records":"unverified";
+   const isolated=r.cloudflare?.isolated?.previews?.find(x=>x.sha===p.head);
+   const previewState=isolated?"isolated "+markdown(isolated.branch)+" "+markdown(isolated.stage)+"/"+markdown(isolated.status):preview?markdown(preview.stage)+"/"+markdown(preview.status):r.cloudflare?.preview?.mode==="none"?"canonical automatic previews disabled":r.cloudflare?.preview?"not in observed preview records":"unverified";
    lines.push("| [#"+p.number+"]("+p.url+") "+markdown(p.title)+" | \`"+p.head+"\` | "+required+" | "+previewState+" | "+p.technical+": "+(details.join("; ")||"owner approval / verify deployed candidate")+" |");
   }
   lines.push("","### Scheduled checks (latest scheduled run)","");
