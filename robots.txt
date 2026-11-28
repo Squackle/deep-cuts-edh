@@ -5,6 +5,7 @@ Disallow: /member-operations
 Disallow: /members
 Allow: /
 Sitemap: https://deep-cuts-edh.pages.dev/sitemap.xml
+Sitemap: https://deep-cuts-edh.pages.dev/sitemap-weekly.xml
 
 # Mana Heist developer reports are not discovery pages.
 Disallow: /games/mana-heist/readiness
