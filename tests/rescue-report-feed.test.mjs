@@ -26,8 +26,7 @@ test('rejects malformed archives, duplicate reports, and external links',()=>{
  assert.throws(()=>renderRescueReportFeed(html.replace('alena-and-gilanra','commander-mustard')),/Duplicate/);
  assert.throws(()=>renderRescueReportFeed(html.replace('/reports/alena-and-gilanra','https://evil.example/path')),/Invalid published/);
  const malicious=html.replace('<strong>Commander Mustard</strong>','<strong>&lt;script&gt;bad()&lt;/script&gt;</strong>');
- assert.doesNotMatch(renderRescueReportFeed(malicious),/<script>/);
- assert.match(renderRescueReportFeed(malicious),/&lt;script&gt;/);
+ assert.ok(renderRescueReportFeed(malicious).includes('<title>&lt;script&gt;bad()&lt;/script&gt; — Rescue Report | Deep Cuts EDH</title>'));
 });
 test('Cloudflare Pages endpoint serves public feed and fails closed on missing asset',async()=>{
  const good=await onRequestGet({request:new Request(origin+'/feed.xml'),env:{ASSETS:{fetch:async req=>{
@@ -46,4 +45,44 @@ test('published entries come from actual public report assets',()=>{
  const entries=extractPublishedRescueReports(publicHomepage);
  assert.ok(entries.length>=4);
  for(const entry of entries)assert.ok(existsSync('.'+entry.path+'.html'),entry.path+' is not a public report asset');
+});
+
+test('metadata rejects raw nested, repeated and malformed markup instead of deleting substrings',()=>{
+ for(const content of ['<em>Commander</em>','<scr<script>ipt>bad','<<img src=x>>','<!-- comment -->Commander','Commander <broken','Commander > broken']){
+  for(const tag of ['strong','small']){
+   const input=html.replace(tag==='strong'?'<strong>Commander Mustard</strong>':'<small>Boros Soldiers</small>', '<'+tag+'>'+content+'</'+tag+'>');
+   assert.throws(()=>renderRescueReportFeed(input),/Invalid published metadata markup/,content);
+  }
+ }
+});
+test('RSS description survives XML decoding as safe HTML text, without recursive entity decoding',()=>{
+ const input=html.replace('Boros Soldiers','&lt;img src=x onerror=bad()&gt; &amp;&amp; &#60;&#x3e; &amp;lt; &#34;&#39; &nbsp; text');
+ const report=extractPublishedRescueReports(input)[0];
+ assert.equal(report.excerpt, '<img src=x onerror=bad()> && <> &lt; "\' text');
+ const rss=renderRescueReportFeed(input);
+ const expected='&amp;lt;img src=x onerror=bad()&amp;gt; &amp;amp;&amp;amp; &amp;lt;&amp;gt; &amp;amp;lt; &amp;quot;&amp;apos; text. Read the published Deep Cuts EDH Commander Rescue Report.';
+ assert.ok(rss.includes('<description>'+expected+'</description>'));
+ // The XML parser removes exactly one entity layer. HTML readers then see
+ // only text entities, not executable markup or a second decode operation.
+ const parsed=expected.replace(/&(amp|lt|gt|quot|apos);/g,(_,name)=>({amp:'&',lt:'<',gt:'>',quot:'"',apos:"'"})[name]);
+ assert.equal(parsed,'&lt;img src=x onerror=bad()&gt; &amp;&amp; &lt;&gt; &amp;lt; &quot;&apos; text. Read the published Deep Cuts EDH Commander Rescue Report.');
+ assert.ok(rss.includes('<description>Gruul partners. Read the published Deep Cuts EDH Commander Rescue Report.</description>'));
+});
+test('invalid XML characters fail closed and valid Unicode survives',async()=>{
+ for(const bad of ['\u0000','\u0001','\ud800','\ufffe','&#65535;','&#0;','&#xD800;','&#x110000;','&#1;','\u000b','\u000c']){
+  assert.throws(()=>renderRescueReportFeed(html.replace('Boros Soldiers','Boros'+bad+'Soldiers')),/Invalid XML character/);
+ }
+ assert.ok(renderRescueReportFeed(html.replace('Boros Soldiers','Boros &#x1f600;')).includes('Boros 😀'));
+ const response=await onRequestGet({request:new Request(origin+'/feed.xml'),env:{ASSETS:{fetch:async()=>new Response(html.replace('Boros Soldiers','<em>bad</em>'))}}});
+ assert.equal(response.status,503);
+ assert.equal(response.headers.get('cache-control'),'no-store');
+});
+
+test('invalid numeric entities cannot normalize a malformed link into a valid canonical URL',()=>{
+ for(const suffix of ['&#0;','&#xD800;','&#x110000;','&#1;','&#10;','&#13;','&#9;','\n']){
+  const input=html.replace('/reports/commander-mustard','/reports/commander-mustard'+suffix);
+  assert.throws(()=>renderRescueReportFeed(input),/Invalid (XML character|published case link)/,suffix);
+ }
+ assert.equal(extractPublishedRescueReports(html.replace('commander-mustard','commander&#45;mustard'))[0].path,'/reports/commander-mustard');
+ assert.equal(extractPublishedRescueReports(html.replace('Boros Soldiers','Boros&#9;&#10;Soldiers'))[0].excerpt,'Boros Soldiers');
 });

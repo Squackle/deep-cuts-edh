@@ -6,7 +6,8 @@
 import {EDITORIAL_EDITIONS} from './weekly-rescue-editions.js';
 import {remoteJson} from './weekly-rescues-html.js';
 
-const DATE=/^20\d\d-\d\d-\d\d$/;
+import {validWeeklyDate as validDate} from '../home-weekly-feature.mjs';
+const validRow=row=>row&&validDate(row.date)&&typeof row.commander==='string'&&row.commander.trim()&&typeof row.theme==='string'&&row.theme.trim();
 const editions=new Map(EDITORIAL_EDITIONS.map(x=>[x.date,x]));
 
 export const indexRow=item=>({date:item.date,commander:item.commander.name,theme:item.theme,headline:item.sections?.headline||'',imageUrl:item.commander.imageUrl||null});
@@ -15,7 +16,7 @@ export const indexRow=item=>({date:item.date,commander:item.commander.name,theme
 export function mergeIndex(workerRows,local=EDITORIAL_EDITIONS){
  const byDate=new Map();
  for(const row of Array.isArray(workerRows)?workerRows:[])
-  if(row&&typeof row.date==='string'&&DATE.test(row.date)&&!byDate.has(row.date))byDate.set(row.date,row);
+  if(validRow(row)&&!byDate.has(row.date))byDate.set(row.date,row);
  for(const item of local)byDate.set(item.date,indexRow(item));
  return [...byDate.values()].sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
 }
@@ -27,7 +28,8 @@ export function editionFor(date){return editions.get(date)||null}
 export async function loadArchive(fetchJson=remoteJson){
  try{
   const data=await fetchJson('/v1/index');
-  return {reports:mergeIndex(data?.reports),unavailable:false};
+  if(!Array.isArray(data?.reports))throw Error('Weekly report index has an invalid shape');
+  return {reports:mergeIndex(data.reports),unavailable:false};
  }catch(error){
   console.error('Weekly Rescue index upstream unavailable',String(error));
   return {reports:mergeIndex([]),unavailable:true};
@@ -37,7 +39,7 @@ export async function loadArchive(fetchJson=remoteJson){
 // Returns the report for a date, or null when it does not exist.
 // Throws only when the Worker failed AND no repository edition exists.
 export async function loadReport(date,fetchJson=remoteJson){
- if(!DATE.test(String(date||'')))return null;
+ if(!validDate(date))return null;
  const local=editionFor(date);
  if(local)return local;
  try{
