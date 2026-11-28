@@ -57,7 +57,8 @@ test('Ekthi historical preview is distinguished from official current eligibilit
 });
 test('weekly reports render a positive integer card-use rank or report it unavailable',()=>{
  const edition=EDITORIAL_EDITIONS[0];
- assert.match(reportHtml(edition),/<strong>4919 · NOT leader deck count<\/strong>/);
+ const ranked={...edition,commander:{...edition.commander,edhrecCardUseRank:4919}};
+ assert.match(reportHtml(ranked),/<strong>4919 · NOT leader deck count<\/strong>/);
  for(const edhrecCardUseRank of ['unknown','<b>unverified rank</b>',0,-1,1.5,null]){
   const html=reportHtml({...edition,commander:{...edition.commander,edhrecCardUseRank}});
   assert.match(html,/<strong>Unavailable · NOT leader deck count<\/strong>/);
@@ -68,7 +69,11 @@ test('evergreen discovery worksheet links to published weekly cases, actual tool
  const html=read('rescues.html');
  const section=html.match(/<section[^>]+id="discovery-method"[\s\S]*?<\/section>/)?.[0];
  assert.ok(section);
- for(const date of ['2026-10-30',...EDITORIAL_EDITIONS.map(x=>x.date)])assert.ok(section.includes('href="/rescues/'+date+'"'));
+ // The worksheet curates examples independently of the growing weekly archive.
+ const weeklyCases=[...section.matchAll(/href="\/rescues\/(\d{4}-\d{2}-\d{2})"/g)].map(match=>match[1]);
+ assert.deepEqual(weeklyCases,['2026-10-30','2026-11-06','2026-11-13','2026-11-20']);
+ const repositoryDates=new Set(EDITORIAL_EDITIONS.map(edition=>edition.date));
+ for(const date of weeklyCases.slice(1))assert.ok(repositoryDates.has(date),date);
  for(const href of ['/matchmaker','/deep-cut-finder','/library','/deck','/subscribe','/nominations']){assert.ok(section.includes('href="'+href+'"'));assertDestination(href)}
  assert.match(section,/not a measured popularity ranking/);
 });
