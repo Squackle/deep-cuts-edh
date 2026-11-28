@@ -8,7 +8,8 @@
  * report is listed in /rescues even if KV is unavailable.
  *
  * Every card fact below was checked against Scryfall's API (name, Oracle text,
- * color identity, Commander legality) on 2026-11-21 (Central) before publication.
+ * color identity, Commander legality) before publication (Abigale on 2026-11-27,
+ * the others on 2026-11-21, Central time).
  */
 const sf=(set,num,slug)=>`https://scryfall.com/card/${set}/${num}/${slug}`;
 
@@ -43,6 +44,40 @@ const KRUPHIX={
   {name:'Hydroid Krasis',url:sf('soc',315,'hydroid-krasis'),why:"Banked colorless mana can pay X. A big Krasis draws half X, gains half X life, and its {G}{U} pips add to Kruphix's devotion."}
  ],
  methodology:'Editorially revised on November 21, 2026. The original automated draft misdescribed several cards, so the strategy and card notes were rewritten and every card was rechecked against Scryfall (Oracle text, color identity and Commander legality). Strategy interactions are editorial hypotheses, not playtested or judge-certified.',
+ status:'AI-assisted, source-checked and editorially revised; not independently playtested'
+};
+
+const ABIGALE={
+ version:2,date:'2026-11-27',createdAt:'2026-11-27T16:46:00.000Z',revisedAt:'2026-11-27T18:00:00.000Z',
+ commander:{name:'Abigale, Eloquent First-Year',identity:['B','W'],
+  oracle:'Flying, first strike, lifelink When Abigale enters, up to one other target creature loses all abilities. Put a flying counter, a first strike counter, and a lifelink counter on that creature.',
+  scryfall:sf('ecl',204,'abigale-eloquent-first-year'),edhrecCardUseRank:8003,
+  imageUrl:'https://cards.scryfall.io/normal/front/b/f/bf708169-a307-494b-b8d8-baae53b2e2f2.jpg?1783904418'},
+ theme:'Drawback Surgery',
+ usualBuild:'Approximate: Orzhov lifelink and keyword counters',
+ hook:"Abigale's enter trigger erases every ability a creature has, including its drawbacks. Point it at your own oversized monsters with terrible downsides and keep the body.",
+ selectionReason:"Most Abigale lists treat the trigger as removal or a small buff. Pointed at your own creatures, it deletes upkeep costs and sacrifice clauses, and Black has plenty of huge bodies held back only by their drawbacks.",
+ sections:{
+  headline:'Abigale cuts the drawbacks off your biggest monsters',
+  diagnosis:"When Abigale, Eloquent First-Year enters, up to one other target creature loses all abilities, then gets a flying, a first strike and a lifelink counter. People usually aim that at an opponent's best creature. Aimed at your own creature, it is surgery. A creature built with a painful drawback loses the drawback, keeps its stats, and gains three keywords. Abigale costs two mana, so you can recast her from the command zone again and again.",
+  prescription:"Fill the deck with creatures that are far too big for their mana cost because of a drawback. Phyrexian Negator is a 5/5 for three that makes you sacrifice permanents when it takes damage. Grinning Demon is a 6/6 for four that drains you every upkeep. Lord of the Pit is a 7/7 that eats a creature every upkeep. Colossus of Sardia is a 9/9 that never untaps on its own. Ephemerate and Restoration Angel flicker Abigale for another operation, and The Ozolith saves the keyword counters when a patient dies.",
+  earlyGame:"Play a drawback creature first and Abigale second: her trigger only hits creatures already on the battlefield. Phyrexian Negator on turn three, then Abigale on turn four, gives you a 5/5 flying, first strike, lifelink attacker that no longer forces sacrifices. Ajani's Pridemate is a fine early play that grows with every lifelink hit.",
+  midGame:"Line up one surgery per turn. Grinning Demon and Lord of the Pit should be operated on before your next upkeep, so hold Abigale or a flicker spell for the turn they land. Ephemerate on Abigale gives you a trigger now and another from rebound next upkeep. Restoration Angel does the same at instant speed, and it blocks as a 3/4 flyer.",
+  lateGame:"Colossus of Sardia is the big finish: a 9/9 that, after surgery, untaps normally and attacks in the air with first strike and lifelink. If an opponent kills one of your patients, The Ozolith collects its counters and moves them onto another creature at the beginning of combat on your turn. That creature keeps its own abilities and gains the three keywords.",
+  risks:"Every patient is dangerous until Abigale reaches it. An unoperated Lord of the Pit can eat your board, and Phyrexian Negator can cost you lands if it takes damage first. Flickering a patient resets it: it comes back with its drawback and without its counters. Board wipes and exile hit hard, and Abigale herself is a 1/1 that removal handles easily.",
+  verdict:"A real alternative to a generic Orzhov lifelink deck. It plays big, cheap, flying lifelinkers that no other commander can safely run, and the sequencing puzzle is fun. It's untested, and the deck is fragile when Abigale is answered early, but the ceiling is high for a two-mana commander."
+ },
+ synergies:[
+  {name:'Phyrexian Negator',url:sf('dde',1,'phyrexian-negator'),why:"A 5/5 trampler for three. Its drawback is sacrificing a permanent for each point of damage it takes. After surgery it's a 5/5 flying, first strike, lifelink creature with no drawback (it loses trample)."},
+  {name:'Grinning Demon',url:sf('ons',153,'grinning-demon'),why:"A 6/6 for four that makes you lose 2 life every upkeep. Abigale removes the upkeep trigger, and the lifelink counter turns it into a life gain engine."},
+  {name:'Lord of the Pit',url:sf('ima',96,'lord-of-the-pit'),why:"A 7/7 that makes you sacrifice another creature every upkeep or take 7 damage. Abigale removes that upkeep trigger. It loses trample, and the counter gives back flying."},
+  {name:'Colossus of Sardia',url:sf('me4',193,'colossus-of-sardia'),why:"A colorless 9/9 that doesn't untap during your untap step. Once it has lost all abilities, it untaps normally, and the counters make it a 9/9 lifelinking flyer."},
+  {name:'The Ozolith',url:sf('iko',237,'the-ozolith'),why:"When a creature you control with counters leaves the battlefield, The Ozolith keeps those counters. At the beginning of combat on your turn, you can move them onto another creature."},
+  {name:'Ephemerate',url:sf('mh1',7,'ephemerate'),why:"One white mana to flicker Abigale for a fresh enter trigger. Rebound lets you cast it again for free on your next upkeep, for a second operation."},
+  {name:'Restoration Angel',url:sf('inr',38,'restoration-angel'),why:"A flash flyer that can flicker Abigale, a non-Angel, at instant speed. Use it at the end of an opponent's turn to fix a creature you just played."},
+  {name:"Ajani's Pridemate",url:sf('fdn',135,'ajanis-pridemate'),why:"Gets a +1/+1 counter whenever you gain life. With Abigale and every patient carrying lifelink, it grows whenever they deal damage."}
+ ],
+ methodology:'Editorially revised on November 27, 2026. The automated draft picked weak support cards, including Steel Golem, which stops you from casting creature spells, so the strategy and card notes were rewritten, and every card was checked against Scryfall (Oracle text, color identity and Commander legality). Strategy interactions are editorial hypotheses, not playtested or judge-certified.',
  status:'AI-assisted, source-checked and editorially revised; not independently playtested'
 };
 
@@ -112,4 +147,4 @@ const GROTHAMA={
  status:'AI-assisted source-checked editorial backfill; not independently playtested'
 };
 
-export const EDITORIAL_EDITIONS=Object.freeze([KRUPHIX,GROTHAMA,NYMRIS]);
+export const EDITORIAL_EDITIONS=Object.freeze([ABIGALE,KRUPHIX,GROTHAMA,NYMRIS]);
