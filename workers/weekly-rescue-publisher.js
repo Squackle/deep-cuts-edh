@@ -141,15 +141,27 @@ export function parseStoredIndex(raw){
  return [...byDate.values()].sort((a,b)=>b.date.localeCompare(a.date));
 }
 const readIndex=async env=>parseStoredIndex(await env.REPORTS.get('index'));
-const indexArticle=async(env,item)=>{
+function articleRow(item){
  const row={date:item?.date,commander:item?.commander?.name,theme:item?.theme,headline:item?.sections?.headline,imageUrl:item?.commander?.imageUrl||null};
  if(!validRow(row)||typeof row.headline!=='string'||!row.headline.trim())fail('Stored article cannot be indexed');
+ return row;
+}
+async function readArticle(env,date){
+ const raw=await env.REPORTS.get('article:'+date);
+ if(raw===null)return null;
+ let item;
+ try{item=JSON.parse(raw)}catch{fail('Stored article is invalid JSON')}
+ if(item?.date!==date)fail('Stored article date mismatch');
+ articleRow(item);
+ return item;
+}
+const indexArticle=async(env,item)=>{
+ const row=articleRow(item);
  const list=await readIndex(env);
  const next=[row,...list.filter(x=>x.date!==row.date)].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,104);
  await env.REPORTS.put('index',JSON.stringify(next));
 };
 async function recoverExisting(env,date,item){
- if(item?.date!==date)fail('Stored article date mismatch');
  await indexArticle(env,item);
  await status(env,{status:'published',date,commander:item.commander.name,recoveredIndex:true});
  return {status:'already_published',date,recoveredIndex:true};
@@ -158,28 +170,28 @@ export async function publish(env,now){if(!env.REPORTS)fail('Rescue-only KV bind
  const parts=chicago(now);
  if(!localReleaseWindow(now))return {status:'not_release_window',local:dateKey(parts)+' '+parts.hour};
  const date=dateKey(parts);
- // Repair the public index if an earlier run saved an article but crashed.
- const existing=await env.REPORTS.get('article:'+date,'json');
- if(existing)return recoverExisting(env,date,existing);
- await status(env,{status:'researching',date});
- let item;
- try{await readIndex(env);item=await research(env,date)}
- catch(e){
+ try{
+  // Repair the public index if an earlier run saved an article but crashed.
+  const existing=await readArticle(env,date);
+  if(existing)return await recoverExisting(env,date,existing);
+  await readIndex(env);
+  await status(env,{status:'researching',date});
+  const item=await research(env,date);
+  // A second read narrows the overlap window for delayed retries. KV is
+  // eventually consistent; this is not a cross-isolate atomic lock.
+  const recovered=await readArticle(env,date);
+  if(recovered)return await recoverExisting(env,date,recovered);
+  // Recheck index before saving to avoid publishing against known corruption.
+  await readIndex(env);
+  await env.REPORTS.put('article:'+date,JSON.stringify(item));
+  await indexArticle(env,item);
+  await status(env,{status:'published',date,commander:item.commander.name});
+  return {status:'published',date,commander:item.commander.name};
+ }catch(e){
   const reason=clean(e?.message,170);
   await status(env,{status:'held_for_review',date,reason});
   return {status:'held_for_review',date,reason};
  }
- // A second read narrows the overlap window for delayed retries. KV is
- // eventually consistent; this is not a cross-isolate atomic lock.
- const recovered=await env.REPORTS.get('article:'+date,'json');
- if(recovered)return recoverExisting(env,date,recovered);
- // Recheck index before saving to avoid publishing against known corruption.
- await readIndex(env);
- // Publish only after live card and editorial checks pass.
- await env.REPORTS.put('article:'+date,JSON.stringify(item));
- await indexArticle(env,item);
- await status(env,{status:'published',date,commander:item.commander.name});
- return {status:'published',date,commander:item.commander.name};
 }
 export async function scheduledRun(event,env){
  if(!env.REPORTS)fail('Rescue-only KV binding missing');
@@ -204,7 +216,16 @@ export default {
    try{const list=await readIndex(env);return reply(u.pathname==='/v1/index'?{reports:list}:{report:list[0]||null})}
    catch{return new Response(JSON.stringify({error:'Publication index temporarily unavailable'}),{status:503,headers:{...publicHeaders,'Cache-Control':'no-store','Retry-After':'300'}})}
   }
-  if(u.pathname==='/v1/report'){const date=u.searchParams.get('date')||'';if(!validDate(date))return reply({error:'Invalid report date'},400);const x=await env.REPORTS.get('article:'+date,'json');return x?reply({report:x}):reply({error:'Report not found'},404)}
+  if(u.pathname==='/v1/report'){
+   const date=u.searchParams.get('date')||'';
+   if(!validDate(date))return reply({error:'Invalid report date'},400);
+   try{
+    const report=await readArticle(env,date);
+    return report?reply({report}):reply({error:'Report not found'},404);
+   }catch{
+    return new Response(JSON.stringify({error:'Publication temporarily unavailable'}),{status:503,headers:{...publicHeaders,'Cache-Control':'no-store','Retry-After':'300'}});
+   }
+  }
   return reply({error:'Not found'},404);
  }
 };

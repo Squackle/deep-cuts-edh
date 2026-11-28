@@ -34,8 +34,30 @@ test('repairing an older article is idempotent and never replaces the latest edi
  assert.deepEqual(index.map(x=>x.date),['2026-11-20',date]);
  const res=await publisher.fetch(new Request('https://publisher.test/v1/latest'),env);
  assert.equal((await res.json()).report.commander,'Newer');
+ const saved=await publisher.fetch(new Request('https://publisher.test/v1/report?date='+date),env);
+ assert.deepEqual(await saved.json(),{report:article(date,'Older')});
+ const missing=await publisher.fetch(new Request('https://publisher.test/v1/report?date=2026-10-30'),env);
+ assert.equal(missing.status,404);
  const bad=await publisher.fetch(new Request('https://publisher.test/v1/report?date=2026-02-31'),env);
  assert.equal(bad.status,400);
+});
+test('publication holds on malformed or misdated article records without rewriting the archive',async()=>{
+ const date='2026-11-06',key='article:'+date,index=JSON.stringify([row('2026-11-20')]);
+ for(const raw of ['{','null',JSON.stringify(article('2026-11-13')),JSON.stringify({...article(date),sections:{}})]){
+  const kv=memory([['index',index],[key,raw]]);
+  const env={REPORTS:kv,AI:{async run(){assert.fail('Must not regenerate an existing record')}}};
+  const res=await publisher.fetch(new Request('https://publisher.test/v1/report?date='+date),env);
+  assert.equal(res.status,503);
+  assert.equal(res.headers.get('cache-control'),'no-store');
+  assert.equal(res.headers.get('retry-after'),'300');
+  assert.deepEqual(await res.json(),{error:'Publication temporarily unavailable'});
+  const result=await publish(env,friday);
+  assert.equal(result.status,'held_for_review');
+  assert.match(result.reason,/Stored article/);
+  assert.equal(kv.map.get('index'),index);
+  assert.equal(kv.map.get(key),raw);
+  assert.deepEqual(kv.writes,['last-status']);
+ }
 });
 test('outline quality checks reject invented candidates, duplicate evidence and impossible theme before article generation',()=>{
  const pool=[{name:'Real Leader'}],good={commander:'Real Leader',usualBuild:'Control',theme:'Artifact token value',hook:'Try a different plan',selectionReason:'Clear alternative',supportCards:Array.from({length:7},(_,i)=>'Card '+i)};
