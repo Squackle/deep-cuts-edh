@@ -17,17 +17,28 @@ export function trustedCardImage(url){
 }
 // Never switch the featured name/link until its exact card image has loaded.
 // Failure preserves the fully functional previous report and portrait.
-export function preloadCardImage(url,create=()=>new Image()){
+export function preloadCardImage(url,create=()=>new Image(),timeoutMs=5000){
  return new Promise(resolve=>{
+  let image,settled=false,timer;
+  const done=value=>{
+   if(settled)return;settled=true;
+   clearTimeout(timer);
+   if(image){image.onload=null;image.onerror=null}
+   resolve(value);
+  };
   try{
-   const image=create();let settled=false;
-   const done=value=>{if(!settled){settled=true;resolve(value)}};
+   image=create();
+   timer=setTimeout(()=>done(false),timeoutMs);
    image.onload=()=>done(image.naturalWidth>0);
    image.onerror=()=>done(false);
    image.src=url;
    if(image.complete)done(image.naturalWidth>0);
-  }catch{resolve(false)}
+  }catch{done(false)}
  });
+}
+// Calendar dates must round-trip. Date.parse alone normalizes e.g. February 31.
+export function validWeeklyDate(value){
+ return typeof value==='string'&&/^20\d\d-\d\d-\d\d$/.test(value)&&Number.isFinite(Date.parse(value+'T00:00:00Z'))&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
 }
 export function watchFeaturedImage(image){
  if(!image)return false;
@@ -45,7 +56,7 @@ export function newerWeeklyReport(payload,featuredDate){
  const item=payload?.report;
  if(!item||typeof item!=='object'||Array.isArray(item))return null;
  const {date,commander,theme}=item;
- if(typeof date!=='string'||!/^20\d\d-\d\d-\d\d$/.test(date)||!Number.isFinite(Date.parse(date+'T12:00:00Z')))return null;
+ if(!validWeeklyDate(date))return null;
  if(typeof featuredDate!=='string'||date<=featuredDate)return null;
  if(typeof commander!=='string'||typeof theme!=='string')return null;
  const name=commander.trim(),subject=theme.trim();
@@ -79,9 +90,9 @@ export function applyWeeklyFeature(root,report,documentNode){
 }
 if(typeof document!=='undefined'){
  const featured=document.getElementById('homeWeeklyFeature');
- if(featured&&typeof fetch==='function'){
-  watchFeaturedImage(featured.querySelector('[data-weekly-image]'));
-  fetch(LATEST_URL,{headers:{Accept:'application/json'},cache:'no-store'})
+ if(featured)watchFeaturedImage(featured.querySelector('[data-weekly-image]'));
+ if(featured&&featured.dataset.weeklyResolved!=='true'&&typeof fetch==='function'){
+  fetch(LATEST_URL,{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(5000)})
    .then(r=>{if(!r.ok)throw Error('Weekly archive unavailable');return r.json();})
    .then(data=>{
     const next=newerWeeklyReport(data,featured.dataset.weeklyDate);
