@@ -7,6 +7,13 @@ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
 const css=readFileSync(new URL("../styles.css",import.meta.url),"utf8");
 const game=readFileSync(new URL("../src/main.js",import.meta.url),"utf8");
 
+function portraitUrl(name){
+ return "https://api.scryfall.com/cards/named?exact="+encodeURIComponent(name)+"&format=image&version=art_crop";
+}
+function exactPortraitUrl(value,name){
+ return typeof value==="string"&&value===portraitUrl(name);
+}
+
 function element(tag){
  const attrs=new Map(),classes=new Set(),listeners={};
  const node={
@@ -54,7 +61,7 @@ test("game top-right avatar reuses the actual site-wide account component",async
  assert.equal(button.title,"Open @Squackle's investigator dossier");
  assert.ok(button.classList.contains("is-signed-in"));
  const image=button.children[0].children[1];
- assert.match(image.src,/api\.scryfall\.com\/cards\/named/);
+ assert.ok(exactPortraitUrl(image.src,profile.avatar),"avatar must have the exact HTTPS Scryfall origin, named-card route and expected query");
  assert.match(image.style.transform,/scale\(3\.10\)/);
  assert.equal(checks,1);
  events["deepcuts:profile-change"]({detail:{profile:null}});
@@ -72,4 +79,29 @@ test("signed-in leaderboard box is hidden, guests still have a sign-in link",()=
  assert.match(css,/@media\(max-width:580px\)/);
  assert.match(html,/href="\/header-profile\.css"/);
  assert.match(html,/src="\/header-profile\.js"/);
+});
+
+test("avatar URL contract rejects hostile origins, prefixes, suffixes and malformed queries",()=>{
+ const name="Chainer, Dementia Master";
+ const valid=portraitUrl(name);
+ assert.ok(exactPortraitUrl(valid,name));
+ for(const candidate of [
+  "prefix"+valid,
+  valid+"/more",
+  valid+"#fragment",
+  valid+"&redirect=https://evil.example",
+  valid.replace("https://","http://"),
+  valid.replace("api.scryfall.com","api.scryfall.com.evil.example"),
+  valid.replace("api.scryfall.com","evil-api.scryfall.com"),
+  valid.replace("/cards/named?","/cards/named/extra?"),
+  valid.replace("exact=Chainer%2C%20Dementia%20Master","exact=Other"),
+  valid.replace("&format=image","&format=text"),
+  valid.replace("&version=art_crop","&version=normal"),
+  valid.replace("?exact=","?unused=1&exact="),
+  valid.replace("%2C","%2c"),
+  valid+"?extra=1",
+  "",null,undefined
+ ]){
+  assert.equal(exactPortraitUrl(candidate,name),false,String(candidate));
+ }
 });
